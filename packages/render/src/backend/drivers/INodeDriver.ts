@@ -1,7 +1,7 @@
-import { Transform2D } from "@atlasjs/math";
+import { Transform2DLike } from "@atlasjs/math";
 
 export interface INodeDriver {
-  setTransform(t: Transform2D): void;
+  setLocalTransform(transform: Transform2DLike): void;
   setVisible(v: boolean): void;
   setAlpha(a: number): void;
   destroy(): void;

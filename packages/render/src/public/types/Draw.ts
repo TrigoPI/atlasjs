@@ -1,4 +1,4 @@
-import { Box2, Vec2 } from "@atlasjs/math";
+import { Box2 } from "@atlasjs/math";
 
 export type RectStyle = {
   size: Box2;

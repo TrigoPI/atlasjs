@@ -20,6 +20,8 @@
     "@atlasjs/core": "workspace:*",
     "@atlasjs/math": "workspace:*",
     "@atlasjs/render": "workspace:*",
+    "@atlasjs/assets": "workspace:*",
+    "@atlasjs/utils": "workspace:*",
     "pixi.js": "^8.16.0"
   }
 }

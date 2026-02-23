@@ -15,5 +15,8 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@atlasjs/utils": "workspace:*"
   }
 }

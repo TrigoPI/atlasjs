@@ -1,4 +1,4 @@
-import { Transform2D } from "@atlasjs/math";
+import { Transform2DLike } from "@atlasjs/math";
 import { INodeDriver } from "@atlasjs/render/backend";
 
 import { Container } from "pixi.js";
@@ -15,10 +15,10 @@ export class PixiNodeDriver<
     this.obj = obj;
   }
 
-  public setTransform({ position, rotation, scale }: Transform2D): void {
-    this.obj.position.set(position.x, position.y);
-    this.obj.scale.set(scale.x, scale.y);
-    this.obj.rotation = rotation;
+  public setLocalTransform(t: Transform2DLike): void {
+    this.obj.position.set(t.position.x, t.position.y);
+    this.obj.scale.set(t.scale.x, t.scale.y);
+    this.obj.rotation = t.rotation;
   }
 
   public setVisible(v: boolean): void {

@@ -8,5 +8,4 @@ export type EngineOptions = {
 export type EngineEvents = {
   "engine:start": {};
   "engine:stop": {};
-  "render:ready": {};
 };

@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@atlasjs/math": "workspace:*",
-    "@atlasjs/core": "workspace:*"
+    "@atlasjs/core": "workspace:*",
+    "@atlasjs/utils": "workspace:*"
   }
 }

@@ -1,3 +1,5 @@
+import { createLogger, Logger } from "@atlasjs/utils";
+
 import { Plugin } from "./Plugin";
 import { EventBus } from "./EventBus";
 import { Scheduler } from "./Scheduler";
@@ -11,6 +13,8 @@ const DEFAULT_FIXED_DELTA = 1 / 60;
 const DEFAULT_MAX_SUB_STEPS = 5;
 
 export class Engine implements SceneContext {
+  private readonly logger: Logger;
+
   public readonly events: EventBus<EngineEvents>;
   public readonly services: ServiceRegistry;
   public readonly scheduler: Scheduler;
@@ -25,6 +29,8 @@ export class Engine implements SceneContext {
   private acc: number;
 
   public constructor(opts: EngineOptions = {}) {
+    this.logger = createLogger("log", Engine.name);
+
     this.events = new EventBus<EngineEvents>();
     this.services = new ServiceRegistry();
     this.scheduler = new Scheduler();
@@ -48,17 +54,15 @@ export class Engine implements SceneContext {
     return this;
   }
 
-  public start(): void {
+  public async start(): Promise<void> {
     if (this.stopLoop) {
       return;
     }
 
-    this.installPlugins();
-    this.events.emit("engine:start", {});
-    this.startLoop();
+    await this.boot();
   }
 
-  stop(): void {
+  public stop(): void {
     if (!this.stopLoop) {
       return;
     }
@@ -74,14 +78,23 @@ export class Engine implements SceneContext {
     this.events.clear();
   }
 
-  private installPlugins(): void {
+  private async boot(): Promise<void> {
+    this.logger.log("Booting engine...");
+
     this.plugins.sort(
       (a: Plugin, b: Plugin) => (a.order ?? 0) - (b.order ?? 0),
     );
 
     for (const p of this.plugins) {
+      this.logger.log(`Installing plugin: ${p.constructor.name}`);
       p.install(this);
     }
+
+    await Promise.all(this.plugins.map((p: Plugin) => p.deferred.ready));
+    this.logger.log("All plugins are ready");
+
+    this.events.emit("engine:start", {});
+    this.startLoop();
   }
 
   private startLoop(): void {

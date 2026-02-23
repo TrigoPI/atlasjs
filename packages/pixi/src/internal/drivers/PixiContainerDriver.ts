@@ -1,6 +1,5 @@
 import { IContainerDriver, INodeDriver } from "@atlasjs/render/backend";
 import { Container } from "pixi.js";
-
 import { PixiNodeDriver } from "./PixiNodeDriver";
 
 export class PixiContainerDriver

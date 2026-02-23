@@ -1,0 +1,26 @@
+{
+  "name": "@atlasjs/picking",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "@atlasjs/math": "workspace:*",
+    "@atlasjs/core": "workspace:*",
+    "@atlasjs/render": "workspace:*",
+    "@atlasjs/input": "workspace:*",
+    "@atlasjs/utils": "workspace:*"
+  }
+}

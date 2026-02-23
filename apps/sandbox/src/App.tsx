@@ -1,8 +1,10 @@
 import { useEffect, useRef, type RefObject } from "react";
 
 import { Engine } from "@atlasjs/core";
-import { PixiRenderPlugin } from "@atlasjs/pixi";
 import { InputPlugin } from "@atlasjs/input";
+import { AssetPlugin } from "@atlasjs/assets";
+import { PickingPlugin } from "@atlasjs/picking";
+import { PixiRenderPlugin } from "@atlasjs/pixi";
 
 import { Window } from "./Window";
 import { TestScene } from "./scene/TestScene";
@@ -14,31 +16,41 @@ export function App() {
   useEffect(() => {
     const engine: Engine = new Engine();
 
+    const mount: HTMLElement = mountRef.current || document.body;
+    const backgroundColor: number = 0x55efc4;
     const rendererPlugin: PixiRenderPlugin = new PixiRenderPlugin({
-      mount: mountRef.current || document.body,
-      backgroundColor: 0x55efc4,
+      mount,
+      backgroundColor,
     });
 
     const inputPlugin: InputPlugin = new InputPlugin({
       target: mountRef.current || document.body,
     });
 
-    engine.events.on("render:ready", () => {
+    const pickingPlugin: PickingPlugin = new PickingPlugin();
+    const assetPlugin: AssetPlugin = new AssetPlugin();
+
+    assetPlugin.setOrder(0);
+    inputPlugin.setOrder(0);
+    pickingPlugin.setOrder(1);
+    rendererPlugin.setOrder(2);
+
+    engine
+      .use(assetPlugin)
+      .use(rendererPlugin)
+      .use(inputPlugin)
+      .use(pickingPlugin);
+
+    engine.start().then(() => {
       engine.scene.set(new TestScene());
     });
-
-    engine.use(rendererPlugin);
-    engine.use(inputPlugin);
-
-    engine.start();
 
     return () => engine.stop();
   }, []);
 
   return (
     <div>
-      <p>AtlasJs sandbox 😈</p>
-      <Window ref={mountRef} style={{ width: "720px", height: "480px" }} />
+      <Window ref={mountRef} style={{ width: "100vw", height: "100vh" }} />
     </div>
   );
 }

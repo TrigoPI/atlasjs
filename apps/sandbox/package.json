@@ -16,7 +16,9 @@
     "@atlasjs/math": "workspace:*",
     "@atlasjs/render": "workspace:*",
     "@atlasjs/pixi": "workspace:*",
-    "@atlasjs/input": "workspace:*"
+    "@atlasjs/input": "workspace:*",
+    "@atlasjs/assets": "workspace:*",
+    "@atlasjs/picking": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

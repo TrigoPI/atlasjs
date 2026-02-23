@@ -1,7 +1,7 @@
 import { Transform2D } from "@atlasjs/math";
 import { RectStyle } from "../types";
 
-export type NodeKind = "root" | "container" | "rect";
+export type NodeKind = "root" | "container" | "rect" | "sprite";
 
 export type RendererEvents = {
   "render:ready": {};

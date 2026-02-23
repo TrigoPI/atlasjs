@@ -10,4 +10,7 @@ export default defineConfig({
       "@sandbox": "/src",
     },
   },
+  define: {
+    __DEV__: "true",
+  },
 });

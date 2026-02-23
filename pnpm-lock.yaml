@@ -26,6 +26,9 @@ importers:
 
   apps/sandbox:
     dependencies:
+      '@atlasjs/assets':
+        specifier: workspace:*
+        version: link:../../packages/assets
       '@atlasjs/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -35,6 +38,9 @@ importers:
       '@atlasjs/math':
         specifier: workspace:*
         version: link:../../packages/math
+      '@atlasjs/picking':
+        specifier: workspace:*
+        version: link:../../packages/picking
       '@atlasjs/pixi':
         specifier: workspace:*
         version: link:../../packages/pixi
@@ -85,7 +91,17 @@ importers:
         specifier: ^7.3.1
         version: 7.3.1(@types/node@24.10.13)
 
-  packages/core: {}
+  packages/assets:
+    dependencies:
+      '@atlasjs/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/core:
+    dependencies:
+      '@atlasjs/utils':
+        specifier: workspace:*
+        version: link:../utils
 
   packages/input:
     dependencies:
@@ -95,11 +111,39 @@ importers:
       '@atlasjs/math':
         specifier: workspace:*
         version: link:../math
+      '@atlasjs/utils':
+        specifier: workspace:*
+        version: link:../utils
 
-  packages/math: {}
+  packages/math:
+    dependencies:
+      '@atlasjs/utils':
+        specifier: workspace:*
+        version: link:../utils
+
+  packages/picking:
+    dependencies:
+      '@atlasjs/core':
+        specifier: workspace:*
+        version: link:../core
+      '@atlasjs/input':
+        specifier: workspace:*
+        version: link:../input
+      '@atlasjs/math':
+        specifier: workspace:*
+        version: link:../math
+      '@atlasjs/render':
+        specifier: workspace:*
+        version: link:../render
+      '@atlasjs/utils':
+        specifier: workspace:*
+        version: link:../utils
 
   packages/pixi:
     dependencies:
+      '@atlasjs/assets':
+        specifier: workspace:*
+        version: link:../assets
       '@atlasjs/core':
         specifier: workspace:*
         version: link:../core
@@ -109,18 +153,29 @@ importers:
       '@atlasjs/render':
         specifier: workspace:*
         version: link:../render
+      '@atlasjs/utils':
+        specifier: workspace:*
+        version: link:../utils
       pixi.js:
         specifier: ^8.16.0
         version: 8.16.0
 
   packages/render:
     dependencies:
+      '@atlasjs/assets':
+        specifier: workspace:*
+        version: link:../assets
       '@atlasjs/core':
         specifier: workspace:*
         version: link:../core
       '@atlasjs/math':
         specifier: workspace:*
         version: link:../math
+      '@atlasjs/utils':
+        specifier: workspace:*
+        version: link:../utils
+
+  packages/utils: {}
 
 packages:
 
