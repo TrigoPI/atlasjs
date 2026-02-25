@@ -58,7 +58,10 @@ export class Renderer implements RendererLike {
     }
   }
 
-  public createRect(style: RectStyle, id?: string): RectNode {
+  public createRect(
+    style: RectStyle = { size: Box2.create(32, 32) },
+    id?: string,
+  ): RectNode {
     const driver: IRectDriver = this.backend.createRect(style);
     const rect: RectNode = new RectNode({
       backend: this.backend,

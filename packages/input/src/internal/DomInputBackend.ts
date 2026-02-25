@@ -67,7 +67,7 @@ export class DomInputBackend {
     this.off.push(() => window.removeEventListener("blur", onBlur));
   }
 
-  detach(): void {
+  public detach(): void {
     for (const fn of this.off) {
       fn();
     }

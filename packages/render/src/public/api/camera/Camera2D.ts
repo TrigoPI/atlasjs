@@ -28,4 +28,7 @@ export abstract class Camera2D {
   abstract setViewportSize(width: number, height: number): void;
   abstract screenToWorld(screen: Vec2Like): Vec2;
   abstract worldToScreen(world: Vec2Like): Vec2;
+
+  abstract screenToWorldInto(screen: Vec2Like, target: Vec2): void;
+  abstract worldToScreenInto(world: Vec2Like, target: Vec2): void;
 }

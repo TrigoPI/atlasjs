@@ -4,6 +4,8 @@ import { RendererLike } from "../../../internal";
 import { NodeConstructorOptions } from "./types";
 
 import {
+  Bound,
+  Box2,
   Mat2,
   ObservableTransform2D,
   Transform2D,
@@ -33,6 +35,7 @@ export class Node<TDriver extends INodeDriver = INodeDriver> {
   private localDirty: boolean;
   private worldDirty: boolean;
   private invDirty: boolean;
+  private pickable: boolean;
 
   private _parent: Node | null;
   private _group: IContainerDriver | null;
@@ -65,6 +68,7 @@ export class Node<TDriver extends INodeDriver = INodeDriver> {
     this.localDirty = true;
     this.worldDirty = true;
     this.invDirty = true;
+    this.pickable = true;
 
     this._group = this.createRootDriverOrNull(isRoot, driver);
     this._parent = null;
@@ -114,8 +118,8 @@ export class Node<TDriver extends INodeDriver = INodeDriver> {
     return this.transform.position;
   }
 
-  public get pickable(): boolean {
-    return true;
+  public isPickable(): boolean {
+    return this.pickable;
   }
 
   public isWorldDirty(): boolean {
@@ -134,34 +138,42 @@ export class Node<TDriver extends INodeDriver = INodeDriver> {
     return false;
   }
 
+  public getLocalBound(): Bound {
+    return Bound.create();
+  }
+
   public linkDriver(): INodeDriver {
     return this._group ?? this.driver;
   }
 
-  public worldToLocal(world: Vec2Like): Vec2Like {
+  public worldToLocal(world: Vec2Like): Vec2 {
     this.ensureInvWorld();
     return this.invWorldMatrix.multVec2(world);
   }
 
-  public setPosition(x: number, y: number): Node {
+  public localToWorld(local: Vec2Like): Vec2 {
+    return this.worldMatrix.multVec2(local);
+  }
+
+  public setPosition(x: number, y: number): this {
     this.assertAlive();
     this._transform.setPosition(x, y);
     return this;
   }
 
-  public setRotation(r: number): Node {
+  public setRotation(r: number): this {
     this.assertAlive();
     this._transform.setRotation(r);
     return this;
   }
 
-  public setScale(x: number, y: number): Node {
+  public setScale(x: number, y: number): this {
     this.assertAlive();
     this._transform.setScale(x, y);
     return this;
   }
 
-  public setTransform(t: Transform2D): Node {
+  public setTransform(t: Transform2D): this {
     this.assertAlive();
     this._transform.setPosition(t.position.x, t.position.y);
     this._transform.setScale(t.scale.x, t.scale.y);
@@ -169,7 +181,7 @@ export class Node<TDriver extends INodeDriver = INodeDriver> {
     return this;
   }
 
-  public setVisible(v: boolean): Node {
+  public setVisible(v: boolean): this {
     this.assertAlive();
     this.driver.setVisible(v);
     this.renderer.events.emit("node:visibleChanged", {
@@ -180,7 +192,7 @@ export class Node<TDriver extends INodeDriver = INodeDriver> {
     return this;
   }
 
-  public setAlpha(a: number): Node {
+  public setAlpha(a: number): this {
     this.assertAlive();
     this.driver.setAlpha(a);
     this.renderer.events.emit("node:alphaChanged", {
@@ -191,7 +203,7 @@ export class Node<TDriver extends INodeDriver = INodeDriver> {
     return this;
   }
 
-  public add(child: Node): Node {
+  public add(child: Node): this {
     this.assertAlive();
     child.assertAlive();
 
@@ -218,7 +230,7 @@ export class Node<TDriver extends INodeDriver = INodeDriver> {
     return this;
   }
 
-  public remove(child: Node): Node {
+  public remove(child: Node): this {
     this.assertAlive();
 
     const i: number = this._children.indexOf(child);
@@ -261,6 +273,12 @@ export class Node<TDriver extends INodeDriver = INodeDriver> {
     this.renderer.events.emit("node:destroyed", {
       id: this.id,
     });
+  }
+
+  public setPickable(pickable: boolean): this {
+    this.assertAlive();
+    this.pickable = pickable;
+    return this;
   }
 
   public markQueued(): void {
@@ -309,6 +327,15 @@ export class Node<TDriver extends INodeDriver = INodeDriver> {
     }
   }
 
+  public worldToLocalInto(world: Vec2Like, out: Vec2): void {
+    this.ensureInvWorld();
+    this.invWorldMatrix.multVec2Into(world, out);
+  }
+
+  public localToWorldInto(local: Vec2Like, out: Vec2): void {
+    this.worldMatrix.multVec2Into(local, out);
+  }
+
   private assertAlive() {
     if (this.dead) {
       throw new Error(`Node "${this.id}" is destroyed`);
@@ -331,27 +358,26 @@ export class Node<TDriver extends INodeDriver = INodeDriver> {
   }
 
   private ensureGroup(): IContainerDriver {
-    if (this._group) {
-      return this._group;
-    }
+    if (this._group) return this._group;
 
+    const prevLink: INodeDriver = this.linkDriver();
     const group: IContainerDriver = this.backend.createContainer();
     this._group = group;
 
     if (this._parent) {
       const parentContainer: IContainerDriver = this._parent.attachContainer();
-      parentContainer.remove(this.driver);
+      parentContainer.remove(prevLink);
       parentContainer.add(group);
     }
 
     group.add(this.driver);
+    this.driver.setLocalTransform(Transform2D.identity());
 
-    for (let i: number = 0; i < this._children.length; i++) {
+    for (let i = 0; i < this._children.length; i++) {
       group.add(this._children[i].linkDriver());
     }
 
     this.markWorldDirty();
-
     return group;
   }
 

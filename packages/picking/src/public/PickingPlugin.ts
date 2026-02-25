@@ -8,10 +8,12 @@ import { PICKING } from "./Tokens";
 
 export class PickingPlugin extends Plugin {
   private readonly logger: Logger;
+  private picker: Picker | null;
 
   public constructor() {
     super("picking");
-    this.logger = createLogger("log", PickingPlugin.name);
+    this.logger = createLogger(PickingPlugin.name);
+    this.picker = null;
   }
 
   public async install(engine: Engine): Promise<void> {
@@ -19,8 +21,9 @@ export class PickingPlugin extends Plugin {
 
     const renderer: Renderer = await engine.services.wait(RENDERER);
     const input: Input = await engine.services.wait(INPUT);
-
     const picker: Picker = new Picker(renderer.root, renderer.camera, input);
+
+    this.picker = picker;
 
     engine.services.provide(PICKING, picker);
     engine.scheduler.onUpdate(() => {
@@ -31,5 +34,9 @@ export class PickingPlugin extends Plugin {
     this.deferred.resolve();
   }
 
-  public uninstall(engine: Engine): void {}
+  public uninstall(): void {
+    this.logger.log("Uninstalling picking plugin...");
+    this.picker?.destroy();
+    this.picker = null;
+  }
 }

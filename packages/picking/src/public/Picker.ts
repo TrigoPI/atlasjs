@@ -6,22 +6,22 @@ import { Input } from "@atlasjs/input";
 import { PickingEvents } from "./Events";
 
 export class Picker {
+  public readonly events: EventBus<PickingEvents>;
+
   private readonly tmpLocal: Vec2;
   private readonly tmpWorld: Vec2;
-
   private readonly root: Node;
   private readonly camera: Camera2D;
   private readonly input: Input;
-  private readonly events: EventBus<PickingEvents>;
 
-  private hoveredId: string | null = null;
+  private hoveredNode: Node | null = null;
 
   public constructor(root: Node, camera: Camera2D, input: Input) {
     this.root = root;
     this.input = input;
     this.camera = camera;
 
-    this.hoveredId = null;
+    this.hoveredNode = null;
 
     this.tmpLocal = new Vec2();
     this.tmpWorld = new Vec2();
@@ -31,21 +31,19 @@ export class Picker {
 
   public onUpdate(): void {
     const screen: Vec2 = this.input.pointer.position;
-    const world: Vec2 = this.camera.screenToWorld(screen);
-
-    this.tmpWorld.copyFrom(world);
+    this.camera.screenToWorldInto(screen, this.tmpWorld);
 
     const hit: Node | null = this.pickFrom(this.root, this.tmpWorld);
-    const hitId: string | null = hit?.id ?? null;
+    const hitId: string | undefined = hit?.id;
+    const hoveredId: string | undefined = this.hoveredNode?.id;
 
-    if (hitId !== this.hoveredId) {
-      if (hitId) {
-        this.events.emit("pick:hoverEnter", {
-          nodeId: hitId,
-          world: this.tmpWorld.copy(),
-        });
-      }
-    }
+    this.updateEnterLeave(hit, hitId, hoveredId);
+    this.updatePickMove(hit);
+    this.updatePickUpDown(hit);
+  }
+
+  public destroy(): void {
+    this.events.clear();
   }
 
   private pickFrom(node: Node, pWorld: Vec2Like): Node | null {
@@ -56,13 +54,64 @@ export class Picker {
       if (got) return got;
     }
 
-    if (!node.pickable) {
+    if (!node.isPickable()) {
       return null;
     }
 
-    const local: Vec2 = node.worldToLocal(pWorld);
-    this.tmpLocal.copyFrom(local);
-
+    node.worldToLocalInto(pWorld, this.tmpLocal);
     return node.hitTestLocal(this.tmpLocal) ? node : null;
+  }
+
+  private updateEnterLeave(
+    hit: Node | null,
+    hitId: string | undefined,
+    hoveredId: string | undefined,
+  ): void {
+    if (hitId === hoveredId) {
+      return;
+    }
+
+    if (hoveredId) {
+      this.events.emit("pick:hoverLeave", {
+        node: <Node>this.hoveredNode,
+        world: this.tmpWorld.copy(),
+      });
+    }
+
+    if (hitId) {
+      this.events.emit("pick:hoverEnter", {
+        node: <Node>hit,
+        world: this.tmpWorld.copy(),
+      });
+    }
+
+    this.hoveredNode = hit;
+  }
+
+  private updatePickMove(hit: Node | null): void {
+    if (this.input.pointer.delta.x === 0 && this.input.pointer.delta.y === 0) {
+      return;
+    }
+
+    this.events.emit("pick:move", {
+      node: <Node>hit,
+      world: this.tmpWorld.copy(),
+    });
+  }
+
+  private updatePickUpDown(hit: Node | null): void {
+    if (this.input.pointer.pressed) {
+      this.events.emit("pick:down", {
+        node: hit,
+        world: this.tmpWorld.copy(),
+      });
+    }
+
+    if (this.input.pointer.released) {
+      this.events.emit("pick:up", {
+        node: hit,
+        world: this.tmpWorld.copy(),
+      });
+    }
   }
 }

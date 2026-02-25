@@ -26,10 +26,11 @@ export class Engine implements SceneContext {
   private fixedDelta: number;
   private maxSubSteps: number;
 
+  private booted: boolean;
   private acc: number;
 
   public constructor(opts: EngineOptions = {}) {
-    this.logger = createLogger("log", Engine.name);
+    this.logger = createLogger(Engine.name);
 
     this.events = new EventBus<EngineEvents>();
     this.services = new ServiceRegistry();
@@ -42,7 +43,12 @@ export class Engine implements SceneContext {
     this.maxSubSteps = opts.maxSubSteps ?? DEFAULT_MAX_SUB_STEPS;
 
     this.acc = 0;
+    this.booted = false;
     this.stopLoop = null;
+  }
+
+  public isBooted(): boolean {
+    return this.booted;
   }
 
   public use(plugin: Plugin): Engine {
@@ -55,10 +61,7 @@ export class Engine implements SceneContext {
   }
 
   public async start(): Promise<void> {
-    if (this.stopLoop) {
-      return;
-    }
-
+    if (this.stopLoop) return;
     await this.boot();
   }
 
@@ -94,6 +97,7 @@ export class Engine implements SceneContext {
     this.logger.log("All plugins are ready");
 
     this.events.emit("engine:start", {});
+    this.booted = true;
     this.startLoop();
   }
 
@@ -112,6 +116,7 @@ export class Engine implements SceneContext {
       }
 
       this.scheduler.runRender(dt);
+      this.scheduler.runEndFrame(dt);
     });
   }
 }

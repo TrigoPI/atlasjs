@@ -118,4 +118,39 @@ export class Mat2 {
       this.b * vec2.x + this.d * vec2.y + this.ty,
     );
   }
+
+  public set(
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    tx: number,
+    ty: number,
+  ): this {
+    this.a = a;
+    this.b = b;
+    this.c = c;
+    this.d = d;
+    this.tx = tx;
+    this.ty = ty;
+    return this;
+  }
+
+  public multVec2Into(vec2: Vec2Like, target: Vec2): void {
+    target.set(
+      this.a * vec2.x + this.c * vec2.y + this.tx,
+      this.b * vec2.x + this.d * vec2.y + this.ty,
+    );
+  }
+
+  public multInto(other: Mat2, target: Mat2): void {
+    target.set(
+      this.a * other.a + this.c * other.b,
+      this.b * other.a + this.d * other.b,
+      this.a * other.c + this.c * other.d,
+      this.b * other.c + this.d * other.d,
+      this.a * other.tx + this.c * other.ty + this.tx,
+      this.b * other.tx + this.d * other.ty + this.ty,
+    );
+  }
 }

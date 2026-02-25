@@ -96,6 +96,14 @@ export class ObservableCamera2D<
     this.markDirty();
   }
 
+  public screenToWorldInto(screen: Vec2Like, target: Vec2): void {
+    this.invViewMatrix().multVec2Into(screen, target);
+  }
+
+  public worldToScreenInto(world: Vec2Like, target: Vec2): void {
+    this.viewMatrix().multVec2Into(world, target);
+  }
+
   public flush(): void {
     if (!this.dirtyDriver) return;
 

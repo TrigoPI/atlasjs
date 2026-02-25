@@ -1,8 +1,8 @@
-import { RENDERER, SpriteNode, type Renderer } from "@atlasjs/render";
+import { RectNode, RENDERER, SpriteNode, type Renderer } from "@atlasjs/render";
 import { AssetManager, ASSETS, type TextureHandle } from "@atlasjs/assets";
 import { INPUT, Key, type Input } from "@atlasjs/input";
 import { Scene, type SceneContext } from "@atlasjs/core";
-import { Picker, PICKING } from "@atlasjs/picking";
+import { DragSystem, Picker, PICKING, SelectionSystem } from "@atlasjs/picking";
 import { Vec2 } from "@atlasjs/math";
 
 const Direction = {
@@ -32,27 +32,38 @@ export class TestScene extends Scene {
     this.assets = ctx.services.get(ASSETS);
     this.picker = ctx.services.get(PICKING);
 
+    new DragSystem(this.picker, this.input);
+    new SelectionSystem(this.picker, this.renderer);
+
     const texture: TextureHandle = await this.assets.loadTexture(
       "sealion",
       "assets/sealion.png",
     );
 
-    const subRect: SpriteNode = this.renderer.createSprite("sealion2");
-    subRect
+    const subRect: SpriteNode = this.renderer
+      .createSprite("sealion2")
       .setTexture(texture)
       .setAnchor(0.5, 0.5)
-      .setScale(0.5, 0.5)
-      .setPosition(100, 0);
+      .setScale(0.1, 0.1)
+      .setPosition(0, 0);
 
-    this.rect = this.renderer.createSprite("sealion1");
-    this.rect
+    const graphicRect: RectNode = this.renderer
+      .createRect()
+      .setFillColor(0xff0000)
+      .setSize(100, 100)
+      .setPosition(200, 0);
+
+    this.rect = this.renderer
+      .createSprite("sealion1")
       .setTexture(texture)
       .setAnchor(0.5, 0.5)
       .setScale(0.15, 0.15)
       .setAlpha(0.3);
 
-    this.renderer.root.add(this.rect);
-    this.rect.add(subRect);
+    // this.renderer.root.add(this.rect);
+    this.renderer.root.add(graphicRect);
+    // this.rect.add(subRect);
+    graphicRect.add(subRect);
   }
 
   public override onUpdate(dt: number): void {
@@ -94,17 +105,17 @@ export class TestScene extends Scene {
       this.renderer.camera.position.add(Direction.Up);
     }
 
-    if (this.input.isDown(Key.MouseLeft)) {
-      const worldPosition: Vec2 = this.renderer.camera.screenToWorld(
-        this.input.pointer.position,
-      );
+    // if (this.input.isDown(Key.MouseLeft)) {
+    //   const worldPosition: Vec2 = this.renderer.camera.screenToWorld(
+    //     this.input.pointer.position,
+    //   );
 
-      const f: Vec2 = Vec2.from(worldPosition)
-        .sub(this.rect.position)
-        .mult(0.1);
+    //   const f: Vec2 = Vec2.from(worldPosition)
+    //     .sub(this.rect.position)
+    //     .mult(0.1);
 
-      this.rect.position.add(f);
-    }
+    //   this.rect.position.add(f);
+    // }
 
     if (this.input.pointer.wheelDelta !== 0) {
       const s: number = this.input.pointer.wheelDelta * 0.0005;

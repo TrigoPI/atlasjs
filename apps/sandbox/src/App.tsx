@@ -17,7 +17,7 @@ export function App() {
     const engine: Engine = new Engine();
 
     const mount: HTMLElement = mountRef.current || document.body;
-    const backgroundColor: number = 0x55efc4;
+    const backgroundColor: number = 0x2d3436;
     const rendererPlugin: PixiRenderPlugin = new PixiRenderPlugin({
       mount,
       backgroundColor,
@@ -32,8 +32,8 @@ export function App() {
 
     assetPlugin.setOrder(0);
     inputPlugin.setOrder(0);
-    pickingPlugin.setOrder(1);
-    rendererPlugin.setOrder(2);
+    rendererPlugin.setOrder(1);
+    pickingPlugin.setOrder(2);
 
     engine
       .use(assetPlugin)

@@ -1,5 +1,5 @@
 import { TextureHandle } from "@atlasjs/assets";
-import { Box2, Vec2, Vec2Like } from "@atlasjs/math";
+import { Bound, Box2, Vec2, Vec2Like } from "@atlasjs/math";
 
 import { ISpriteDriver } from "../../../backend";
 import { NodeConstructorOptions } from "./types";
@@ -15,12 +15,18 @@ export class SpriteNode extends Node<ISpriteDriver> {
     this.anchor = new Vec2();
   }
 
+  public override getLocalBound(): Bound {
+    const x: number = -this.anchor.x * this.textureSize.width;
+    const y: number = -this.anchor.y * this.textureSize.height;
+    const width: number = this.textureSize.width;
+    const height: number = this.textureSize.height;
+    return Bound.create(x, y, width, height);
+  }
+
   public override hitTestLocal(p: Vec2Like): boolean {
     if (this.textureSize.width === 0 || this.textureSize.height === 0) {
       return false;
     }
-
-    // console.log("from sprite node", p.x, p.y);
 
     const minX: number = -this.anchor.x * this.textureSize.width;
     const maxX: number = (1 - this.anchor.x) * this.textureSize.width;

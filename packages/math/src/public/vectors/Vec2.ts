@@ -67,4 +67,26 @@ export class Vec2 implements Vec2Like {
   public copy(): Vec2 {
     return new Vec2(this.x, this.y);
   }
+
+  public static create(x: number = 0, y: number = 0): Vec2 {
+    return new Vec2(x, y);
+  }
+
+  public static add(a: Vec2Like, b: Vec2Like): Vec2 {
+    return new Vec2(a.x + b.x, a.y + b.y);
+  }
+
+  public static addInto(a: Vec2Like, b: Vec2Like, out: Vec2Like): Vec2 {
+    out.set(a.x + b.x, a.y + b.y);
+    return out;
+  }
+
+  public static sub(a: Vec2Like, b: Vec2Like): Vec2 {
+    return new Vec2(a.x - b.x, a.y - b.y);
+  }
+
+  public static subInto(a: Vec2Like, b: Vec2Like, out: Vec2Like): Vec2 {
+    out.set(a.x - b.x, a.y - b.y);
+    return out;
+  }
 }

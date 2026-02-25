@@ -18,7 +18,7 @@ export class InputPlugin extends Plugin {
     this.input = null;
     this.backend = null;
 
-    this.logger = createLogger("log", InputPlugin.name);
+    this.logger = createLogger(InputPlugin.name);
   }
 
   public install(engine: Engine): void {
@@ -30,7 +30,7 @@ export class InputPlugin extends Plugin {
     backend.attach(this.opts.target ?? window);
 
     engine.services.provide(INPUT, input);
-    engine.scheduler.onUpdate(() => input.endFrame());
+    engine.scheduler.onEndFrame(() => input.endFrame());
 
     this.input = input;
     this.backend = backend;

@@ -1,3 +1,4 @@
-export * from "./Observable";
-export * from "./Logger";
+export * from "./logging";
 export * from "./types";
+
+export * from "./Observable";

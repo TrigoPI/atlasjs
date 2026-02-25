@@ -8,7 +8,7 @@ export class ServiceRegistry {
   private readonly waiters: Map<symbol, Deferred<any>>;
 
   public constructor() {
-    this.logger = createLogger("log", ServiceRegistry.name);
+    this.logger = createLogger(ServiceRegistry.name);
     this.services = new Map<symbol, unknown>();
     this.waiters = new Map<symbol, Deferred<any>>();
   }

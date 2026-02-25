@@ -4,11 +4,17 @@ export class Scheduler {
   private readonly updates: StepFn[];
   private readonly fixed: StepFn[];
   private readonly renders: StepFn[];
+  private readonly endFrame: StepFn[];
 
   public constructor() {
     this.updates = [];
     this.fixed = [];
     this.renders = [];
+    this.endFrame = [];
+  }
+
+  public onEndFrame(fn: StepFn): void {
+    this.endFrame.push(fn);
   }
 
   public onUpdate(fn: StepFn): void {
@@ -30,14 +36,20 @@ export class Scheduler {
   }
 
   public runFixedUpdate(dt: number): void {
-    for (const f of this.fixed) {
-      f(dt);
+    for (let i: number = 0; i < this.fixed.length; i++) {
+      this.fixed[i](dt);
     }
   }
 
   public runRender(dt: number): void {
-    for (const f of this.renders) {
-      f(dt);
+    for (let i: number = 0; i < this.renders.length; i++) {
+      this.renders[i](dt);
+    }
+  }
+
+  public runEndFrame(dt: number): void {
+    for (let i: number = 0; i < this.endFrame.length; i++) {
+      this.endFrame[i](dt);
     }
   }
 }

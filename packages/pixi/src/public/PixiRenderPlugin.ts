@@ -21,7 +21,7 @@ export class PixiRenderPlugin extends Plugin {
 
   public constructor(opts: PixiRenderPluginOptions) {
     super("pixi-render", 10);
-    this.logger = createLogger("log", PixiRenderPlugin.name);
+    this.logger = createLogger(PixiRenderPlugin.name);
     this.opts = opts;
     this.backend = null;
     this.stopResize = null;

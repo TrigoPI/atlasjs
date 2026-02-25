@@ -45,4 +45,8 @@ export class Transform2D implements Transform2DLike {
     this.rotation += dr;
     return this;
   }
+
+  public static identity(): Transform2D {
+    return new Transform2D(new Vec2(), new Vec2(1, 1), 0);
+  }
 }
