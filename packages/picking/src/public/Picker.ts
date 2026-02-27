@@ -1,13 +1,15 @@
-import { Vec2, Vec2Like } from "@atlasjs/math";
-import { Camera2D, Node } from "@atlasjs/render";
+import { Camera2D, Node } from "@atlasjs/nebula";
+import { createLogger, Logger } from "@atlasjs/utils";
 import { EventBus } from "@atlasjs/core";
 import { Input } from "@atlasjs/input";
+import { Vec2 } from "@atlasjs/math";
 
 import { PickingEvents } from "./Events";
 
 export class Picker {
   public readonly events: EventBus<PickingEvents>;
 
+  private readonly logger: Logger;
   private readonly tmpLocal: Vec2;
   private readonly tmpWorld: Vec2;
   private readonly root: Node;
@@ -17,6 +19,8 @@ export class Picker {
   private hoveredNode: Node | null = null;
 
   public constructor(root: Node, camera: Camera2D, input: Input) {
+    this.logger = createLogger(Picker.name);
+
     this.root = root;
     this.input = input;
     this.camera = camera;
@@ -31,7 +35,7 @@ export class Picker {
 
   public onUpdate(): void {
     const screen: Vec2 = this.input.pointer.position;
-    this.camera.screenToWorldInto(screen, this.tmpWorld);
+    this.camera.screenToWorldTo(screen, this.tmpWorld);
 
     const hit: Node | null = this.pickFrom(this.root, this.tmpWorld);
     const hitId: string | undefined = hit?.id;
@@ -43,10 +47,11 @@ export class Picker {
   }
 
   public destroy(): void {
+    this.logger.log("Destroying picker...");
     this.events.clear();
   }
 
-  private pickFrom(node: Node, pWorld: Vec2Like): Node | null {
+  private pickFrom(node: Node, pWorld: Vec2): Node | null {
     const children: readonly Node[] = node.children;
 
     for (let i = children.length - 1; i >= 0; i--) {
@@ -54,11 +59,11 @@ export class Picker {
       if (got) return got;
     }
 
-    if (!node.isPickable()) {
+    if (!node.pickable) {
       return null;
     }
 
-    node.worldToLocalInto(pWorld, this.tmpLocal);
+    node.worldToLocalTo(pWorld, this.tmpLocal);
     return node.hitTestLocal(this.tmpLocal) ? node : null;
   }
 

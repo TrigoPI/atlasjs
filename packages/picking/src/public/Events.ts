@@ -1,9 +1,9 @@
-import { Node } from "@atlasjs/render";
-import type { Vec2Like } from "@atlasjs/math";
+import { Node } from "@atlasjs/nebula";
+import type { Vec2 } from "@atlasjs/math";
 
 export type PickingEventPayload = {
   node: Node | null;
-  world: Vec2Like;
+  world: Vec2;
 };
 
 export type PickingEvents = {

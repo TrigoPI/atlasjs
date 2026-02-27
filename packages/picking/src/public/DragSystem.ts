@@ -1,4 +1,6 @@
-import { Node } from "@atlasjs/render";
+import { createLogger, Logger } from "@atlasjs/utils";
+import { Unsubscribe } from "@atlasjs/core";
+import { Node } from "@atlasjs/nebula";
 import { Input } from "@atlasjs/input";
 import { Vec2 } from "@atlasjs/math";
 
@@ -9,16 +11,22 @@ export class DragSystem {
   private dragged: Node | null;
   private enabled: boolean;
 
+  private readonly logger: Logger;
   private readonly picker: Picker;
   private readonly input: Input;
 
   private readonly offsetWorld: Vec2;
   private readonly tmp: Vec2;
 
+  private readonly unsubscribe: Unsubscribe[];
+
   public constructor(picker: Picker, input: Input) {
+    this.logger = createLogger(DragSystem.name);
+
     this.picker = picker;
     this.input = input;
 
+    this.unsubscribe = [];
     this.dragged = null;
     this.enabled = true;
 
@@ -26,6 +34,11 @@ export class DragSystem {
     this.tmp = new Vec2();
 
     this.bind();
+  }
+
+  public destroy(): void {
+    this.logger.log("Destroying drag system...");
+    this.unsubscribe.forEach((unsubscribe: Unsubscribe) => unsubscribe());
   }
 
   private bind(): void {
@@ -37,8 +50,8 @@ export class DragSystem {
         this.dragged = node;
 
         this.tmp.set(0, 0);
-        node.localToWorldInto(this.tmp, this.tmp);
-        Vec2.subInto(this.tmp, world, this.offsetWorld);
+        node.localToWorldTo(this.tmp, this.tmp);
+        Vec2.subTo(this.tmp, world, this.offsetWorld);
       },
     );
 
@@ -53,7 +66,7 @@ export class DragSystem {
         const parent: Node | null = this.dragged.parent;
 
         if (parent) {
-          parent.worldToLocalInto(target, this.tmp);
+          parent.worldToLocalTo(target, this.tmp);
           this.dragged.setPosition(this.tmp.x, this.tmp.y);
         } else {
           this.dragged.setPosition(target.x, target.y);

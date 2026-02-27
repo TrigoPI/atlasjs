@@ -2,9 +2,9 @@ import { useEffect, useRef, type RefObject } from "react";
 
 import { Engine } from "@atlasjs/core";
 import { InputPlugin } from "@atlasjs/input";
-import { AssetPlugin } from "@atlasjs/assets";
+import { PixiRenderer } from "@atlasjs/pixi";
 import { PickingPlugin } from "@atlasjs/picking";
-import { PixiRenderPlugin } from "@atlasjs/pixi";
+import { AssetPlugin, NebulaPlugin } from "@atlasjs/nebula";
 
 import { Window } from "./Window";
 import { TestScene } from "./scene/TestScene";
@@ -15,30 +15,30 @@ export function App() {
 
   useEffect(() => {
     const engine: Engine = new Engine();
-
     const mount: HTMLElement = mountRef.current || document.body;
-    const backgroundColor: number = 0x2d3436;
-    const rendererPlugin: PixiRenderPlugin = new PixiRenderPlugin({
+    const pixiRenderer: PixiRenderer = new PixiRenderer();
+
+    const assetPlugin: AssetPlugin = new AssetPlugin();
+    const pickingPlugin: PickingPlugin = new PickingPlugin();
+
+    const rendererPlugin: NebulaPlugin = new NebulaPlugin(pixiRenderer, {
       mount,
-      backgroundColor,
+      background: 0x000000,
     });
 
     const inputPlugin: InputPlugin = new InputPlugin({
       target: mountRef.current || document.body,
     });
 
-    const pickingPlugin: PickingPlugin = new PickingPlugin();
-    const assetPlugin: AssetPlugin = new AssetPlugin();
-
     assetPlugin.setOrder(0);
     inputPlugin.setOrder(0);
+    pickingPlugin.setOrder(0);
     rendererPlugin.setOrder(1);
-    pickingPlugin.setOrder(2);
 
     engine
       .use(assetPlugin)
-      .use(rendererPlugin)
       .use(inputPlugin)
+      .use(rendererPlugin)
       .use(pickingPlugin);
 
     engine.start().then(() => {
@@ -48,9 +48,5 @@ export function App() {
     return () => engine.stop();
   }, []);
 
-  return (
-    <div>
-      <Window ref={mountRef} style={{ width: "100vw", height: "100vh" }} />
-    </div>
-  );
+  return <Window ref={mountRef} style={{ width: "100vw", height: "100vh" }} />;
 }

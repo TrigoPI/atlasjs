@@ -1,15 +1,19 @@
+import { createLogger, Logger } from "@atlasjs/utils";
 import { textureHandle } from "./TextureHandle";
-import { TextureHandle, TextureMeta } from "./types";
+import { TextureHandle } from "./types";
+import { Texture2D } from "./Texture2D";
 
 export class AssetManager {
-  private readonly textures: Map<TextureHandle, TextureMeta>;
+  private readonly logger: Logger;
+  private readonly textures: Map<TextureHandle, Texture2D>;
 
   public constructor() {
-    this.textures = new Map<TextureHandle, TextureMeta>();
+    this.textures = new Map<TextureHandle, Texture2D>();
+    this.logger = createLogger(AssetManager.name);
   }
 
-  public getTextureMeta(handle: TextureHandle): Readonly<TextureMeta> {
-    const t: TextureMeta | undefined = this.textures.get(handle);
+  public getTextureMeta(handle: TextureHandle): Readonly<Texture2D> {
+    const t: Texture2D | undefined = this.textures.get(handle);
 
     if (!t) {
       throw new Error(`AssetManager: unknown texture handle "${handle}"`);
@@ -18,23 +22,26 @@ export class AssetManager {
     return t;
   }
 
-  public async loadTexture(id: string, src: string): Promise<TextureHandle> {
+  public async loadTexture(id: string, src: string): Promise<Texture2D> {
+    this.logger.log(`Loading texture "${id}" from "${src}"...`);
     const handle: TextureHandle = textureHandle(id);
 
     if (this.textures.has(handle)) {
-      return handle;
+      this.logger.log(`Texture "${id}" is already loaded.`);
+      return this.textures.get(handle)!;
     }
 
+    this.logger.log(`Texture "${id}" is not loaded. Loading...`);
+
     const img: HTMLImageElement = await this.loadImage(src);
+    const texture: Texture2D = new Texture2D(handle, img);
+    this.textures.set(handle, texture);
 
-    this.textures.set(handle, {
-      src,
-      width: img.naturalWidth || img.width,
-      height: img.naturalHeight || img.height,
-      image: img,
-    });
+    this.logger.log(
+      `Texture "${id}" loaded successfully [${texture.width}x${texture.height}]`,
+    );
 
-    return handle;
+    return texture;
   }
 
   private loadImage(src: string): Promise<HTMLImageElement> {

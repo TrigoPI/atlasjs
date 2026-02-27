@@ -1,6 +1,8 @@
 import { WebSocketTransportPayload } from "./types";
 
 export class WebSocketClient {
+  private static _instance: WebSocketClient;
+
   private readonly ws: WebSocket;
   private readonly buffer: WebSocketTransportPayload[] = [];
 
@@ -24,6 +26,7 @@ export class WebSocketClient {
     while (this.buffer.length > 0) {
       const payload: WebSocketTransportPayload | undefined =
         this.buffer.shift();
+
       if (payload && this.ws.readyState === WebSocket.OPEN) {
         this.ws.send(JSON.stringify(payload));
       }
@@ -31,6 +34,10 @@ export class WebSocketClient {
   }
 
   public static connect(url: string): WebSocketClient {
-    return new WebSocketClient(url);
+    if (!WebSocketClient._instance) {
+      WebSocketClient._instance = new WebSocketClient(url);
+    }
+
+    return WebSocketClient._instance;
   }
 }

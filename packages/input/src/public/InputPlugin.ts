@@ -1,7 +1,7 @@
 import { Engine, Plugin } from "@atlasjs/core";
 import { createLogger, Logger } from "@atlasjs/utils";
 
-import { DomInputBackend, BackendInput } from "../internal";
+import { DomInputBackend, BackendInput } from "../private";
 import { InputPluginOptions } from "./types";
 import { INPUT } from "./Tokens";
 

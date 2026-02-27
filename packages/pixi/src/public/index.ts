@@ -1,1 +1,3 @@
-export * from "./PixiRenderPlugin";
+export * from "./pool";
+export * from "./PixiTextureResolver";
+export * from "./PixiRenderer";

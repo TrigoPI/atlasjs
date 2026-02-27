@@ -35,10 +35,19 @@ export class Logger {
 }
 
 export function createLogger(scope?: string): Logger {
-  if (__DEV__)
-    return new Logger([
-      // new ConsoleTransport(scope || "Atlas"),
-      // new WebSocketTransport(scope || "Atlas"),
-    ]);
+  if (__DEV__) {
+    const transports: LogTransport[] = [];
+
+    if (__CONSOLE_TRANSPORT__) {
+      transports.push(new ConsoleTransport(scope || "Atlas"));
+    }
+
+    if (__WEBSOCKET_TRANSPORT__) {
+      transports.push(new WebSocketTransport(scope || "Atlas"));
+    }
+
+    return new Logger(transports);
+  }
+
   return new Logger([]);
 }

@@ -26,9 +26,6 @@ importers:
 
   apps/sandbox:
     dependencies:
-      '@atlasjs/assets':
-        specifier: workspace:*
-        version: link:../../packages/assets
       '@atlasjs/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -38,15 +35,15 @@ importers:
       '@atlasjs/math':
         specifier: workspace:*
         version: link:../../packages/math
+      '@atlasjs/nebula':
+        specifier: workspace:*
+        version: link:../../packages/nebula
       '@atlasjs/picking':
         specifier: workspace:*
         version: link:../../packages/picking
       '@atlasjs/pixi':
         specifier: workspace:*
         version: link:../../packages/pixi
-      '@atlasjs/render':
-        specifier: workspace:*
-        version: link:../../packages/render
       react:
         specifier: ^19.2.0
         version: 19.2.4
@@ -91,11 +88,33 @@ importers:
         specifier: ^7.3.1
         version: 7.3.1(@types/node@24.10.13)
 
+  apps/test-renderer:
+    dependencies:
+      '@atlasjs/math':
+        specifier: workspace:*
+        version: link:../../packages/math
+      '@atlasjs/nebula':
+        specifier: workspace:*
+        version: link:../../packages/nebula
+      '@atlasjs/pixi':
+        specifier: workspace:*
+        version: link:../../packages/pixi
+    devDependencies:
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
+      vite:
+        specifier: ^7.3.1
+        version: 7.3.1(@types/node@24.10.13)
+
   packages/assets:
     dependencies:
       '@atlasjs/core':
         specifier: workspace:*
         version: link:../core
+      '@atlasjs/utils':
+        specifier: workspace:*
+        version: link:../utils
 
   packages/core:
     dependencies:
@@ -137,6 +156,27 @@ importers:
         specifier: workspace:*
         version: link:../utils
 
+  packages/nebula:
+    dependencies:
+      '@atlasjs/assets':
+        specifier: workspace:*
+        version: link:../assets
+      '@atlasjs/core':
+        specifier: workspace:*
+        version: link:../core
+      '@atlasjs/math':
+        specifier: workspace:*
+        version: link:../math
+      '@atlasjs/renderer':
+        specifier: workspace:*
+        version: link:../renderer
+      '@atlasjs/scene':
+        specifier: workspace:*
+        version: link:../scene
+      '@atlasjs/utils':
+        specifier: workspace:*
+        version: link:../utils
+
   packages/picking:
     dependencies:
       '@atlasjs/core':
@@ -148,9 +188,9 @@ importers:
       '@atlasjs/math':
         specifier: workspace:*
         version: link:../math
-      '@atlasjs/render':
+      '@atlasjs/nebula':
         specifier: workspace:*
-        version: link:../render
+        version: link:../nebula
       '@atlasjs/utils':
         specifier: workspace:*
         version: link:../utils
@@ -166,9 +206,9 @@ importers:
       '@atlasjs/math':
         specifier: workspace:*
         version: link:../math
-      '@atlasjs/render':
+      '@atlasjs/renderer':
         specifier: workspace:*
-        version: link:../render
+        version: link:../renderer
       '@atlasjs/utils':
         specifier: workspace:*
         version: link:../utils
@@ -176,7 +216,7 @@ importers:
         specifier: ^8.16.0
         version: 8.16.0
 
-  packages/render:
+  packages/renderer:
     dependencies:
       '@atlasjs/assets':
         specifier: workspace:*
@@ -187,6 +227,21 @@ importers:
       '@atlasjs/math':
         specifier: workspace:*
         version: link:../math
+      '@atlasjs/utils':
+        specifier: workspace:*
+        version: link:../utils
+
+  packages/scene:
+    dependencies:
+      '@atlasjs/assets':
+        specifier: workspace:*
+        version: link:../assets
+      '@atlasjs/math':
+        specifier: workspace:*
+        version: link:../math
+      '@atlasjs/renderer':
+        specifier: workspace:*
+        version: link:../renderer
       '@atlasjs/utils':
         specifier: workspace:*
         version: link:../utils

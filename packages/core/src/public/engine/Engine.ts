@@ -5,7 +5,7 @@ import { EventBus } from "./EventBus";
 import { Scheduler } from "./Scheduler";
 import { ServiceRegistry } from "./ServiceRegistry";
 
-import { startRafLoop } from "../../internal";
+import { startRafLoop } from "../../private";
 import { SceneContext, SceneManager } from "../scene";
 import { EngineEvents, EngineOptions, StopLoop } from "./types";
 
