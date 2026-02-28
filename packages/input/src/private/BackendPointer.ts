@@ -70,7 +70,7 @@ export class BackendPointer implements Pointer {
     this._wheelDelta += dy;
   }
 
-  public endFrame(): void {
+  public clear(): void {
     this._delta.x = 0;
     this._delta.y = 0;
     this._pressed = false;

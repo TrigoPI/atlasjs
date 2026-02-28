@@ -1,6 +1,6 @@
 import { NebulaRenderer, NEBULA_RENDERER } from "@atlasjs/nebula";
 import { createLogger, Logger } from "@atlasjs/utils";
-import { Engine, Plugin } from "@atlasjs/core";
+import { Engine, Plugin, PRIORITY } from "@atlasjs/core";
 import { INPUT, Input } from "@atlasjs/input";
 
 import { Picker } from "./Picker";
@@ -43,12 +43,17 @@ export class PickingPlugin extends Plugin {
     this.selectionSystem = selectionSystem;
     this.dragSystem = dragSystem;
 
-    engine.services.provide(PICKING, picker);
-    engine.scheduler.onUpdate(() => {
-      picker.onUpdate();
-      selectionSystem.onUpdate();
+    engine.scheduler.onUpdate(() => picker.onUpdate(), {
+      name: "picking:update",
+      priority: PRIORITY.UPDATE_PICKING,
     });
 
+    engine.scheduler.onUpdate(() => selectionSystem.onUpdate(), {
+      name: "selection:update",
+      priority: PRIORITY.UPDATE_EDITOR,
+    });
+
+    engine.services.provide(PICKING, picker);
     this.logger.log("Picking plugin installed");
     this.deferred.resolve();
   }

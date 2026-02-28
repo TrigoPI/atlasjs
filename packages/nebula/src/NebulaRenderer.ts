@@ -5,6 +5,7 @@ import { Camera2D } from "./camera";
 
 import {
   Node,
+  Overlay,
   RectNode,
   SceneGraph,
   SceneRenderer,
@@ -15,7 +16,7 @@ export class NebulaRenderer {
   public readonly scene: SceneGraph;
   public readonly camera: Camera2D;
   public readonly root: Node;
-  public readonly overlay: Node;
+  public readonly overlay: Overlay;
 
   private readonly cmds: CommandBuffer;
   private readonly sceneRenderer: SceneRenderer;
@@ -25,17 +26,18 @@ export class NebulaRenderer {
   public constructor(renderer: Renderer) {
     this.renderer = renderer;
 
+    this.overlay = new Overlay();
     this.scene = new SceneGraph();
     this.camera = new Camera2D();
     this.cmds = new CommandBuffer();
 
     this.root = this.scene.root;
-    this.overlay = this.scene.overlay;
 
     this.sceneRenderer = new SceneRenderer(
       this.scene,
       this.renderer,
       this.cmds,
+      this.overlay,
     );
   }
 
@@ -52,8 +54,16 @@ export class NebulaRenderer {
     this.renderer.resize(w, h);
   }
 
-  public render(): void {
+  public onFlush(): void {
+    this.sceneRenderer.onFlush();
+  }
+
+  public onSync(): void {
+    this.sceneRenderer.onSync();
+  }
+
+  public onRender(): void {
     const view: ViewState = this.camera.getViewState();
-    this.sceneRenderer.render(view);
+    this.sceneRenderer.onRender(view);
   }
 }

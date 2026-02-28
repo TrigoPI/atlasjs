@@ -116,7 +116,6 @@ export class Engine implements SceneContext {
       }
 
       this.scheduler.runRender(dt);
-      this.scheduler.runEndFrame(dt);
     });
   }
 }

@@ -4,3 +4,4 @@ export * from "./Plugin";
 export * from "./Scheduler";
 export * from "./ServiceRegistry";
 export * from "./Deferred";
+export * from "./Priority";

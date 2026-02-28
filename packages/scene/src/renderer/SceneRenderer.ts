@@ -1,34 +1,49 @@
 import { CommandBuffer, Renderer, ViewState } from "@atlasjs/renderer";
 
 import { SceneGraph } from "../graph";
-import { Node, RectNode, SpriteNode } from "../nodes";
+import { Overlay } from "../overlay";
+import { RectNode, Node, SpriteNode } from "../nodes";
 
 export class SceneRenderer {
-  private readonly graph: SceneGraph;
+  private readonly overlay: Overlay;
+  private readonly scene: SceneGraph;
   private readonly renderer: Renderer;
   private readonly cmds: CommandBuffer;
 
   public constructor(
-    graph: SceneGraph,
+    scene: SceneGraph,
     renderer: Renderer,
     cmds: CommandBuffer,
+    overlay: Overlay,
   ) {
-    this.graph = graph;
-    this.renderer = renderer;
     this.cmds = cmds;
+    this.scene = scene;
+    this.renderer = renderer;
+    this.overlay = overlay;
   }
 
-  public render(view: ViewState): void {
-    this.graph.flush();
+  public onFlush(): void {
     this.cmds.clear();
+    this.scene.flush();
+  }
 
-    this.traverse(this.graph.root);
-    this.traverse(this.graph.overlay);
+  public onSync(): void {
+    this.traverse(this.scene.root);
+    this.traverseOverlay(this.overlay);
+  }
 
+  public onRender(view: ViewState): void {
     this.renderer.beginFrame();
     this.renderer.setView(view);
     this.renderer.submit(this.cmds);
     this.renderer.endFrame();
+  }
+
+  private traverseOverlay(overlay: Overlay): void {
+    for (let i: number = 0; i < overlay.nodes.length; i++) {
+      const node: Node = overlay.nodes[i];
+      this.traverse(node);
+    }
   }
 
   private traverse(n: Node): void {

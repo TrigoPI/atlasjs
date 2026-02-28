@@ -23,9 +23,9 @@ export class BackendInput implements Input {
     return this.keys.released(key);
   }
 
-  public endFrame(): void {
-    this.keys.endFrame();
-    this.pointer.endFrame();
+  public clear(): void {
+    this.keys.clear();
+    this.pointer.clear();
   }
 
   public clearAll(): void {

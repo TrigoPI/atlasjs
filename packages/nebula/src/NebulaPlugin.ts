@@ -1,6 +1,5 @@
-import { AssetManager, ASSETS } from "@atlasjs/assets";
 import { createLogger, Logger } from "@atlasjs/utils";
-import { Engine, Plugin, Unsubscribe } from "@atlasjs/core";
+import { Engine, Plugin, PRIORITY, Unsubscribe } from "@atlasjs/core";
 
 import { NebulaPluginOptions } from "./types";
 import { NebulaRenderer } from "./NebulaRenderer";
@@ -29,8 +28,6 @@ export class NebulaPlugin extends Plugin {
   }
 
   public async install(engine: Engine): Promise<void> {
-    const assets: AssetManager = await engine.services.get(ASSETS);
-
     const renderer: NebulaRenderer = new NebulaRenderer(this.renderer);
     const surface: RenderingSurface = createSurface(
       this.options.mount,
@@ -48,8 +45,19 @@ export class NebulaPlugin extends Plugin {
       },
     );
 
-    engine.scheduler.onRender(() => {
-      renderer.render();
+    engine.scheduler.onUpdate(() => renderer.onFlush(), {
+      name: "nebula:flush",
+      priority: PRIORITY.PRE_UPDATE,
+    });
+
+    engine.scheduler.onUpdate(() => renderer.onSync(), {
+      name: "nebula:sync",
+      priority: PRIORITY.UPDATE_CMD_BUILD,
+    });
+
+    engine.scheduler.onRender(() => renderer.onRender(), {
+      name: "nebula:render",
+      priority: PRIORITY.RENDER_MAIN,
     });
 
     engine.services.provide(NEBULA_RENDERER, renderer);

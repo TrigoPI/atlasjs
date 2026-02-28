@@ -1,4 +1,4 @@
-import { Engine, Plugin } from "@atlasjs/core";
+import { Engine, Plugin, PRIORITY } from "@atlasjs/core";
 import { createLogger, Logger } from "@atlasjs/utils";
 
 import { DomInputBackend, BackendInput } from "../private";
@@ -27,13 +27,17 @@ export class InputPlugin extends Plugin {
     const input: BackendInput = new BackendInput();
     const backend: DomInputBackend = new DomInputBackend(input);
 
-    backend.attach(this.opts.target ?? window);
-
-    engine.services.provide(INPUT, input);
-    engine.scheduler.onEndFrame(() => input.endFrame());
-
     this.input = input;
     this.backend = backend;
+
+    backend.attach(this.opts.target ?? window);
+
+    engine.scheduler.onUpdate(() => input.clear(), {
+      name: "input:update",
+      priority: PRIORITY.UPDATE_INPUT_END,
+    });
+
+    engine.services.provide(INPUT, input);
 
     this.logger.log("Input plugin installed");
     this.deferred.resolve();

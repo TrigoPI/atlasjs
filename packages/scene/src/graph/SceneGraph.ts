@@ -4,12 +4,10 @@ import { DirtyQueue } from "./DirtyQueue";
 export class SceneGraph {
   public readonly dirty: DirtyQueue<Node>;
   public readonly root: Node;
-  public readonly overlay: Node;
 
   public constructor() {
     this.dirty = new DirtyQueue<Node>();
     this.root = new Node(this.dirty, "root");
-    this.overlay = new Node(this.dirty, "overlay");
   }
 
   public flush(): void {

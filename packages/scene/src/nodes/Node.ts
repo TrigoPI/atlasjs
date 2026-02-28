@@ -33,14 +33,10 @@ export class Node implements DirtyItem {
 
   private queued: boolean;
 
-  public constructor(
-    dirty: DirtyQueue<Node>,
-    id: string = crypto.randomUUID(),
-  ) {
+  public constructor(dirty: DirtyQueue<Node>, id?: string) {
     this.kind = "node";
-
-    this.id = id;
     this.dirty = dirty;
+    this.id = id ?? crypto.randomUUID();
 
     this._parent = null;
     this._children = [];
@@ -128,6 +124,11 @@ export class Node implements DirtyItem {
 
   public hitTestLocal(_p: Vec2): boolean {
     return false;
+  }
+
+  public setWorldMatrix(m: Mat2): this {
+    this.world.copyFrom(m);
+    return this;
   }
 
   public setPosition(x: number, y: number): this {

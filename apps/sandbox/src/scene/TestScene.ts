@@ -1,6 +1,6 @@
 import { Scene, type SceneContext } from "@atlasjs/core";
 import { INPUT, type Input, Key } from "@atlasjs/input";
-import { DragSystem, Picker, PICKING, SelectionSystem } from "@atlasjs/picking";
+import { Picker, PICKING } from "@atlasjs/picking";
 import { Vec2 } from "@atlasjs/math";
 
 import {
@@ -103,7 +103,7 @@ export class TestScene extends Scene {
     }
 
     if (this.input.pointer.wheelDelta !== 0) {
-      this.nebula.camera.zoom += this.input.pointer.wheelDelta * 0.01;
+      this.nebula.camera.zoom += this.input.pointer.wheelDelta * 0.001;
     }
   }
 }

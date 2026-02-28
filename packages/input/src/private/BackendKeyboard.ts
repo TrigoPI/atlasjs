@@ -39,7 +39,7 @@ export class BackendKeyboard implements Keyboard {
     this.downSet.add(code);
   }
 
-  public endFrame(): void {
+  public clear(): void {
     this.pressedSet.clear();
     this.releasedSet.clear();
   }

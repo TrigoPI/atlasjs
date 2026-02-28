@@ -1,6 +1,6 @@
-import { Bound, Mat2, Vec2 } from "@atlasjs/math";
-import { createLogger, Logger } from "@atlasjs/utils";
+import { Bound, Mat2 } from "@atlasjs/math";
 import { Unsubscribe } from "@atlasjs/core";
+import { createLogger, Logger } from "@atlasjs/utils";
 import { NebulaRenderer, RectNode, Node } from "@atlasjs/nebula";
 
 import { Picker } from "./Picker";
@@ -18,7 +18,6 @@ export class SelectionSystem {
 
   private readonly m1: Mat2;
   private readonly m: Mat2;
-  private readonly s: Mat2;
 
   public constructor(picker: Picker, renderer: NebulaRenderer) {
     this.logger = createLogger(SelectionSystem.name);
@@ -32,7 +31,6 @@ export class SelectionSystem {
 
     this.m1 = Mat2.identity();
     this.m = Mat2.identity();
-    this.s = Mat2.identity();
 
     this.bind();
   }
@@ -50,29 +48,19 @@ export class SelectionSystem {
   private bind(): void {
     this.unsubscribe.push(
       this.picker.events.on("pick:down", ({ node }: PickingEventPayload) => {
-        if (!node) {
-          this.clear();
-          return;
-        }
-
         this.select(node);
       }),
     );
   }
 
-  private select(node: Node): void {
-    this.selected = node;
+  private select(node: Node | null): void {
+    if (!node) return this.clear();
 
-    const bound: Bound = this.selected.getLocalBound();
-
-    if (bound.isZero()) {
-      this.clear();
-      return;
-    }
+    const bound: Bound = node.getLocalBound();
+    if (bound.isZero()) return this.clear();
 
     if (!this.outline) {
       this.logger.log(`Creating selection outline for ${node.id}`);
-
       this.outline = this.renderer
         .createRect()
         .setAlpha(0)
@@ -84,6 +72,7 @@ export class SelectionSystem {
       this.renderer.overlay.add(this.outline);
     }
 
+    this.selected = node;
     this.updateOutline();
   }
 
@@ -97,15 +86,15 @@ export class SelectionSystem {
     const cy: number = b.y + b.height * 0.5;
 
     this.outline.setSize(b.width, b.height);
-    this.m1.setTranslate(cx, cy);
 
+    this.m1.setTranslate(cx, cy);
     this.selected.worldMatrix.multTo(this.m1, this.m);
-    this.outline.worldMatrix.copyFrom(this.m);
+    this.outline.setWorldMatrix(this.m);
   }
 
   private clear(): void {
-    if (this.outline?.parent) {
-      this.outline.parent.remove(this.outline);
+    if (this.outline) {
+      this.renderer.overlay.remove(this.outline);
     }
 
     this.selected = null;

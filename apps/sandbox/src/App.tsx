@@ -30,11 +30,6 @@ export function App() {
       target: mountRef.current || document.body,
     });
 
-    assetPlugin.setOrder(0);
-    inputPlugin.setOrder(0);
-    pickingPlugin.setOrder(0);
-    rendererPlugin.setOrder(1);
-
     engine
       .use(assetPlugin)
       .use(inputPlugin)

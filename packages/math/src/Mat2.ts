@@ -1,18 +1,27 @@
-import { Transform2D } from "./Transform2D";
 import { Transform2DLike } from "./Transform2DLike";
-import { Vec2 } from "./Vec2";
 import { Vec2Like } from "./Vec2Like";
+import { Vec2 } from "./Vec2";
 
+/**
+ * 2D Matrix
+ * | a c tx |
+ * | b d ty |
+ */
 export class Mat2 {
-  public a = 1;
-  public b = 0;
-  public c = 0;
-  public d = 1;
-  public tx = 0;
-  public ty = 0;
+  public a: number;
+  public b: number;
+  public c: number;
+  public d: number;
+  public tx: number;
+  public ty: number;
 
-  public static identity(): Mat2 {
-    return new Mat2();
+  public constructor() {
+    this.a = 1;
+    this.b = 0;
+    this.c = 0;
+    this.d = 1;
+    this.tx = 0;
+    this.ty = 0;
   }
 
   public copy(): Mat2 {
@@ -163,5 +172,9 @@ export class Mat2 {
       this.a * other.tx + this.c * other.ty + this.tx,
       this.b * other.tx + this.d * other.ty + this.ty,
     );
+  }
+
+  public static identity(): Mat2 {
+    return new Mat2();
   }
 }
