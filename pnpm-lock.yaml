@@ -26,9 +26,15 @@ importers:
 
   apps/sandbox:
     dependencies:
+      '@atlasjs/assets':
+        specifier: workspace:*
+        version: link:../../packages/assets
       '@atlasjs/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@atlasjs/editor':
+        specifier: workspace:*
+        version: link:../../packages/editor
       '@atlasjs/input':
         specifier: workspace:*
         version: link:../../packages/input
@@ -38,9 +44,6 @@ importers:
       '@atlasjs/nebula':
         specifier: workspace:*
         version: link:../../packages/nebula
-      '@atlasjs/picking':
-        specifier: workspace:*
-        version: link:../../packages/picking
       '@atlasjs/pixi':
         specifier: workspace:*
         version: link:../../packages/pixi
@@ -88,25 +91,6 @@ importers:
         specifier: ^7.3.1
         version: 7.3.1(@types/node@24.10.13)
 
-  apps/test-renderer:
-    dependencies:
-      '@atlasjs/math':
-        specifier: workspace:*
-        version: link:../../packages/math
-      '@atlasjs/nebula':
-        specifier: workspace:*
-        version: link:../../packages/nebula
-      '@atlasjs/pixi':
-        specifier: workspace:*
-        version: link:../../packages/pixi
-    devDependencies:
-      typescript:
-        specifier: ~5.9.3
-        version: 5.9.3
-      vite:
-        specifier: ^7.3.1
-        version: 7.3.1(@types/node@24.10.13)
-
   packages/assets:
     dependencies:
       '@atlasjs/core':
@@ -138,6 +122,24 @@ importers:
         specifier: ^8.18.1
         version: 8.18.1
 
+  packages/editor:
+    dependencies:
+      '@atlasjs/core':
+        specifier: workspace:*
+        version: link:../core
+      '@atlasjs/input':
+        specifier: workspace:*
+        version: link:../input
+      '@atlasjs/math':
+        specifier: workspace:*
+        version: link:../math
+      '@atlasjs/nebula':
+        specifier: workspace:*
+        version: link:../nebula
+      '@atlasjs/utils':
+        specifier: workspace:*
+        version: link:../utils
+
   packages/input:
     dependencies:
       '@atlasjs/core':
@@ -167,30 +169,6 @@ importers:
       '@atlasjs/math':
         specifier: workspace:*
         version: link:../math
-      '@atlasjs/renderer':
-        specifier: workspace:*
-        version: link:../renderer
-      '@atlasjs/scene':
-        specifier: workspace:*
-        version: link:../scene
-      '@atlasjs/utils':
-        specifier: workspace:*
-        version: link:../utils
-
-  packages/picking:
-    dependencies:
-      '@atlasjs/core':
-        specifier: workspace:*
-        version: link:../core
-      '@atlasjs/input':
-        specifier: workspace:*
-        version: link:../input
-      '@atlasjs/math':
-        specifier: workspace:*
-        version: link:../math
-      '@atlasjs/nebula':
-        specifier: workspace:*
-        version: link:../nebula
       '@atlasjs/utils':
         specifier: workspace:*
         version: link:../utils
@@ -206,45 +184,15 @@ importers:
       '@atlasjs/math':
         specifier: workspace:*
         version: link:../math
-      '@atlasjs/renderer':
+      '@atlasjs/nebula':
         specifier: workspace:*
-        version: link:../renderer
+        version: link:../nebula
       '@atlasjs/utils':
         specifier: workspace:*
         version: link:../utils
       pixi.js:
         specifier: ^8.16.0
         version: 8.16.0
-
-  packages/renderer:
-    dependencies:
-      '@atlasjs/assets':
-        specifier: workspace:*
-        version: link:../assets
-      '@atlasjs/core':
-        specifier: workspace:*
-        version: link:../core
-      '@atlasjs/math':
-        specifier: workspace:*
-        version: link:../math
-      '@atlasjs/utils':
-        specifier: workspace:*
-        version: link:../utils
-
-  packages/scene:
-    dependencies:
-      '@atlasjs/assets':
-        specifier: workspace:*
-        version: link:../assets
-      '@atlasjs/math':
-        specifier: workspace:*
-        version: link:../math
-      '@atlasjs/renderer':
-        specifier: workspace:*
-        version: link:../renderer
-      '@atlasjs/utils':
-        specifier: workspace:*
-        version: link:../utils
 
   packages/utils: {}
 

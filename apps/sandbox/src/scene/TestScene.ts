@@ -1,16 +1,14 @@
+import { AssetManager, ASSETS, Texture2D } from "@atlasjs/assets";
 import { Scene, type SceneContext } from "@atlasjs/core";
 import { INPUT, type Input, Key } from "@atlasjs/input";
-import { Picker, PICKING } from "@atlasjs/picking";
+// import { Picker, PICKING } from "@atlasjs/editor";
 import { Vec2 } from "@atlasjs/math";
 
 import {
-  AssetManager,
-  ASSETS,
   NebulaRenderer,
   NEBULA_RENDERER,
   RectNode,
   SpriteNode,
-  Texture2D,
 } from "@atlasjs/nebula";
 
 const Direction = {
@@ -25,14 +23,14 @@ export class TestScene extends Scene {
   private rect: RectNode;
   private sprite: SpriteNode;
   private nebula: NebulaRenderer;
-  private picker: Picker;
+  // private picker: Picker;
 
   public constructor() {
     super("TestScene");
   }
 
   public override async onCreate(ctx: SceneContext): Promise<void> {
-    this.picker = ctx.services.get(PICKING);
+    // this.picker = ctx.services.get(PICKING);
     this.input = ctx.services.get(INPUT);
     this.nebula = ctx.services.get(NEBULA_RENDERER);
 
@@ -51,7 +49,7 @@ export class TestScene extends Scene {
     this.sprite = this.nebula
       .createSprite(sealion)
       .setScale(0.5, 0.5)
-      .setAlpha(0.5);
+      .setAlpha(1);
 
     this.sprite.add(this.rect);
     this.nebula.root.add(this.sprite);
@@ -103,7 +101,7 @@ export class TestScene extends Scene {
     }
 
     if (this.input.pointer.wheelDelta !== 0) {
-      this.nebula.camera.zoom += this.input.pointer.wheelDelta * 0.001;
+      this.nebula.camera.zoom += this.input.pointer.wheelDelta * 0.0001;
     }
   }
 }

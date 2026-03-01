@@ -3,8 +3,9 @@ import { useEffect, useRef, type RefObject } from "react";
 import { Engine } from "@atlasjs/core";
 import { InputPlugin } from "@atlasjs/input";
 import { PixiRenderer } from "@atlasjs/pixi";
-import { PickingPlugin } from "@atlasjs/picking";
-import { AssetPlugin, NebulaPlugin } from "@atlasjs/nebula";
+import { EditorPlugin } from "@atlasjs/editor";
+import { NebulaPlugin } from "@atlasjs/nebula";
+import { AssetPlugin } from "@atlasjs/assets";
 
 import { Window } from "./Window";
 import { TestScene } from "./scene/TestScene";
@@ -16,11 +17,10 @@ export function App() {
   useEffect(() => {
     const engine: Engine = new Engine();
     const mount: HTMLElement = mountRef.current || document.body;
+
     const pixiRenderer: PixiRenderer = new PixiRenderer();
-
     const assetPlugin: AssetPlugin = new AssetPlugin();
-    const pickingPlugin: PickingPlugin = new PickingPlugin();
-
+    const pickingPlugin: EditorPlugin = new EditorPlugin();
     const rendererPlugin: NebulaPlugin = new NebulaPlugin(pixiRenderer, {
       mount,
       background: 0x000000,

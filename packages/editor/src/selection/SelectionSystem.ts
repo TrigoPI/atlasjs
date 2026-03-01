@@ -3,8 +3,8 @@ import { Unsubscribe } from "@atlasjs/core";
 import { createLogger, Logger } from "@atlasjs/utils";
 import { NebulaRenderer, RectNode, Node } from "@atlasjs/nebula";
 
-import { Picker } from "./Picker";
-import { PickingEventPayload } from "./Events";
+import { Picker } from "../picking/Picker";
+import { PickingEventPayload } from "../picking/Events";
 
 export class SelectionSystem {
   private logger: Logger;
@@ -21,6 +21,7 @@ export class SelectionSystem {
 
   public constructor(picker: Picker, renderer: NebulaRenderer) {
     this.logger = createLogger(SelectionSystem.name);
+    this.logger.log("Creating selection system...");
 
     this.picker = picker;
     this.renderer = renderer;
@@ -33,6 +34,10 @@ export class SelectionSystem {
     this.m = Mat2.identity();
 
     this.bind();
+  }
+
+  public getSelected(): Node | null {
+    return this.selected;
   }
 
   public onUpdate(): void {

@@ -132,6 +132,22 @@ export class Mat2 {
     return this;
   }
 
+  public getTranslate(): Vec2 {
+    return new Vec2(this.tx, this.ty);
+  }
+
+  public getScale(): Vec2 {
+    return new Vec2(this.a, this.d);
+  }
+
+  public getXAxis(): Vec2 {
+    return new Vec2(this.a, this.b);
+  }
+
+  public getYAxis(): Vec2 {
+    return new Vec2(this.c, this.d);
+  }
+
   public multVec2(vec2: Vec2Like): Vec2 {
     return new Vec2(
       this.a * vec2.x + this.c * vec2.y + this.tx,
@@ -172,6 +188,22 @@ export class Mat2 {
       this.a * other.tx + this.c * other.ty + this.tx,
       this.b * other.tx + this.d * other.ty + this.ty,
     );
+  }
+
+  public getTranslateTo(out: Vec2Like): void {
+    out.set(this.tx, this.ty);
+  }
+
+  public getScaleTo(out: Vec2Like): void {
+    out.set(this.a, this.d);
+  }
+
+  public getXAxisTo(out: Vec2Like): void {
+    out.set(this.a, this.b);
+  }
+
+  public getYAxisTo(out: Vec2Like): void {
+    out.set(this.c, this.d);
   }
 
   public static identity(): Mat2 {

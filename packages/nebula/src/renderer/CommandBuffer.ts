@@ -1,4 +1,4 @@
-import { DrawRectCmd, DrawSpriteCmd } from "./types";
+import { DrawSpriteCmd, DrawRectCmd } from "./types";
 
 export class CommandBuffer {
   public readonly sprites: DrawSpriteCmd[];

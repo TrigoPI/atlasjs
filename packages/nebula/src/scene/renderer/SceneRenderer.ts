@@ -1,8 +1,7 @@
-import { CommandBuffer, Renderer, ViewState } from "@atlasjs/renderer";
-
 import { SceneGraph } from "../graph";
 import { Overlay } from "../overlay";
-import { RectNode, Node, SpriteNode } from "../nodes";
+import { RectNode, SpriteNode, Node } from "../nodes";
+import { Renderer, CommandBuffer, ViewState } from "../../renderer";
 
 export class SceneRenderer {
   private readonly overlay: Overlay;

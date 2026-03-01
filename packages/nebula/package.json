@@ -20,8 +20,6 @@
     "@atlasjs/math": "workspace:*",
     "@atlasjs/utils": "workspace:*",
     "@atlasjs/core": "workspace:*",
-    "@atlasjs/assets": "workspace:*",
-    "@atlasjs/scene": "workspace:*",
-    "@atlasjs/renderer": "workspace:*"
+    "@atlasjs/assets": "workspace:*"
   }
 }

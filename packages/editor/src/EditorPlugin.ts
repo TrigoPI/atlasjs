@@ -1,14 +1,14 @@
-import { NebulaRenderer, NEBULA_RENDERER } from "@atlasjs/nebula";
+import { INPUT, Input } from "@atlasjs/input";
 import { createLogger, Logger } from "@atlasjs/utils";
 import { Engine, Plugin, PRIORITY } from "@atlasjs/core";
-import { INPUT, Input } from "@atlasjs/input";
+import { NebulaRenderer, NEBULA_RENDERER } from "@atlasjs/nebula";
 
-import { Picker } from "./Picker";
-import { PICKING } from "./Tokens";
-import { DragSystem } from "./DragSystem";
-import { SelectionSystem } from "./SelectionSystem";
+import { Picker, PICKING } from "./picking";
+import { SelectionSystem } from "./selection";
+import { DragSystem } from "./drag";
+import { Gizmo } from "./gizmo";
 
-export class PickingPlugin extends Plugin {
+export class EditorPlugin extends Plugin {
   private readonly logger: Logger;
 
   private picker: Picker | null;
@@ -16,8 +16,8 @@ export class PickingPlugin extends Plugin {
   private dragSystem: DragSystem | null;
 
   public constructor() {
-    super("picking");
-    this.logger = createLogger(PickingPlugin.name);
+    super("editor");
+    this.logger = createLogger(EditorPlugin.name);
 
     this.picker = null;
     this.selectionSystem = null;
@@ -25,18 +25,25 @@ export class PickingPlugin extends Plugin {
   }
 
   public async install(engine: Engine): Promise<void> {
-    this.logger.log("Installing picking plugin...");
+    this.logger.log("Installing editor plugin...");
 
     const renderer: NebulaRenderer =
       await engine.services.wait(NEBULA_RENDERER);
 
     const input: Input = await engine.services.wait(INPUT);
     const picker: Picker = new Picker(renderer.root, renderer.camera, input);
-
     const dragSystem: DragSystem = new DragSystem(picker, input);
+
     const selectionSystem: SelectionSystem = new SelectionSystem(
       picker,
       renderer,
+    );
+
+    const gizmo: Gizmo = new Gizmo(
+      renderer,
+      selectionSystem,
+      renderer.camera,
+      input,
     );
 
     this.picker = picker;
@@ -51,15 +58,22 @@ export class PickingPlugin extends Plugin {
     engine.scheduler.onUpdate(() => selectionSystem.onUpdate(), {
       name: "selection:update",
       priority: PRIORITY.UPDATE_EDITOR,
+      id: 0,
+    });
+
+    engine.scheduler.onUpdate(() => gizmo.onUpdate(), {
+      name: "gizmo:update",
+      priority: PRIORITY.UPDATE_EDITOR,
+      id: 1,
     });
 
     engine.services.provide(PICKING, picker);
-    this.logger.log("Picking plugin installed");
+    this.logger.log("Editor plugin installed");
     this.deferred.resolve();
   }
 
   public uninstall(): void {
-    this.logger.log("Uninstalling picking plugin...");
+    this.logger.log("Uninstalling editor plugin...");
 
     this.selectionSystem?.destroy();
     this.selectionSystem = null;

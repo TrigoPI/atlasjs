@@ -9,7 +9,7 @@ import {
   Renderer,
   RenderingSurface,
   ViewState,
-} from "@atlasjs/renderer";
+} from "@atlasjs/nebula";
 
 import {
   Application,
@@ -60,8 +60,8 @@ export class PixiRenderer implements Renderer {
   }
 
   public beginFrame(): void {
-    this.graphicsPool.beginFrame();
     this.spritePool.beginFrame();
+    this.graphicsPool.beginFrame();
   }
 
   public setView(view: ViewState): void {

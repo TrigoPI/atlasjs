@@ -1,10 +1,7 @@
-export * from "@atlasjs/scene";
-export * from "@atlasjs/renderer";
-export * from "@atlasjs/assets";
-
+export * from "./scene";
+export * from "./renderer";
 export * from "./camera";
-export * from "./types";
-export * from "./tokens";
 
 export * from "./NebulaRenderer";
 export * from "./NebulaPlugin";
+export * from "./tokens";

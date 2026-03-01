@@ -20,6 +20,7 @@ export class Picker {
 
   public constructor(root: Node, camera: Camera2D, input: Input) {
     this.logger = createLogger(Picker.name);
+    this.logger.log("Creating picker...");
 
     this.root = root;
     this.input = input;

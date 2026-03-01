@@ -1,16 +1,16 @@
-import { CommandBuffer, Renderer, ViewState } from "@atlasjs/renderer";
 import { Texture2D } from "@atlasjs/assets";
 
+import { CommandBuffer, Renderer, ViewState } from "./renderer";
 import { Camera2D } from "./camera";
 
 import {
-  Node,
-  Overlay,
-  RectNode,
   SceneGraph,
+  Overlay,
   SceneRenderer,
+  RectNode,
   SpriteNode,
-} from "@atlasjs/scene";
+  Node,
+} from "./scene";
 
 export class NebulaRenderer {
   public readonly scene: SceneGraph;

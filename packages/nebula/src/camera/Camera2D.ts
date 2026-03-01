@@ -1,6 +1,6 @@
 import { Observable } from "@atlasjs/utils";
 import { Mat2, ObservalbeVec2, Vec2, Vec2Like } from "@atlasjs/math";
-import { ViewState } from "@atlasjs/renderer";
+import { ViewState } from "../renderer/types";
 
 export class Camera2D {
   public readonly position: ObservalbeVec2;
@@ -82,6 +82,16 @@ export class Camera2D {
     this.viewport.x = w;
     this.viewport.y = h;
     this.dirty = true;
+  }
+
+  public screenToWorldInto(screen: Vec2, out: Vec2Like): void {
+    this.ensure();
+    this.invView.multVec2To(screen, out);
+  }
+
+  public worldToScreenInto(world: Vec2, out: Vec2Like): void {
+    this.ensure();
+    this.view.multVec2To(world, out);
   }
 
   private ensure(): void {

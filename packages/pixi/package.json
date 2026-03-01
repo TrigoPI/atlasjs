@@ -19,9 +19,9 @@
   "dependencies": {
     "@atlasjs/core": "workspace:*",
     "@atlasjs/math": "workspace:*",
-    "@atlasjs/renderer": "workspace:*",
-    "@atlasjs/assets": "workspace:*",
     "@atlasjs/utils": "workspace:*",
+    "@atlasjs/assets": "workspace:*",
+    "@atlasjs/nebula": "workspace:*",
     "pixi.js": "^8.16.0"
   }
 }

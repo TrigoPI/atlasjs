@@ -126,6 +126,11 @@ export class Node implements DirtyItem {
     return false;
   }
 
+  public setPickable(pickable: boolean): this {
+    this.pickable = pickable;
+    return this;
+  }
+
   public setWorldMatrix(m: Mat2): this {
     this.world.copyFrom(m);
     return this;

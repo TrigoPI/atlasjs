@@ -1,11 +1,10 @@
 import { createLogger, Logger } from "@atlasjs/utils";
 import { Unsubscribe } from "@atlasjs/core";
 import { Node } from "@atlasjs/nebula";
-import { Input } from "@atlasjs/input";
+import { Input, Key } from "@atlasjs/input";
 import { Vec2 } from "@atlasjs/math";
 
-import { Picker } from "./Picker";
-import { PickingEventPayload } from "./Events";
+import { Picker, PickingEventPayload } from "../picking";
 
 export class DragSystem {
   private dragged: Node | null;
@@ -22,6 +21,7 @@ export class DragSystem {
 
   public constructor(picker: Picker, input: Input) {
     this.logger = createLogger(DragSystem.name);
+    this.logger.log("Creating drag system...");
 
     this.picker = picker;
     this.input = input;
@@ -64,6 +64,16 @@ export class DragSystem {
 
         const target: Vec2 = Vec2.add(world, this.offsetWorld);
         const parent: Node | null = this.dragged.parent;
+
+        // lock y
+        if (this.input.isDown(Key.Shift)) {
+          target.y = this.dragged.position.y;
+        }
+
+        // lock x
+        if (this.input.isDown(Key.Ctrl)) {
+          target.x = this.dragged.position.x;
+        }
 
         if (parent) {
           parent.worldToLocalTo(target, this.tmp);

@@ -2,15 +2,15 @@ import { createLogger, Logger } from "@atlasjs/utils";
 import { Engine, Plugin, PRIORITY, Unsubscribe } from "@atlasjs/core";
 
 import { NebulaPluginOptions } from "./types";
-import { NebulaRenderer } from "./NebulaRenderer";
 import { NEBULA_RENDERER } from "./tokens";
+import { NebulaRenderer } from "./NebulaRenderer";
 
 import {
-  createSurface,
-  observeSurfaceResize,
   Renderer,
   RenderingSurface,
-} from "@atlasjs/renderer";
+  createSurface,
+  observeSurfaceResize,
+} from "./renderer";
 
 export class NebulaPlugin extends Plugin {
   private readonly renderer: Renderer;

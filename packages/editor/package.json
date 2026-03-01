@@ -1,5 +1,5 @@
 {
-  "name": "@atlasjs/scene",
+  "name": "@atlasjs/editor",
   "type": "module",
   "version": "0.0.1",
   "private": true,
@@ -18,8 +18,9 @@
   },
   "dependencies": {
     "@atlasjs/math": "workspace:*",
-    "@atlasjs/utils": "workspace:*",
-    "@atlasjs/assets": "workspace:*",
-    "@atlasjs/renderer": "workspace:*"
+    "@atlasjs/core": "workspace:*",
+    "@atlasjs/nebula": "workspace:*",
+    "@atlasjs/input": "workspace:*",
+    "@atlasjs/utils": "workspace:*"
   }
 }

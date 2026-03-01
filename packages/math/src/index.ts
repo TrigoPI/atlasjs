@@ -10,3 +10,4 @@ export * from "./ObservableTransform2D";
 export * from "./Transform2D";
 
 export * from "./Mat2";
+export * from "./Math";

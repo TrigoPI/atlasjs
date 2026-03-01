@@ -1,7 +1,7 @@
-import { Texture } from "pixi.js";
-
 import { Texture2D, TextureHandle } from "@atlasjs/assets";
-import { TextureResolver } from "@atlasjs/renderer";
+import { TextureResolver } from "@atlasjs/nebula";
+
+import { Texture } from "pixi.js";
 
 export class PixiTextureResolver implements TextureResolver<Texture> {
   private readonly map: Map<TextureHandle, Texture>;

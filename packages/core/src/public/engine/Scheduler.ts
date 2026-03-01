@@ -29,7 +29,6 @@ export class Scheduler {
 
   public runUpdate(dt: number): void {
     for (let i: number = 0; i < this.updates.length; i++) {
-      console.log(this.updates[i].name);
       this.updates[i].fn(dt);
     }
   }
@@ -42,14 +41,18 @@ export class Scheduler {
 
   public runRender(dt: number): void {
     for (let i: number = 0; i < this.renders.length; i++) {
-      console.log(this.renders[i].name);
       this.renders[i].fn(dt);
     }
   }
 
   private add(fn: StepFn, pool: Step[], opts: StepOptions): void {
-    this.logger.log(`Registering update step : ${opts.name}:${opts.priority}`);
-    pool.push({ fn, ...opts });
+    const id: number = opts.id ?? 0;
+    const priority: number = opts.priority + id;
+    const name: string = opts.name;
+
+    this.logger.log(`Registering update step : ${opts.name}:${priority}`);
+
+    pool.push({ fn, priority, name });
     this.sortStable(pool);
   }
 
