@@ -12,6 +12,7 @@ export class RectNode extends Node {
     super(dirty, id);
     this.kind = "rect";
     this.data = {
+      anchor: new Vec2(0.5, 0.5),
       width: 32,
       height: 32,
       fill: {
@@ -34,6 +35,10 @@ export class RectNode extends Node {
     return this.data.height;
   }
 
+  public get anchor(): Vec2 {
+    return this.data.anchor;
+  }
+
   public override getLocalBound(): Bound {
     const hw: number = this.data.width * 0.5;
     const hh: number = this.data.height * 0.5;
@@ -44,6 +49,11 @@ export class RectNode extends Node {
     const hw: number = this.data.width * 0.5;
     const hh: number = this.data.height * 0.5;
     return p.x >= -hw && p.x <= hw && p.y >= -hh && p.y <= hh;
+  }
+
+  public override hitTestWorld(p: Vec2): boolean {
+    const local: Vec2 = this.worldToLocal(p);
+    return this.hitTestLocal(local);
   }
 
   public getFill(): FillStyle {
@@ -72,6 +82,11 @@ export class RectNode extends Node {
 
   public getStrokeWidth(): number {
     return this.data.stroke.width;
+  }
+
+  public setAnchor(x: number, y: number): this {
+    this.data.anchor.set(x, y);
+    return this;
   }
 
   public setSize(w: number, h: number): this {

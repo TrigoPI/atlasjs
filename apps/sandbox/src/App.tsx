@@ -9,6 +9,7 @@ import { AssetPlugin } from "@atlasjs/assets";
 
 import { Window } from "./Window";
 import { TestScene } from "./scene/TestScene";
+import { GameScene } from "./game";
 
 export function App() {
   const mountRef: RefObject<HTMLDivElement | null> =
@@ -20,7 +21,7 @@ export function App() {
 
     const pixiRenderer: PixiRenderer = new PixiRenderer();
     const assetPlugin: AssetPlugin = new AssetPlugin();
-    const pickingPlugin: EditorPlugin = new EditorPlugin();
+    const editorPlugin: EditorPlugin = new EditorPlugin();
     const rendererPlugin: NebulaPlugin = new NebulaPlugin(pixiRenderer, {
       mount,
       background: 0x000000,
@@ -34,10 +35,10 @@ export function App() {
       .use(assetPlugin)
       .use(inputPlugin)
       .use(rendererPlugin)
-      .use(pickingPlugin);
+      .use(editorPlugin);
 
     engine.start().then(() => {
-      engine.scene.set(new TestScene());
+      engine.scene.set(new GameScene());
     });
 
     return () => engine.stop();

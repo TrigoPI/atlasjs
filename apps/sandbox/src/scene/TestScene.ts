@@ -43,13 +43,13 @@ export class TestScene extends Scene {
     this.rect = this.nebula
       .createRect()
       .setSize(100, 100)
-      .setFillColor(0xff0000)
+      .setFillColor(0x0000ff)
       .setPosition(500, 0);
 
     this.sprite = this.nebula
       .createSprite(sealion)
       .setScale(0.5, 0.5)
-      .setAlpha(1);
+      .setAlpha(0.3);
 
     this.sprite.add(this.rect);
     this.nebula.root.add(this.sprite);

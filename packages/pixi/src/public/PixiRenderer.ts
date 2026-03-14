@@ -90,8 +90,8 @@ export class PixiRenderer implements Renderer {
     for (let i = 0; i < rects.length; i++) {
       const cmd: DrawRectCmd = rects[i];
       const g: Graphics = this.graphicsPool.acquire();
-      const hw: number = cmd.width * 0.5;
-      const hh: number = cmd.height * 0.5;
+      const hw: number = cmd.width * cmd.anchor.x;
+      const hh: number = cmd.height * cmd.anchor.y;
 
       AtlasMapper.mat2ToPixiMatrix(cmd.world, this.tmpMatrix);
 
@@ -121,8 +121,13 @@ export class PixiRenderer implements Renderer {
       const tex: Texture = this.textureResolver.resolve(cmd.texture);
 
       s.texture = tex;
+      s.texture.frame.x = cmd.frame.x;
+      s.texture.frame.y = cmd.frame.y;
+      s.texture.frame.width = cmd.frame.width;
+      s.texture.frame.height = cmd.frame.height;
+
       s.alpha = cmd.alpha ?? 1;
-      s.anchor.set(0.5, 0.5);
+      s.anchor.set(cmd.anchor.x, cmd.anchor.y);
 
       AtlasMapper.mat2ToPixiMatrix(cmd.world, this.tmpMatrix);
       s.setFromMatrix(this.tmpMatrix);

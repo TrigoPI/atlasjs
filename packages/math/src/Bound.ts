@@ -20,6 +20,10 @@ export class Bound {
     return this.width === 0 && this.height === 0;
   }
 
+  public copy(): Bound {
+    return new Bound(this.x, this.y, this.width, this.height);
+  }
+
   public static create(
     x: number = 0,
     y: number = 0,

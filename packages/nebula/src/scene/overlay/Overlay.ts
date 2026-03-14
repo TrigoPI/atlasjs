@@ -1,7 +1,7 @@
 import { Node } from "../nodes";
 
 export class Overlay {
-  public readonly _nodes: Node[];
+  private readonly _nodes: Node[];
   private dirty: boolean;
 
   public constructor() {

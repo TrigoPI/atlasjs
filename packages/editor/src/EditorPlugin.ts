@@ -4,64 +4,47 @@ import { Engine, Plugin, PRIORITY } from "@atlasjs/core";
 import { NebulaRenderer, NEBULA_RENDERER } from "@atlasjs/nebula";
 
 import { Picker, PICKING } from "./picking";
-import { SelectionSystem } from "./selection";
-import { DragSystem } from "./drag";
 import { Gizmo } from "./gizmo";
+import { DragTool, ScaleTool, SelectionOverlayTool } from "./tools";
 
 export class EditorPlugin extends Plugin {
   private readonly logger: Logger;
-
   private picker: Picker | null;
-  private selectionSystem: SelectionSystem | null;
-  private dragSystem: DragSystem | null;
 
   public constructor() {
     super("editor");
     this.logger = createLogger(EditorPlugin.name);
-
     this.picker = null;
-    this.selectionSystem = null;
-    this.dragSystem = null;
   }
 
   public async install(engine: Engine): Promise<void> {
     this.logger.log("Installing editor plugin...");
-
+    const input: Input = await engine.services.wait(INPUT);
     const renderer: NebulaRenderer =
       await engine.services.wait(NEBULA_RENDERER);
 
-    const input: Input = await engine.services.wait(INPUT);
     const picker: Picker = new Picker(renderer.root, renderer.camera, input);
-    const dragSystem: DragSystem = new DragSystem(picker, input);
+    const selectionOverlay: SelectionOverlayTool = new SelectionOverlayTool();
+    const scaleTool: ScaleTool = new ScaleTool();
+    const dragTool: DragTool = new DragTool();
+    const gizmo: Gizmo = new Gizmo({
+      input: input,
+      picker: picker,
+      renderer: renderer,
+      camera: renderer.camera,
+      overlay: renderer.overlay,
+    });
 
-    const selectionSystem: SelectionSystem = new SelectionSystem(
-      picker,
-      renderer,
-    );
-
-    const gizmo: Gizmo = new Gizmo(
-      renderer,
-      selectionSystem,
-      renderer.camera,
-      input,
-    );
+    gizmo.register(selectionOverlay).register(scaleTool).register(dragTool);
 
     this.picker = picker;
-    this.selectionSystem = selectionSystem;
-    this.dragSystem = dragSystem;
 
     engine.scheduler.onUpdate(() => picker.onUpdate(), {
       name: "picking:update",
       priority: PRIORITY.UPDATE_PICKING,
     });
 
-    engine.scheduler.onUpdate(() => selectionSystem.onUpdate(), {
-      name: "selection:update",
-      priority: PRIORITY.UPDATE_EDITOR,
-      id: 0,
-    });
-
-    engine.scheduler.onUpdate(() => gizmo.onUpdate(), {
+    engine.scheduler.onUpdate((dt: number) => gizmo.onUpdate(dt), {
       name: "gizmo:update",
       priority: PRIORITY.UPDATE_EDITOR,
       id: 1,
@@ -74,13 +57,6 @@ export class EditorPlugin extends Plugin {
 
   public uninstall(): void {
     this.logger.log("Uninstalling editor plugin...");
-
-    this.selectionSystem?.destroy();
-    this.selectionSystem = null;
-
-    this.dragSystem?.destroy();
-    this.dragSystem = null;
-
     this.picker?.destroy();
     this.picker = null;
   }

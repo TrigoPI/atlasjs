@@ -15,6 +15,7 @@ export class PixiTextureResolver implements TextureResolver<Texture> {
 
     if (!t) {
       t = Texture.from(texture.image);
+      t.source.scaleMode = "nearest";
       this.map.set(texture.id, t);
     }
 

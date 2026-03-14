@@ -1,3 +1,4 @@
+import { cos, sin } from "./Math";
 import { Vec2Like } from "./Vec2Like";
 
 export class Vec2 implements Vec2Like {
@@ -55,6 +56,14 @@ export class Vec2 implements Vec2Like {
     return this.mult(1 / m);
   }
 
+  public clamp(max: number): Vec2 {
+    if (this.mag() > max) {
+      this.normalize().mult(max);
+    }
+
+    return this;
+  }
+
   public swap(): Vec2 {
     const temp: number = this.x;
     this.x = this.y;
@@ -80,6 +89,12 @@ export class Vec2 implements Vec2Like {
 
   public static sub(a: Vec2Like, b: Vec2Like): Vec2 {
     return new Vec2(a.x - b.x, a.y - b.y);
+  }
+
+  public static fromAngle(r: number): Vec2 {
+    const x: number = cos(r);
+    const y: number = sin(r);
+    return new Vec2(x, y);
   }
 
   public static subTo(a: Vec2Like, b: Vec2Like, out: Vec2): Vec2 {

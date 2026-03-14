@@ -16,6 +16,7 @@ export type RectData = {
   height: number;
   fill: FillStyle;
   stroke: StrokeStyle;
+  anchor: Vec2;
 };
 
 export type HitTestLocal = (p: Vec2) => boolean;

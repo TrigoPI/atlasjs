@@ -51,6 +51,7 @@ export class SceneRenderer {
     if (n.kind === "rect") {
       const r: RectNode = <RectNode>n;
       this.cmds.drawRect({
+        anchor: r.anchor,
         height: r.height,
         width: r.width,
         world: r.getWorldMatrix(),
@@ -61,10 +62,13 @@ export class SceneRenderer {
 
     if (n.kind === "sprite") {
       const s: SpriteNode = <SpriteNode>n;
+
       this.cmds.drawSprite({
         world: s.getWorldMatrix(),
         texture: s.getTexture(),
         alpha: s.getAlpha(),
+        anchor: s.getAnchor(),
+        frame: s.getSourceFrame(),
       });
     }
 

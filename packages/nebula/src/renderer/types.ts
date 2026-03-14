@@ -1,5 +1,5 @@
 import { Texture2D } from "@atlasjs/assets";
-import { Mat2 } from "@atlasjs/math";
+import { Bound, Mat2, Vec2 } from "@atlasjs/math";
 
 export type CmdKind = "rect" | "sprite";
 
@@ -28,6 +28,8 @@ export type DrawSpriteCmd = {
   kind: "sprite";
   texture: Texture2D;
   world: Mat2;
+  anchor: Vec2;
+  frame: Bound;
   alpha?: number;
 };
 
@@ -38,6 +40,7 @@ export type DrawRectCmd = {
   height: number;
   fill: FillOptions;
   stroke: StrokeOptions;
+  anchor: Vec2;
 };
 
 export type ViewState = {

@@ -155,6 +155,10 @@ export class Mat2 {
     );
   }
 
+  public toArray(): number[] {
+    return [this.a, this.b, this.c, this.d, this.tx, this.ty];
+  }
+
   public set(
     a: number,
     b: number,

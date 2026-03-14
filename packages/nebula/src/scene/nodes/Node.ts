@@ -126,6 +126,10 @@ export class Node implements DirtyItem {
     return false;
   }
 
+  public hitTestWorld(_p: Vec2): boolean {
+    return false;
+  }
+
   public setPickable(pickable: boolean): this {
     this.pickable = pickable;
     return this;
@@ -233,7 +237,6 @@ export class Node implements DirtyItem {
   }
 
   private ensureInvWorld(): void {
-    if (!this.invDirty) return;
     this.invDirty = false;
     this.invWorld.copyFrom(this.world).invert();
   }

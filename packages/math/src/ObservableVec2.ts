@@ -99,6 +99,20 @@ export class ObservalbeVec2 implements Vec2Like {
     return this;
   }
 
+  public clamp(max: number): ObservalbeVec2 {
+    const mag: number = this.mag();
+
+    if (this.mag() > max) {
+      this._x /= mag;
+      this._y /= mag;
+      this._x *= mag;
+      this._y *= mag;
+      this.observer.notifyChange();
+    }
+
+    return this;
+  }
+
   public dot(a: Vec2Like): number {
     return this.x * a.x + this.y * a.y;
   }

@@ -1,6 +1,15 @@
 import { Input } from "@atlasjs/input";
 import { Vec2 } from "@atlasjs/math";
-import { Camera2D, NebulaRenderer, Overlay, RectNode } from "@atlasjs/nebula";
+
+import {
+  Camera2D,
+  NebulaRenderer,
+  Node,
+  Overlay,
+  RectNode,
+} from "@atlasjs/nebula";
+
+import { Picker } from "../picking";
 
 export type GizmoMode = "translate";
 export type GizmoHandleKind = "x" | "y" | "center";
@@ -15,6 +24,8 @@ export type GizmoContext = {
   camera: Camera2D;
   input: Input;
   overlay: Overlay;
+  picker: Picker;
+  selected: Node | null;
 };
 
 export type ToolUpdateEnv = {
