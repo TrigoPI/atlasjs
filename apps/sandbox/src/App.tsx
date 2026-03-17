@@ -38,7 +38,7 @@ export function App() {
       .use(editorPlugin);
 
     engine.start().then(() => {
-      engine.scene.set(new GameScene());
+      engine.scene.set(new TestScene());
     });
 
     return () => engine.stop();

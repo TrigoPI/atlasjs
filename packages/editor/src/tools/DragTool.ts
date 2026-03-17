@@ -1,5 +1,5 @@
 import { Node, RectNode } from "@atlasjs/nebula";
-import { Mat2, Matrix } from "@atlasjs/math";
+import { Mat2, Matrix, Vec2 } from "@atlasjs/math";
 import { createLogger, Logger } from "@atlasjs/utils";
 
 import { GizmoContext, GizmoTool } from "../gizmo";
@@ -19,8 +19,23 @@ export class DragTool implements GizmoTool {
     this.logger.log("Creating drag tool...");
   }
 
+  public hit(pWorld: Vec2): boolean {
+    return this.np.hitTestWorld(pWorld);
+  }
+
   public mount(ctx: GizmoContext): void {
     this.np = ctx.renderer.createRect().setFillColor(0xff00ff);
+  }
+
+  public drag(pWorld: Vec2, { selected }: GizmoContext): void {
+    if (!selected) return;
+
+    const parent: Node | null = selected.parent;
+
+    if (parent) {
+      const local: Vec2 = parent.worldToLocal(pWorld);
+      selected.setPosition(local.x, local.y);
+    }
   }
 
   public onUpdate(ctx: GizmoContext): void {
