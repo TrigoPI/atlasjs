@@ -20,6 +20,18 @@ export class Bound {
     return this.width === 0 && this.height === 0;
   }
 
+  public clone(): Bound {
+    return new Bound(this.x, this.y, this.width, this.height);
+  }
+
+  public set(x: number, y: number, width: number, height: number): Bound {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    return this;
+  }
+
   public copy(): Bound {
     return new Bound(this.x, this.y, this.width, this.height);
   }

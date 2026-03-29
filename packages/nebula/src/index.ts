@@ -1,6 +1,6 @@
-export * from "./scene";
-export * from "./renderer";
-export * from "./camera";
+export * from "./renderers";
+export * from "./core";
+export * from "./webgpu";
 
 export * from "./NebulaRenderer";
 export * from "./NebulaPlugin";

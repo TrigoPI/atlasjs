@@ -1,0 +1,20 @@
+{
+  "name": "webgpu",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@atlasjs/nebula": "workspace:*",
+    "@atlasjs/math": "workspace:*"
+  },
+  "devDependencies": {
+    "@webgpu/types": "^0.1.69",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.0"
+  }
+}
