@@ -1,4 +1,4 @@
-import { Color } from "../../utils";
+import { Color } from "../utils";
 import { Node } from "./Node";
 
 export class Shape extends Node {

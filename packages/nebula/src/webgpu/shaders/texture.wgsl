@@ -31,6 +31,6 @@ fn vs_main(input: VertexInput) -> VertexOutput {
 }
 
 @fragment
-fn fs_main(input: VertexOutput) -> @location(0) vec4<f32> {
-  return textureSample(atlasTexture, atlasSampler, input.uv);
+fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
+  return textureSample(atlasTexture, atlasSampler, in.uv);
 }

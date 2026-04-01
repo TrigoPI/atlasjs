@@ -1,4 +1,5 @@
-import { Bound, Mat4, Transform2D, Vec2 } from "@atlasjs/math";
+import { Bound, Mat4, Vec2 } from "@atlasjs/math";
+import { Sprite } from "../graphics";
 
 import {
   WebGPUShaders,
@@ -9,16 +10,15 @@ import {
 } from "../webgpu";
 
 import {
-  Geometry,
-  Material,
-  Pipeline,
-  Quad,
   Renderer,
-  Sampler,
+  Geometry,
   Shader,
-  Sprite,
+  Pipeline,
+  Sampler,
   Texture2D,
+  Material,
   ObjectBinding,
+  Quad,
 } from "../core";
 
 export class SpriteRenderer {
@@ -127,15 +127,20 @@ export class SpriteRenderer {
   }
 
   private updateModelMatrix(sprite: Sprite): void {
-    const t: Transform2D = sprite.transform;
-    const anchor: Vec2 = sprite.getAnchor();
+    const worldMatrix: Mat4 = sprite.worldMatrix;
 
-    const anchorOffsetX: number = (0.5 - anchor.x) * t.scale.x;
-    const anchorOffsetY: number = (0.5 - anchor.y) * t.scale.y;
+    const anchor: Vec2 = sprite.getAnchor();
+    const sourceRect: Bound = sprite.getSourceRect();
+    const width: number = sourceRect.width;
+    const height: number = sourceRect.height;
+
+    const anchorOffsetX: number = (0.5 - anchor.x) * width;
+    const anchorOffsetY: number = (0.5 - anchor.y) * height;
 
     this.modelMatrix
-      .fromTransform2D(t)
-      .translate(anchorOffsetX, anchorOffsetY, 0);
+      .copy(worldMatrix)
+      .translate(anchorOffsetX, anchorOffsetY, 0)
+      .scale(width, height);
   }
 
   private updateUVRect(sprite: Sprite): Float32Array {

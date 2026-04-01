@@ -1,12 +1,22 @@
-import { Scene, type SceneContext } from "@atlasjs/core";
-import { INPUT, type Input } from "@atlasjs/input";
-import { AssetManager, ASSETS, type Texture2D } from "@atlasjs/assets";
-import { NEBULA_RENDERER, type NebulaRenderer } from "@atlasjs/nebula";
+import BlueDinoImage from "../../assets/game/dinos/dino_blue.png";
+import SwordImage from "../../assets/game/swords/Iicon_32_01.png";
+
+import { type SceneContext, Scene } from "@atlasjs/core";
+import { type Input, INPUT } from "@atlasjs/input";
 
 import { Player } from "./Player";
+import { Sword } from "./Sword";
+
+import {
+  type NebulaRenderer,
+  type Sampler,
+  type Texture2D,
+  NEBULA_RENDERER,
+} from "@atlasjs/nebula";
 
 export class GameScene extends Scene {
   private player: Player;
+  private sword: Sword;
 
   public constructor() {
     super("game-scene");
@@ -14,23 +24,48 @@ export class GameScene extends Scene {
 
   public override async onCreate(ctx: SceneContext): Promise<void> {
     const input: Input = ctx.services.get(INPUT);
-    const assets: AssetManager = ctx.services.get(ASSETS);
     const renderer: NebulaRenderer = ctx.services.get(NEBULA_RENDERER);
 
-    const playerTexture: Texture2D = await assets.loadTexture(
-      "player",
-      "assets/game/dinos/dino_blue.png",
-    );
+    const dinoImage: ImageBitmap = await this.getImage(BlueDinoImage);
+    const swordImage: ImageBitmap = await this.getImage(SwordImage);
 
-    const swordTexture: Texture2D = await assets.loadTexture(
-      "sword",
-      "assets/game/swords/Iicon_32_01.png",
-    );
+    const sampler: Sampler = renderer.createSampler({
+      minFilter: "nearest",
+      magFilter: "nearest",
+    });
 
-    this.player = new Player(input, renderer, playerTexture, swordTexture);
+    const swordTexture: Texture2D = renderer.createTexture2D({
+      source: swordImage,
+      height: swordImage.height,
+      width: swordImage.width,
+    });
+
+    const playerTexture: Texture2D = renderer.createTexture2D({
+      source: dinoImage,
+      height: dinoImage.height,
+      width: dinoImage.width,
+    });
+
+    this.sword = new Sword(swordTexture, sampler, input, renderer);
+    this.player = new Player(
+      input,
+      renderer,
+      playerTexture,
+      sampler,
+      this.sword,
+    );
   }
 
   public override onUpdate(dt: number): void {
     this.player.onUpdate(dt);
+  }
+
+  private async getImage(src: string): Promise<ImageBitmap> {
+    const image: HTMLImageElement = new Image();
+    image.src = src;
+    await image.decode();
+    return createImageBitmap(image, {
+      imageOrientation: "flipY",
+    });
   }
 }

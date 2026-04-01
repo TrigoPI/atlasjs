@@ -1,43 +1,50 @@
+import { Box2 } from "@atlasjs/math";
+
+import { SceneGraph } from "./scene";
+import { SceneRenderer } from "./renderers";
+
+import {
+  Camera2D,
+  Renderer,
+  Sampler,
+  SamplerDescriptor,
+  Texture2D,
+  Texture2DDescriptor,
+} from "./core";
+
 export class NebulaRenderer {
-  // public readonly scene: SceneGraph;
-  // public readonly camera: Camera2D;
-  // public readonly root: Node;
-  // public readonly overlay: Overlay;
-  // private readonly cmds: CommandBuffer;
-  // private readonly sceneRenderer: SceneRenderer;
-  // private readonly renderer: Renderer;
-  // public constructor(renderer: Renderer) {
-  //   this.renderer = renderer;
-  //   this.overlay = new Overlay();
-  //   this.scene = new SceneGraph();
-  //   this.camera = new Camera2D();
-  //   this.cmds = new CommandBuffer();
-  //   this.root = this.scene.root;
-  //   this.sceneRenderer = new SceneRenderer(
-  //     this.scene,
-  //     this.renderer,
-  //     this.cmds,
-  //     this.overlay,
-  //   );
-  // }
-  // public createRect(id?: string): RectNode {
-  //   return new RectNode(this.scene.dirty, id);
-  // }
-  // public createSprite(texture: Texture2D, id?: string): SpriteNode {
-  //   return new SpriteNode(texture, this.scene.dirty, id);
-  // }
-  // public setViewportSize(w: number, h: number): void {
-  //   this.camera.setViewportSize(w, h);
-  //   this.renderer.resize(w, h);
-  // }
-  // public onFlush(): void {
-  //   this.sceneRenderer.onFlush();
-  // }
-  // public onSync(): void {
-  //   this.sceneRenderer.onSync();
-  // }
-  // public onRender(): void {
-  //   const view: ViewState = this.camera.getViewState();
-  //   this.sceneRenderer.onRender(view);
-  // }
+  public scene!: SceneGraph;
+
+  private renderer!: Renderer;
+  private sceneRenderer!: SceneRenderer;
+
+  public constructor(renderer: Renderer) {
+    this.renderer = renderer;
+  }
+
+  public get camera(): Camera2D {
+    return this.renderer.camera;
+  }
+
+  public getViewport(): Box2 {
+    return this.renderer.getViewport();
+  }
+
+  public createSampler(descriptor: SamplerDescriptor): Sampler {
+    return this.renderer.createSampler(descriptor);
+  }
+
+  public createTexture2D(descriptor: Texture2DDescriptor): Texture2D {
+    return this.renderer.createTexture2D(descriptor);
+  }
+
+  public async init(): Promise<void> {
+    await this.renderer.init();
+    this.scene = new SceneGraph();
+    this.sceneRenderer = new SceneRenderer(this.renderer);
+  }
+
+  public render(): void {
+    this.sceneRenderer.render(this.scene);
+  }
 }

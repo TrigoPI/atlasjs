@@ -1,5 +1,6 @@
 import { Mat4, Vec2 } from "@atlasjs/math";
 
+//prettier-ignore
 export class Camera2D {
   public readonly view: Mat4;
   public readonly projection: Mat4;
@@ -33,12 +34,17 @@ export class Camera2D {
   }
 
   public update(width: number, height: number): void {
-    this.projection.identity().orthographic(0, width, height, 0, -1, 1);
+    this.projection
+      .identity()
+      .orthographic(0, width, height, 0, -1, 1);
+
     this.view
       .identity()
       .translate(-this.position.x, -this.position.y, 0)
       .scale(this.zoom, this.zoom, 1);
 
-    this.viewProjection.copy(this.projection).multiply(this.view);
+    this.viewProjection
+      .copy(this.projection)
+      .multiply(this.view);
   }
 }

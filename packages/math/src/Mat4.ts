@@ -1,4 +1,5 @@
 import { Transform2D } from "./Transform2D";
+import { Vec2 } from "./Vec2";
 
 //prettier-ignore
 export class Mat4 {
@@ -149,6 +150,23 @@ export class Mat4 {
       .translate(t.position.x, t.position.y, 0)
       .rotateZ(t.rotation)
       .scale(t.scale.x, t.scale.y, 1);
+  }
+
+  public transformPoint2(x: number, y: number): Vec2 {
+    const m: Float32Array = this.buffer;
+
+    return new Vec2(
+      m[0] * x + m[4] * y + m[12],
+      m[1] * x + m[5] * y + m[13],
+    );
+  }
+
+  public getTranslationX(): number {
+    return this.buffer[12];
+  }
+
+  public getTranslationY(): number {
+    return this.buffer[13];
   }
 
   public static identity(): Mat4 {

@@ -1,11 +1,11 @@
 import { Mat4 } from "@atlasjs/math";
+import { Rect } from "../graphics";
 
 import {
   Renderer,
   Geometry,
   Pipeline,
   Shader,
-  Rect,
   ObjectBinding,
   Material,
 } from "../core";

@@ -5,7 +5,6 @@ export * from "./bindings";
 export * from "./buffers";
 export * from "./camera";
 export * from "./geometry";
-export * from "./graphics";
 export * from "./pipeline";
 export * from "./renderer";
 export * from "./resources";

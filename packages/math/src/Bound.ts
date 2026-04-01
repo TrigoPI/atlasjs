@@ -20,6 +20,15 @@ export class Bound {
     return this.width === 0 && this.height === 0;
   }
 
+  public overlaps(other: Bound): boolean {
+    return (
+      this.x + this.width > other.x &&
+      this.x < other.x + other.width &&
+      this.y + this.height > other.y &&
+      this.y < other.y + other.height
+    );
+  }
+
   public clone(): Bound {
     return new Bound(this.x, this.y, this.width, this.height);
   }

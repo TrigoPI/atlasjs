@@ -1,3 +1,4 @@
+import { Bound, Box2 } from "@atlasjs/math";
 import { Logger, createLogger } from "@atlasjs/utils";
 
 import { WebGPUShaderCache } from "./caches";
@@ -73,6 +74,21 @@ export class WebGPURenderer implements Renderer {
   }
 
   public destroy(): void {}
+
+  public getViewport(): Box2 {
+    return Box2.create(this.canvas.width, this.canvas.height);
+  }
+
+  public getCameraViewport(): Bound {
+    const width = this.canvas.width / this.camera.zoom;
+    const height = this.canvas.height / this.camera.zoom;
+    return Bound.create(
+      this.camera.position.x,
+      this.camera.position.y,
+      width,
+      height,
+    );
+  }
 
   public getDevice(): GPUDevice {
     return this.device;
