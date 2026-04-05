@@ -1,17 +1,20 @@
-import { ShaderDefinition } from "../../core";
-import { WebGPUShader } from "../pipeline";
-import { WebGPUShaders } from "../resources/WebGPUShaderList";
+import { Disposable, ShaderDescriptor } from "../../core";
+import { WebGPUShaderBindingGroups } from "../webgpu-types";
+import { WebGPUShader } from "../material";
+import { WebGPUShaders } from "../resources";
 
-export class WebGPUShaderCache {
+export class WebGPUShaderCache implements Disposable {
   private readonly device: GPUDevice;
   private readonly shaders: Map<string, WebGPUShader>;
+  private readonly groups: WebGPUShaderBindingGroups;
 
-  public constructor(device: GPUDevice) {
+  public constructor(device: GPUDevice, groups: WebGPUShaderBindingGroups) {
     this.device = device;
+    this.groups = groups;
     this.shaders = new Map<string, WebGPUShader>();
   }
 
-  public getOrCreate(definition: ShaderDefinition): WebGPUShader {
+  public getOrCreate(definition: ShaderDescriptor): WebGPUShader {
     const cached: WebGPUShader | undefined = this.shaders.get(definition.id);
 
     if (!cached) {
@@ -22,16 +25,20 @@ export class WebGPUShaderCache {
         code,
       });
 
-      const shader: WebGPUShader = new WebGPUShader(shaderModule, definition);
-      this.shaders.set(definition.id, shader);
+      const shader: WebGPUShader = new WebGPUShader(
+        shaderModule,
+        this.groups,
+        definition,
+      );
 
+      this.shaders.set(definition.id, shader);
       return shader;
     }
 
     return cached;
   }
 
-  public clear(): void {
+  public destroy(): void {
     this.shaders.clear();
   }
 }

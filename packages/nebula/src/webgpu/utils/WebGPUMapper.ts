@@ -34,14 +34,10 @@ export class WebGPUMapper {
     format: VertexAttributeFormat,
   ): GPUVertexFormat {
     switch (format) {
-      case "float32":
+      case "float":
         return "float32";
       case "vec2":
         return "float32x2";
-      case "vec3":
-        return "float32x3";
-      case "vec4":
-        return "float32x4";
       case "color":
         return "float32x4";
       default:

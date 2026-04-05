@@ -1,4 +1,4 @@
-import { Geometry, Primitive, VertexBufferLayout } from "../../core";
+import { Geometry, Primitive } from "../../core";
 import { WebGPUVertexBuffer, WebGPUIndexBuffer } from "../buffers";
 
 export class WebGPUGeometry implements Geometry {
@@ -16,10 +16,6 @@ export class WebGPUGeometry implements Geometry {
     this.vertexBuffer = vertexBuffer;
     this.indexBuffer = indexBuffer;
     this.primitive = primitive;
-  }
-
-  public getVertexLayout(): VertexBufferLayout {
-    return this.vertexBuffer.layout;
   }
 
   public destroy(): void {

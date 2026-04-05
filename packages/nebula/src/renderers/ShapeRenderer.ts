@@ -52,9 +52,6 @@ export class ShapeRenderer {
   private init(): void {
     this.geometry = this.renderer.createQuad();
     this.shader = this.renderer.createShader(WebGPUShaders.Shape);
-    this.pipeline = this.renderer.createPipeline(
-      this.shader,
-      this.geometry.getVertexLayout(),
-    );
+    this.pipeline = this.renderer.createPipeline(this.shader, this.geometry);
   }
 }

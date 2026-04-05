@@ -1,22 +1,26 @@
-import { Pipeline } from "../../core";
-import { WebGPUMapper } from "../utils";
+import { Pipeline, VertexBufferLayout } from "../../core";
 import { WebGPUPipelineDescriptor } from "../webgpu-types";
+import { WebGPUGeometry } from "../geometry";
+import { WebGPUMapper } from "../utils";
 
 export class WebGPUPipeline implements Pipeline {
   public readonly __kind: string = "webgpu";
   public readonly id: string;
   public readonly descriptor: WebGPUPipelineDescriptor;
   public readonly pipeline: GPURenderPipeline;
+  public readonly geometry: WebGPUGeometry;
 
   public constructor(device: GPUDevice, descriptor: WebGPUPipelineDescriptor) {
+    const layout: VertexBufferLayout = descriptor.geometry.vertexBuffer.layout;
     const webgpuBufferLayout: GPUVertexBufferLayout =
-      WebGPUMapper.toGPUVertexBufferLayout(descriptor.vertexLayout);
+      WebGPUMapper.toGPUVertexBufferLayout(layout);
 
+    this.geometry = descriptor.geometry;
     this.descriptor = descriptor;
     this.id = this.createPipelineId();
 
     this.pipeline = device.createRenderPipeline({
-      layout: "auto",
+      layout: descriptor.layout ?? "auto",
       vertex: {
         entryPoint: this.descriptor.shader.vertexEntryPoint,
         module: this.descriptor.shader.module,
@@ -37,6 +41,10 @@ export class WebGPUPipeline implements Pipeline {
   }
 
   public destroy(): void {}
+
+  public getBindGroupLayout(index: number): GPUBindGroupLayout {
+    return this.pipeline.getBindGroupLayout(index);
+  }
 
   private getBlend(
     descriptor: WebGPUPipelineDescriptor,
@@ -60,7 +68,7 @@ export class WebGPUPipeline implements Pipeline {
   private createPipelineId(): string {
     return [
       this.descriptor.shader.id,
-      this.descriptor.vertexLayout.getId(),
+      this.descriptor.geometry.vertexBuffer.layout.getId(),
       this.descriptor.format,
       this.descriptor.topology,
       this.descriptor.alphaBlend ? "a" : "o",

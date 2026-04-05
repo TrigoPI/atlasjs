@@ -1,53 +1,52 @@
 import { Bound, Box2 } from "@atlasjs/math";
-import { Logger, createLogger } from "@atlasjs/utils";
+import { Clock, Logger, createLogger } from "@atlasjs/utils";
 
-import { WebGPUShaderCache } from "./caches";
-import { WebGPUGeometry } from "./geometry";
-import { WebGPUPipeline, WebGPUShader } from "./pipeline";
-import { WebGPUSampler, WebGPUTexture2D } from "./resources";
-import { WebGPURenderContext } from "./states";
 import { WebGPUGuard } from "./utils";
+import { WebGPUGeometry } from "./geometry";
+import { WebGPUPipeline } from "./pipeline";
+import { WebGPURenderContext } from "./states";
+import { WebGPUBindingGroupCache, WebGPUShaderCache } from "./caches";
+import { WebGPUSampler, WebGPUTexture2D } from "./resources";
+import { WebGPUShader, WebGPUMaterial } from "./material";
+
+import {
+  BINDING_GROUP_GLOBAL,
+  BINDING_GROUP_MATERIAL,
+  BINDING_GROUP_OBJECT,
+} from "./web-gpu-const";
+
+import {
+  WebGPUBinder,
+  WebGPUBindingGroup,
+  WebGPUBindingGroupDefinition,
+  WebGPUBindingGroupLayout,
+  WebGPUCompiledBindingGroup,
+} from "./bindings";
 
 import {
   Renderer,
   Quad,
   Shader,
   VertexBufferLayout,
-  VertexAttributeFormat,
   SamplerDescriptor,
-  ShaderDefinition,
+  ShaderDescriptor,
   IndexFormat,
   Pipeline,
-  Texture2D,
-  Sampler,
   Primitive,
   Texture2DDescriptor,
   Geometry,
   Material,
-  ObjectBinding,
   Camera2D,
+  UniformType,
+  BindingGroup,
+  BindingGroupDefinition,
 } from "../core";
-
-import {
-  WebGPUBinder,
-  WebGPUGlobalBindings,
-  WebGPUObjectBindings,
-  WebGPUMaterial,
-  WebGPUBindings,
-} from "./bindings";
 
 import {
   WebGPUUniformBuffer,
   WebGPUVertexBuffer,
   WebGPUIndexBuffer,
 } from "./buffers";
-
-import {
-  BINDING_LOCATION_TEXTURE,
-  BINDING_LOCATION_SAMPLER,
-  UNIFORM_GLOBALS,
-  BINDING_GROUP_GLOBAL,
-} from "./web-gpu-const";
 
 export class WebGPURenderer implements Renderer {
   public readonly __kind: string = "webgpu";
@@ -60,8 +59,12 @@ export class WebGPURenderer implements Renderer {
   private device!: GPUDevice;
   private context!: GPUCanvasContext;
   private format!: GPUTextureFormat;
+
+  private bindingGroupCache!: WebGPUBindingGroupCache;
   private shaderCache!: WebGPUShaderCache;
-  private globalBindings!: WebGPUGlobalBindings;
+  private globalBindings!: WebGPUBindingGroup;
+
+  private clock: Clock;
 
   private currentRenderContext?: WebGPURenderContext;
 
@@ -69,11 +72,15 @@ export class WebGPURenderer implements Renderer {
     this.logger = createLogger("WebGPURenderer");
     this.canvas = canvas;
 
+    this.clock = new Clock();
     this.camera = new Camera2D();
     this.binder = new WebGPUBinder();
   }
 
-  public destroy(): void {}
+  public destroy(): void {
+    this.shaderCache.destroy();
+    this.bindingGroupCache.destroy();
+  }
 
   public getViewport(): Box2 {
     return Box2.create(this.canvas.width, this.canvas.height);
@@ -107,23 +114,49 @@ export class WebGPURenderer implements Renderer {
     return this.createGeometry(quad);
   }
 
-  public createPipeline(
-    shader: Shader,
-    vertexLayout: VertexBufferLayout,
-  ): WebGPUPipeline {
+  public createPipeline(shader: Shader, geometry: Geometry): WebGPUPipeline {
     const topology: GPUPrimitiveTopology = "triangle-list";
     const webGPUShader: WebGPUShader = WebGPUGuard.asWebGPUShader(shader);
+    const webGPUGeometry: WebGPUGeometry =
+      WebGPUGuard.asWebGPUGeometry(geometry);
+
+    const globalLayout: WebGPUBindingGroupLayout =
+      this.bindingGroupCache.getOrCreateLayout(webGPUShader.globalDefinition);
+
+    const objectLayout: WebGPUBindingGroupLayout =
+      this.bindingGroupCache.getOrCreateLayout(webGPUShader.objectDefinition);
+
+    const materialLayout: WebGPUBindingGroupLayout =
+      this.bindingGroupCache.getOrCreateLayout(webGPUShader.materialDefinition);
+
+    const globalGroup: GPUBindGroupLayout = this.device.createBindGroupLayout({
+      entries: [...globalLayout.bindGroupLayoutEntries],
+    });
+
+    const objectGroup: GPUBindGroupLayout = this.device.createBindGroupLayout({
+      entries: [...objectLayout.bindGroupLayoutEntries],
+    });
+
+    //prettier-ignore
+    const materialGroup: GPUBindGroupLayout = this.device.createBindGroupLayout({
+        entries: [...materialLayout.bindGroupLayoutEntries],
+    });
+
+    const layout: GPUPipelineLayout = this.device.createPipelineLayout({
+      bindGroupLayouts: [globalGroup, objectGroup, materialGroup],
+    });
 
     return new WebGPUPipeline(this.device, {
       topology,
-      vertexLayout,
+      layout,
       alphaBlend: true,
       format: this.format,
+      geometry: webGPUGeometry,
       shader: webGPUShader,
     });
   }
 
-  public createUniformBuffer(type: VertexAttributeFormat): WebGPUUniformBuffer {
+  public createUniformBuffer(type: UniformType): WebGPUUniformBuffer {
     return new WebGPUUniformBuffer(this.device, type);
   }
 
@@ -131,12 +164,8 @@ export class WebGPURenderer implements Renderer {
     return new WebGPUSampler(this.device, descriptor);
   }
 
-  public createShader(definition: ShaderDefinition): WebGPUShader {
+  public createShader(definition: ShaderDescriptor): WebGPUShader {
     return this.shaderCache.getOrCreate(definition);
-  }
-
-  public createObjectBindings(pipeline: WebGPUPipeline): WebGPUObjectBindings {
-    return new WebGPUObjectBindings(this.device, pipeline);
   }
 
   public createVertexBuffer(
@@ -153,34 +182,16 @@ export class WebGPURenderer implements Renderer {
     return new WebGPUIndexBuffer(this.device, data, format);
   }
 
-  public createMaterial(pipeline: Pipeline): WebGPUMaterial {
-    const webGPUPipeline: WebGPUPipeline =
-      WebGPUGuard.asWebGPUPipeline(pipeline);
-
-    return new WebGPUMaterial(this.device, webGPUPipeline);
+  public createBindingGroup(
+    definition: BindingGroupDefinition,
+  ): WebGPUBindingGroup {
+    WebGPUGuard.assertWebGPUBindingGroupDefinition(definition);
+    return new WebGPUBindingGroup(definition);
   }
 
-  public createTexturedMaterial(
-    pipeline: Pipeline,
-    texture: Texture2D,
-    sampler: Sampler,
-  ): WebGPUMaterial {
-    const webGPUSampler: WebGPUSampler = WebGPUGuard.asWebGPUSampler(sampler);
-    const webGPUTexture: WebGPUTexture2D =
-      WebGPUGuard.asWebGPUTexture2D(texture);
-
-    const webGPUPipeline: WebGPUPipeline =
-      WebGPUGuard.asWebGPUPipeline(pipeline);
-
-    const material: WebGPUMaterial = new WebGPUMaterial(
-      this.device,
-      webGPUPipeline,
-    );
-
-    material.bindTexture2D(BINDING_LOCATION_TEXTURE, webGPUTexture);
-    material.bindSampler(BINDING_LOCATION_SAMPLER, webGPUSampler);
-
-    return material;
+  public createMaterial(shader: Shader): WebGPUMaterial {
+    WebGPUGuard.assertWebGPUShader(shader);
+    return new WebGPUMaterial(shader);
   }
 
   public createGeometry(primitive: Primitive): WebGPUGeometry {
@@ -243,31 +254,26 @@ export class WebGPURenderer implements Renderer {
       alphaMode: "premultiplied",
     });
 
+    const globalBindingsDefinition: WebGPUBindingGroupDefinition =
+      new WebGPUBindingGroupDefinition("atlas.global", BINDING_GROUP_GLOBAL);
+
+    globalBindingsDefinition
+      .add({ type: "mat4", name: "viewProjection" })
+      .add({ type: "float", name: "time", defaultValue: 0.0 });
+
     this.device = device;
     this.context = context;
     this.format = format;
 
-    this.globalBindings = new WebGPUGlobalBindings(this.device);
-    this.shaderCache = new WebGPUShaderCache(this.device);
-
-    this.globalBindings.bindUniform(
-      UNIFORM_GLOBALS.camera.name,
-      UNIFORM_GLOBALS.camera.binding,
-      UNIFORM_GLOBALS.camera.type,
-    );
+    this.globalBindings = new WebGPUBindingGroup(globalBindingsDefinition);
+    this.bindingGroupCache = new WebGPUBindingGroupCache(this.device);
+    this.shaderCache = new WebGPUShaderCache(this.device, {
+      global: BINDING_GROUP_GLOBAL,
+      object: BINDING_GROUP_OBJECT,
+      material: BINDING_GROUP_MATERIAL,
+    });
 
     this.logger.log("WebGPURenderer initialized successfully.");
-  }
-
-  public updateCamera(): void {
-    const width = this.canvas.width;
-    const height = this.canvas.height;
-
-    this.camera.update(width, height);
-    this.globalBindings.setMat4(
-      UNIFORM_GLOBALS.camera.name,
-      this.camera.viewProjection,
-    );
   }
 
   public beginFrame(): void {
@@ -296,40 +302,28 @@ export class WebGPURenderer implements Renderer {
     });
 
     this.updateCamera();
+    this.updateTime();
   }
 
   public draw(
     geometry: Geometry,
     pipeline: Pipeline,
     material: Material,
-    bindings: ObjectBinding,
+    bindings: BindingGroup,
   ): void {
     const ctx: WebGPURenderContext = this.assertContext();
-    const webGPUGeo: WebGPUGeometry = WebGPUGuard.asWebGPUGeometry(geometry);
-    const webGPUBinding: WebGPUBindings = WebGPUGuard.asWebGPUBinding(
-      bindings.bindings,
-    );
 
-    const webGPUPipeline: WebGPUPipeline =
-      WebGPUGuard.asWebGPUPipeline(pipeline);
+    WebGPUGuard.assertWebGPUGeometry(geometry);
+    WebGPUGuard.assertWebGPUPipeline(pipeline);
+    WebGPUGuard.assertWebGPUMaterial(material);
+    WebGPUGuard.assertWebGPUBindingGroup(bindings);
 
-    const cameraBindGroup: GPUBindGroup =
-      this.globalBindings.getBindGroup(webGPUPipeline);
-
-    this.assertGeometryCompatibleWithPipeline(webGPUGeo, webGPUPipeline);
-
-    this.binder.bindPipeline(ctx, webGPUPipeline);
-    this.binder.bindGroup(ctx, BINDING_GROUP_GLOBAL, cameraBindGroup);
-    this.binder.bindObject(ctx, webGPUBinding);
-
-    if (material) {
-      const webGPUMaterial: WebGPUMaterial =
-        WebGPUGuard.asWebGPUMaterial(material);
-      this.binder.bindMaterial(ctx, webGPUMaterial);
-    }
-
-    this.binder.bindGeometry(ctx, webGPUGeo);
-    ctx.renderPass.drawIndexed(webGPUGeo.primitive.indexCount);
+    this.assertGeometryCompatibleWithPipeline(geometry, pipeline);
+    this.bindPipeline(ctx, pipeline);
+    this.bindGlobalGroup(ctx, pipeline);
+    this.bindObjectGroup(ctx, bindings, pipeline);
+    this.bindMaterial(ctx, material, pipeline);
+    this.bindGeometryAndDrawIndexed(ctx, geometry);
   }
 
   public endFrame(): void {
@@ -337,6 +331,105 @@ export class WebGPURenderer implements Renderer {
     context.renderPass.end();
     this.device.queue.submit([context.commandEncoder.finish()]);
     this.currentRenderContext = undefined;
+  }
+
+  private updateCamera(): void {
+    const width: number = this.canvas.width;
+    const height: number = this.canvas.height;
+    this.camera.update(width, height);
+    this.globalBindings.setMat4("viewProjection", this.camera.viewProjection);
+  }
+
+  private updateTime(): void {
+    const time: number = this.clock.getTimeSecond();
+    this.globalBindings.setNumber("time", time);
+  }
+
+  private bindPipeline(
+    ctx: WebGPURenderContext,
+    pipeline: WebGPUPipeline,
+  ): void {
+    this.binder.bindPipeline(ctx, pipeline);
+  }
+
+  private bindGlobalGroup(
+    ctx: WebGPURenderContext,
+    pipeline: WebGPUPipeline,
+  ): void {
+    const globalBindGroupLayout: GPUBindGroupLayout =
+      pipeline.getBindGroupLayout(BINDING_GROUP_GLOBAL);
+
+    const compiledGlobalBindings: WebGPUCompiledBindingGroup =
+      this.bindingGroupCache.get(this.globalBindings, globalBindGroupLayout);
+
+    this.assertBindGroup(compiledGlobalBindings.bindGroup);
+
+    this.binder.bindGroup(
+      ctx,
+      BINDING_GROUP_GLOBAL,
+      compiledGlobalBindings.bindGroup,
+    );
+  }
+
+  private bindObjectGroup(
+    ctx: WebGPURenderContext,
+    bindings: WebGPUBindingGroup,
+    pipeline: WebGPUPipeline,
+  ): void {
+    const objectBindGroupLayout: GPUBindGroupLayout =
+      pipeline.getBindGroupLayout(BINDING_GROUP_OBJECT);
+
+    const compiledObjectBindings: WebGPUCompiledBindingGroup =
+      this.bindingGroupCache.get(bindings, objectBindGroupLayout);
+
+    this.assertBindGroup(compiledObjectBindings.bindGroup);
+
+    this.binder.bindGroup(
+      ctx,
+      BINDING_GROUP_OBJECT,
+      compiledObjectBindings.bindGroup,
+    );
+  }
+
+  private bindMaterial(
+    ctx: WebGPURenderContext,
+    material: WebGPUMaterial,
+    pipeline: WebGPUPipeline,
+  ): void {
+    const webGPUMaterial: WebGPUMaterial =
+      WebGPUGuard.asWebGPUMaterial(material);
+
+    const materialBindGroupLayout: GPUBindGroupLayout =
+      pipeline.getBindGroupLayout(BINDING_GROUP_MATERIAL);
+
+    const compiledMaterial: WebGPUCompiledBindingGroup =
+      this.bindingGroupCache.get(
+        webGPUMaterial.bindingGroup,
+        materialBindGroupLayout,
+      );
+
+    this.assertBindGroup(compiledMaterial.bindGroup);
+    this.binder.bindGroup(
+      ctx,
+      compiledMaterial.layout.group,
+      compiledMaterial.bindGroup,
+    );
+  }
+
+  private bindGeometryAndDrawIndexed(
+    ctx: WebGPURenderContext,
+    geometry: WebGPUGeometry,
+  ): void {
+    this.binder.bindGeometry(ctx, geometry);
+    ctx.renderPass.drawIndexed(geometry.primitive.indexCount);
+  }
+
+  private assertBindGroup(
+    bindGroup: GPUBindGroup | null,
+  ): asserts bindGroup is GPUBindGroup {
+    if (!bindGroup) {
+      throw new Error("Invalid bind group.");
+    }
   }
 
   private assertContext(): WebGPURenderContext {
@@ -352,7 +445,8 @@ export class WebGPURenderer implements Renderer {
     pipeline: WebGPUPipeline,
   ): void {
     const geometryLayoutId: string = geometry.vertexBuffer.layout.getId();
-    const pipelineLayoutId: string = pipeline.descriptor.vertexLayout.getId();
+    const pipelineLayoutId: string =
+      pipeline.geometry.vertexBuffer.layout.getId();
 
     if (geometryLayoutId !== pipelineLayoutId) {
       throw new Error(

@@ -1,13 +1,6 @@
 import { Bound, Mat4, Vec2 } from "@atlasjs/math";
 import { Sprite } from "../graphics";
-
-import {
-  WebGPUShaders,
-  BINDING_LOCATION_MODEL,
-  BINDING_LOCATION_TEXTURE,
-  BINDING_LOCATION_SAMPLER,
-  BINDING_LOCATION_SOURCE_RECT,
-} from "../webgpu";
+import { WebGPUShaders } from "../webgpu";
 
 import {
   Renderer,
@@ -17,8 +10,8 @@ import {
   Sampler,
   Texture2D,
   Material,
-  ObjectBinding,
   Quad,
+  BindingGroup,
 } from "../core";
 
 export class SpriteRenderer {
@@ -27,24 +20,21 @@ export class SpriteRenderer {
   private readonly shader: Shader;
   private readonly pipeline: Pipeline;
   private readonly defaultSampler: Sampler;
-
   private readonly materialCache: Map<string, Material>;
-  private readonly objectBindingsCache: WeakMap<Sprite, ObjectBinding>;
+  private readonly objectBindingGroupCache: WeakMap<Sprite, BindingGroup>;
+
   private readonly modelMatrix: Mat4;
 
   public constructor(renderer: Renderer) {
     this.renderer = renderer;
-    this.geometry = renderer.createGeometry(new Quad());
-    this.shader = renderer.createShader(WebGPUShaders.Texture2D);
     this.modelMatrix = Mat4.identity();
+    this.shader = this.initShader();
 
-    this.objectBindingsCache = new WeakMap();
+    this.geometry = renderer.createGeometry(new Quad());
+    this.pipeline = renderer.createPipeline(this.shader, this.geometry);
+
     this.materialCache = new Map();
-
-    this.pipeline = renderer.createPipeline(
-      this.shader,
-      this.geometry.getVertexLayout(),
-    );
+    this.objectBindingGroupCache = new WeakMap();
 
     this.defaultSampler = renderer.createSampler({
       minFilter: "linear",
@@ -64,28 +54,17 @@ export class SpriteRenderer {
       sprite.sampler ?? this.defaultSampler,
     );
 
-    const objectBindings: ObjectBinding =
-      this.getOrCreateObjectBindings(sprite);
+    const sourceRect: Float32Array = this.updateUVRect(sprite);
+    const bindingGroup: BindingGroup =
+      this.getOrCreateObjectBindingGroup(sprite);
 
     this.updateModelMatrix(sprite);
-    objectBindings.setMat4At(BINDING_LOCATION_MODEL, this.modelMatrix);
 
-    const uvRect: Float32Array = this.updateUVRect(sprite);
-    objectBindings.setVec4At(BINDING_LOCATION_SOURCE_RECT, uvRect);
+    bindingGroup
+      .setMat4("model", this.modelMatrix)
+      .setBuffer("sourceRect", sourceRect);
 
-    this.renderer.draw(this.geometry, this.pipeline, material, objectBindings);
-  }
-
-  public destroy(): void {
-    for (const material of this.materialCache.values()) {
-      material.destroy();
-    }
-
-    this.materialCache.clear();
-  }
-
-  private createMaterialKey(texture: Texture2D, sampler: Sampler): string {
-    return `${texture.id}|${sampler.id}`;
+    this.renderer.draw(this.geometry, this.pipeline, material, bindingGroup);
   }
 
   private getOrCreateMaterial(texture: Texture2D, sampler: Sampler): Material {
@@ -96,34 +75,58 @@ export class SpriteRenderer {
       return cached;
     }
 
-    const material: Material = this.renderer.createMaterial(this.pipeline);
-
-    material.bindTexture2D(BINDING_LOCATION_TEXTURE, texture);
-    material.bindSampler(BINDING_LOCATION_SAMPLER, sampler);
+    const material: Material = this.renderer
+      .createMaterial(this.shader)
+      .setTexture2D("uTexture", texture)
+      .setSampler("uSampler", sampler);
 
     this.materialCache.set(key, material);
 
     return material;
   }
 
-  private getOrCreateObjectBindings(sprite: Sprite): ObjectBinding {
-    const cached: ObjectBinding | undefined =
-      this.objectBindingsCache.get(sprite);
+  private getOrCreateObjectBindingGroup(sprite: Sprite): BindingGroup {
+    const cached: BindingGroup | undefined =
+      this.objectBindingGroupCache.get(sprite);
 
     if (cached) {
       return cached;
     }
 
-    const objectBindings: ObjectBinding = this.renderer.createObjectBindings(
-      this.pipeline,
+    const bindingGroup: BindingGroup = this.renderer.createBindingGroup(
+      this.shader.objectDefinition,
     );
 
-    objectBindings.bindMat4At(BINDING_LOCATION_MODEL);
-    objectBindings.bindVec4At(BINDING_LOCATION_SOURCE_RECT);
+    this.objectBindingGroupCache.set(sprite, bindingGroup);
 
-    this.objectBindingsCache.set(sprite, objectBindings);
+    return bindingGroup;
+  }
 
-    return objectBindings;
+  private updateUVRect(sprite: Sprite): Float32Array {
+    const texture: Texture2D = sprite.texture;
+    const rect: Bound = sprite.getSourceRect();
+
+    const u0: number = rect.x / texture.width;
+    const v0: number = rect.y / texture.height;
+    const du: number = rect.width / texture.width;
+    const dv: number = rect.height / texture.height;
+
+    return new Float32Array([u0, v0, du, dv]);
+  }
+
+  private createMaterialKey(texture: Texture2D, sampler: Sampler): string {
+    return `${texture.id}|${sampler.id}`;
+  }
+
+  private initShader(): Shader {
+    return this.renderer
+      .createShader(WebGPUShaders.Texture2D)
+      .addGlobalProperty({ type: "mat4", name: "viewProjection" })
+      .addGlobalProperty({ type: "float", name: "time", defaultValue: 0.0 })
+      .addObjectProperty({ type: "mat4", name: "model" })
+      .addObjectProperty({ type: "buffer", name: "sourceRect", size: 16 })
+      .addMaterialProperty({ type: "texture2D", name: "uTexture" })
+      .addMaterialProperty({ type: "sampler", name: "uSampler" });
   }
 
   private updateModelMatrix(sprite: Sprite): void {
@@ -141,17 +144,5 @@ export class SpriteRenderer {
       .copy(worldMatrix)
       .translate(anchorOffsetX, anchorOffsetY, 0)
       .scale(width, height);
-  }
-
-  private updateUVRect(sprite: Sprite): Float32Array {
-    const texture: Texture2D = sprite.texture;
-    const rect: Bound = sprite.getSourceRect();
-
-    const u0: number = rect.x / texture.width;
-    const v0: number = rect.y / texture.height;
-    const du: number = rect.width / texture.width;
-    const dv: number = rect.height / texture.height;
-
-    return new Float32Array([u0, v0, du, dv]);
   }
 }

@@ -8,6 +8,7 @@ export * from "./geometry";
 export * from "./pipeline";
 export * from "./resources";
 export * from "./states";
+export * from "./material";
 export * from "./utils";
 
 export * from "./WebGPURenderer";

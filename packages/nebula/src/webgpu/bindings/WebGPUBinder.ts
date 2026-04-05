@@ -2,26 +2,8 @@ import { WebGPUVertexBuffer, WebGPUIndexBuffer } from "../buffers";
 import { WebGPUGeometry } from "../geometry";
 import { WebGPUPipeline } from "../pipeline";
 import { WebGPURenderContext } from "../states";
-import { WebGPUBindings } from "./WebGPUBidings";
-import { WebGPUMaterial } from "./WebGPUMaterial";
 
 export class WebGPUBinder {
-  public bindMaterial(
-    context: WebGPURenderContext,
-    material: WebGPUMaterial,
-  ): void {
-    material.apply(context.renderPass);
-    context.renderState.material = material;
-  }
-
-  public bindObject(
-    context: WebGPURenderContext,
-    object: WebGPUBindings,
-  ): void {
-    object.apply(context.renderPass);
-    context.renderState.objectBindings = object;
-  }
-
   public bindPipeline(
     context: WebGPURenderContext,
     pipeline: WebGPUPipeline,

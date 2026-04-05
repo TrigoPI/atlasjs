@@ -1,9 +1,12 @@
-import { WebGPUShader } from "./pipeline";
+import { WebGPUShader } from "./material";
+import { WebGPUGeometry } from "./geometry";
+
 import {
   PipelineDescriptor,
   TextureFormat,
-  VertexAttributeFormat,
   VertexLayoutDescriptor,
+  UniformType,
+  UniformPropertyLayout,
 } from "../core";
 
 export type UniformKey = `${number}:${number}`;
@@ -33,12 +36,25 @@ export type WebGPUPipelineCacheDescriptor = {
 
 export type WebGPUPipelineDescriptor = PipelineDescriptor & {
   shader: WebGPUShader;
+  geometry: WebGPUGeometry;
   format: GPUTextureFormat;
   topology: GPUPrimitiveTopology;
+  layout?: GPUPipelineLayout;
 };
 
 export type GlobalBindingDefinition = {
   name: string;
   binding: number;
-  type: VertexAttributeFormat;
+  type: UniformType;
+};
+
+export type GetUniformPropertiesResult = {
+  layout: UniformPropertyLayout[];
+  size: number;
+};
+
+export type WebGPUShaderBindingGroups = {
+  global: number;
+  object: number;
+  material: number;
 };

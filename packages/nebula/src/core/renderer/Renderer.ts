@@ -4,7 +4,8 @@ import { Camera2D } from "../camera";
 import { Geometry } from "../geometry";
 import { Pipeline } from "../pipeline";
 import { Disposable } from "../utils";
-import { Material, ObjectBinding } from "../bindings";
+import { Material } from "../material";
+import { BindingGroup } from "../bindings";
 
 import { ResourceFactory } from "./ResourceFactory";
 
@@ -22,6 +23,6 @@ export interface Renderer extends Disposable, ResourceFactory {
     geometry: Geometry,
     pipeline: Pipeline,
     material: Material,
-    bindings: ObjectBinding,
+    bindings: BindingGroup,
   ): void;
 }

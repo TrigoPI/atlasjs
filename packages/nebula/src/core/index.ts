@@ -8,4 +8,5 @@ export * from "./geometry";
 export * from "./pipeline";
 export * from "./renderer";
 export * from "./resources";
+export * from "./material";
 export * from "./utils";

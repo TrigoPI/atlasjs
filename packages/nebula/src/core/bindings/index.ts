@@ -1,3 +1,3 @@
-export * from "./Bindings";
-export * from "./Material";
-export * from "./ObjectBinding";
+export * from "./BindingGroup";
+export * from "./BindingGroupDefinition";
+export * from "./BindingGroupLayout";
