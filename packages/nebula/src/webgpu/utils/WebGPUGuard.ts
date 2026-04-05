@@ -1,10 +1,12 @@
-import { WebGPUBindings, WebGPUMaterial } from "../bindings";
-import { WebGPUShader, WebGPUPipeline } from "../pipeline";
-import { WebGPUTexture2D, WebGPUSampler } from "../resources";
+import { WebGPUBindingGroup, WebGPUBindingGroupDefinition } from "../bindings";
+import { WebGPUPipeline } from "../pipeline";
 import { WebGPUGeometry } from "../geometry";
+import { WebGPUTexture2D, WebGPUSampler } from "../resources";
+import { WebGPUShader, WebGPUMaterial } from "../material";
 
 import {
-  Bindings,
+  BindingGroup,
+  BindingGroupDefinition,
   Geometry,
   Material,
   Pipeline,
@@ -14,12 +16,62 @@ import {
 } from "../../core";
 
 export class WebGPUGuard {
-  public static asWebGPUBinding(binding: Bindings): WebGPUBindings {
+  public static assertWebGPUBindingGroupDefinition(
+    definition: BindingGroupDefinition,
+  ): asserts definition is WebGPUBindingGroupDefinition {
+    if (definition.__kind !== "webgpu") {
+      throw new Error("Expected a WebGPUBindingGroupDefinition instance.");
+    }
+  }
+
+  public static assertWebGPUShader(
+    shader: Shader,
+  ): asserts shader is WebGPUShader {
+    if (shader.__kind !== "webgpu") {
+      throw new Error("Expected a WebGPUShader instance.");
+    }
+  }
+
+  public static assertWebGPUMaterial(
+    material: Material,
+  ): asserts material is WebGPUMaterial {
+    if (material.__kind !== "webgpu") {
+      throw new Error("Expected a WebGPUMaterial instance.");
+    }
+  }
+
+  public static assertWebGPUGeometry(
+    geometry: Geometry,
+  ): asserts geometry is WebGPUGeometry {
+    if (geometry.__kind !== "webgpu") {
+      throw new Error("Expected a WebGPUGeometry instance.");
+    }
+  }
+
+  public static assertWebGPUBindingGroup(
+    binding: BindingGroup,
+  ): asserts binding is WebGPUBindingGroup {
     if (binding.__kind !== "webgpu") {
-      throw new Error("Expected a WebGPUBindings instance.");
+      throw new Error("Expected a WebGPUBindingGroup instance.");
+    }
+  }
+
+  public static assertWebGPUPipeline(
+    pipeline: Pipeline,
+  ): asserts pipeline is WebGPUPipeline {
+    if (pipeline.__kind !== "webgpu") {
+      throw new Error("Expected a WebGPUPipeline instance.");
+    }
+  }
+
+  public static asWebGPUBindingGroup(
+    binding: BindingGroup,
+  ): WebGPUBindingGroup {
+    if (binding.__kind !== "webgpu") {
+      throw new Error("Expected a WebGPUBindingGroup instance.");
     }
 
-    return <WebGPUBindings>binding;
+    return <WebGPUBindingGroup>binding;
   }
 
   public static asWebGPUShader(shader: Shader): WebGPUShader {

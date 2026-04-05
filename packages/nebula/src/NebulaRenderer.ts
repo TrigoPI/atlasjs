@@ -5,9 +5,12 @@ import { SceneRenderer } from "./renderers";
 
 import {
   Camera2D,
+  Material,
   Renderer,
   Sampler,
   SamplerDescriptor,
+  Shader,
+  ShaderDescriptor,
   Texture2D,
   Texture2DDescriptor,
 } from "./core";
@@ -28,6 +31,14 @@ export class NebulaRenderer {
 
   public getViewport(): Box2 {
     return this.renderer.getViewport();
+  }
+
+  public createMaterial(shader: Shader): Material {
+    return this.renderer.createMaterial(shader);
+  }
+
+  public createShader(definition: ShaderDescriptor): Shader {
+    return this.renderer.createShader(definition);
   }
 
   public createSampler(descriptor: SamplerDescriptor): Sampler {

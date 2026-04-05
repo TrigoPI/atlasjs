@@ -1,8 +1,4 @@
-import {
-  UniformBuffer,
-  VertexAttributeFormat,
-  VERTEX_ATTRIBUTE_SIZES,
-} from "../../core";
+import { SHADER_PROPERTY_SIZES, UniformBuffer, UniformType } from "../../core";
 
 export class WebGPUUniformBuffer implements UniformBuffer {
   public readonly __kind: string = "webgpu";
@@ -10,8 +6,8 @@ export class WebGPUUniformBuffer implements UniformBuffer {
   public readonly size: number;
   public readonly device: GPUDevice;
 
-  constructor(device: GPUDevice, type: VertexAttributeFormat) {
-    this.size = VERTEX_ATTRIBUTE_SIZES[type];
+  constructor(device: GPUDevice, type: UniformType) {
+    this.size = SHADER_PROPERTY_SIZES[type];
     this.device = device;
     this.buffer = this.device.createBuffer({
       size: this.size,

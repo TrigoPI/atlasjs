@@ -1,5 +1,5 @@
-import { VERTEX_ATTRIBUTE_SIZES } from "../core-const";
-import { VertexAttribute, VertexAttributeFormat } from "../core-types";
+import { SHADER_PROPERTY_SIZES } from "../core-const";
+import { VertexAttribute, UniformType } from "../core-types";
 import { IDGenerator } from "../utils";
 
 export class VertexBufferLayout {
@@ -25,8 +25,8 @@ export class VertexBufferLayout {
     return this.stride;
   }
 
-  public addAttribute(type: VertexAttributeFormat): VertexBufferLayout {
-    const size: number = VERTEX_ATTRIBUTE_SIZES[type];
+  public addAttribute(type: UniformType): VertexBufferLayout {
+    const size: number = SHADER_PROPERTY_SIZES[type];
     const offset: number = this.stride;
     const location: number = this.location;
 

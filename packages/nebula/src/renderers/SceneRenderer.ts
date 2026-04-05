@@ -55,8 +55,6 @@ export class SceneRenderer {
     if (node instanceof Sprite) {
       if (this.isSpriteVisible(node)) {
         out.push(node);
-      } else {
-        console.log("Sprite is not visible");
       }
     }
 

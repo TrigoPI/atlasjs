@@ -1,12 +1,12 @@
-import { ShaderDefinition } from "../../core";
+import { ShaderDescriptor } from "../../core";
 
 import TextureShader from "../shaders/texture.wgsl";
 import GlobalShader from "../shaders/global.wgsl";
 import ShapeShader from "../shaders/shape.wgsl";
 
-export const WebGPUShaders = (<T extends Record<string, ShaderDefinition>>(
+export const WebGPUShaders = (<T extends Record<string, ShaderDescriptor>>(
   list: T,
-): Record<keyof T, ShaderDefinition> => list)({
+): Record<keyof T, ShaderDescriptor> => list)({
   Global: {
     id: "atlas.webgpu.Global",
     vertexEntryPoint: "",

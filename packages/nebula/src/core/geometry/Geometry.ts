@@ -1,4 +1,4 @@
-import { VertexBuffer, IndexBuffer, VertexBufferLayout } from "../buffers";
+import { VertexBuffer, IndexBuffer } from "../buffers";
 import { Disposable } from "../utils";
 import { Primitive } from "./Primitive";
 
@@ -8,6 +8,4 @@ export interface Geometry extends Disposable {
   readonly primitive: Primitive;
   readonly vertexBuffer: VertexBuffer;
   readonly indexBuffer: IndexBuffer;
-
-  getVertexLayout(): VertexBufferLayout;
 }

@@ -40,6 +40,6 @@ export class Quad implements Primitive {
   }
 
   private getVertexLayout(): VertexBufferLayout {
-    return VertexBufferLayout.create().addAttribute("vec2", 0).addAttribute("vec2", 1);
+    return VertexBufferLayout.create().addAttribute("vec2").addAttribute("vec2");
   }
 }
