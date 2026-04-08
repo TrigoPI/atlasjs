@@ -1,61 +1,28 @@
-import { createLogger, Logger } from "@atlasjs/utils";
 import { Engine, Plugin, PRIORITY, Unsubscribe } from "@atlasjs/core";
+import { Logger, createLogger } from "@atlasjs/utils";
 
-import { NebulaPluginOptions } from "./types";
-import { NEBULA_RENDERER } from "./tokens";
+import { Renderer } from "./core";
 import { NebulaRenderer } from "./NebulaRenderer";
-
-import {
-  Renderer,
-  RenderingSurface,
-  createSurface,
-  observeSurfaceResize,
-} from "./renderer";
+import { NEBULA_RENDERER } from "./tokens";
 
 export class NebulaPlugin extends Plugin {
   private readonly renderer: Renderer;
-  private readonly options: NebulaPluginOptions;
   private readonly logger: Logger;
 
   private unsubscribe: Unsubscribe | null;
 
-  public constructor(renderer: Renderer, options: NebulaPluginOptions) {
+  public constructor(renderer: Renderer) {
     super("nebula-plugin");
-    this.logger = createLogger();
+    this.logger = createLogger(NebulaPlugin.name);
     this.renderer = renderer;
-    this.options = options;
     this.unsubscribe = null;
   }
 
   public async install(engine: Engine): Promise<void> {
     const renderer: NebulaRenderer = new NebulaRenderer(this.renderer);
-    const surface: RenderingSurface = createSurface(
-      this.options.mount,
-      this.options.background,
-    );
+    await renderer.init();
 
-    this.logger.log(`Surface created : ${surface.width}x${surface.height}`);
-    await this.renderer.init(surface);
-
-    this.unsubscribe = observeSurfaceResize(
-      surface,
-      (width: number, height: number): void => {
-        this.logger.log(`Surface resized : ${width}x${height}`);
-        renderer.setViewportSize(width, height);
-      },
-    );
-
-    engine.scheduler.onUpdate(() => renderer.onFlush(), {
-      name: "nebula:flush",
-      priority: PRIORITY.PRE_UPDATE,
-    });
-
-    engine.scheduler.onUpdate(() => renderer.onSync(), {
-      name: "nebula:sync",
-      priority: PRIORITY.UPDATE_CMD_BUILD,
-    });
-
-    engine.scheduler.onRender(() => renderer.onRender(), {
+    engine.scheduler.onRender(() => renderer.render(), {
       name: "nebula:render",
       priority: PRIORITY.RENDER_MAIN,
     });

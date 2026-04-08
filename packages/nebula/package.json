@@ -17,9 +17,12 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@atlasjs/math": "workspace:*",
-    "@atlasjs/utils": "workspace:*",
+    "@atlasjs/assets": "workspace:*",
     "@atlasjs/core": "workspace:*",
-    "@atlasjs/assets": "workspace:*"
+    "@atlasjs/math": "workspace:*",
+    "@atlasjs/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@webgpu/types": "^0.1.69"
   }
 }

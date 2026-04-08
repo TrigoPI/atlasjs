@@ -1,7 +1,6 @@
 import { cos, sin } from "./Math";
-import { Vec2Like } from "./Vec2Like";
 
-export class Vec2 implements Vec2Like {
+export class Vec2 {
   public x: number;
   public y: number;
 
@@ -10,19 +9,19 @@ export class Vec2 implements Vec2Like {
     this.y = y;
   }
 
-  public copyFrom(a: Vec2Like): Vec2 {
+  public copyFrom(a: Vec2): Vec2 {
     this.x = a.x;
     this.y = a.y;
     return this;
   }
 
-  public copyTo(out: Vec2Like): Vec2 {
+  public copyTo(out: Vec2): Vec2 {
     out.x = this.x;
     out.y = this.y;
     return out;
   }
 
-  public copy(): Vec2 {
+  public clone(): Vec2 {
     return new Vec2(this.x, this.y);
   }
 
@@ -32,13 +31,13 @@ export class Vec2 implements Vec2Like {
     return this;
   }
 
-  public add(b: Vec2Like): Vec2 {
+  public add(b: Vec2): Vec2 {
     this.x += b.x;
     this.y += b.y;
     return this;
   }
 
-  public sub(b: Vec2Like): Vec2 {
+  public sub(b: Vec2): Vec2 {
     this.x -= b.x;
     this.y -= b.y;
     return this;
@@ -71,7 +70,7 @@ export class Vec2 implements Vec2Like {
     return this;
   }
 
-  public dot(a: Vec2Like): number {
+  public dot(a: Vec2): number {
     return this.x * a.x + this.y * a.y;
   }
 
@@ -79,15 +78,15 @@ export class Vec2 implements Vec2Like {
     return Math.sqrt(this.x * this.x + this.y * this.y);
   }
 
-  public static from(a: Vec2Like): Vec2 {
+  public static from(a: Vec2): Vec2 {
     return new Vec2(a.x, a.y);
   }
 
-  public static add(a: Vec2Like, b: Vec2Like): Vec2 {
+  public static add(a: Vec2, b: Vec2): Vec2 {
     return new Vec2(a.x + b.x, a.y + b.y);
   }
 
-  public static sub(a: Vec2Like, b: Vec2Like): Vec2 {
+  public static sub(a: Vec2, b: Vec2): Vec2 {
     return new Vec2(a.x - b.x, a.y - b.y);
   }
 
@@ -97,12 +96,12 @@ export class Vec2 implements Vec2Like {
     return new Vec2(x, y);
   }
 
-  public static subTo(a: Vec2Like, b: Vec2Like, out: Vec2): Vec2 {
+  public static subTo(a: Vec2, b: Vec2, out: Vec2): Vec2 {
     out.set(a.x - b.x, a.y - b.y);
     return out;
   }
 
-  public static addTo(a: Vec2Like, b: Vec2Like, out: Vec2): Vec2 {
+  public static addTo(a: Vec2, b: Vec2, out: Vec2): Vec2 {
     out.set(a.x + b.x, a.y + b.y);
     return out;
   }
