@@ -1,9 +1,10 @@
-import { useEffect, useRef, type RefObject } from "react";
+import { type RefObject, useEffect, useRef } from "react";
 
 import { Engine } from "@atlasjs/core";
 import { InputPlugin } from "@atlasjs/input";
-import { AssetPlugin } from "@atlasjs/assets";
 import { NebulaPlugin, WebGPURenderer } from "@atlasjs/nebula";
+import { InertialPlugin } from "@atlasjs/inertia";
+import { RapierPhysicsWorld } from "@atlasjs/rapier";
 
 import { GameScene } from "./game";
 
@@ -22,15 +23,22 @@ export function App() {
     mount.width = window.innerWidth;
     mount.height = window.innerHeight;
 
-    const assetPlugin: AssetPlugin = new AssetPlugin();
     const renderer: WebGPURenderer = new WebGPURenderer(mount);
     const rendererPlugin: NebulaPlugin = new NebulaPlugin(renderer);
+
+    // prettier-ignore
+    const rapierWorld: RapierPhysicsWorld = new RapierPhysicsWorld({ unitsPerMeter: 100 });
+    const inertiaPlugin: InertialPlugin = new InertialPlugin(rapierWorld);
 
     const inputPlugin: InputPlugin = new InputPlugin({
       target: mountRef.current || document.body,
     });
 
-    engine.use(assetPlugin).use(inputPlugin).use(rendererPlugin);
+    // prettier-ignore
+    engine
+      .use(inputPlugin)
+      .use(inertiaPlugin)
+      .use(rendererPlugin);
 
     engine.start().then(() => {
       engine.scene.set(new GameScene());

@@ -1,8 +1,10 @@
 import BlueDinoImage from "../../assets/game/dinos/dino_blue.png";
 import SwordImage from "../../assets/game/swords/Iicon_32_01.png";
 
+import { type PhysicsWorld, INERTIAL_ENGINE } from "@atlasjs/inertia";
 import { type SceneContext, Scene } from "@atlasjs/core";
 import { type Input, INPUT } from "@atlasjs/input";
+import { Vec2 } from "@atlasjs/math";
 
 import { Player } from "./Player";
 import { Sword } from "./Sword";
@@ -25,6 +27,7 @@ export class GameScene extends Scene {
   public override async onCreate(ctx: SceneContext): Promise<void> {
     const input: Input = ctx.services.get(INPUT);
     const renderer: NebulaRenderer = ctx.services.get(NEBULA_RENDERER);
+    const physics: PhysicsWorld = ctx.services.get(INERTIAL_ENGINE);
 
     const dinoImage: ImageBitmap = await this.getImage(BlueDinoImage);
     const swordImage: ImageBitmap = await this.getImage(SwordImage);
@@ -46,10 +49,17 @@ export class GameScene extends Scene {
       width: dinoImage.width,
     });
 
+    physics.createCollider({
+      shape: { type: "box", height: 100, width: 1000 },
+      translation: new Vec2(0, 200),
+      friction: 0.05,
+    });
+
     this.sword = new Sword(swordTexture, sampler, input, renderer);
     this.player = new Player(
       input,
       renderer,
+      physics,
       playerTexture,
       sampler,
       this.sword,
