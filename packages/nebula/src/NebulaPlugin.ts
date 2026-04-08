@@ -13,14 +13,13 @@ export class NebulaPlugin extends Plugin {
 
   public constructor(renderer: Renderer) {
     super("nebula-plugin");
-    this.logger = createLogger();
+    this.logger = createLogger(NebulaPlugin.name);
     this.renderer = renderer;
     this.unsubscribe = null;
   }
 
   public async install(engine: Engine): Promise<void> {
     const renderer: NebulaRenderer = new NebulaRenderer(this.renderer);
-
     await renderer.init();
 
     engine.scheduler.onRender(() => renderer.render(), {

@@ -26,15 +26,15 @@ importers:
 
   apps/sandbox:
     dependencies:
-      '@atlasjs/assets':
-        specifier: workspace:*
-        version: link:../../packages/assets
       '@atlasjs/core':
         specifier: workspace:*
         version: link:../../packages/core
       '@atlasjs/editor':
         specifier: workspace:*
         version: link:../../packages/editor
+      '@atlasjs/inertia':
+        specifier: workspace:*
+        version: link:../../packages/inertia
       '@atlasjs/input':
         specifier: workspace:*
         version: link:../../packages/input
@@ -44,9 +44,9 @@ importers:
       '@atlasjs/nebula':
         specifier: workspace:*
         version: link:../../packages/nebula
-      '@atlasjs/pixi':
+      '@atlasjs/rapier':
         specifier: workspace:*
-        version: link:../../packages/pixi
+        version: link:../../packages/rapier
       '@atlasjs/utils':
         specifier: workspace:*
         version: link:../../packages/utils
@@ -165,6 +165,18 @@ importers:
         specifier: workspace:*
         version: link:../utils
 
+  packages/inertia:
+    dependencies:
+      '@atlasjs/core':
+        specifier: workspace:*
+        version: link:../core
+      '@atlasjs/math':
+        specifier: workspace:*
+        version: link:../math
+      '@atlasjs/utils':
+        specifier: workspace:*
+        version: link:../utils
+
   packages/input:
     dependencies:
       '@atlasjs/core':
@@ -222,6 +234,28 @@ importers:
       pixi.js:
         specifier: ^8.16.0
         version: 8.16.0
+
+  packages/rapier:
+    dependencies:
+      '@atlasjs/core':
+        specifier: workspace:*
+        version: link:../core
+      '@atlasjs/inertia':
+        specifier: workspace:*
+        version: link:../inertia
+      '@atlasjs/math':
+        specifier: workspace:*
+        version: link:../math
+      '@atlasjs/utils':
+        specifier: workspace:*
+        version: link:../utils
+      '@dimforge/rapier2d-compat':
+        specifier: ^0.19.3
+        version: 0.19.3
+    devDependencies:
+      '@webgpu/types':
+        specifier: ^0.1.69
+        version: 0.1.69
 
   packages/utils: {}
 
@@ -330,6 +364,9 @@ packages:
   '@babel/types@8.0.0-rc.1':
     resolution: {integrity: sha512-ubmJ6TShyaD69VE9DQrlXcdkvJbmwWPB8qYj0H2kaJi29O7vJT9ajSdBd2W8CG34pwL9pYA74fi7RHC1qbLoVQ==}
     engines: {node: ^20.19.0 || >=22.12.0}
+
+  '@dimforge/rapier2d-compat@0.19.3':
+    resolution: {integrity: sha512-5HZUgiSpu9Uba3He+4SCPVte3h2vgxcodkxWThRjd3X/zgq/Z4OyRUKpNEOsOR6AC+OfulPkkZ5asZGzRMpcwA==}
 
   '@emnapi/core@1.8.1':
     resolution: {integrity: sha512-AvT9QFpxK0Zd8J0jopedNm+w/2fIzvtPKPjqyw9jwvBaReTTqPBk9Hixaz7KbjimP+QNz605/XnjFcDAL2pqBg==}
@@ -2013,6 +2050,8 @@ snapshots:
     dependencies:
       '@babel/helper-string-parser': 8.0.0-rc.1
       '@babel/helper-validator-identifier': 8.0.0-rc.1
+
+  '@dimforge/rapier2d-compat@0.19.3': {}
 
   '@emnapi/core@1.8.1':
     dependencies:

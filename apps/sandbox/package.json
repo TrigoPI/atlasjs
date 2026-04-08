@@ -14,11 +14,11 @@
     "react-dom": "^19.2.0",
     "@atlasjs/core": "workspace:*",
     "@atlasjs/math": "workspace:*",
-    "@atlasjs/pixi": "workspace:*",
     "@atlasjs/nebula": "workspace:*",
+    "@atlasjs/inertia": "workspace:*",
+    "@atlasjs/rapier": "workspace:*",
     "@atlasjs/input": "workspace:*",
     "@atlasjs/editor": "workspace:*",
-    "@atlasjs/assets": "workspace:*",
     "@atlasjs/utils": "workspace:*"
   },
   "devDependencies": {

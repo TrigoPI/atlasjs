@@ -1,7 +1,14 @@
-import { type Input, Key } from "@atlasjs/input";
 import { Vec2 } from "@atlasjs/math";
+import { type Input, Key } from "@atlasjs/input";
 
 import type { Sword } from "./Sword";
+
+import {
+  type Collider,
+  type ColliderDesc,
+  type PhysicsWorld,
+  type RigidBody,
+} from "@atlasjs/inertia";
 
 import {
   type NebulaRenderer,
@@ -13,8 +20,7 @@ import {
   SpriteSheet,
 } from "@atlasjs/nebula";
 
-const SPEED = 700;
-const FRICTION = 0.05;
+const SPEED = 200;
 
 export class Player {
   private readonly input: Input;
@@ -22,26 +28,36 @@ export class Player {
   private readonly player: Sprite;
   private readonly animator: AnimationPlayer;
 
-  private readonly sword: Sword;
+  private readonly body: RigidBody;
+  private readonly collider: Collider;
 
-  private readonly acc: Vec2;
-  private readonly vel: Vec2;
+  private readonly sword: Sword;
 
   public constructor(
     input: Input,
     renderer: NebulaRenderer,
+    physics: PhysicsWorld,
     texture: Texture2D,
     sampler: Sampler,
     sword: Sword,
   ) {
+    const shape: ColliderDesc = {
+      shape: {
+        type: "box",
+        height: 100,
+        width: 100,
+      },
+    };
+
     this.input = input;
     this.sword = sword;
 
     this.player = new Sprite(texture, sampler);
     this.animator = new AnimationPlayer();
 
-    this.acc = new Vec2(0, 0);
-    this.vel = new Vec2(0, 0);
+    this.body = physics.createRigidBody({ type: "dynamic" });
+
+    this.collider = physics.createCollider(shape, this.body);
 
     this.player.setScale(3, 3).setPosition(100, 100);
     this.sword.attachTo(this.player);
@@ -52,9 +68,7 @@ export class Player {
   }
 
   public onUpdate(dt: number): void {
-    this.resetPhysics();
-    this.updateInput(dt);
-    this.updatePhysics(dt);
+    this.updateInput();
     this.updatePosition();
     this.updateAnimation();
 
@@ -62,45 +76,27 @@ export class Player {
     this.sword.update(dt);
   }
 
-  private resetPhysics(): void {
-    this.acc.set(0, 0);
-  }
-
-  private updateInput(dt: number): void {
+  private updateInput(): void {
     if (this.input.isDown(Key.D)) {
-      this.acc.x += SPEED * dt;
+      this.body.setLinearVelocity(SPEED, 0);
       this.player.flipX(false);
     }
 
     if (this.input.isDown(Key.A)) {
-      this.acc.x -= SPEED * dt;
+      this.body.setLinearVelocity(-SPEED, 0);
       this.player.flipX(true);
     }
-
-    if (this.input.isDown(Key.W)) {
-      this.acc.y -= SPEED * dt;
-    }
-
-    if (this.input.isDown(Key.S)) {
-      this.acc.y += SPEED * dt;
-    }
-  }
-
-  private updatePhysics(dt: number): void {
-    const friction: Vec2 = this.vel.clone().mult(-FRICTION);
-    this.vel.add(friction);
-
-    this.vel.x += this.acc.x * dt;
-    this.vel.y += this.acc.y * dt;
   }
 
   private updatePosition(): void {
-    this.player.transform.position.x += this.vel.x;
-    this.player.transform.position.y += this.vel.y;
+    const bodyPos: Vec2 = this.body.getTranslation();
+    const rotation: number = this.body.getRotation();
+    this.player.transform.position.copyFrom(bodyPos);
+    this.player.transform.rotation = rotation;
   }
 
   private updateAnimation(): void {
-    if (this.vel.mag() > 0.8) {
+    if (this.body.getLinearVelocity().mag() > 100) {
       this.animator.play("run");
     } else {
       this.animator.play("idle");
