@@ -136,13 +136,19 @@ Deux obstacles concrets à traiter :
 
 Chaque phase doit compiler et tourner.
 
-### Phase 0 — Nettoyage (rapide, sans risque) — ✅ FAIT (partiel)
+### Phase 0 — Nettoyage — ✅ TERMINÉE
 - ✅ Supprimer `ShapeRenderer` + `shape.wgsl` (code mort, API fantôme, ne compilait pas).
 - ✅ Réparer `WebGPURenderState` (imports cassés + champs morts `material`/`objectBindings`) — découvert pendant le nettoyage.
 - ✅ Collapse `Material` / `BindingGroup` : les 8 méthodes `setX` remplacées par une seule surface `set(name, value)` + `get`. Le type attendu est dérivé de la définition, validé au runtime (crash tôt). Corrige au passage un bug latent dans `WebGPUMaterial.clone()`.
-- ⏳ **Différé** — Ajouter les types manquants `vec3`, `vec4`, `mat3`, `ivec*` : nécessite d'étendre `@atlasjs/math` (n'expose aujourd'hui que `Vec2`/`Mat4`). À faire quand la réflexion (Phase 1) aura précisé les types réellement requis, ou en sous-chantier dédié côté `math`.
+- ✅ Types manquants ajoutés :
+  - `@atlasjs/math` : nouvelles classes `Vec3`, `Vec4`, `Mat3` (column-major).
+  - `nebula` : types `vec3`/`vec4`/`mat3` câblés dans `BindingGroupProperty`, `BindingValue`, `SHADER_PROPERTY_SIZES`/`_LAYOUTS` (alignements WGSL corrects : `vec3` align 16, `mat3x3` stride 48 colonnes paddées), le packing (`BindingGroupLayoutHelper`), les type-guards, et le mapper de format de sommet.
+  - Démonstration : `SpriteRenderer.sourceRect` migré de `buffer` + packing manuel `Float32Array` → `vec4` propre.
+- ⏳ **Différé** — `ivec*` (vecteurs d'entiers) : peu prioritaire, pas de type `IVec*` dans `math`. À réévaluer si un besoin concret apparaît.
 
-> Validé : `tsc --noEmit` sur `nebula` = 0 erreur, `pnpm build` (tsdown) = OK. Les erreurs restantes de l'app `webgpu` sont dans `ecs.ts` (API `nexus`), hors périmètre.
+> Validé : `tsc --noEmit` sur `nebula` = 0 erreur, `pnpm build` (math + nebula) = OK. Packing `vec3`/`vec4`/`mat3` vérifié contre le code réel (offsets, padding colonne, longueur, throw sur mauvais type). Les erreurs restantes de l'app `webgpu` sont dans `ecs.ts` (API `nexus`), hors périmètre.
+
+> ⚠️ Bug pré-existant repéré (hors périmètre, tâche de fond créée) : le court-circuit par référence dans `BindingGroup.set()` ne bumpe pas `version` pour une instance mutée en place → un sprite en mouvement se figerait à sa transform de la 1ère frame (masqué car les démos sont statiques).
 
 ### Phase 1 — Réflexion (le socle)
 - Intégrer `wgsl_reflect` dans l'implémentation WebGPU.

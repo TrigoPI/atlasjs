@@ -1,4 +1,4 @@
-import { Vec2, Mat4 } from "@atlasjs/math";
+import { Vec2, Vec3, Vec4, Mat3, Mat4 } from "@atlasjs/math";
 
 import { Color } from "../../utils";
 import { ShaderTypeGuard } from "./ShaderTypeGuard";
@@ -108,6 +108,38 @@ export class BindingGroupLayoutHelper {
         const v: Vec2 = value as Vec2;
         view.setFloat32(offset, v.x, true);
         view.setFloat32(offset + 4, v.y, true);
+        break;
+      }
+
+      case "vec3": {
+        ShaderTypeGuard.assertVector3(value);
+        const v: Vec3 = value as Vec3;
+        view.setFloat32(offset, v.x, true);
+        view.setFloat32(offset + 4, v.y, true);
+        view.setFloat32(offset + 8, v.z, true);
+        break;
+      }
+
+      case "vec4": {
+        ShaderTypeGuard.assertVector4(value);
+        const v: Vec4 = value as Vec4;
+        view.setFloat32(offset, v.x, true);
+        view.setFloat32(offset + 4, v.y, true);
+        view.setFloat32(offset + 8, v.z, true);
+        view.setFloat32(offset + 12, v.w, true);
+        break;
+      }
+
+      case "mat3": {
+        ShaderTypeGuard.assertMat3(value);
+        const m: Mat3 = value as Mat3;
+        // WGSL mat3x3<f32>: 3 columns, each padded to 16 bytes.
+        for (let c = 0; c < 3; c++) {
+          const base: number = offset + c * 16;
+          view.setFloat32(base, m.buffer[c * 3], true);
+          view.setFloat32(base + 4, m.buffer[c * 3 + 1], true);
+          view.setFloat32(base + 8, m.buffer[c * 3 + 2], true);
+        }
         break;
       }
 

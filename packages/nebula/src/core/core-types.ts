@@ -1,4 +1,4 @@
-import { Mat4, Vec2 } from "@atlasjs/math";
+import { Mat3, Mat4, Vec2, Vec3, Vec4 } from "@atlasjs/math";
 
 import { Sampler, Texture2D } from "./resources";
 import { Color } from "../utils";
@@ -21,7 +21,7 @@ export type UniformType = Exclude<ShaderValueType, "texture2D" | "sampler">;
 
 export type VertexAttributeFormat = Exclude<
   ShaderValueType,
-  "buffer" | "texture2D" | "sampler" | "mat4"
+  "buffer" | "texture2D" | "sampler" | "mat3" | "mat4"
 >;
 
 export type BindingValue =
@@ -29,6 +29,9 @@ export type BindingValue =
   | boolean
   | Color
   | Vec2
+  | Vec3
+  | Vec4
+  | Mat3
   | Mat4
   | Texture2D
   | Sampler
@@ -103,6 +106,24 @@ export type BindingGroupPropertyVec2 = {
   readonly defaultValue?: Vec2;
 };
 
+export type BindingGroupPropertyVec3 = {
+  readonly type: "vec3";
+  readonly name: string;
+  readonly defaultValue?: Vec3;
+};
+
+export type BindingGroupPropertyVec4 = {
+  readonly type: "vec4";
+  readonly name: string;
+  readonly defaultValue?: Vec4;
+};
+
+export type BindingGroupPropertyMat3 = {
+  readonly type: "mat3";
+  readonly name: string;
+  readonly defaultValue?: Mat3;
+};
+
 export type BindingGroupPropertyMat4 = {
   readonly type: "mat4";
   readonly name: string;
@@ -167,6 +188,9 @@ export type BindingGroupProperty =
   | BindingGroupPropertyInt
   | BindingGroupPropertyBool
   | BindingGroupPropertyVec2
+  | BindingGroupPropertyVec3
+  | BindingGroupPropertyVec4
+  | BindingGroupPropertyMat3
   | BindingGroupPropertyMat4
   | BindingGroupPropertyColor
   | BindingGroupPropertyTexture2D

@@ -1,4 +1,4 @@
-import { Mat4, Vec2 } from "@atlasjs/math";
+import { Mat3, Mat4, Vec2, Vec3, Vec4 } from "@atlasjs/math";
 import { Color } from "../../utils";
 import { BindingValue, ShaderValueType } from "../core-types";
 
@@ -19,6 +19,15 @@ export class ShaderTypeGuard {
         break;
       case "vec2":
         ShaderTypeGuard.assertVector2(value);
+        break;
+      case "vec3":
+        ShaderTypeGuard.assertVector3(value);
+        break;
+      case "vec4":
+        ShaderTypeGuard.assertVector4(value);
+        break;
+      case "mat3":
+        ShaderTypeGuard.assertMat3(value);
         break;
       case "mat4":
         ShaderTypeGuard.assertMat4(value);
@@ -59,6 +68,24 @@ export class ShaderTypeGuard {
   public static assertVector2(value: BindingValue): void {
     if (!(value instanceof Vec2)) {
       throw new Error(`Expected a Vec2 but received ${typeof value}`);
+    }
+  }
+
+  public static assertVector3(value: BindingValue): void {
+    if (!(value instanceof Vec3)) {
+      throw new Error(`Expected a Vec3 but received ${typeof value}`);
+    }
+  }
+
+  public static assertVector4(value: BindingValue): void {
+    if (!(value instanceof Vec4)) {
+      throw new Error(`Expected a Vec4 but received ${typeof value}`);
+    }
+  }
+
+  public static assertMat3(value: BindingValue): void {
+    if (!(value instanceof Mat3)) {
+      throw new Error(`Expected a Mat3 but received ${typeof value}`);
     }
   }
 
