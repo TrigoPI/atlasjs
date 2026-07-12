@@ -210,7 +210,19 @@ Mené en deux temps (décidé au grill) : **3a découplage in-place**, puis **3b
 
 Les 4 phases sont livrées et vérifiées end-to-end. La douleur initiale (double déclaration WGSL ↔ TS, packing manuel, groupes fragiles) est éliminée : le WGSL est l'unique source de vérité, la réflexion dérive tout, le chemin facile (`defineMaterial`) réduit un material à un bloc `material { }` + un fragment, et l'architecture est proprement séparée (`@atlasjs/nebula` interfaces / `@atlasjs/nebula-webgpu` implémentation).
 
-Pistes futures (hors périmètre) : plugin Vite de codegen `.d.ts` (typage compile-time de `set()`), branchement `Sprite.material` (effets custom sur sprites), rafraîchir ou retirer le backend `@atlasjs/pixi` périmé, et le bug de versioning des binding groups (tâche de fond déjà signalée).
+### Correctif — Versioning des binding groups — ✅ FAIT
+
+Bug repéré en Phase 0 : `WebGPUBindingGroup.set()` court-circuitait sur `values.get(name) === value`, donc ne bumpait pas `version` quand on repassait une **même instance mutée en place** (ex. la matrice `model` réutilisée chaque frame par `SpriteRenderer`). Résultat : un sprite en mouvement se figeait à sa transform de la 1ère frame.
+
+Fix (dans `@atlasjs/nebula-webgpu`) :
+- Suppression du court-circuit par référence : tout `set()` marque le groupe dirty.
+- Versioning dédoublé : `version` (tout changement → re-upload du buffer uniforme) vs `resourceVersion` (changement de texture/sampler → reconstruction du bind group). `WebGPUCompiledBindingGroup.update()` gate les deux séparément, donc un sprite animé re-upload ses uniformes chaque frame **sans** reconstruire son bind group inutilement.
+
+> Validé : sprite animé (translation par frame) → mouvement visible à l'écran (avant : figé), 0 validation error.
+
+### Pistes futures (hors périmètre)
+- Plugin Vite de codegen `.d.ts` (typage compile-time de `set()`).
+- Branchement `Sprite.material` (effets custom directement sur les sprites).
 
 ### Phase 4 — Tooling (plus tard)
 - Plugin Vite : parse les `.wgsl` et génère des `.d.ts` pour l'autocomplétion / le type-check de `set()`.

@@ -10,13 +10,18 @@ import {
 export class WebGPUBindingGroup implements BindingGroup {
   public readonly __kind = "webgpu";
   public readonly definition: WebGPUBindingGroupDefinition;
+
+  /** Bumped on any change — gates uniform buffer re-upload. */
   public version: number;
+  /** Bumped only when a resource (texture/sampler) changes — gates bind group rebuild. */
+  public resourceVersion: number;
 
   protected readonly values: Map<string, BindingValue>;
 
   public constructor(definition: WebGPUBindingGroupDefinition) {
     this.definition = definition;
     this.version = 0;
+    this.resourceVersion = 0;
     this.values = new Map<string, BindingValue>();
 
     this.hydrate();
@@ -51,14 +56,18 @@ export class WebGPUBindingGroup implements BindingGroup {
       throw new Error(`Binding property not found: ${name}`);
     }
 
-    if (this.values.get(name) === value) {
-      return this;
-    }
-
     WebGPUShaderTypeGuard.assertShaderType(property.type, value);
 
+    // No reference-equality short-circuit: a value may be a reused instance
+    // mutated in place (e.g. a per-frame model matrix), which `===` cannot
+    // detect — skipping it would freeze the GPU-side data. A set() always
+    // marks the group dirty.
     this.values.set(name, value);
     this.version++;
+
+    if (property.type === "texture2D" || property.type === "sampler") {
+      this.resourceVersion++;
+    }
 
     return this;
   }
@@ -71,6 +80,7 @@ export class WebGPUBindingGroup implements BindingGroup {
     }
 
     clone.version = this.version;
+    clone.resourceVersion = this.resourceVersion;
 
     return clone;
   }

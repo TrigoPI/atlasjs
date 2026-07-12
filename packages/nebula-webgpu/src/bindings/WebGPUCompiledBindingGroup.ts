@@ -13,6 +13,7 @@ export class WebGPUCompiledBindingGroup {
   public bindGroup: GPUBindGroup | null = null;
   public uniformBuffer: GPUBuffer | null = null;
   public version: number = -1;
+  public resourceVersion: number = -1;
 
   public constructor(
     device: GPUDevice,
@@ -27,13 +28,21 @@ export class WebGPUCompiledBindingGroup {
   }
 
   public update(): void {
-    if (this.version === this.bindingGroupData.version) {
-      return;
+    const data: WebGPUBindingGroup = this.bindingGroupData;
+
+    // Uniform values changed → re-upload the buffer (the GPUBuffer itself is
+    // stable, so this does not require rebuilding the bind group).
+    if (this.version !== data.version) {
+      this.updateUniformBuffer();
+      this.version = data.version;
     }
 
-    this.updateUniformBuffer();
-    this.rebuildBindGroup();
-    this.version = this.bindingGroupData.version;
+    // Only rebuild the bind group when a resource reference changed (or on
+    // first use) — not on every uniform tweak.
+    if (this.bindGroup === null || this.resourceVersion !== data.resourceVersion) {
+      this.rebuildBindGroup();
+      this.resourceVersion = data.resourceVersion;
+    }
   }
 
   public destroy(): void {
@@ -41,6 +50,7 @@ export class WebGPUCompiledBindingGroup {
     this.uniformBuffer = null;
     this.bindGroup = null;
     this.version = -1;
+    this.resourceVersion = -1;
   }
 
   private updateUniformBuffer(): void {
