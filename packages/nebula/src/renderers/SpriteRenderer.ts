@@ -61,8 +61,8 @@ export class SpriteRenderer {
     this.updateModelMatrix(sprite);
 
     bindingGroup
-      .setMat4("model", this.modelMatrix)
-      .setBuffer("sourceRect", sourceRect);
+      .set("model", this.modelMatrix)
+      .set("sourceRect", sourceRect);
 
     this.renderer.draw(this.geometry, this.pipeline, material, bindingGroup);
   }
@@ -77,8 +77,8 @@ export class SpriteRenderer {
 
     const material: Material = this.renderer
       .createMaterial(this.shader)
-      .setTexture2D("uTexture", texture)
-      .setSampler("uSampler", sampler);
+      .set("uTexture", texture)
+      .set("uSampler", sampler);
 
     this.materialCache.set(key, material);
 

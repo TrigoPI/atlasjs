@@ -1,6 +1,3 @@
-import { Vec2, Mat4 } from "@atlasjs/math";
-
-import { Color } from "../../utils";
 import { WebGPUShaderTypeGuard } from "../utils";
 import { WebGPUBindingGroupDefinition } from "./WebGPUBindingGroupDefinition";
 
@@ -8,9 +5,6 @@ import {
   BindingGroup,
   BindingGroupProperty,
   BindingValue,
-  Sampler,
-  ShaderValueType,
-  Texture2D,
 } from "../../core";
 
 export class WebGPUBindingGroup implements BindingGroup {
@@ -49,51 +43,7 @@ export class WebGPUBindingGroup implements BindingGroup {
     return value as T;
   }
 
-  public setNumber(name: string, value: number): this {
-    this.set("float", name, value);
-    return this;
-  }
-
-  public setBoolean(name: string, value: boolean): this {
-    this.set("bool", name, value);
-    return this;
-  }
-
-  public setColor(name: string, value: Color): this {
-    this.set("color", name, value);
-    return this;
-  }
-
-  public setVec2(name: string, value: Vec2): this {
-    this.set("vec2", name, value);
-    return this;
-  }
-
-  public setMat4(name: string, value: Mat4): this {
-    this.set("mat4", name, value);
-    return this;
-  }
-
-  public setTexture2D(name: string, value: Texture2D | null): this {
-    this.set("texture2D", name, value);
-    return this;
-  }
-
-  public setSampler(name: string, value: Sampler | null): this {
-    this.set("sampler", name, value);
-    return this;
-  }
-
-  public setBuffer(name: string, value: ArrayBufferView): this {
-    this.set("buffer", name, value);
-    return this;
-  }
-
-  public set<T extends BindingValue = BindingValue>(
-    type: ShaderValueType,
-    name: string,
-    value: T,
-  ): this {
+  public set(name: string, value: BindingValue): this {
     const property: BindingGroupProperty | undefined =
       this.definition.get(name);
 
@@ -105,7 +55,7 @@ export class WebGPUBindingGroup implements BindingGroup {
       return this;
     }
 
-    WebGPUShaderTypeGuard.assertShaderType(type, value);
+    WebGPUShaderTypeGuard.assertShaderType(property.type, value);
 
     this.values.set(name, value);
     this.version++;

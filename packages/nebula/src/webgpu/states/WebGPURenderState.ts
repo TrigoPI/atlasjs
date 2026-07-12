@@ -1,7 +1,7 @@
 import { WebGPUGeometry } from "../geometry";
-import { WebGPUMaterial, WebGPUBindings } from "../bindings";
+import { WebGPUShader } from "../material";
+import { WebGPUPipeline } from "../pipeline";
 import { WebGPUVertexBuffer, WebGPUIndexBuffer } from "../buffers";
-import { WebGPUPipeline, WebGPUShader } from "../pipeline";
 
 export class WebGPURenderState {
   public pipeline?: WebGPUPipeline;
@@ -9,9 +9,6 @@ export class WebGPURenderState {
   public geometry?: WebGPUGeometry;
   public vertexBuffer?: WebGPUVertexBuffer;
   public indexBuffer?: WebGPUIndexBuffer;
-
-  public material?: WebGPUMaterial;
-  public objectBindings?: WebGPUBindings;
 
   public readonly bindGroups: Map<number, GPUBindGroup>;
 
@@ -25,8 +22,6 @@ export class WebGPURenderState {
     this.geometry = undefined;
     this.vertexBuffer = undefined;
     this.indexBuffer = undefined;
-    this.material = undefined;
-    this.objectBindings = undefined;
     this.bindGroups.clear();
   }
 }

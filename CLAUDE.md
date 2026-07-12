@@ -88,6 +88,16 @@ This may include:
 
 Applications may compose multiple packages together, but application-specific logic should not leak into reusable engine packages.
 
+### `docs/`
+
+The `docs` directory contains cross-cutting design documents and architecture decisions that span multiple packages or describe planned refactors.
+
+Consult it before undertaking a significant change: a design may already be validated and awaiting implementation.
+
+Current documents:
+
+- `docs/shaders-materials-redesign.md` — validated redesign of the Nebula shader/material authoring API (WGSL as single source of truth via reflection, layered easy/advanced paths, package split).
+
 ---
 
 ## Architectural Direction
@@ -110,6 +120,7 @@ This does not mean every system must support 3D today. It means new decisions sh
 
 Before modifying the project:
 
+- Check `docs/` for an existing design document covering the change.
 - Identify whether the change belongs in `packages` or `apps`.
 - Understand the responsibility of the affected package or application.
 - Follow the existing architecture before introducing a new pattern.

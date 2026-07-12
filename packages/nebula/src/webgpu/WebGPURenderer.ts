@@ -337,12 +337,12 @@ export class WebGPURenderer implements Renderer {
     const width: number = this.canvas.width;
     const height: number = this.canvas.height;
     this.camera.update(width, height);
-    this.globalBindings.setMat4("viewProjection", this.camera.viewProjection);
+    this.globalBindings.set("viewProjection", this.camera.viewProjection);
   }
 
   private updateTime(): void {
     const time: number = this.clock.getTimeSecond();
-    this.globalBindings.setNumber("time", time);
+    this.globalBindings.set("time", time);
   }
 
   private bindPipeline(
