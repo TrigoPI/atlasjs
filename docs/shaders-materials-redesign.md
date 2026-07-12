@@ -185,9 +185,21 @@ Livré : `webgpu/authoring/MaterialShaderBuilder`
 > Validé end-to-end : `tsc` 0 erreur, `pnpm build` OK, **app WebGPU réelle** → quad texturé + teinté via un material easy-path (`material.set("tint", Vec4)` visible), 0 validation error. La sortie WGSL générée a été inspectée (bindings 0/1/2 auto-assignés corrects).
 
 ### Phase 3 — Split de package
-- Extraire `@atlasjs/nebula-webgpu` ; `nebula` ne garde que `core/` + renderers + scene + graphics.
-- Bibliothèque de shaders exposée par le backend (règle le couplage `SpriteRenderer` → WGSL).
-- Purger les types `@webgpu/types` du core.
+
+Mené en deux temps (décidé au grill) : **3a découplage in-place**, puis **3b extraction physique**.
+
+#### Phase 3a — Découplage in-place — ✅ TERMINÉE
+- Seam backend : `ResourceFactory.createSpriteShader(): Shader`. `WebGPURenderer` l'implémente (`createShader(WebGPUShaders.Texture2D)`) ; `SpriteRenderer` l'appelle au lieu d'importer `WebGPUShaders`. Plus aucun fichier hors `webgpu/` n'importe l'implémentation.
+- Purge `@webgpu/types` du core : `TextureFormat`/`Topology` deviennent des unions maison (valeurs = littéraux GPU valides, donc assignables côté backend). Le core n'importe plus aucun type WebGPU.
+
+> Validé : `tsc` 0 erreur, `pnpm build` OK, **app WebGPU réelle** → sprite rendu identique, 0 validation error. `grep` confirme : `core`/`renderers`/`scene`/`graphics` totalement découplés de `webgpu/`.
+
+> Note : le backend `@atlasjs/pixi` (`PixiRenderer`) est **périmé** (n'implémente ni `createShader`/`createMaterial`/`createPipeline`, donc pas le `ResourceFactory` actuel) — hors périmètre, laissé tel quel.
+
+#### Phase 3b — Extraction physique — ⏳ À FAIRE
+- Extraire `@atlasjs/nebula-webgpu` ; `nebula` ne garde que `core/` + renderers + scene + graphics + animations + `NebulaRenderer`/plugin.
+- Déplacer `src/webgpu/**` + les `.wgsl` + le barrel ; ajouter package.json/tsconfig/tsdown ; dép `wgsl_reflect` + `@webgpu/types` migrent vers le nouveau package.
+- Mettre à jour l'unique consommateur concret : `apps/webgpu` (`WebGPURenderer` importé depuis `@atlasjs/nebula-webgpu`). Le reste (`sandbox`/`gameplay`/`editor`) n'utilise que les interfaces de `nebula`.
 
 ### Phase 4 — Tooling (plus tard)
 - Plugin Vite : parse les `.wgsl` et génère des `.d.ts` pour l'autocomplétion / le type-check de `set()`.

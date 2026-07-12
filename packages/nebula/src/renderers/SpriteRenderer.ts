@@ -1,6 +1,5 @@
 import { Bound, Mat4, Vec2, Vec4 } from "@atlasjs/math";
 import { Sprite } from "../graphics";
-import { WebGPUShaders } from "../webgpu";
 
 import {
   Renderer,
@@ -117,7 +116,9 @@ export class SpriteRenderer {
   }
 
   private initShader(): Shader {
-    return this.renderer.createShader(WebGPUShaders.Texture2D);
+    // The backend provides the sprite shader; its bindings are reflected from
+    // the source — SpriteRenderer stays free of any shading language.
+    return this.renderer.createSpriteShader();
   }
 
   private updateModelMatrix(sprite: Sprite): void {

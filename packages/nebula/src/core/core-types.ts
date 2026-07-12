@@ -5,8 +5,27 @@ import { Color } from "../utils";
 import { Shader } from "./material";
 import { Geometry } from "./geometry";
 
-export type TextureFormat = GPUTextureFormat;
-export type Topology = GPUPrimitiveTopology;
+// Backend-agnostic unions. Values are chosen to match the string literals used
+// by graphics backends (e.g. WebGPU's GPUTextureFormat/GPUPrimitiveTopology),
+// so a backend can consume them directly — but the core never imports
+// backend-specific types.
+export type TextureFormat =
+  | "rgba8unorm"
+  | "rgba8unorm-srgb"
+  | "bgra8unorm"
+  | "bgra8unorm-srgb"
+  | "rgba16float"
+  | "rgba32float"
+  | "r8unorm"
+  | "rg8unorm";
+
+export type Topology =
+  | "point-list"
+  | "line-list"
+  | "line-strip"
+  | "triangle-list"
+  | "triangle-strip";
+
 export type ShaderValueType = BindingGroupProperty["type"];
 
 export type BindingGroupPropertyType = ShaderValueType;

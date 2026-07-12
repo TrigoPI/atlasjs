@@ -170,6 +170,10 @@ export class WebGPURenderer implements Renderer {
     return this.shaderCache.getOrCreate(definition);
   }
 
+  public createSpriteShader(): WebGPUShader {
+    return this.createShader(WebGPUShaders.Texture2D);
+  }
+
   public createVertexBuffer(
     data: Float32Array,
     layout: VertexBufferLayout,
