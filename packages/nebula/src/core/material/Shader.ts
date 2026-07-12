@@ -1,7 +1,11 @@
 import { Disposable } from "../utils";
-import { BindingGroupProperty } from "../core-types";
 import { BindingGroupDefinition } from "../bindings";
 
+/**
+ * A compiled shader. All binding metadata (groups, bindings, struct layouts,
+ * entry points) is derived from the WGSL source via reflection — the source is
+ * the single point of truth. There is no manual property-declaration builder.
+ */
 export interface Shader extends Disposable {
   readonly __kind: string;
   readonly id: string;
@@ -12,8 +16,4 @@ export interface Shader extends Disposable {
   readonly materialDefinition: BindingGroupDefinition;
   readonly objectDefinition: BindingGroupDefinition;
   readonly globalDefinition: BindingGroupDefinition;
-
-  addMaterialProperty(property: BindingGroupProperty): this;
-  addObjectProperty(property: BindingGroupProperty): this;
-  addGlobalProperty(property: BindingGroupProperty): this;
 }

@@ -1,6 +1,5 @@
-import { Bound, Mat4, Vec2 } from "@atlasjs/math";
+import { Bound, Mat4, Vec2, Vec4 } from "@atlasjs/math";
 import { Sprite } from "../graphics";
-import { WebGPUShaders } from "../webgpu";
 
 import {
   Renderer,
@@ -54,15 +53,13 @@ export class SpriteRenderer {
       sprite.sampler ?? this.defaultSampler,
     );
 
-    const sourceRect: Float32Array = this.updateUVRect(sprite);
+    const sourceRect: Vec4 = this.updateUVRect(sprite);
     const bindingGroup: BindingGroup =
       this.getOrCreateObjectBindingGroup(sprite);
 
     this.updateModelMatrix(sprite);
 
-    bindingGroup
-      .setMat4("model", this.modelMatrix)
-      .setBuffer("sourceRect", sourceRect);
+    bindingGroup.set("model", this.modelMatrix).set("sourceRect", sourceRect);
 
     this.renderer.draw(this.geometry, this.pipeline, material, bindingGroup);
   }
@@ -77,8 +74,8 @@ export class SpriteRenderer {
 
     const material: Material = this.renderer
       .createMaterial(this.shader)
-      .setTexture2D("uTexture", texture)
-      .setSampler("uSampler", sampler);
+      .set("uTexture", texture)
+      .set("uSampler", sampler);
 
     this.materialCache.set(key, material);
 
@@ -102,7 +99,7 @@ export class SpriteRenderer {
     return bindingGroup;
   }
 
-  private updateUVRect(sprite: Sprite): Float32Array {
+  private updateUVRect(sprite: Sprite): Vec4 {
     const texture: Texture2D = sprite.texture;
     const rect: Bound = sprite.getSourceRect();
 
@@ -111,7 +108,7 @@ export class SpriteRenderer {
     const du: number = rect.width / texture.width;
     const dv: number = rect.height / texture.height;
 
-    return new Float32Array([u0, v0, du, dv]);
+    return new Vec4(u0, v0, du, dv);
   }
 
   private createMaterialKey(texture: Texture2D, sampler: Sampler): string {
@@ -119,14 +116,9 @@ export class SpriteRenderer {
   }
 
   private initShader(): Shader {
-    return this.renderer
-      .createShader(WebGPUShaders.Texture2D)
-      .addGlobalProperty({ type: "mat4", name: "viewProjection" })
-      .addGlobalProperty({ type: "float", name: "time", defaultValue: 0.0 })
-      .addObjectProperty({ type: "mat4", name: "model" })
-      .addObjectProperty({ type: "buffer", name: "sourceRect", size: 16 })
-      .addMaterialProperty({ type: "texture2D", name: "uTexture" })
-      .addMaterialProperty({ type: "sampler", name: "uSampler" });
+    // The backend provides the sprite shader; its bindings are reflected from
+    // the source — SpriteRenderer stays free of any shading language.
+    return this.renderer.createSpriteShader();
   }
 
   private updateModelMatrix(sprite: Sprite): void {

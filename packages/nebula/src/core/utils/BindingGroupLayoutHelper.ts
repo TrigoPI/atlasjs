@@ -1,64 +1,16 @@
-import { Vec2, Mat4 } from "@atlasjs/math";
+import { Vec2, Vec3, Vec4, Mat3, Mat4 } from "@atlasjs/math";
 
 import { Color } from "../../utils";
 import { ShaderTypeGuard } from "./ShaderTypeGuard";
-import { SHADER_PROPERTY_LAYOUTS } from "../core-const";
 
-import {
-  BindingValue,
-  ResourcePropertyType,
-  BindingGroupProperty,
-  ShaderValueType,
-  TypeLayoutInfo,
-  UniformPropertyLayout,
-  UniformType,
-} from "../core-types";
+import { BindingValue, UniformPropertyLayout } from "../core-types";
 
+/**
+ * Packs binding values into a uniform buffer. Offsets/sizes are supplied by the
+ * caller (derived from WGSL reflection) — this helper only writes JS values
+ * into bytes; it never computes alignment itself.
+ */
 export class BindingGroupLayoutHelper {
-  public static alignTo(value: number, alignment: number): number {
-    if (alignment <= 0) {
-      throw new Error(`Alignment must be greater than 0.`);
-    }
-
-    return Math.ceil(value / alignment) * alignment;
-  }
-
-  public static isResourceType(
-    type: ShaderValueType,
-  ): type is ResourcePropertyType {
-    return type === "texture2D" || type === "sampler";
-  }
-
-  public static getTypeLayoutInfo(
-    property: BindingGroupProperty,
-  ): TypeLayoutInfo {
-    if (BindingGroupLayoutHelper.isResourceType(property.type)) {
-      throw new Error(
-        `Resource type "${property.type}" is not supported for uniform layout calculation.`,
-      );
-    }
-
-    if (property.type === "buffer") {
-      if (property.size <= 0) {
-        throw new Error(
-          `Shader property "${property.name}" of type "buffer" requires a size greater than 0.`,
-        );
-      }
-
-      if (property.align && property.align <= 0) {
-        throw new Error(
-          `Shader property "${property.name}" of type "buffer" requires a valid alignment.`,
-        );
-      }
-
-      return {
-        size: property.size,
-        align: property.align ?? 16,
-      };
-    }
-
-    return SHADER_PROPERTY_LAYOUTS[property.type as UniformType];
-  }
 
   public static packUniformBuffer(
     size: number,
@@ -108,6 +60,45 @@ export class BindingGroupLayoutHelper {
         const v: Vec2 = value as Vec2;
         view.setFloat32(offset, v.x, true);
         view.setFloat32(offset + 4, v.y, true);
+        break;
+      }
+
+      case "vec3": {
+        ShaderTypeGuard.assertVector3(value);
+        const v: Vec3 = value as Vec3;
+        view.setFloat32(offset, v.x, true);
+        view.setFloat32(offset + 4, v.y, true);
+        view.setFloat32(offset + 8, v.z, true);
+        break;
+      }
+
+      case "vec4": {
+        ShaderTypeGuard.assertVec4OrColor(value);
+        if (value instanceof Color) {
+          view.setFloat32(offset, value.r, true);
+          view.setFloat32(offset + 4, value.g, true);
+          view.setFloat32(offset + 8, value.b, true);
+          view.setFloat32(offset + 12, value.a, true);
+        } else {
+          const v: Vec4 = value as Vec4;
+          view.setFloat32(offset, v.x, true);
+          view.setFloat32(offset + 4, v.y, true);
+          view.setFloat32(offset + 8, v.z, true);
+          view.setFloat32(offset + 12, v.w, true);
+        }
+        break;
+      }
+
+      case "mat3": {
+        ShaderTypeGuard.assertMat3(value);
+        const m: Mat3 = value as Mat3;
+        // WGSL mat3x3<f32>: 3 columns, each padded to 16 bytes.
+        for (let c = 0; c < 3; c++) {
+          const base: number = offset + c * 16;
+          view.setFloat32(base, m.buffer[c * 3], true);
+          view.setFloat32(base + 4, m.buffer[c * 3 + 1], true);
+          view.setFloat32(base + 8, m.buffer[c * 3 + 2], true);
+        }
         break;
       }
 

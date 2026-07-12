@@ -6,13 +6,13 @@ import {
   type Texture2D,
   type Renderer,
   type Sampler,
-  WebGPURenderer,
   Sprite,
   SpriteSheet,
   SpriteAnimation,
   AnimationPlayer,
   NebulaRenderer,
 } from "@atlasjs/nebula";
+import { WebGPURenderer } from "@atlasjs/nebula-webgpu";
 
 declare global {
   var animator: AnimationPlayer;

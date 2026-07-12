@@ -1,12 +1,31 @@
-import { Mat4, Vec2 } from "@atlasjs/math";
+import { Mat3, Mat4, Vec2, Vec3, Vec4 } from "@atlasjs/math";
 
 import { Sampler, Texture2D } from "./resources";
 import { Color } from "../utils";
 import { Shader } from "./material";
 import { Geometry } from "./geometry";
 
-export type TextureFormat = GPUTextureFormat;
-export type Topology = GPUPrimitiveTopology;
+// Backend-agnostic unions. Values are chosen to match the string literals used
+// by graphics backends (e.g. WebGPU's GPUTextureFormat/GPUPrimitiveTopology),
+// so a backend can consume them directly — but the core never imports
+// backend-specific types.
+export type TextureFormat =
+  | "rgba8unorm"
+  | "rgba8unorm-srgb"
+  | "bgra8unorm"
+  | "bgra8unorm-srgb"
+  | "rgba16float"
+  | "rgba32float"
+  | "r8unorm"
+  | "rg8unorm";
+
+export type Topology =
+  | "point-list"
+  | "line-list"
+  | "line-strip"
+  | "triangle-list"
+  | "triangle-strip";
+
 export type ShaderValueType = BindingGroupProperty["type"];
 
 export type BindingGroupPropertyType = ShaderValueType;
@@ -21,7 +40,7 @@ export type UniformType = Exclude<ShaderValueType, "texture2D" | "sampler">;
 
 export type VertexAttributeFormat = Exclude<
   ShaderValueType,
-  "buffer" | "texture2D" | "sampler" | "mat4"
+  "buffer" | "texture2D" | "sampler" | "mat3" | "mat4"
 >;
 
 export type BindingValue =
@@ -29,6 +48,9 @@ export type BindingValue =
   | boolean
   | Color
   | Vec2
+  | Vec3
+  | Vec4
+  | Mat3
   | Mat4
   | Texture2D
   | Sampler
@@ -103,6 +125,24 @@ export type BindingGroupPropertyVec2 = {
   readonly defaultValue?: Vec2;
 };
 
+export type BindingGroupPropertyVec3 = {
+  readonly type: "vec3";
+  readonly name: string;
+  readonly defaultValue?: Vec3;
+};
+
+export type BindingGroupPropertyVec4 = {
+  readonly type: "vec4";
+  readonly name: string;
+  readonly defaultValue?: Vec4;
+};
+
+export type BindingGroupPropertyMat3 = {
+  readonly type: "mat3";
+  readonly name: string;
+  readonly defaultValue?: Mat3;
+};
+
 export type BindingGroupPropertyMat4 = {
   readonly type: "mat4";
   readonly name: string;
@@ -136,10 +176,10 @@ export type BindingGroupPropertyBuffer = {
 };
 
 export type ShaderDescriptor = {
-  readonly id: string;
   readonly source: string;
-  readonly vertexEntryPoint: string;
-  readonly fragmentEntryPoint: string;
+  readonly id?: string;
+  readonly vertexEntryPoint?: string;
+  readonly fragmentEntryPoint?: string;
 };
 
 export type PipelineDescriptor = {
@@ -167,6 +207,9 @@ export type BindingGroupProperty =
   | BindingGroupPropertyInt
   | BindingGroupPropertyBool
   | BindingGroupPropertyVec2
+  | BindingGroupPropertyVec3
+  | BindingGroupPropertyVec4
+  | BindingGroupPropertyMat3
   | BindingGroupPropertyMat4
   | BindingGroupPropertyColor
   | BindingGroupPropertyTexture2D
