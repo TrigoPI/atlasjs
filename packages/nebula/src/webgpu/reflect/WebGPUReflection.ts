@@ -1,4 +1,4 @@
-import { WgslReflect, ResourceType } from "wgsl_reflect";
+import { WgslReflect, ResourceType, VariableInfo } from "wgsl_reflect";
 
 import {
   BindingGroupProperty,
@@ -44,17 +44,22 @@ export class WebGPUReflection {
     const reflect: WgslReflect = new WgslReflect(code);
     const groups: Map<number, WebGPUReflectedGroup> = new Map();
 
-    reflect.getBindGroups().forEach((vars, groupIndex: number) => {
-      const present: VariableLike[] = (vars as VariableLike[]).filter(Boolean);
-      if (present.length === 0) {
-        return;
-      }
+    reflect
+      .getBindGroups()
+      .forEach((vars: VariableInfo[], groupIndex: number) => {
+        // prettier-ignore
+        const present: VariableLike[] = (vars as VariableLike[])
+          .filter(Boolean);
 
-      groups.set(
-        groupIndex,
-        WebGPUReflection.reflectGroup(groupIndex, present),
-      );
-    });
+        if (present.length === 0) {
+          return;
+        }
+
+        groups.set(
+          groupIndex,
+          WebGPUReflection.reflectGroup(groupIndex, present),
+        );
+      });
 
     return {
       vertexEntryPoint: reflect.entry.vertex[0]?.name ?? "",

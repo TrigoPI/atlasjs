@@ -172,9 +172,17 @@ Décisions verrouillées :
 
 API `wgsl_reflect` utilisée : `new WgslReflect(code)` → `.getBindGroups()` (array[group] d'array[binding] de `VariableInfo` : `.name`/`.binding`/`.resourceType`/`.type.name`/`.size`/`.members[{name,type,offset,size}]`) + `.entry.vertex`/`.entry.fragment` (`.name`).
 
-### Phase 2 — Préludes + chemin facile
-- Formaliser l'injection frame (group 0) + object (group 1) — généralise le `global.wgsl` déjà prependé.
-- Écrire le pré-processeur `material { }` → WGSL + auto-binding, puis réflexion sur le résultat.
+### Phase 2 — Préludes + chemin facile — ✅ TERMINÉE (authoring)
+
+Décidé au grill : format = **une source WGSL avec bloc `material { }`** (pas de descriptor TS) ; périmètre = **authoring seul** (le branchement `Sprite.material` reste une phase d'intégration scene/gameplay ultérieure).
+
+Livré : `webgpu/authoring/MaterialShaderBuilder`
+- `defineMaterial(source): ShaderDescriptor` — l'utilisateur écrit **uniquement** un bloc `material { name: type, ... }` (sans `@group`/`@binding`) + une fonction `@fragment` (via `FragmentInput` injecté).
+- Le builder assemble : prélude object (group 1, `model`) + vertex 2D standard (`VertexInput`/`FragmentInput`/`vs_main`) + group material expansé (struct `Material` + `@group(2)` auto-bindés, uniforms d'abord puis ressources, **sans trou de binding**) + le code utilisateur. Le prélude global (group 0) est préfixé par le `WebGPUShaderCache` existant.
+- Convention : uniforms via `material.<nom>`, ressources par leur nom nu. Le résultat passe par le pipeline `createShader` normal → réflexion Phase 1 → aucune logique parallèle.
+- Exemple : `apps/webgpu/src/easy-material.ts`.
+
+> Validé end-to-end : `tsc` 0 erreur, `pnpm build` OK, **app WebGPU réelle** → quad texturé + teinté via un material easy-path (`material.set("tint", Vec4)` visible), 0 validation error. La sortie WGSL générée a été inspectée (bindings 0/1/2 auto-assignés corrects).
 
 ### Phase 3 — Split de package
 - Extraire `@atlasjs/nebula-webgpu` ; `nebula` ne garde que `core/` + renderers + scene + graphics.
