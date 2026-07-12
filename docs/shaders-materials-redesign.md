@@ -150,9 +150,27 @@ Chaque phase doit compiler et tourner.
 
 > ⚠️ Bug pré-existant repéré (hors périmètre, tâche de fond créée) : le court-circuit par référence dans `BindingGroup.set()` ne bumpe pas `version` pour une instance mutée en place → un sprite en mouvement se figerait à sa transform de la 1ère frame (masqué car les démos sont statiques).
 
-### Phase 1 — Réflexion (le socle)
-- Intégrer `wgsl_reflect` dans l'implémentation WebGPU.
-- `WebGPUShaderCache` : après compilation, réfléchir → dériver `materialDefinition` / layouts au lieu des `.addXProperty()` manuels. `SpriteRenderer.initShader()` (les 6 `.addProperty`) disparaît.
+### Phase 1 — Réflexion (le socle) — ✅ TERMINÉE
+
+Livré :
+- Module `webgpu/reflect/WebGPUReflection` (basé sur `wgsl_reflect` v1.5.0) : `reflect(code)` → entry points + 3 groupes (`uniformBinding`/`uniformSize`/`uniformProperties`[offset,size]/`resourceProperties`[binding]/`properties`).
+- `WebGPUBindingGroupDefinition` construite depuis un groupe réfléchi (porte le layout) ; `WebGPUBindingGroupLayout` **lit** ces données au lieu de recalculer ; suppression du calcul d'alignement maison (`alignTo`/`getTypeLayoutInfo`/`isResourceType`).
+- `WebGPUShaderCache` : réflexion du code final (prélude + user), entry points auto-détectés, `id` = hash si absent. `WebGPUShader` reconstruit ses 3 définitions depuis la réflexion (plus de builder).
+- Interfaces core nettoyées : `Shader` sans `addXProperty`, `BindingGroupDefinition` sans `add`, `ShaderDescriptor` avec `id`/entry points optionnels.
+- `WebGPURenderer.init` : `globalBindings` dérivé en réfléchissant `global.wgsl` (fini le `.add(viewProjection/time)` hardcodé). `SpriteRenderer.initShader()` = `createShader({ source })`, les 6 `.addProperty` supprimés.
+- Mapping types : connus→typés, inconnus→octets bruts (offset/size réfléchis) ; un slot `vec4<f32>` accepte `Vec4` ou `Color`.
+
+> Validé end-to-end : `tsc` 0 erreur, `pnpm build` (math + nebula) OK, **app WebGPU réelle** lancée dans le navigateur → sprite texturé correctement, aucune validation error GPU. Chemin complet réflexion → pipeline → draw (packing model + sourceRect vec4 + textures) exercé.
+
+> Note packaging : `wgsl_reflect` expose son ESM via le champ `module` (le `main` est du CJS). Vite/bundlers prennent le bon build ; en import bare sous node pur, l'export nommé n'est pas résolu (sans impact sur l'app).
+
+Décisions verrouillées :
+- **Autorité layout = réflexion.** Les offsets/tailles/bindings viennent de `wgsl_reflect` (v1.5.0). On supprime le calcul d'alignement maison (`BindingGroupLayoutHelper.getUniformProperties`/`getResourceProperties`/`alignTo`) ; on garde uniquement `packUniformBuffer`/`writeUniformValue` (valeur→octets aux offsets fournis).
+- **3 groupes dérivés.** On réfléchit le shader final (prélude global injecté + code). Les définitions global(0)/object(1)/material(2) sont toutes dérivées. Disparaissent : les `.addXProperty()` de `SpriteRenderer.initShader()` ET le `globalBindingsDefinition.add(...)` de `WebGPURenderer.init` (le global sera dérivé en réfléchissant `global.wgsl`).
+- **API `Shader` nettoyée.** Suppression de `addMaterialProperty`/`addObjectProperty`/`addGlobalProperty` ; les `*Definition` deviennent read-only dérivées. Entry points auto-détectés (`@vertex`/`@fragment`) → optionnels ; `id` optionnel (hash de la source). Cible : `createShader({ source })`.
+- **Mapping types.** Connus (`f32`→float, `vecN`→vecN, `mat3x3`/`mat4x4`→mat3/mat4, `i32`→int, `texture_2d`→texture2D, `sampler`→sampler) → packing typé. Inconnus (`array`, struct imbriqué, `mat2x2`, `u32`, `f16`) → slot octets bruts (ArrayBufferView écrit à l'offset/size réfléchis, plus aucune taille manuelle). Un slot `vec4<f32>` accepte `Vec4` **ou** `Color`.
+
+API `wgsl_reflect` utilisée : `new WgslReflect(code)` → `.getBindGroups()` (array[group] d'array[binding] de `VariableInfo` : `.name`/`.binding`/`.resourceType`/`.type.name`/`.size`/`.members[{name,type,offset,size}]`) + `.entry.vertex`/`.entry.fragment` (`.name`).
 
 ### Phase 2 — Préludes + chemin facile
 - Formaliser l'injection frame (group 0) + object (group 1) — généralise le `global.wgsl` déjà prependé.

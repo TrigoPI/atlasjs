@@ -1,17 +1,18 @@
-import { GetUniformPropertiesResult } from "../webgpu-types";
 import { BindingGroupLayoutHelper } from "../../core/utils";
 import { WebGPUBindingGroup } from "./WebGPUBindingGroup";
+import { WebGPUBindingGroupDefinition } from "./WebGPUBindingGroupDefinition";
 
 import {
-  BindingGroupDefinition,
   BindingGroupLayout,
   ResourcePropertyLayout,
-  ResourcePropertyType,
-  TypeLayoutInfo,
   UniformPropertyLayout,
-  UniformType,
 } from "../../core";
 
+/**
+ * GPU-facing view of a bind group's layout. Offsets/sizes/bindings come
+ * verbatim from the reflected {@link WebGPUBindingGroupDefinition}; this class
+ * only derives the `GPUBindGroupLayoutEntry` list and packs values.
+ */
 export class WebGPUBindingGroupLayout implements BindingGroupLayout {
   public readonly group: number;
   public readonly uniformBinding: number;
@@ -20,19 +21,12 @@ export class WebGPUBindingGroupLayout implements BindingGroupLayout {
   public readonly resourceProperties: ReadonlyArray<ResourcePropertyLayout>;
   public readonly bindGroupLayoutEntries: ReadonlyArray<GPUBindGroupLayoutEntry>;
 
-  public constructor(
-    definition: BindingGroupDefinition,
-    uniformBinding: number = 0,
-  ) {
+  public constructor(definition: WebGPUBindingGroupDefinition) {
     this.group = definition.group;
-    this.uniformBinding = uniformBinding;
-
-    const { layout, size } = this.getUniformProperties(definition);
-
-    this.uniformProperties = layout;
-    this.uniformSize = size;
-
-    this.resourceProperties = this.getResourceProperties(definition);
+    this.uniformBinding = definition.uniformBinding;
+    this.uniformSize = definition.uniformSize;
+    this.uniformProperties = definition.uniformProperties;
+    this.resourceProperties = definition.resourceProperties;
     this.bindGroupLayoutEntries = this.getBindGroupLayoutEntries();
   }
 
@@ -66,69 +60,6 @@ export class WebGPUBindingGroupLayout implements BindingGroupLayout {
       this.uniformProperties,
       (name: string) => bindings.get(name),
     );
-  }
-
-  private getUniformProperties(
-    definition: BindingGroupDefinition,
-  ): GetUniformPropertiesResult {
-    const result: UniformPropertyLayout[] = [];
-
-    let currentOffset: number = 0;
-    let maxAlign: number = 1;
-
-    for (const property of definition.getProperties()) {
-      if (!BindingGroupLayoutHelper.isResourceType(property.type)) {
-        const layoutInfo: TypeLayoutInfo =
-          BindingGroupLayoutHelper.getTypeLayoutInfo(property);
-
-        maxAlign = Math.max(maxAlign, layoutInfo.align);
-        currentOffset = BindingGroupLayoutHelper.alignTo(
-          currentOffset,
-          layoutInfo.align,
-        );
-
-        result.push({
-          offset: currentOffset,
-          name: property.name,
-          type: property.type as UniformType,
-          align: layoutInfo.align,
-          size: layoutInfo.size,
-        });
-
-        currentOffset += layoutInfo.size;
-      }
-    }
-
-    const size: number =
-      result.length > 0
-        ? BindingGroupLayoutHelper.alignTo(currentOffset, maxAlign)
-        : 0;
-
-    return {
-      size,
-      layout: result,
-    };
-  }
-
-  private getResourceProperties(
-    definition: BindingGroupDefinition,
-  ): ResourcePropertyLayout[] {
-    const result: ResourcePropertyLayout[] = [];
-    let nextBinding: number = this.uniformBinding + 1;
-
-    for (const property of definition.getProperties()) {
-      if (BindingGroupLayoutHelper.isResourceType(property.type)) {
-        result.push({
-          binding: nextBinding,
-          type: property.type as ResourcePropertyType,
-          name: property.name,
-        });
-
-        nextBinding++;
-      }
-    }
-
-    return result;
   }
 
   private getBindGroupLayoutEntries(): GPUBindGroupLayoutEntry[] {

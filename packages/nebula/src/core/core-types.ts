@@ -157,10 +157,10 @@ export type BindingGroupPropertyBuffer = {
 };
 
 export type ShaderDescriptor = {
-  readonly id: string;
   readonly source: string;
-  readonly vertexEntryPoint: string;
-  readonly fragmentEntryPoint: string;
+  readonly id?: string;
+  readonly vertexEntryPoint?: string;
+  readonly fragmentEntryPoint?: string;
 };
 
 export type PipelineDescriptor = {

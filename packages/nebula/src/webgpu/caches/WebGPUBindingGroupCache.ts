@@ -1,6 +1,7 @@
-import { Disposable, BindingGroupDefinition } from "../../core";
+import { Disposable } from "../../core";
 import {
   WebGPUBindingGroup,
+  WebGPUBindingGroupDefinition,
   WebGPUBindingGroupLayout,
   WebGPUCompiledBindingGroup,
 } from "../bindings";
@@ -10,7 +11,7 @@ export class WebGPUBindingGroupCache implements Disposable {
 
   private compiledRefs: Set<WebGPUCompiledBindingGroup>;
   private compiled: WeakMap<WebGPUBindingGroup, WebGPUCompiledBindingGroup>;
-  private layouts: WeakMap<BindingGroupDefinition, WebGPUBindingGroupLayout>;
+  private layouts: WeakMap<WebGPUBindingGroupDefinition, WebGPUBindingGroupLayout>;
 
   public constructor(device: GPUDevice) {
     this.device = device;
@@ -20,7 +21,7 @@ export class WebGPUBindingGroupCache implements Disposable {
   }
 
   public getOrCreateLayout(
-    definition: BindingGroupDefinition,
+    definition: WebGPUBindingGroupDefinition,
   ): WebGPUBindingGroupLayout {
     let layout: WebGPUBindingGroupLayout | undefined =
       this.layouts.get(definition);

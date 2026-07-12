@@ -60,9 +60,7 @@ export class SpriteRenderer {
 
     this.updateModelMatrix(sprite);
 
-    bindingGroup
-      .set("model", this.modelMatrix)
-      .set("sourceRect", sourceRect);
+    bindingGroup.set("model", this.modelMatrix).set("sourceRect", sourceRect);
 
     this.renderer.draw(this.geometry, this.pipeline, material, bindingGroup);
   }
@@ -119,14 +117,7 @@ export class SpriteRenderer {
   }
 
   private initShader(): Shader {
-    return this.renderer
-      .createShader(WebGPUShaders.Texture2D)
-      .addGlobalProperty({ type: "mat4", name: "viewProjection" })
-      .addGlobalProperty({ type: "float", name: "time", defaultValue: 0.0 })
-      .addObjectProperty({ type: "mat4", name: "model" })
-      .addObjectProperty({ type: "vec4", name: "sourceRect" })
-      .addMaterialProperty({ type: "texture2D", name: "uTexture" })
-      .addMaterialProperty({ type: "sampler", name: "uSampler" });
+    return this.renderer.createShader(WebGPUShaders.Texture2D);
   }
 
   private updateModelMatrix(sprite: Sprite): void {

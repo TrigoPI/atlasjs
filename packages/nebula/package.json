@@ -20,7 +20,8 @@
     "@atlasjs/assets": "workspace:*",
     "@atlasjs/core": "workspace:*",
     "@atlasjs/math": "workspace:*",
-    "@atlasjs/utils": "workspace:*"
+    "@atlasjs/utils": "workspace:*",
+    "wgsl_reflect": "^1.5.0"
   },
   "devDependencies": {
     "@webgpu/types": "^0.1.69"

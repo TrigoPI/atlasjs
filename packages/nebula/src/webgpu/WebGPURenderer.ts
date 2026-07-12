@@ -8,6 +8,8 @@ import { WebGPURenderContext } from "./states";
 import { WebGPUBindingGroupCache, WebGPUShaderCache } from "./caches";
 import { WebGPUSampler, WebGPUTexture2D } from "./resources";
 import { WebGPUShader, WebGPUMaterial } from "./material";
+import { WebGPUShaders } from "./resources";
+import { WebGPUReflection, WebGPUReflectedGroup } from "./reflect";
 
 import {
   BINDING_GROUP_GLOBAL,
@@ -254,12 +256,13 @@ export class WebGPURenderer implements Renderer {
       alphaMode: "premultiplied",
     });
 
-    const globalBindingsDefinition: WebGPUBindingGroupDefinition =
-      new WebGPUBindingGroupDefinition("atlas.global", BINDING_GROUP_GLOBAL);
+    // prettier-ignore
+    const globalReflected: WebGPUReflectedGroup =
+      WebGPUReflection.reflect(WebGPUShaders.Global.source).groups.get(BINDING_GROUP_GLOBAL) ?? 
+      WebGPUReflection.emptyGroup(BINDING_GROUP_GLOBAL);
 
-    globalBindingsDefinition
-      .add({ type: "mat4", name: "viewProjection" })
-      .add({ type: "float", name: "time", defaultValue: 0.0 });
+    const globalBindingsDefinition: WebGPUBindingGroupDefinition =
+      new WebGPUBindingGroupDefinition("atlas.global", globalReflected);
 
     this.device = device;
     this.context = context;
@@ -267,11 +270,7 @@ export class WebGPURenderer implements Renderer {
 
     this.globalBindings = new WebGPUBindingGroup(globalBindingsDefinition);
     this.bindingGroupCache = new WebGPUBindingGroupCache(this.device);
-    this.shaderCache = new WebGPUShaderCache(this.device, {
-      global: BINDING_GROUP_GLOBAL,
-      object: BINDING_GROUP_OBJECT,
-      material: BINDING_GROUP_MATERIAL,
-    });
+    this.shaderCache = new WebGPUShaderCache(this.device);
 
     this.logger.log("WebGPURenderer initialized successfully.");
   }

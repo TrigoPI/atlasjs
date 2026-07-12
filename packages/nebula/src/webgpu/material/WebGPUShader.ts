@@ -1,6 +1,19 @@
-import { Shader, ShaderDescriptor, BindingGroupProperty } from "../../core";
+import { Shader } from "../../core";
 import { WebGPUBindingGroupDefinition } from "../bindings";
-import { WebGPUShaderBindingGroups } from "../webgpu-types";
+import { WebGPUReflectedShader, WebGPUReflection } from "../reflect";
+
+import {
+  BINDING_GROUP_GLOBAL,
+  BINDING_GROUP_OBJECT,
+  BINDING_GROUP_MATERIAL,
+} from "../web-gpu-const";
+
+export type WebGPUShaderParams = {
+  readonly id: string;
+  readonly source: string;
+  readonly vertexEntryPoint: string;
+  readonly fragmentEntryPoint: string;
+};
 
 export class WebGPUShader implements Shader {
   public readonly __kind: string = "webgpu";
@@ -18,45 +31,31 @@ export class WebGPUShader implements Shader {
 
   public constructor(
     shaderModule: GPUShaderModule,
-    groups: WebGPUShaderBindingGroups,
-    definition: ShaderDescriptor,
+    params: WebGPUShaderParams,
+    reflected: WebGPUReflectedShader,
   ) {
-    this.id = definition.id;
-    this.source = definition.source;
-    this.vertexEntryPoint = definition.vertexEntryPoint;
-    this.fragmentEntryPoint = definition.fragmentEntryPoint;
+    this.id = params.id;
+    this.source = params.source;
+    this.vertexEntryPoint = params.vertexEntryPoint;
+    this.fragmentEntryPoint = params.fragmentEntryPoint;
     this.module = shaderModule;
 
-    this.globalDefinition = new WebGPUBindingGroupDefinition(
-      this.id,
-      groups.global,
+    this.globalDefinition = this.buildDefinition(reflected, BINDING_GROUP_GLOBAL);
+    this.objectDefinition = this.buildDefinition(reflected, BINDING_GROUP_OBJECT);
+    this.materialDefinition = this.buildDefinition(
+      reflected,
+      BINDING_GROUP_MATERIAL,
     );
-
-    this.objectDefinition = new WebGPUBindingGroupDefinition(
-      this.id,
-      groups.object,
-    );
-
-    this.materialDefinition = new WebGPUBindingGroupDefinition(
-      this.id,
-      groups.material,
-    );
-  }
-
-  public addMaterialProperty(property: BindingGroupProperty): this {
-    this.materialDefinition.add(property);
-    return this;
-  }
-
-  public addObjectProperty(property: BindingGroupProperty): this {
-    this.objectDefinition.add(property);
-    return this;
-  }
-
-  public addGlobalProperty(property: BindingGroupProperty): this {
-    this.globalDefinition.add(property);
-    return this;
   }
 
   public destroy(): void {}
+
+  private buildDefinition(
+    reflected: WebGPUReflectedShader,
+    group: number,
+  ): WebGPUBindingGroupDefinition {
+    const reflectedGroup =
+      reflected.groups.get(group) ?? WebGPUReflection.emptyGroup(group);
+    return new WebGPUBindingGroupDefinition(this.id, reflectedGroup);
+  }
 }

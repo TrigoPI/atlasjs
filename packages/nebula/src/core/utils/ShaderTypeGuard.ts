@@ -24,7 +24,7 @@ export class ShaderTypeGuard {
         ShaderTypeGuard.assertVector3(value);
         break;
       case "vec4":
-        ShaderTypeGuard.assertVector4(value);
+        ShaderTypeGuard.assertVec4OrColor(value);
         break;
       case "mat3":
         ShaderTypeGuard.assertMat3(value);
@@ -80,6 +80,12 @@ export class ShaderTypeGuard {
   public static assertVector4(value: BindingValue): void {
     if (!(value instanceof Vec4)) {
       throw new Error(`Expected a Vec4 but received ${typeof value}`);
+    }
+  }
+
+  public static assertVec4OrColor(value: BindingValue): void {
+    if (!(value instanceof Vec4) && !(value instanceof Color)) {
+      throw new Error(`Expected a Vec4 or Color but received ${typeof value}`);
     }
   }
 
