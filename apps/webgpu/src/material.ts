@@ -4,10 +4,10 @@ import {
   type Renderer,
   type Texture2D,
   type Sampler,
-  WebGPURenderer,
   Sprite,
   NebulaRenderer,
 } from "@atlasjs/nebula";
+import { WebGPURenderer } from "@atlasjs/nebula-webgpu";
 
 function getCanvas(): HTMLCanvasElement {
   const canvas: HTMLCanvasElement | null = document.getElementById(

@@ -8,10 +8,9 @@ import {
   type Pipeline,
   type Material,
   type BindingGroup,
-  WebGPURenderer,
-  defineMaterial,
   type ShaderDescriptor,
 } from "@atlasjs/nebula";
+import { WebGPURenderer, defineMaterial } from "@atlasjs/nebula-webgpu";
 
 // Easy-path material: only a `material { }` block + a @fragment function.
 // No @group / @binding, no vertex stage, no IO structs — all injected.

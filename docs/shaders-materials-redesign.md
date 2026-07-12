@@ -196,10 +196,21 @@ Mené en deux temps (décidé au grill) : **3a découplage in-place**, puis **3b
 
 > Note : le backend `@atlasjs/pixi` (`PixiRenderer`) est **périmé** (n'implémente ni `createShader`/`createMaterial`/`createPipeline`, donc pas le `ResourceFactory` actuel) — hors périmètre, laissé tel quel.
 
-#### Phase 3b — Extraction physique — ⏳ À FAIRE
-- Extraire `@atlasjs/nebula-webgpu` ; `nebula` ne garde que `core/` + renderers + scene + graphics + animations + `NebulaRenderer`/plugin.
-- Déplacer `src/webgpu/**` + les `.wgsl` + le barrel ; ajouter package.json/tsconfig/tsdown ; dép `wgsl_reflect` + `@webgpu/types` migrent vers le nouveau package.
-- Mettre à jour l'unique consommateur concret : `apps/webgpu` (`WebGPURenderer` importé depuis `@atlasjs/nebula-webgpu`). Le reste (`sandbox`/`gameplay`/`editor`) n'utilise que les interfaces de `nebula`.
+#### Phase 3b — Extraction physique — ✅ TERMINÉE
+- Nouveau package **`@atlasjs/nebula-webgpu`** (`git mv` de `src/webgpu/**` → `nebula-webgpu/src`, historique préservé). Contient l'implémentation, les `.wgsl`, la réflexion, l'authoring (`defineMaterial`).
+- Deps migrées : `wgsl_reflect` + `@webgpu/types` retirées de `nebula`, ajoutées à `nebula-webgpu` (qui dépend de `@atlasjs/nebula`/`math`/`utils`). Imports internes `../core` → `@atlasjs/nebula`.
+- `nebula` : barrel sans `./webgpu`, plus aucune dépendance WebGPU, tsconfig sans `types: ["@webgpu/types"]`. Le core est désormais un package d'interfaces + logique agnostique.
+- `apps/webgpu` : `WebGPURenderer`/`defineMaterial` importés depuis `@atlasjs/nebula-webgpu`, les interfaces depuis `@atlasjs/nebula`.
+
+> Validé : `tsc` 0 erreur sur `nebula` ET `nebula-webgpu`, `turbo build` (ordre `nebula` → `nebula-webgpu`) OK, **app WebGPU réelle** → sprite rendu identique, 0 validation error. Blast radius confirmé minimal : seul `apps/webgpu` consommait un symbole WebGPU depuis `nebula` ; `sandbox`/`gameplay`/`editor` n'utilisent que les interfaces.
+
+---
+
+## Bilan
+
+Les 4 phases sont livrées et vérifiées end-to-end. La douleur initiale (double déclaration WGSL ↔ TS, packing manuel, groupes fragiles) est éliminée : le WGSL est l'unique source de vérité, la réflexion dérive tout, le chemin facile (`defineMaterial`) réduit un material à un bloc `material { }` + un fragment, et l'architecture est proprement séparée (`@atlasjs/nebula` interfaces / `@atlasjs/nebula-webgpu` implémentation).
+
+Pistes futures (hors périmètre) : plugin Vite de codegen `.d.ts` (typage compile-time de `set()`), branchement `Sprite.material` (effets custom sur sprites), rafraîchir ou retirer le backend `@atlasjs/pixi` périmé, et le bug de versioning des binding groups (tâche de fond déjà signalée).
 
 ### Phase 4 — Tooling (plus tard)
 - Plugin Vite : parse les `.wgsl` et génère des `.d.ts` pour l'autocomplétion / le type-check de `set()`.

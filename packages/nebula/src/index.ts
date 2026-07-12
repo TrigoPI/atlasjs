@@ -1,5 +1,4 @@
 export * from "./core";
-export * from "./webgpu";
 export * from "./renderers";
 export * from "./graphics";
 export * from "./animations";

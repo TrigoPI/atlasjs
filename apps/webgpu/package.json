@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@atlasjs/nebula": "workspace:*",
+    "@atlasjs/nebula-webgpu": "workspace:*",
     "@atlasjs/utils": "workspace:*",
     "@atlasjs/math": "workspace:*",
     "@atlasjs/nexus": "workspace:*",
