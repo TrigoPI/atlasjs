@@ -11,7 +11,9 @@
   "dependencies": {
     "@atlasjs/nebula": "workspace:*",
     "@atlasjs/utils": "workspace:*",
-    "@atlasjs/math": "workspace:*"
+    "@atlasjs/math": "workspace:*",
+    "@atlasjs/nexus": "workspace:*",
+    "@atlasjs/gameplay": "workspace:*"
   },
   "devDependencies": {
     "@webgpu/types": "^0.1.69",

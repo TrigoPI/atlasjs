@@ -64,6 +64,11 @@ export class Node extends Transformable {
     return this;
   }
 
+  public setVisible(visible: boolean): this {
+    this.visible = visible;
+    return this;
+  }
+
   public setZIndex(zIndex: number): this {
     this.zIndex = zIndex;
     return this;

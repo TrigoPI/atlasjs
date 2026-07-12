@@ -22,8 +22,6 @@ export class InputPlugin extends Plugin {
   }
 
   public install(engine: Engine): void {
-    this.logger.log("Installing input plugin...");
-
     const input: BackendInput = new BackendInput();
     const backend: DomInputBackend = new DomInputBackend(input);
 
@@ -34,7 +32,7 @@ export class InputPlugin extends Plugin {
 
     engine.scheduler.onUpdate(() => input.clear(), {
       name: "input:update",
-      priority: PRIORITY.UPDATE_INPUT_END,
+      priority: PRIORITY.UPDATE_INPUT_BEGIN,
     });
 
     engine.services.provide(INPUT, input);
