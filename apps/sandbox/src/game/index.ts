@@ -1,2 +1,2 @@
 export * from "./GameScene";
-export * from "./Player";
+export * from "./EcsScene";

@@ -19,10 +19,12 @@ export class InertialPlugin extends Plugin {
 
     engine.scheduler.onFixedUpdate(() => this.world.step(), {
       name: "inertia:step",
-      priority: PRIORITY.PRE_UPDATE,
+      priority: PRIORITY.FIXED_PHYSICS_STEP,
     });
 
     engine.services.provide(INERTIAL_ENGINE, this.world);
+
+    this.logger.log("Inertial Plugin installed");
     this.deferred.resolve();
   }
 

@@ -1,8 +1,6 @@
-import { Transform2DLike } from "./Transform2DLike";
 import { Vec2 } from "./Vec2";
-import { Vec2Like } from "./Vec2Like";
 
-export class Transform2D implements Transform2DLike {
+export class Transform2D {
   public position: Vec2;
   public scale: Vec2;
   public rotation: number;
@@ -17,7 +15,7 @@ export class Transform2D implements Transform2DLike {
     this.scale = scale;
   }
 
-  public copyFrom(a: Transform2DLike): Transform2D {
+  public copyFrom(a: Transform2D): Transform2D {
     this.position.copyFrom(a.position);
     this.scale.copyFrom(a.scale);
     this.rotation = a.rotation;
@@ -39,7 +37,7 @@ export class Transform2D implements Transform2DLike {
     return this;
   }
 
-  public translate(translation: Vec2Like): Transform2D {
+  public translate(translation: Vec2): Transform2D {
     this.position.add(translation);
     return this;
   }

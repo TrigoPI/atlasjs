@@ -28,6 +28,8 @@ export class NebulaPlugin extends Plugin {
     });
 
     engine.services.provide(NEBULA_RENDERER, renderer);
+
+    this.logger.log("Nebula Plugin installed");
     this.deferred.resolve();
   }
 

@@ -2,11 +2,13 @@ import { type RefObject, useEffect, useRef } from "react";
 
 import { Engine } from "@atlasjs/core";
 import { InputPlugin } from "@atlasjs/input";
-import { NebulaPlugin, WebGPURenderer } from "@atlasjs/nebula";
+import { NexusPlugin } from "@atlasjs/nexus";
 import { InertialPlugin } from "@atlasjs/inertia";
 import { RapierPhysicsWorld } from "@atlasjs/rapier";
+import { GameplayPlugin } from "@atlasjs/gameplay";
+import { NebulaPlugin, WebGPURenderer } from "@atlasjs/nebula";
 
-import { GameScene } from "./game";
+import { EcsScene } from "./game";
 
 export function App() {
   const mountRef: RefObject<HTMLCanvasElement | null> =
@@ -25,6 +27,8 @@ export function App() {
 
     const renderer: WebGPURenderer = new WebGPURenderer(mount);
     const rendererPlugin: NebulaPlugin = new NebulaPlugin(renderer);
+    const nexusPlugin: NexusPlugin = new NexusPlugin();
+    const gameplayPlugin: GameplayPlugin = new GameplayPlugin();
 
     // prettier-ignore
     const rapierWorld: RapierPhysicsWorld = new RapierPhysicsWorld({ unitsPerMeter: 100 });
@@ -38,10 +42,12 @@ export function App() {
     engine
       .use(inputPlugin)
       .use(inertiaPlugin)
-      .use(rendererPlugin);
+      .use(rendererPlugin)
+      .use(nexusPlugin)
+      .use(gameplayPlugin);
 
     engine.start().then(() => {
-      engine.scene.set(new GameScene());
+      engine.scene.set(new EcsScene());
     });
 
     return () => engine.stop();

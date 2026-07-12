@@ -11,7 +11,7 @@ export default defineConfig({
     },
   },
   define: {
-    __DEV__: "false",
+    __DEV__: "true",
     __CONSOLE_TRANSPORT__: "true",
     __WEBSOCKET_TRANSPORT__: "false",
   },
