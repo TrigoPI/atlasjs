@@ -1,6 +1,6 @@
 import { createLogger, Logger } from "@atlasjs/utils";
 
-import { Query, EmptyQuery, NexusQuery } from "./query";
+import { Query, EmptyQuery, NexusQuery, StoreResolver } from "./query";
 import { EntityManager } from "./EntityManager";
 import { IComponentStore, SparseSetStore } from "./ComponentStore";
 import { CommandBuffer, NexusCommandBuffer } from "./CommandBuffer";
@@ -13,7 +13,9 @@ import {
   Component,
   ComponentID,
   ComponentList,
+  ComponentListener,
   Entity,
+  Unsubscribe,
 } from "./nexus-types";
 
 export class NexusWorld {
@@ -22,6 +24,8 @@ export class NexusWorld {
   private readonly entityManager: EntityManager;
   private readonly stores: Map<ComponentID, IComponentStore<any>>;
   private readonly commandBuffer: NexusCommandBuffer;
+  private readonly addListeners: Map<ComponentID, Set<ComponentListener>>;
+  private readonly removeListeners: Map<ComponentID, Set<ComponentListener>>;
 
   public constructor(registry: ComponentRegistry = defaultComponentRegistry) {
     this.logger = createLogger(NexusWorld.name);
@@ -29,6 +33,8 @@ export class NexusWorld {
     this.entityManager = new EntityManager();
     this.stores = new Map();
     this.commandBuffer = new NexusCommandBuffer(this);
+    this.addListeners = new Map();
+    this.removeListeners = new Map();
   }
 
   public get commands(): CommandBuffer {
@@ -37,6 +43,20 @@ export class NexusWorld {
 
   public flush(): void {
     this.commandBuffer.flush();
+  }
+
+  public onAdd<TComponent extends object>(
+    component: Component<TComponent>,
+    listener: ComponentListener<TComponent>,
+  ): Unsubscribe {
+    return this.subscribe(this.addListeners, component, listener);
+  }
+
+  public onRemove<TComponent extends object>(
+    component: Component<TComponent>,
+    listener: ComponentListener<TComponent>,
+  ): Unsubscribe {
+    return this.subscribe(this.removeListeners, component, listener);
   }
 
   public exists(entity: Entity): boolean {
@@ -79,14 +99,25 @@ export class NexusWorld {
       return false;
     }
 
-    return store.delete(entity);
+    const instance: TComponent | undefined = store.get(entity);
+    const removed: boolean = store.delete(entity);
+
+    if (removed) {
+      this.emit(this.removeListeners, this.registry.register(type), entity, instance!);
+    }
+
+    return removed;
   }
 
   public destroyEntity(entity: Entity): boolean {
     this.assertEntityExists(entity);
 
-    for (const store of this.stores.values()) {
-      store.delete(entity);
+    for (const [id, store] of this.stores) {
+      const instance: unknown = store.get(entity);
+
+      if (store.delete(entity)) {
+        this.emit(this.removeListeners, id, entity, instance as object);
+      }
     }
 
     return this.entityManager.destroy(entity);
@@ -180,6 +211,7 @@ export class NexusWorld {
       : (component as TComponent);
 
     store.set(entity, instance);
+    this.emit(this.addListeners, this.registry.register(type), entity, instance);
 
     return instance;
   }
@@ -191,9 +223,19 @@ export class NexusWorld {
   ): TComponent {
     this.assertEntityExists(entity);
     const store: IComponentStore<TComponent> = this.getOrCreateStore(component);
+    const existed: boolean = store.has(entity);
 
     const instance: TComponent = new component(...args);
     store.set(entity, instance);
+
+    if (!existed) {
+      this.emit(
+        this.addListeners,
+        this.registry.register(component),
+        entity,
+        instance,
+      );
+    }
 
     return instance;
   }
@@ -217,15 +259,10 @@ export class NexusWorld {
       stores.push(store);
     }
 
-    let baseStore: IComponentStore = stores[0];
+    const resolve: StoreResolver = (component: Component) =>
+      this.findStore(component);
 
-    for (let i = 1; i < stores.length; i++) {
-      if (stores[i].size < baseStore.size) {
-        baseStore = stores[i];
-      }
-    }
-
-    return new NexusQuery<T>(stores, baseStore, types as Component[]);
+    return new NexusQuery<T>(resolve, stores, types as Component[]);
   }
 
   public destroy(): void {
@@ -233,6 +270,8 @@ export class NexusWorld {
     this.commandBuffer.clear();
     this.entityManager.clear();
     this.stores.clear();
+    this.addListeners.clear();
+    this.removeListeners.clear();
   }
 
   private getOrCreateStore<TComponent extends object>(
@@ -267,6 +306,44 @@ export class NexusWorld {
   private assertEntityExists(entity: Entity): void {
     if (!this.entityManager.has(entity)) {
       throw new Error(`Entity ${entity} does not exist.`);
+    }
+  }
+
+  private subscribe<TComponent extends object>(
+    listeners: Map<ComponentID, Set<ComponentListener>>,
+    component: Component<TComponent>,
+    listener: ComponentListener<TComponent>,
+  ): Unsubscribe {
+    const id: ComponentID = this.registry.register(component);
+
+    let set: Set<ComponentListener> | undefined = listeners.get(id);
+
+    if (set === undefined) {
+      set = new Set();
+      listeners.set(id, set);
+    }
+
+    set.add(listener as ComponentListener);
+
+    return () => {
+      listeners.get(id)?.delete(listener as ComponentListener);
+    };
+  }
+
+  private emit(
+    listeners: Map<ComponentID, Set<ComponentListener>>,
+    id: ComponentID,
+    entity: Entity,
+    component: object,
+  ): void {
+    const set: Set<ComponentListener> | undefined = listeners.get(id);
+
+    if (set === undefined) {
+      return;
+    }
+
+    for (const listener of set) {
+      listener(entity, component);
     }
   }
 }

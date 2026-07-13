@@ -1,6 +1,6 @@
 # Refonte de l'ECS Nexus (`@atlasjs/nexus`)
 
-> **Statut : design validé, non implémenté.** Document de design + suivi. Voir la checklist en bas.
+> **Statut : implémenté (phases 0→7 terminées).** Migration `gameplay` restante (doc séparé). Document de design + suivi. Voir la checklist en bas.
 
 ## Context
 
@@ -153,7 +153,25 @@ On remplace l'état module-global mutable + le monkeypatch de la classe (`ctor.c
 - `hasComponent(deadEntity, X)` → `false` (ne throw plus).
 - Message d'erreur `addComponent` : `component.name`.
 - `addComponent` accepte une instance existante en plus de `(ctor, ...args)`.
-- Événements de cycle de vie sur le store (`onAdd`/`onRemove`) → permettent le nettoyage auto des stores externes côté gameplay (phase ultérieure, hors nexus).
+- Événements de cycle de vie (`onAdd`/`onRemove`) → cf. section 7.
+
+### 7. Filtres de query & événements de cycle de vie
+
+**Filtres (builder immuable sur la query).** La query connaît les stores de ses composants ; pour résoudre les stores ajoutés par les filtres, elle reçoit un `StoreResolver` (`(component) => IComponentStore | undefined`) — le même découplage que `CommandTarget`, elle ne dépend pas du world concret.
+
+```ts
+world.query(Position).without(Frozen).each((e, pos) => { ... });        // exclusion
+world.query(Position).optional(Velocity).each((e, pos, vel) => { ... }); // vel: Velocity | undefined
+world.query(Position).without(Frozen).optional(Velocity)                 // combinables
+```
+
+- `without(...types)` : filtre les entités qui possèdent l'un des composants exclus. Tuple yield **inchangé** (`Query<T>`). Composant exclu jamais utilisé → store absent → no-op.
+- `optional(...types)` : n'affecte **pas** l'appartenance (le base store reste le plus petit des composants **requis**) ; ajoute au tuple des valeurs `U[K] | undefined`. Le paramètre générique de `Query` passe de `object[]` à `unknown[]` pour porter le `| undefined`.
+- Les filtres retournent une **nouvelle** query configurée (les queries sont éphémères, une par frame).
+
+**Événements de cycle de vie (médiés par le world, pas par le store).** `world.onAdd(Component, listener)` / `world.onRemove(Component, listener)` renvoient un `Unsubscribe`. Le world émet depuis `addComponent`/`setComponent` (insertion uniquement, pas sur écrasement) / `removeComponent` / `destroyEntity` (un `onRemove` par composant détruit). Les mutations différées émettent **au flush**. Coût nul sans listener (map vide court-circuitée). Garder la logique dans le world laisse `IComponentStore` inchangé.
+
+> Ces événements sont la brique qui permettra (à la migration gameplay) de nettoyer automatiquement les stores externes clés par entité (ex. `runtimeBodiesStorage`) : un `onRemove(RigidBody2D, …)` supprime le body runtime associé.
 
 ---
 
@@ -166,7 +184,7 @@ On remplace l'état module-global mutable + le monkeypatch de la classe (`ctor.c
 - **Phase 4 — Command buffer + flush hybride.** `world.commands`, `world.flush()`, hook de flush auto dans le scheduler.
 - **Phase 5 — Multi-world + registre.** `ComponentRegistry`, suppression de l'état module-global.
 - **Phase 6 — Correctifs & ergo.** Auto-define, `hasComponent`, messages, `addComponent(instance)`.
-- **Phase 7 (ergo, différé) — Filtres `without`/optionnels, événements de cycle de vie.**
+- **Phase 7 (ergo) — Filtres `without`/optionnels, événements de cycle de vie.** Builder `without`/`optional` sur la query via `StoreResolver` ; `world.onAdd`/`onRemove` médiés par le world.
 
 > `gameplay` n'est **pas** modifié dans ce doc. Sa migration (query typée, `world.commands` dans les systèmes de cleanup/request) fera l'objet d'un passage dédié une fois nexus stabilisé.
 
@@ -181,5 +199,5 @@ On remplace l'état module-global mutable + le monkeypatch de la classe (`ctor.c
 - [x] Phase 4 — command buffer + flush hybride (`world.commands` + `world.flush()` ; câblage auto scheduler à la migration gameplay)
 - [x] Phase 5 — multi-world + `ComponentRegistry` (+ auto-define livré en avance ; supprime aussi l'erreur tsc pré-existante de `define-component`)
 - [x] Phase 6 — correctifs restants (`hasComponent` no-throw sur entité morte, message `component.name`, `addComponent(instance)`) — auto-define déjà fait en Phase 5
-- [ ] Phase 7 (différé) — filtres `without`/optionnels + événements de cycle de vie
+- [x] Phase 7 — filtres `without`/optionnels + événements de cycle de vie
 - [ ] Migration `gameplay` (doc séparé)

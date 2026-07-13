@@ -12,6 +12,13 @@ export type ComponentList<T extends object[], TArgs extends unknown[]> = {
   [K in keyof T]: Component<T[K], TArgs>;
 };
 
+export type ComponentListener<T extends object = object> = (
+  entity: Entity,
+  component: T,
+) => void;
+
+export type Unsubscribe = () => void;
+
 export type NexusSystemContext = {
   readonly world: NexusWorld;
   readonly dt: number;
