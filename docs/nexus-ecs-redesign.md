@@ -180,6 +180,6 @@ On remplace l'état module-global mutable + le monkeypatch de la classe (`ctor.c
 - [x] Phase 3 — query typée `each`/tuples + garde-fou fail-fast
 - [x] Phase 4 — command buffer + flush hybride (`world.commands` + `world.flush()` ; câblage auto scheduler à la migration gameplay)
 - [x] Phase 5 — multi-world + `ComponentRegistry` (+ auto-define livré en avance ; supprime aussi l'erreur tsc pré-existante de `define-component`)
-- [ ] Phase 6 — correctifs restants (`hasComponent` no-throw sur entité morte, message `component.name`, `addComponent(instance)`) — auto-define déjà fait en Phase 5
+- [x] Phase 6 — correctifs restants (`hasComponent` no-throw sur entité morte, message `component.name`, `addComponent(instance)`) — auto-define déjà fait en Phase 5
 - [ ] Phase 7 (différé) — filtres `without`/optionnels + événements de cycle de vie
 - [ ] Migration `gameplay` (doc séparé)

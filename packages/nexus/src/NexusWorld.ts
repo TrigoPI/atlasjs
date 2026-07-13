@@ -47,7 +47,9 @@ export class NexusWorld {
     entity: Entity,
     component: Component<TComponent>,
   ): boolean {
-    this.assertEntityExists(entity);
+    if (!this.entityManager.has(entity)) {
+      return false;
+    }
 
     const store: IComponentStore<TComponent> | undefined =
       this.findStore(component);
@@ -145,18 +147,38 @@ export class NexusWorld {
     entity: Entity,
     component: Component<TComponent, TArgs>,
     ...args: TArgs
+  ): TComponent;
+  public addComponent<TComponent extends object>(
+    entity: Entity,
+    instance: TComponent,
+  ): TComponent;
+  public addComponent<TComponent extends object, TArgs extends unknown[]>(
+    entity: Entity,
+    component: Component<TComponent, TArgs> | TComponent,
+    ...args: TArgs
   ): TComponent {
     this.assertEntityExists(entity);
+
+    const isConstructor: boolean = typeof component === "function";
+    const type: Component<TComponent, TArgs> = (
+      isConstructor
+        ? component
+        : (component as TComponent).constructor
+    ) as Component<TComponent, TArgs>;
+
     const store: IComponentStore<TComponent> =
-      this.getOrCreateStore<TComponent>(component);
+      this.getOrCreateStore<TComponent>(type);
 
     if (store.has(entity)) {
       throw new Error(
-        `Entity ${entity} already has component "${component.constructor.name}".`,
+        `Entity ${entity} already has component "${type.name}".`,
       );
     }
 
-    const instance: TComponent = new component(...args);
+    const instance: TComponent = isConstructor
+      ? new (component as Component<TComponent, TArgs>)(...args)
+      : (component as TComponent);
+
     store.set(entity, instance);
 
     return instance;
