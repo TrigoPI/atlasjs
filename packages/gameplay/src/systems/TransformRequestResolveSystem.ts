@@ -1,32 +1,24 @@
-import { RigidBody } from "@atlasjs/inertia";
-import { RigidBody2D, Transform2D, TransformWriteRequest } from "../components";
+import { PhysicsBodyRef, RigidBody2D, Transform2D, TransformWriteRequest } from "../components";
 import {
   Entity,
   NexusSystem,
   NexusSystemContext,
   NexusWorld,
-  SparseSet,
 } from "@atlasjs/nexus";
 
 export class TransformRequestResolveSystem implements NexusSystem {
-  private readonly runtimeBodies: SparseSet<RigidBody>;
-
-  public constructor(runtimeBodies: SparseSet<RigidBody>) {
-    this.runtimeBodies = runtimeBodies;
-  }
-
   //prettier-ignore
   public update({ world }: NexusSystemContext): void {
     world.query(TransformWriteRequest, Transform2D).each((entity, request, transform) => {
-      const rigidBodyRuntime: RigidBody | undefined = this.runtimeBodies.get(entity);
+      const ref: PhysicsBodyRef | undefined = world.getComponent(entity, PhysicsBodyRef);
 
-      if (this.hasPhysicsControl(world, entity, rigidBodyRuntime)) {
+      if (this.hasPhysicsControl(world, entity, ref)) {
         if (request.hasPosition) {
-          rigidBodyRuntime.setTranslation(request.position.x, request.position.y);
+          ref.body.setTranslation(request.position.x, request.position.y);
         }
 
         if (request.hasRotation) {
-          rigidBodyRuntime.setRotation(request.rotation);
+          ref.body.setRotation(request.rotation);
         }
       } else {
         if (request.hasPosition) {
@@ -47,8 +39,8 @@ export class TransformRequestResolveSystem implements NexusSystem {
   private hasPhysicsControl(
     world: NexusWorld,
     entity: Entity,
-    rigidBodyRuntime: RigidBody | undefined,
-  ): rigidBodyRuntime is RigidBody {
-    return world.hasComponent(entity, RigidBody2D) && rigidBodyRuntime != null;
+    ref: PhysicsBodyRef | undefined,
+  ): ref is PhysicsBodyRef {
+    return world.hasComponent(entity, RigidBody2D) && ref != null;
   }
 }

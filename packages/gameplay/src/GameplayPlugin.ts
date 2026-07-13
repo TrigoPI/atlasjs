@@ -1,23 +1,17 @@
 import { createLogger, Logger } from "@atlasjs/utils";
 import { Engine, Plugin, StepHandle } from "@atlasjs/core";
 import { NEBULA_RENDERER, NebulaRenderer } from "@atlasjs/nebula";
-import { INERTIAL_ENGINE, PhysicsWorld, RigidBody } from "@atlasjs/inertia";
+import { INERTIAL_ENGINE, PhysicsWorld } from "@atlasjs/inertia";
 
 import { SCRIPT_MANAGER } from "./tokens";
 import { registerSystem } from "./registerSystem";
 
-import {
-  Entity,
-  NEXUS,
-  NexusWorld,
-  SparseSet,
-  Unsubscribe,
-} from "@atlasjs/nexus";
+import { Entity, NEXUS, NexusWorld, Unsubscribe } from "@atlasjs/nexus";
 
 import {
+  PhysicsPullSystem,
+  PhysicsPushSystem,
   RigidBody2DRequestSystem,
-  RigidBody2DSystem,
-  RigidBodyWriteBackSystem,
   ScriptTransformFeedbackSystem,
   ScriptTransformRequestSystem,
   SpriteRenderSystem,
@@ -32,6 +26,7 @@ import {
 } from "./scripting";
 
 import {
+  PhysicsBodyRef,
   RigidBody2D,
   SpriteRender,
   Transform2D,
@@ -63,15 +58,14 @@ export class GameplayPlugin extends Plugin {
 
     const componentStorage: ScriptComponentStorage = new ScriptComponentStorage();
     const runtimeStorage: ScriptComponentRuntimeStorage = new ScriptComponentRuntimeStorage();
-    const runtimeBodiesStorage: SparseSet<RigidBody> = new SparseSet();
 
     this.scriptManager = new ScriptManager(componentStorage);
 
     const scriptTransformRequestSystem = new ScriptTransformRequestSystem(componentStorage, runtimeStorage);
     const rigidBody2DRequestSystem = new RigidBody2DRequestSystem(componentStorage);
-    const rigidBody2dSystem = new RigidBody2DSystem(inertia, runtimeBodiesStorage);
-    const transformRequestResolveSystem = new TransformRequestResolveSystem(runtimeBodiesStorage);
-    const rigidBodyWriteBackSystem = new RigidBodyWriteBackSystem(runtimeBodiesStorage);
+    const physicsPushSystem = new PhysicsPushSystem(inertia);
+    const physicsPullSystem = new PhysicsPullSystem();
+    const transformRequestResolveSystem = new TransformRequestResolveSystem();
     const scriptTransformFeedbackSystem = new ScriptTransformFeedbackSystem(componentStorage, runtimeStorage);
     const transformWriteRequestCleanupSystem = new TransformWriteRequestCleanupSystem();
     const spriteRenderSystem = new SpriteRenderSystem(nebula);
@@ -80,14 +74,16 @@ export class GameplayPlugin extends Plugin {
       .defineComponent(RigidBody2D)
       .defineComponent(Transform2D)
       .defineComponent(SpriteRender)
+      .defineComponent(PhysicsBodyRef)
       .defineComponent(TransformWriteRequest);
 
     this.unsubscribers.push(
+      world.onRemove(PhysicsBodyRef, (_entity: Entity, ref: PhysicsBodyRef) => {
+        inertia.destroyRigidBody(ref.body);
+      }),
       world.onRemove(RigidBody2D, (entity: Entity) => {
-        const body: RigidBody | undefined = runtimeBodiesStorage.get(entity);
-        if (body !== undefined) {
-          inertia.destroyRigidBody(body);
-          runtimeBodiesStorage.delete(entity);
+        if (world.hasComponent(entity, PhysicsBodyRef)) {
+          world.removeComponent(entity, PhysicsBodyRef);
         }
       }),
     );
@@ -111,27 +107,27 @@ export class GameplayPlugin extends Plugin {
         stage: "PhysicsRequest",
         after: "gameplay:script-transform-request",
       }),
-      registerSystem(fixed, world, rigidBody2dSystem, {
-        name: "gameplay:rigidbody-create",
+      registerSystem(fixed, world, physicsPushSystem, {
+        name: "gameplay:physics-push",
         stage: "PhysicsRequest",
         after: "gameplay:rigidbody-request",
       }),
       registerSystem(fixed, world, transformRequestResolveSystem, {
         name: "gameplay:transform-resolve",
         stage: "PhysicsRequest",
-        after: "gameplay:rigidbody-create",
+        after: "gameplay:physics-push",
       }),
     );
 
     this.handles.push(
-      registerSystem(fixed, world, rigidBodyWriteBackSystem, {
-        name: "gameplay:rigidbody-writeback",
+      registerSystem(fixed, world, physicsPullSystem, {
+        name: "gameplay:physics-pull",
         stage: "PhysicsWriteback",
       }),
       registerSystem(fixed, world, scriptTransformFeedbackSystem, {
         name: "gameplay:script-feedback",
         stage: "PhysicsWriteback",
-        after: "gameplay:rigidbody-writeback",
+        after: "gameplay:physics-pull",
       }),
     );
 
