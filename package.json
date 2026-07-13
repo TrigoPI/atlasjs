@@ -15,7 +15,8 @@
     "rimraf": "^6.1.2",
     "tsdown": "^0.20.3",
     "turbo": "^2.8.8",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "vitest": "^4.1.10"
   },
   "engines": {
     "node": ">=18"
