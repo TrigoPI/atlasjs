@@ -194,7 +194,7 @@ Mouvements clés :
 ## Checklist
 
 - [x] Phase 1 — base `ScriptComponent<TEngine>` (cache/`invalidate` conservés transitoirement) + `ScriptComponentCtor` dans `scripting/core/` ; `Transform2DComponent`/`RigidBody2DComponent` héritent, déclarent `static engine`, déplacées vers `scripting/components/` (miroir de `components/` moteur). Constructeur de base `public` (façades `new`-ées par le registre puis, en Phase 3, par le contexte). Registre/contexte/`AtlasScript`/`ScriptContext` repointés sur `../components`. tsc gameplay + build + tsc sandbox OK, 20/20 tests verts.
-- [ ] Phase 2 — dispatch `"engine" in type` + trio dans `RuntimeScriptContext`.
+- [x] Phase 2 — dispatch `"engine" in type` + trio dans `RuntimeScriptContext` (`get`/`add`/`require`/`has`/`remove` : façade → opère sur `type.engine`, renvoie un proxy neuf ; sinon raw). Typage : façade `new (world, entity) => T` déjà assignable à `Component<T, any[]>` → seul `addComponent` a besoin d'overloads (args forwardés depuis le moteur) sur `ScriptContext`/`AtlasScript`/`RuntimeScriptContext`. Getters magiques inchangés (délèguent au registre). 6 tests de dispatch ajoutés (façade add/has/get/remove/require + raw data + forward d'args). 26/26 verts, tsc gameplay + build + tsc sandbox OK.
 - [ ] Phase 3 — getters magiques + registre + cache supprimés ; `ScriptManager`/`GameplayPlugin` simplifiés ; sandbox + tests migrés.
 - [ ] Phase 4 — exports publics + tsc + tests verts.
 

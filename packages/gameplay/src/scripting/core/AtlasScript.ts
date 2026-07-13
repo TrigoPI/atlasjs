@@ -3,6 +3,7 @@ import { Component, Entity } from "@atlasjs/nexus";
 import type { RigidBody2DComponent } from "../components/RigidBody2DComponent";
 import type { Transform2DComponent } from "../components/Transform2DComponent";
 
+import { ScriptComponentCtor } from "./ScriptComponent";
 import { ScriptContext } from "./ScriptContext";
 import { ScriptLifecycle } from "./ScriptLifeCycle";
 
@@ -56,11 +57,22 @@ export abstract class AtlasScript implements ScriptLifecycle {
     return this.context.getComponent(type);
   }
 
+  public addComponent<TFacade, TEngine extends object, TArgs extends unknown[]>(
+    type: ScriptComponentCtor<TFacade, TEngine, TArgs>,
+    ...args: TArgs
+  ): TFacade;
   public addComponent<TComponent extends object, TArgs extends unknown[]>(
     type: Component<TComponent, TArgs>,
     ...args: TArgs
+  ): TComponent;
+  public addComponent<TComponent extends object, TArgs extends unknown[]>(
+    type: Component<TComponent, TArgs> | ScriptComponentCtor<TComponent, object, TArgs>,
+    ...args: TArgs
   ): TComponent {
-    return this.context.addComponent(type, ...args);
+    return this.context.addComponent(
+      type as Component<TComponent, TArgs>,
+      ...args,
+    );
   }
 
   public removeComponent<TComponent extends object>(
