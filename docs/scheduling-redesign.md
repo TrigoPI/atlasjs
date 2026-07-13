@@ -1,6 +1,6 @@
 # Refonte du scheduling d'AtlasJS
 
-> **Statut : en cours d'implémentation.** Document de design + suivi. On implémente une phase à la fois (voir la checklist en bas) ; chaque case est cochée après validation.
+> **Statut : implémenté (phases 0→8 terminées).** Document de design + suivi. Voir la checklist en bas.
 
 ## Context
 
@@ -181,8 +181,8 @@ On implémente **une phase à la fois** ; après validation de l'auteur, on coch
 - [x] **Phase 5 — Suppr. `NexusScheduler`** : suppression `NexusScheduler.ts` + export + le type orphelin `SystemPhase`. Nexus = pur data-store, une seule autorité d'ordonnancement (le core).
 - [x] **Phase 6 — Fix input** : `clear` (début de frame) → `endFrame()` en fin de logique (nouvelle étape `update/Late`, ancre 900). Les edges `isPressed`/`isReleased` sont enfin observables par les systèmes. Handle retiré à l'`uninstall`. _(test de timing input vert.)_
 - [x] **Phase 7 — Set éditeur + `SceneContext.scheduler`** : `EditorPlugin` via un `StepSet` "editor" (picking/gizmo chaînés par `after`, `uninstall → set.remove()`, fuite corrigée). `SceneContext` expose un `StepSet` scoppé à la scène (auto-retiré à `destroy()`) ; `SceneManager` reçoit `services/events/scheduler` et `Engine` n'`implements` plus `SceneContext`. _(test de teardown de scène vert.)_
-- [ ] **Phase 8 — Retrait compat** : suppression de la façade `priority` et du `PRIORITY` numérique.
-- [ ] **Tests vitest** : à glisser au fil des phases (Scheduler dès phase 0, Engine dès phase 1-2, déterminisme dès phase 4).
+- [x] **Phase 8 — Retrait compat** : `NebulaPlugin`/`InertialPlugin` migrés vers `render.add`/`fixed.add` ; suppression de la façade `onUpdate/onFixedUpdate/onRender` + `runUpdate/…`, des types `LegacyStepFn`/`StepOptions`, et du `PRIORITY` numérique (`Priority.ts`). `lane.add(fn, spec)` est la seule API.
+- [x] **Tests vitest** : Scheduler + Engine (ordre, alpha, boot topo, teardown de scène) dans `@atlasjs/core`, timing input dans `@atlasjs/input`, déterminisme dans `@atlasjs/gameplay`. `pnpm test` (tâche Turbo) — 26 tests verts.
 
 ---
 

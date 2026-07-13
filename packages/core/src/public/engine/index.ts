@@ -5,5 +5,4 @@ export * from "./PluginErrors";
 export * from "./Scheduler";
 export * from "./ServiceRegistry";
 export * from "./Deferred";
-export * from "./Priority";
 export * from "./Stages";

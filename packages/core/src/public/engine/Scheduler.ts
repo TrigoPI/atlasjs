@@ -1,19 +1,16 @@
-import { createLogger, Logger } from "@atlasjs/utils";
-
 import { STAGES_BY_LANE } from "./Stages";
 import {
   Lane,
   LaneScheduler,
-  LegacyStepFn,
   Stage,
   StepContext,
   StepFn,
   StepHandle,
-  StepOptions,
   StepSet,
   StepSpec,
 } from "./types";
 
+/** Small offset used to order steps within a stage on the shared axis. */
 const WITHIN_STAGE_EPSILON = 1e-3;
 
 export class SchedulerCycleError extends Error {
@@ -33,10 +30,9 @@ type Entry = {
   seq: number;
   enabled: boolean;
   setName?: string;
-  stage?: Stage;
+  stage: Stage;
   before: string[];
   after: string[];
-  legacyPriority?: number;
 };
 
 function asArray(v: string | readonly string[] | undefined): string[] {
@@ -47,7 +43,6 @@ function asArray(v: string | readonly string[] | undefined): string[] {
 class LaneSchedulerImpl implements LaneScheduler {
   public readonly lane: Lane;
 
-  private readonly logger: Logger;
   private readonly stages: readonly Stage[];
   private readonly entries: Map<string, Entry>;
 
@@ -55,9 +50,8 @@ class LaneSchedulerImpl implements LaneScheduler {
   private dirty: boolean;
   private seqCounter: number;
 
-  public constructor(lane: Lane, logger: Logger) {
+  public constructor(lane: Lane) {
     this.lane = lane;
-    this.logger = logger;
     this.stages = STAGES_BY_LANE[lane];
     this.entries = new Map<string, Entry>();
     this.compiled = [];
@@ -66,7 +60,16 @@ class LaneSchedulerImpl implements LaneScheduler {
   }
 
   public add(fn: StepFn, spec: StepSpec, setName?: string): StepHandle {
-    this.assertStage(spec.stage);
+    const stage: Stage | undefined = this.stages.find(
+      (s: Stage) => s.name === spec.stage,
+    );
+
+    if (!stage) {
+      const names: string = this.stages.map((s: Stage) => s.name).join(", ");
+      throw new Error(
+        `Unknown stage "${spec.stage}" for lane "${this.lane}". Valid stages: ${names}.`,
+      );
+    }
 
     const entry: Entry = {
       name: spec.name,
@@ -74,31 +77,12 @@ class LaneSchedulerImpl implements LaneScheduler {
       seq: this.seqCounter++,
       enabled: spec.enabled ?? true,
       setName,
-      stage: this.stages.find((s: Stage) => s.name === spec.stage),
+      stage,
       before: asArray(spec.before),
       after: asArray(spec.after),
     };
 
     this.insert(entry);
-    return this.handleFor(entry);
-  }
-
-  /** @deprecated Legacy numeric-priority registration. */
-  public addLegacy(fn: LegacyStepFn, opts: StepOptions): StepHandle {
-    const entry: Entry = {
-      name: opts.name,
-      fn: (ctx: StepContext) => fn(ctx.dt),
-      seq: this.seqCounter++,
-      enabled: true,
-      before: [],
-      after: [],
-      legacyPriority: opts.priority + (opts.id ?? 0),
-    };
-
-    this.insert(entry);
-    this.logger.log(
-      `Registering ${this.lane} step (legacy): ${entry.name}:${entry.legacyPriority}`,
-    );
     return this.handleFor(entry);
   }
 
@@ -144,23 +128,15 @@ class LaneSchedulerImpl implements LaneScheduler {
     };
   }
 
-  private assertStage(stage: string): void {
-    if (!this.stages.some((s: Stage) => s.name === stage)) {
-      const names: string = this.stages.map((s: Stage) => s.name).join(", ");
-      throw new Error(
-        `Unknown stage "${stage}" for lane "${this.lane}". Valid stages: ${names}.`,
-      );
-    }
-  }
-
   private compile(): void {
     const all: Entry[] = [...this.entries.values()];
     const keyed: { entry: Entry; key: number }[] = [];
 
-    // Staged entries: bucket by stage, topologically sort within each stage.
+    // Bucket by stage, topologically sort within each stage, then place each
+    // step on the shared ordering axis by its stage anchor + within-stage rank.
     for (const stage of this.stages) {
       const inStage: Entry[] = all.filter(
-        (e: Entry) => e.stage?.name === stage.name,
+        (e: Entry) => e.stage.name === stage.name,
       );
 
       if (inStage.length === 0) continue;
@@ -172,13 +148,6 @@ class LaneSchedulerImpl implements LaneScheduler {
           entry: ordered[rank],
           key: stage.anchor + rank * WITHIN_STAGE_EPSILON,
         });
-      }
-    }
-
-    // Legacy entries: ordered by their numeric priority.
-    for (const entry of all) {
-      if (entry.legacyPriority !== undefined) {
-        keyed.push({ entry, key: entry.legacyPriority });
       }
     }
 
@@ -274,15 +243,13 @@ export class Scheduler {
   public readonly update: LaneScheduler;
   public readonly render: LaneScheduler;
 
-  private readonly logger: Logger;
   private readonly lanes: Record<Lane, LaneSchedulerImpl>;
 
   public constructor() {
-    this.logger = createLogger(Scheduler.name);
     this.lanes = {
-      fixed: new LaneSchedulerImpl("fixed", this.logger),
-      update: new LaneSchedulerImpl("update", this.logger),
-      render: new LaneSchedulerImpl("render", this.logger),
+      fixed: new LaneSchedulerImpl("fixed"),
+      update: new LaneSchedulerImpl("update"),
+      render: new LaneSchedulerImpl("render"),
     };
     this.fixed = this.lanes.fixed;
     this.update = this.lanes.update;
@@ -295,45 +262,6 @@ export class Scheduler {
 
   public runLane(lane: Lane, ctx: StepContext): void {
     this.lanes[lane].run(ctx);
-  }
-
-  // -------------------------------------------------------------------------
-  // Legacy facade — preserved so existing plugins keep working during
-  // migration. Removed in the final phase.
-  // -------------------------------------------------------------------------
-
-  /** @deprecated Use `scheduler.update.add(fn, spec)`. */
-  public onUpdate(fn: LegacyStepFn, opts: StepOptions): void {
-    this.lanes.update.addLegacy(fn, opts);
-  }
-
-  /** @deprecated Use `scheduler.fixed.add(fn, spec)`. */
-  public onFixedUpdate(fn: LegacyStepFn, opts: StepOptions): void {
-    this.lanes.fixed.addLegacy(fn, opts);
-  }
-
-  /** @deprecated Use `scheduler.render.add(fn, spec)`. */
-  public onRender(fn: LegacyStepFn, opts: StepOptions): void {
-    this.lanes.render.addLegacy(fn, opts);
-  }
-
-  /** @deprecated Use `runLane("update", ctx)`. */
-  public runUpdate(dt: number): void {
-    this.lanes.update.run(this.legacyCtx(dt));
-  }
-
-  /** @deprecated Use `runLane("fixed", ctx)`. */
-  public runFixedUpdate(dt: number): void {
-    this.lanes.fixed.run(this.legacyCtx(dt));
-  }
-
-  /** @deprecated Use `runLane("render", ctx)`. */
-  public runRender(dt: number): void {
-    this.lanes.render.run(this.legacyCtx(dt));
-  }
-
-  private legacyCtx(dt: number): StepContext {
-    return { dt, alpha: 1, tick: 0, frame: 0, elapsed: 0 };
   }
 }
 

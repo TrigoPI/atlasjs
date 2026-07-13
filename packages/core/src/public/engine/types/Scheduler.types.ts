@@ -42,13 +42,3 @@ export type Stage = {
   name: string;
   anchor: number;
 };
-
-/** @deprecated Legacy `(dt) => void` callback shape. Use {@link StepFn}. */
-export type LegacyStepFn = (dt: number) => void;
-
-/** @deprecated Legacy numeric-priority options. Use {@link StepSpec}. */
-export type StepOptions = {
-  name: string;
-  priority: number;
-  id?: number;
-};
