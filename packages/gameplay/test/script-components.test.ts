@@ -3,30 +3,27 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Entity } from "@atlasjs/nexus";
 
 import { RigidBody2D, Transform2D } from "../src/components";
-import { ScriptComponentRegistry } from "../src/scripting";
+import { RigidBody2DComponent, Transform2DComponent } from "../src/scripting";
 import { createHarness, Harness } from "./helpers/harness";
 
 describe("Gameplay — script components (façade over the real ECS)", () => {
   let h: Harness;
-  let registry: ScriptComponentRegistry;
 
   beforeEach(async () => {
     h = await createHarness();
-    registry = new ScriptComponentRegistry(h.world);
   });
 
   afterEach(() => {
-    registry.dispose();
     h.physics.clear();
   });
 
-  // --- Single source of truth: the handle points at the real component ---
+  // --- Single source of truth: the façade points at the real component ---
 
   it("writes through to the real Transform2D component", () => {
     const e: Entity = h.world.createEntity();
     h.world.addComponent(e, Transform2D);
 
-    registry.for(e).transform.setPosition(3, 4).setScale(2, 2);
+    new Transform2DComponent(h.world, e).setPosition(3, 4).setScale(2, 2);
 
     const real: Transform2D = h.world.requireComponent(e, Transform2D);
     expect(real.position.x).toBe(3);
@@ -38,31 +35,24 @@ describe("Gameplay — script components (façade over the real ECS)", () => {
     const e: Entity = h.world.createEntity();
     h.world.addComponent(e, Transform2D);
 
-    const transform = registry.for(e).transform;
+    const transform: Transform2DComponent = new Transform2DComponent(h.world, e);
     h.world.requireComponent(e, Transform2D).position.set(7, 8);
 
     expect(transform.position.x).toBe(7);
     expect(transform.position.y).toBe(8);
   });
 
-  it("returns a stable handle per entity", () => {
-    const e: Entity = h.world.createEntity();
-    h.world.addComponent(e, Transform2D);
+  // --- Stateless: re-resolves the current component on every access ---
 
-    expect(registry.for(e)).toBe(registry.for(e));
-  });
-
-  // --- Cache invalidated by lifecycle events ---
-
-  it("invalidates the cached instance when the component is removed and re-added", () => {
+  it("re-resolves after the component is removed and re-added (no stale pointer)", () => {
     const e: Entity = h.world.createEntity();
     const first: Transform2D = h.world.addComponent(e, Transform2D);
     first.position.set(1, 1);
 
-    const transform = registry.for(e).transform;
-    expect(transform.position.x).toBe(1); // caches `first`
+    const transform: Transform2DComponent = new Transform2DComponent(h.world, e);
+    expect(transform.position.x).toBe(1); // resolves `first`
 
-    h.world.removeComponent(e, Transform2D); // onRemove -> registry invalidates
+    h.world.removeComponent(e, Transform2D);
     const second: Transform2D = h.world.addComponent(e, Transform2D);
     second.position.set(9, 9);
 
@@ -70,17 +60,11 @@ describe("Gameplay — script components (façade over the real ECS)", () => {
     expect(transform.position.x).toBe(9); // re-resolved to `second`, not stale `first`
   });
 
-  it("invalidates the RigidBody2D handle cache too", () => {
+  it("throws on access when the backing component is absent", () => {
     const e: Entity = h.world.createEntity();
-    h.world.addComponent(e, RigidBody2D).mass = 5;
+    const transform: Transform2DComponent = new Transform2DComponent(h.world, e);
 
-    const rigidbody = registry.for(e).rigidbody;
-    expect(rigidbody.mass).toBe(5);
-
-    h.world.removeComponent(e, RigidBody2D);
-    h.world.addComponent(e, RigidBody2D).mass = 42;
-
-    expect(rigidbody.mass).toBe(42);
+    expect(() => transform.position).toThrow();
   });
 
   // --- Authority routing decided at write time by body type ---
@@ -92,7 +76,7 @@ describe("Gameplay — script components (façade over the real ECS)", () => {
 
     h.frame(); // body created
 
-    registry.for(e).transform.setPosition(5, 0);
+    new Transform2DComponent(h.world, e).setPosition(5, 0);
     h.frame();
 
     expect(h.world.requireComponent(e, Transform2D).position.x).toBeCloseTo(
@@ -108,7 +92,7 @@ describe("Gameplay — script components (façade over the real ECS)", () => {
 
     h.frame(); // body created at (0,0)
 
-    registry.for(e).transform.setPosition(50, 0);
+    new Transform2DComponent(h.world, e).setPosition(50, 0);
     h.frame(); // dynamic: physics owns position; only a teleport survives
 
     expect(h.world.requireComponent(e, Transform2D).position.x).toBeCloseTo(
@@ -125,7 +109,7 @@ describe("Gameplay — script components (façade over the real ECS)", () => {
     h.frame();
 
     // Bypasses the authority-routed setter: writes the live Vec2 directly.
-    registry.for(e).transform.position.x = 50;
+    new Transform2DComponent(h.world, e).position.x = 50;
     h.frame();
 
     expect(h.world.requireComponent(e, Transform2D).position.x).toBeCloseTo(
@@ -134,13 +118,13 @@ describe("Gameplay — script components (façade over the real ECS)", () => {
     );
   });
 
-  // --- RigidBody2D handle proxies the real component ---
+  // --- RigidBody2D façade proxies the real component ---
 
   it("RigidBody2DComponent writes through to the real component", () => {
     const e: Entity = h.world.createEntity();
     h.world.addComponent(e, RigidBody2D);
 
-    const rigidbody = registry.for(e).rigidbody;
+    const rigidbody: RigidBody2DComponent = new RigidBody2DComponent(h.world, e);
     rigidbody.type = "kinematic";
     rigidbody.setVelocity(3, 4);
 

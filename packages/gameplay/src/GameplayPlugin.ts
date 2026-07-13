@@ -2,19 +2,18 @@ import { createLogger, Logger } from "@atlasjs/utils";
 import { Engine, Plugin, StepHandle } from "@atlasjs/core";
 import { NEBULA_RENDERER, NebulaRenderer } from "@atlasjs/nebula";
 import { INERTIAL_ENGINE, PhysicsWorld } from "@atlasjs/inertia";
+import { Entity, NEXUS, NexusWorld, Unsubscribe } from "@atlasjs/nexus";
 
 import { SCRIPT_MANAGER } from "./tokens";
 import { registerSystem } from "./registerSystem";
 
-import { Entity, NEXUS, NexusWorld, Unsubscribe } from "@atlasjs/nexus";
+import { ScriptManager } from "./scripting";
 
 import {
   PhysicsPullSystem,
   PhysicsPushSystem,
   SpriteRenderSystem,
 } from "./systems";
-
-import { ScriptComponentRegistry, ScriptManager } from "./scripting";
 
 import {
   PhysicsBodyRef,
@@ -46,9 +45,7 @@ export class GameplayPlugin extends Plugin {
     const nebula: NebulaRenderer = await engine.services.wait(NEBULA_RENDERER);
     const inertia: PhysicsWorld = await engine.services.wait(INERTIAL_ENGINE);
 
-    const componentRegistry: ScriptComponentRegistry = new ScriptComponentRegistry(world);
-
-    this.scriptManager = new ScriptManager(world, componentRegistry);
+    this.scriptManager = new ScriptManager(world);
 
     const physicsPushSystem = new PhysicsPushSystem(inertia);
     const physicsPullSystem = new PhysicsPullSystem();
@@ -60,7 +57,6 @@ export class GameplayPlugin extends Plugin {
       .defineComponent(SpriteRender)
       .defineComponent(PhysicsBodyRef);
 
-    this.unsubscribers.push(() => componentRegistry.dispose());
     this.unsubscribers.push(
       world.onRemove(PhysicsBodyRef, (_entity: Entity, ref: PhysicsBodyRef) => {
         inertia.destroyRigidBody(ref.body);

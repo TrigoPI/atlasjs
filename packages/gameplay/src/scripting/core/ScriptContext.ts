@@ -1,14 +1,8 @@
 import { Component, Entity } from "@atlasjs/nexus";
 
-import type { RigidBody2DComponent } from "../components/RigidBody2DComponent";
-import type { Transform2DComponent } from "../components/Transform2DComponent";
-
 import { ScriptComponentCtor } from "./ScriptComponent";
 
 export interface ScriptContext {
-  readonly transform: Transform2DComponent;
-  readonly rigidbody: RigidBody2DComponent;
-
   getEntityId(): Entity;
 
   hasComponent<TComponent extends object>(

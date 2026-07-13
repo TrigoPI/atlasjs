@@ -1,9 +1,16 @@
-import { AtlasScript, RigidBody2D, Transform2D } from "@atlasjs/gameplay";
+import {
+  AtlasScript,
+  RigidBody2DComponent,
+  Transform2DComponent,
+} from "@atlasjs/gameplay";
 
 export class TestScript extends AtlasScript {
+  private transform!: Transform2DComponent;
+  private rigidbody!: RigidBody2DComponent;
+
   public onCreate(): void {
-    this.addComponent(Transform2D);
-    this.addComponent(RigidBody2D);
+    this.transform = this.addComponent(Transform2DComponent);
+    this.rigidbody = this.addComponent(RigidBody2DComponent);
 
     this.rigidbody.type = "kinematic";
 

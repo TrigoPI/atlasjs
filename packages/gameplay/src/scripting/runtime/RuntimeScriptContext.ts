@@ -2,39 +2,18 @@ import { Component, Entity, NexusWorld } from "@atlasjs/nexus";
 
 import { ScriptComponentCtor, ScriptContext } from "../core";
 
-import { RigidBody2DComponent, Transform2DComponent } from "../components";
-
-import {
-  EntityScriptComponents,
-  ScriptComponentRegistry,
-} from "./ScriptComponentRegistry";
-
 // prettier-ignore
 export class RuntimeScriptContext implements ScriptContext {
   private readonly entity: Entity;
   private readonly world: NexusWorld;
-  private readonly components: EntityScriptComponents;
 
-  public constructor(
-    entity: Entity,
-    world: NexusWorld,
-    registry: ScriptComponentRegistry,
-  ) {
+  public constructor(entity: Entity, world: NexusWorld) {
     this.entity = entity;
     this.world = world;
-    this.components = registry.for(entity);
   }
 
   public getEntityId(): Entity {
     return this.entity;
-  }
-
-  public get transform(): Transform2DComponent {
-    return this.components.transform;
-  }
-
-  public get rigidbody(): RigidBody2DComponent {
-    return this.components.rigidbody;
   }
 
   public hasComponent<TComponent extends object>(
