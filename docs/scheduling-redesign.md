@@ -178,7 +178,7 @@ On implémente **une phase à la fois** ; après validation de l'auteur, on coch
 - [x] **Phase 2 — Boot topo** : `provides/requires` sur tous les plugins, tri topo (Kahn) + `MissingDependencyError`/`DependencyCycleError`/`DuplicateProviderError` + `BootTimeoutError`, assertion post-install, `Plugin.order`/`setOrder` supprimés. _(4 tests boot verts ; tous les packages compilent.)_
 - [ ] **Phase 3 — Physics dt** : `PhysicsWorld.step(dt)` + `world.timestep = dt`.
 - [x] **Phase 4 — Re-lanes ECS** : split `GameplayPlugin` en étapes fixed/render (adaptateur `registerSystem`) + `scriptManager.fixedUpdate` branché (bug #1) + `uninstall` retire les handles. `SpriteRenderSystem` en `render/PreRender`. _(test de déterminisme gameplay vert : `onFixedUpdate` s'exécute + pipeline reproductible.)_
-- [ ] **Phase 5 — Suppr. `NexusScheduler`** : suppression fichier + export.
+- [x] **Phase 5 — Suppr. `NexusScheduler`** : suppression `NexusScheduler.ts` + export + le type orphelin `SystemPhase`. Nexus = pur data-store, une seule autorité d'ordonnancement (le core).
 - [ ] **Phase 6 — Fix input** : `clear` → `endFrame`, ajout `beginFrame`/`endFrame`.
 - [ ] **Phase 7 — Set éditeur + `SceneContext.scheduler`**.
 - [ ] **Phase 8 — Retrait compat** : suppression de la façade `priority` et du `PRIORITY` numérique.
