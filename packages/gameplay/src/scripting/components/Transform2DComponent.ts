@@ -1,26 +1,11 @@
 import { Vec2 } from "@atlasjs/math";
-import { Entity, NexusWorld } from "@atlasjs/nexus";
 
-import {
-  PhysicsBodyRef,
-  RigidBody2D,
-  Transform2D,
-} from "../../components";
+import { PhysicsBodyRef, RigidBody2D, Transform2D } from "../../components";
 
-export class Transform2DComponent {
-  private readonly world: NexusWorld;
-  private readonly entity: Entity;
-  private cached: Transform2D | null;
+import { ScriptComponent } from "../core";
 
-  public constructor(world: NexusWorld, entity: Entity) {
-    this.world = world;
-    this.entity = entity;
-    this.cached = null;
-  }
-
-  public invalidate(): void {
-    this.cached = null;
-  }
+export class Transform2DComponent extends ScriptComponent<Transform2D> {
+  public static readonly engine = Transform2D;
 
   public get position(): Vec2 {
     return this.resolve().position;
@@ -80,14 +65,6 @@ export class Transform2DComponent {
 
   public rotate(angle: number): this {
     return this.setRotation(this.resolve().rotation + angle);
-  }
-
-  private resolve(): Transform2D {
-    if (this.cached === null) {
-      this.cached = this.world.requireComponent(this.entity, Transform2D);
-    }
-
-    return this.cached;
   }
 
   private controllingBody(): PhysicsBodyRef | undefined {

@@ -1,7 +1,7 @@
 import { Component, Entity } from "@atlasjs/nexus";
 
-import type { RigidBody2DComponent } from "../runtime/RigidBody2DComponent";
-import type { Transform2DComponent } from "../runtime/Transform2DComponent";
+import type { RigidBody2DComponent } from "../components/RigidBody2DComponent";
+import type { Transform2DComponent } from "../components/Transform2DComponent";
 
 import { ScriptContext } from "./ScriptContext";
 import { ScriptLifecycle } from "./ScriptLifeCycle";

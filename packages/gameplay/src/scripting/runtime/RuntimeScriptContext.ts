@@ -2,8 +2,7 @@ import { Component, Entity, NexusWorld } from "@atlasjs/nexus";
 
 import { ScriptContext } from "../core";
 
-import { RigidBody2DComponent } from "./RigidBody2DComponent";
-import { Transform2DComponent } from "./Transform2DComponent";
+import { RigidBody2DComponent, Transform2DComponent } from "../components";
 
 import {
   EntityScriptComponents,

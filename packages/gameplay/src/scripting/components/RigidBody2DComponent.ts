@@ -1,23 +1,12 @@
 import { Vec2 } from "@atlasjs/math";
 import { RigidBodyType } from "@atlasjs/inertia";
-import { Entity, NexusWorld } from "@atlasjs/nexus";
 
 import { RigidBody2D } from "../../components";
 
-export class RigidBody2DComponent {
-  private readonly world: NexusWorld;
-  private readonly entity: Entity;
-  private cached: RigidBody2D | null;
+import { ScriptComponent } from "../core";
 
-  public constructor(world: NexusWorld, entity: Entity) {
-    this.world = world;
-    this.entity = entity;
-    this.cached = null;
-  }
-
-  public invalidate(): void {
-    this.cached = null;
-  }
+export class RigidBody2DComponent extends ScriptComponent<RigidBody2D> {
+  public static readonly engine = RigidBody2D;
 
   public get type(): RigidBodyType {
     return this.resolve().type;
@@ -64,13 +53,5 @@ export class RigidBody2DComponent {
   public setAngularVelocity(angularVelocity: number): this {
     this.resolve().angularVelocity = angularVelocity;
     return this;
-  }
-
-  private resolve(): RigidBody2D {
-    if (this.cached === null) {
-      this.cached = this.world.requireComponent(this.entity, RigidBody2D);
-    }
-
-    return this.cached;
   }
 }

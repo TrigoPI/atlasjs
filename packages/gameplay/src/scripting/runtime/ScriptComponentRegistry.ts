@@ -2,8 +2,7 @@ import { Entity, NexusWorld, Unsubscribe } from "@atlasjs/nexus";
 
 import { RigidBody2D, Transform2D } from "../../components";
 
-import { RigidBody2DComponent } from "./RigidBody2DComponent";
-import { Transform2DComponent } from "./Transform2DComponent";
+import { RigidBody2DComponent, Transform2DComponent } from "../components";
 
 export class EntityScriptComponents {
   public readonly transform: Transform2DComponent;
