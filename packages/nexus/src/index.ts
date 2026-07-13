@@ -2,6 +2,7 @@ export * from "./query";
 
 export * from "./define-component";
 export * from "./nexus-types";
+export * from "./entity";
 export * from "./token";
 
 export * from "./ComponentStore";

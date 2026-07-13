@@ -40,19 +40,22 @@ Un ECS où : les systèmes itèrent via une seule API (`world.query(...).each(..
 
 Un `Entity` reste un `number` branded, mais encode `index` (bits bas) + `génération` (bits hauts).
 
+**Encodage multiplicatif (pas de BigInt).** `entityIndex`/`entityGeneration` sont appelés sur le hot path (`store.has` par entité × par composant), donc on évite BigInt : `index` capé à 21 bits (2 097 152 slots), génération sur le reste, le tout tient sous `Number.MAX_SAFE_INTEGER`.
+
 ```ts
-// 32 bits index | 20 bits génération (packés dans un number JS safe < 2^53)
-const INDEX_BITS = 32n;
-const INDEX_MASK = (1n << INDEX_BITS) - 1n;
+const ENTITY_INDEX_BITS = 21;
+const ENTITY_INDEX_CAPACITY = 1 << ENTITY_INDEX_BITS; // 2_097_152
 
 function makeEntity(index: number, generation: number): Entity {
-  return Number((BigInt(generation) << INDEX_BITS) | BigInt(index)) as Entity;
+  return (generation * ENTITY_INDEX_CAPACITY + index) as Entity;
 }
-function entityIndex(e: Entity): number { return Number(BigInt(e) & INDEX_MASK); }
-function entityGeneration(e: Entity): number { return Number(BigInt(e) >> INDEX_BITS); }
+function entityIndex(e: Entity): number { return e % ENTITY_INDEX_CAPACITY; }
+function entityGeneration(e: Entity): number { return Math.floor(e / ENTITY_INDEX_CAPACITY); }
 ```
 
-`EntityManager` conserve un tableau `generations[index]`. `destroy(e)` incrémente `generations[index]` et remet `index` dans la freelist. `exists(e)` compare `entityGeneration(e) === generations[entityIndex(e)]`. Un handle périmé échoue proprement au lieu de lire des données fantômes.
+`EntityManager` conserve `generations[index]`, `alive[index]` (bit occupé) et une freelist `freeIndices`. `create()` réutilise un slot libre (génération inchangée, déjà incrémentée au destroy) ou en alloue un neuf. `destroy(e)` passe `alive[index] = false`, incrémente `generations[index]`, et remet `index` dans la freelist. `has(e)` = `alive[index] && generations[index] === entityGeneration(e)`. Un handle périmé échoue proprement au lieu de lire des données fantômes.
+
+Les `SparseSet` indexent `sparse` par `entityIndex(e)` (compact, borné par le pic d'entités vivantes) mais stockent l'`Entity` complète dans `dense` : l'égalité `dense[i] === entity` rejette donc aussi les handles périmés au niveau du store — sûreté bonus, y compris pour les stores externes non nettoyés côté gameplay.
 
 > Les stores/sparse-sets s'indexent par `entityIndex(e)` (l'index bas), pas par le number packé — le sparse reste compact et borné par le pic d'entités vivantes.
 
@@ -160,7 +163,7 @@ On remplace l'état module-global mutable + monkeypatch par un `ComponentRegistr
 ## Checklist
 
 - [x] Phase 0 — vitest + tests de non-régression (mutation-pendant-itération, recyclage, intersection)
-- [ ] Phase 1 — générations d'entités
+- [x] Phase 1 — générations d'entités
 - [ ] Phase 2 — `IComponentStore` + `SparseSetStore` + `version`
 - [ ] Phase 3 — query typée `each`/tuples + garde-fou fail-fast
 - [ ] Phase 4 — command buffer + flush hybride (auto sync points + `world.flush()`)
