@@ -1,25 +1,17 @@
-import {
-  AtlasScript,
-  RigidBody2DComponent,
-  Transform2DComponent,
-} from "@atlasjs/gameplay";
+import { AtlasScript, RigidBody2D, Transform2D } from "@atlasjs/gameplay";
 
 export class TestScript extends AtlasScript {
-  private transform: Transform2DComponent;
-  private rigidBody: RigidBody2DComponent;
-
   public onCreate(): void {
-    this.transform = this.addComponent(Transform2DComponent);
-    this.rigidBody = this.addComponent(RigidBody2DComponent);
+    this.addComponent(Transform2D);
+    this.addComponent(RigidBody2D);
 
-    this.rigidBody.type = "kinematic";
+    this.rigidbody.type = "kinematic";
 
-    this.transform.scale.set(3, 3);
-    this.transform.position.set(400, 300);
+    this.transform.setScale(3, 3).setPosition(400, 300);
   }
 
   public onUpdate(dt: number): void {
-    this.rigidBody.rotation += 1 * dt;
+    this.transform.rotate(1 * dt);
   }
 
   public onFixedUpdate(): void {

@@ -1,8 +1,8 @@
-import { Entity } from "@atlasjs/nexus";
+import { Entity, NexusWorld } from "@atlasjs/nexus";
 
 import { RuntimeScriptContext } from "./RuntimeScriptContext";
 import { IncrementalScriptIdGenerator } from "./IncrementalScriptIdGenerator";
-import { ScriptComponentStorage } from "./ScriptComponentStorage";
+import { ScriptHandleRegistry } from "./ScriptHandleRegistry";
 
 import {
   AtlasScript,
@@ -15,13 +15,15 @@ export class ScriptManager {
   private readonly records: Map<ScriptID, ScriptInstanceRecord>;
   private readonly recordsByEntity: Map<Entity, Set<ScriptID>>;
   private readonly idGenerator: IncrementalScriptIdGenerator;
-  private readonly componentStorage: ScriptComponentStorage;
+  private readonly world: NexusWorld;
+  private readonly handleRegistry: ScriptHandleRegistry;
 
   private readonly pendingCreate: ScriptID[];
   private readonly pendingDestroy: ScriptID[];
 
-  public constructor(storage: ScriptComponentStorage) {
-    this.componentStorage = storage;
+  public constructor(world: NexusWorld, handleRegistry: ScriptHandleRegistry) {
+    this.world = world;
+    this.handleRegistry = handleRegistry;
 
     this.pendingCreate = [];
     this.pendingDestroy = [];
@@ -38,7 +40,8 @@ export class ScriptManager {
     const instance: TScript = new ScriptType();
     const context: RuntimeScriptContext = new RuntimeScriptContext(
       entityId,
-      this.componentStorage,
+      this.world,
+      this.handleRegistry,
     );
 
     instance.__bindContext(context);
@@ -196,6 +199,7 @@ export class ScriptManager {
 
         if (entityRecords.size === 0) {
           this.recordsByEntity.delete(record.entityId);
+          this.handleRegistry.release(record.entityId);
         }
       }
     }

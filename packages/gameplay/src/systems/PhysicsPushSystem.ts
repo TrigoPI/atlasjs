@@ -34,7 +34,7 @@ export class PhysicsPushSystem implements NexusSystem {
 
     this.pending.length = 0;
 
-    world.query(RigidBody2D, Transform2D, PhysicsBodyRef).each((entity, rigidBody, transform, ref) => {
+    world.query(RigidBody2D, Transform2D, PhysicsBodyRef).each((_, rigidBody, transform, ref) => {
       const body: RigidBody = ref.body;
 
       body.setMass(rigidBody.mass);

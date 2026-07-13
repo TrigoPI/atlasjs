@@ -1,6 +1,8 @@
-import { Entity } from "@atlasjs/nexus";
+import { Component, Entity } from "@atlasjs/nexus";
 
-import { ScriptComponentConstructor } from "./core-types";
+import type { RigidBody2DHandle } from "../runtime/RigidBody2DHandle";
+import type { Transform2DHandle } from "../runtime/Transform2DHandle";
+
 import { ScriptContext } from "./ScriptContext";
 import { ScriptLifecycle } from "./ScriptLifeCycle";
 
@@ -34,37 +36,45 @@ export abstract class AtlasScript implements ScriptLifecycle {
     return this.context.getEntityId();
   }
 
+  public get transform(): Transform2DHandle {
+    return this.context.transform;
+  }
+
+  public get rigidbody(): RigidBody2DHandle {
+    return this.context.rigidbody;
+  }
+
   public hasComponent<TComponent extends object>(
-    type: ScriptComponentConstructor<TComponent>,
+    type: Component<TComponent, any[]>,
   ): boolean {
     return this.context.hasComponent(type);
   }
 
   public getComponent<TComponent extends object>(
-    type: ScriptComponentConstructor<TComponent>,
-  ): TComponent | null {
+    type: Component<TComponent, any[]>,
+  ): TComponent | undefined {
     return this.context.getComponent(type);
   }
 
   public addComponent<TComponent extends object, TArgs extends unknown[]>(
-    type: ScriptComponentConstructor<TComponent, TArgs>,
+    type: Component<TComponent, TArgs>,
     ...args: TArgs
   ): TComponent {
     return this.context.addComponent(type, ...args);
   }
 
   public removeComponent<TComponent extends object>(
-    type: ScriptComponentConstructor<TComponent>,
+    type: Component<TComponent, any[]>,
   ): void {
     this.context.removeComponent(type);
   }
 
   public requireComponent<TComponent extends object>(
-    type: ScriptComponentConstructor<TComponent>,
+    type: Component<TComponent, any[]>,
   ): TComponent {
-    const component = this.getComponent(type);
+    const component: TComponent | undefined = this.getComponent(type);
 
-    if (!component) {
+    if (component === undefined) {
       throw new Error(
         `[AtlasScript] Required component "${type.name}" is missing on entity "${this.entityId}".`,
       );

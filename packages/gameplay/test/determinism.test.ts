@@ -9,7 +9,6 @@ import { GameplayPlugin } from "../src/GameplayPlugin";
 import { SCRIPT_MANAGER } from "../src/tokens";
 import { Transform2D } from "../src/components";
 import { AtlasScript, ScriptManager } from "../src/scripting";
-import { Transform2DComponent } from "../src/scripting";
 
 const FIXED = 0.1;
 
@@ -36,12 +35,11 @@ const fakeNebula = { createSampler: () => ({}), scene: { addChild: () => {} } };
 const fakeInertia = {};
 
 class MoveScript extends AtlasScript {
-  private t!: Transform2DComponent;
   public onCreate(): void {
-    this.t = this.addComponent(Transform2DComponent);
+    this.addComponent(Transform2D);
   }
   public onFixedUpdate(): void {
-    this.t.translate(1, 0);
+    this.transform.translate(1, 0);
   }
 }
 
@@ -79,10 +77,9 @@ async function runFixed(ticks: number): Promise<number> {
 }
 
 // Runs `count` scripted entities through one frame of `ticks` fixed steps and
-// returns each entity's resulting x. Exercises the TransformWriteRequest
-// cleanup with N>1 entities — the case the old swap-remove-during-iteration
-// bug silently skipped and the fail-fast guard would now reject if the cleanup
-// mutated the world directly instead of via world.commands.
+// returns each entity's resulting x. Each script drives its own Transform2D
+// through the handle façade — verifies N>1 scripted entities all advance
+// deterministically with no cross-talk.
 async function runFixedMany(ticks: number, count: number): Promise<number[]> {
   let onTick: ((dt: number) => void) | null = null;
 

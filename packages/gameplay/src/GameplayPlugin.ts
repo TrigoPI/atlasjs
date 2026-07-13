@@ -22,6 +22,7 @@ import {
 import {
   ScriptComponentRuntimeStorage,
   ScriptComponentStorage,
+  ScriptHandleRegistry,
   ScriptManager,
 } from "./scripting";
 
@@ -58,8 +59,9 @@ export class GameplayPlugin extends Plugin {
 
     const componentStorage: ScriptComponentStorage = new ScriptComponentStorage();
     const runtimeStorage: ScriptComponentRuntimeStorage = new ScriptComponentRuntimeStorage();
+    const handleRegistry: ScriptHandleRegistry = new ScriptHandleRegistry(world);
 
-    this.scriptManager = new ScriptManager(componentStorage);
+    this.scriptManager = new ScriptManager(world, handleRegistry);
 
     const scriptTransformRequestSystem = new ScriptTransformRequestSystem(componentStorage, runtimeStorage);
     const rigidBody2DRequestSystem = new RigidBody2DRequestSystem(componentStorage);
@@ -77,10 +79,12 @@ export class GameplayPlugin extends Plugin {
       .defineComponent(PhysicsBodyRef)
       .defineComponent(TransformWriteRequest);
 
+    this.unsubscribers.push(() => handleRegistry.dispose());
     this.unsubscribers.push(
       world.onRemove(PhysicsBodyRef, (_entity: Entity, ref: PhysicsBodyRef) => {
         inertia.destroyRigidBody(ref.body);
       }),
+
       world.onRemove(RigidBody2D, (entity: Entity) => {
         if (world.hasComponent(entity, PhysicsBodyRef)) {
           world.removeComponent(entity, PhysicsBodyRef);

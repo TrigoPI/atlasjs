@@ -1,23 +1,27 @@
-import { Entity } from "@atlasjs/nexus";
-import { ScriptComponentConstructor } from "./core-types";
+import { Component, Entity } from "@atlasjs/nexus";
+
+import type { RigidBody2DHandle } from "../runtime/RigidBody2DHandle";
+import type { Transform2DHandle } from "../runtime/Transform2DHandle";
 
 export interface ScriptContext {
-  getEntityId(): Entity;
+  readonly transform: Transform2DHandle;
+  readonly rigidbody: RigidBody2DHandle;
 
+  getEntityId(): Entity;
   hasComponent<TComponent extends object>(
-    type: ScriptComponentConstructor<TComponent>,
+    type: Component<TComponent, any[]>,
   ): boolean;
 
   getComponent<TComponent extends object>(
-    type: ScriptComponentConstructor<TComponent>,
-  ): TComponent | null;
+    type: Component<TComponent, any[]>,
+  ): TComponent | undefined;
 
   addComponent<TComponent extends object, TArgs extends unknown[]>(
-    type: ScriptComponentConstructor<TComponent, TArgs>,
+    type: Component<TComponent, TArgs>,
     ...args: TArgs
   ): TComponent;
 
   removeComponent<TComponent extends object>(
-    type: ScriptComponentConstructor<TComponent>,
+    type: Component<TComponent, any[]>,
   ): void;
 }

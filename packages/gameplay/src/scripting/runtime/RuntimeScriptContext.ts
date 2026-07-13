@@ -1,55 +1,73 @@
-import { Entity } from "@atlasjs/nexus";
+import { Component, Entity, NexusWorld } from "@atlasjs/nexus";
 
-import { ScriptComponentConstructor, ScriptContext } from "../core";
-import { ScriptComponentStorage } from "./ScriptComponentStorage";
+import { ScriptContext } from "../core";
+
+import { RigidBody2DHandle } from "./RigidBody2DHandle";
+import { Transform2DHandle } from "./Transform2DHandle";
+
+import {
+  EntityScriptHandles,
+  ScriptHandleRegistry,
+} from "./ScriptHandleRegistry";
 
 export class RuntimeScriptContext implements ScriptContext {
-  private readonly entityIdValue: Entity;
-  private readonly componentStorage: ScriptComponentStorage;
+  private readonly entity: Entity;
+  private readonly world: NexusWorld;
+  private readonly handles: EntityScriptHandles;
 
   public constructor(
-    entityIdValue: Entity,
-    componentStorage: ScriptComponentStorage,
+    entity: Entity,
+    world: NexusWorld,
+    registry: ScriptHandleRegistry,
   ) {
-    this.entityIdValue = entityIdValue;
-    this.componentStorage = componentStorage;
+    this.entity = entity;
+    this.world = world;
+    this.handles = registry.for(entity);
   }
 
   public getEntityId(): Entity {
-    return this.entityIdValue;
+    return this.entity;
+  }
+
+  public get transform(): Transform2DHandle {
+    return this.handles.transform;
+  }
+
+  public get rigidbody(): RigidBody2DHandle {
+    return this.handles.rigidbody;
   }
 
   public hasComponent<TComponent extends object>(
-    type: ScriptComponentConstructor<TComponent>,
+    type: Component<TComponent, any[]>,
   ): boolean {
-    return this.componentStorage.has(this.entityIdValue, type);
+    return this.world.hasComponent(this.entity, type);
   }
 
   public getComponent<TComponent extends object>(
-    type: ScriptComponentConstructor<TComponent>,
-  ): TComponent | null {
-    return this.componentStorage.get(this.entityIdValue, type);
+    type: Component<TComponent, any[]>,
+  ): TComponent | undefined {
+    return this.world.getComponent(this.entity, type);
   }
 
   public addComponent<TComponent extends object, TArgs extends unknown[]>(
-    type: ScriptComponentConstructor<TComponent, TArgs>,
+    type: Component<TComponent, TArgs>,
     ...args: TArgs
   ): TComponent {
-    const existing: TComponent | null = this.componentStorage.get(
-      this.entityIdValue,
+    const existing: TComponent | undefined = this.world.getComponent(
+      this.entity,
       type,
     );
 
-    if (existing) {
+    if (existing !== undefined) {
       return existing;
     }
 
-    return this.componentStorage.add(this.entityIdValue, type, ...args);
+    return this.world.addComponent(this.entity, type, ...args);
   }
 
   public removeComponent<TComponent extends object>(
-    type: ScriptComponentConstructor<TComponent>,
+    type: Component<TComponent, any[]>,
   ): void {
-    this.componentStorage.remove(this.entityIdValue, type);
+    this.world.removeComponent(this.entity, type);
   }
 }
