@@ -59,6 +59,27 @@ describe("query intersection", () => {
     }).toThrow(/structural change during query iteration/i);
   });
 
+  // The version guard is checked before the bounds test, so even removing the
+  // last matching entity (which shrinks the base to/below the index) is caught
+  // rather than exiting silently — the small-count boundary hole.
+  it.each([1, 2, 3])(
+    "throws even at the boundary with %i entities",
+    (count: number) => {
+      const world: NexusWorld = new NexusWorld();
+      world.defineComponent(Frozen);
+
+      for (let i = 0; i < count; i++) {
+        world.addComponent(world.createEntity(), Frozen);
+      }
+
+      expect(() => {
+        for (const entity of world.query(Frozen).entities()) {
+          world.removeComponent(entity, Frozen);
+        }
+      }).toThrow(/structural change during query iteration/i);
+    },
+  );
+
   // Phase 4 (command buffer): deferred removal lets the loop drain every entity
   // without tripping the guard — the fix the guard was pointing systems toward.
   it("drains every entity when removal is deferred via world.commands", () => {

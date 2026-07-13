@@ -3,12 +3,7 @@ import { createLogger, Logger } from "@atlasjs/utils";
 
 import { RigidBody2D, Transform2D } from "../components";
 
-import {
-  NexusSystem,
-  NexusSystemContext,
-  Query,
-  SparseSet,
-} from "@atlasjs/nexus";
+import { NexusSystem, NexusSystemContext, SparseSet } from "@atlasjs/nexus";
 
 export class RigidBody2DSystem implements NexusSystem {
   private readonly logger: Logger;
@@ -25,12 +20,8 @@ export class RigidBody2DSystem implements NexusSystem {
     this.runtimeBodies = runtimeBodies;
   }
 
-  // prettier-ignore
   public update({ world }: NexusSystemContext): void {
-    const query: Query = world.query(RigidBody2D, Transform2D);
-
-    for (const entity of query.entities()) {
-      const [rigidBody2D, transform2D] = world.requireComponents(entity, RigidBody2D, Transform2D);
+    world.query(RigidBody2D, Transform2D).each((entity, rigidBody2D, transform2D) => {
       let runtime: RigidBody | undefined = this.runtimeBodies.get(entity);
 
       if (!runtime) {
@@ -40,7 +31,7 @@ export class RigidBody2DSystem implements NexusSystem {
       }
 
       runtime.setMass(rigidBody2D.mass);
-    }
+    });
   }
 
   private createRuntimeBody(

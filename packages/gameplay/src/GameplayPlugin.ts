@@ -2,7 +2,7 @@ import { createLogger, Logger } from "@atlasjs/utils";
 import { Engine, Plugin, StepHandle } from "@atlasjs/core";
 import { NEBULA_RENDERER, NebulaRenderer } from "@atlasjs/nebula";
 import { INERTIAL_ENGINE, PhysicsWorld, RigidBody } from "@atlasjs/inertia";
-import { NEXUS, NexusWorld, SparseSet } from "@atlasjs/nexus";
+import { NEXUS, NexusWorld, SparseSet, Unsubscribe } from "@atlasjs/nexus";
 
 import { SCRIPT_MANAGER } from "./tokens";
 import { registerSystem } from "./registerSystem";
@@ -36,6 +36,7 @@ export class GameplayPlugin extends Plugin {
 
   private scriptManager!: ScriptManager;
   private handles: StepHandle[];
+  private unsubscribers: Unsubscribe[];
 
   public constructor() {
     super("gameplay-plugin", {
@@ -44,6 +45,7 @@ export class GameplayPlugin extends Plugin {
     });
     this.logger = createLogger(GameplayPlugin.name);
     this.handles = [];
+    this.unsubscribers = [];
   }
 
   //prettier-ignore
@@ -72,6 +74,18 @@ export class GameplayPlugin extends Plugin {
       .defineComponent(Transform2D)
       .defineComponent(SpriteRender)
       .defineComponent(TransformWriteRequest);
+
+    // Destroying an entity (or removing RigidBody2D) tears down its runtime body,
+    // keeping the external SparseSet from leaking recycled entity slots.
+    this.unsubscribers.push(
+      world.onRemove(RigidBody2D, (entity) => {
+        const body: RigidBody | undefined = runtimeBodiesStorage.get(entity);
+        if (body !== undefined) {
+          inertia.destroyRigidBody(body);
+          runtimeBodiesStorage.delete(entity);
+        }
+      }),
+    );
 
     const { fixed, update, render } = engine.scheduler;
 
@@ -123,6 +137,16 @@ export class GameplayPlugin extends Plugin {
       }),
     );
 
+    // Sync point: apply the frame's deferred structural changes (e.g. the
+    // cleanup's TransformWriteRequest removals) at the end of the fixed lane.
+    this.handles.push(
+      fixed.add(() => world.flush(), {
+        name: "gameplay:flush",
+        stage: "Cleanup",
+        after: "gameplay:request-cleanup",
+      }),
+    );
+
     this.handles.push(
       update.add((ctx) => this.scriptManager.update(ctx.dt), {
         name: "gameplay:script-update",
@@ -146,6 +170,8 @@ export class GameplayPlugin extends Plugin {
   public uninstall(): void {
     this.logger.log("Uninstalling GameplayPlugin.");
     for (const handle of this.handles) handle.remove();
+    for (const off of this.unsubscribers) off();
     this.handles = [];
+    this.unsubscribers = [];
   }
 }

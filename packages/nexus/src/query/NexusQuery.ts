@@ -110,9 +110,15 @@ export class NexusQuery<T extends unknown[] = unknown[]> implements Query<T> {
     // Reused across iterations: fn.apply reads it in place, so zero alloc/entity.
     const args: unknown[] = new Array(1 + requiredCount + optionalCount);
 
-    for (let i: number = 0; i < base.size; i++) {
+    for (let i: number = 0; ; i++) {
+      // Checked before the bounds test so a same-loop structural change is
+      // caught even when it shrinks the base below the current index.
       if (base.version !== version) {
         throw new Error(this.structuralChangeMessage());
+      }
+
+      if (i >= base.size) {
+        break;
       }
 
       const entity: Entity = entities[i];
@@ -155,9 +161,15 @@ export class NexusQuery<T extends unknown[] = unknown[]> implements Query<T> {
     const entities: ReadonlyArray<Entity> = base.getEntities();
     const version: number = base.version;
 
-    for (let i: number = 0; i < base.size; i++) {
+    for (let i: number = 0; ; i++) {
+      // Checked before the bounds test so a same-loop structural change is
+      // caught even when it shrinks the base below the current index.
       if (base.version !== version) {
         throw new Error(this.structuralChangeMessage());
+      }
+
+      if (i >= base.size) {
+        break;
       }
 
       const entity: Entity = entities[i];
@@ -178,9 +190,15 @@ export class NexusQuery<T extends unknown[] = unknown[]> implements Query<T> {
     const excludedCount: number = excluded.length;
     const version: number = base.version;
 
-    for (let i: number = 0; i < base.size; i++) {
+    for (let i: number = 0; ; i++) {
+      // Checked before the bounds test so a same-loop structural change is
+      // caught even when it shrinks the base below the current index.
       if (base.version !== version) {
         throw new Error(this.structuralChangeMessage());
+      }
+
+      if (i >= base.size) {
+        break;
       }
 
       const entity: Entity = entities[i];

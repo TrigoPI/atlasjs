@@ -1,6 +1,6 @@
 # Refonte de l'ECS Nexus (`@atlasjs/nexus`)
 
-> **Statut : implémenté (phases 0→7 terminées).** Migration `gameplay` restante (doc séparé). Document de design + suivi. Voir la checklist en bas.
+> **Statut : implémenté (phases 0→7 + migration `gameplay` terminées).** Document de design + suivi. Voir la checklist en bas.
 
 ## Context
 
@@ -110,7 +110,7 @@ world.query(RigidBody2D, Transform2D).each((entity, rb, tr) => {
 
 Comme `world.query` construit `stores` dans l'ordre des types demandés, `each` restitue les composants **dans l'ordre demandé** même si le base store (le plus petit) est un autre.
 
-**Garde-fou fail-fast :** `each`/`entities`/l'itérateur capturent `baseStore.version` au début et le revérifient **à chaque tour** ; une mutation structurelle directe du store itéré lève une erreur explicite listant les composants concernés (« defer it with world.commands »). Le bug silencieux d'entités sautées devient un throw immédiat et actionnable.
+**Garde-fou fail-fast :** `each`/`entities`/l'itérateur capturent `baseStore.version` au début et le revérifient **à chaque tour**, **avant le test de borne** (`for (i=0;;i++) { checkVersion(); if (i>=size) break; }`). Cet ordre est crucial : sinon un swap-remove qui fait passer `size` sous l'index courant ferait sortir la boucle *avant* la revérification → skip silencieux aux petits effectifs (1-2 entités). Toute mutation structurelle directe du store itéré lève une erreur explicite listant les composants concernés (« defer it with world.commands »). Le bug silencieux d'entités sautées devient un throw immédiat et actionnable, quel que soit le nombre d'entités.
 
 ### 4. Command buffer + flush hybride
 
@@ -186,7 +186,7 @@ world.query(Position).without(Frozen).optional(Velocity)                 // comb
 - **Phase 6 — Correctifs & ergo.** Auto-define, `hasComponent`, messages, `addComponent(instance)`.
 - **Phase 7 (ergo) — Filtres `without`/optionnels, événements de cycle de vie.** Builder `without`/`optional` sur la query via `StoreResolver` ; `world.onAdd`/`onRemove` médiés par le world.
 
-> `gameplay` n'est **pas** modifié dans ce doc. Sa migration (query typée, `world.commands` dans les systèmes de cleanup/request) fera l'objet d'un passage dédié une fois nexus stabilisé.
+> **Migration `gameplay` (faite).** Systèmes de lecture passés en `world.query(...).each(...)` (`RigidBody2DSystem`, `RigidBodyWriteBackSystem`, `SpriteRenderSystem`, `TransformRequestResolveSystem`). `TransformWriteRequestCleanupSystem` mute via `world.commands.remove` (le garde-fou rejetterait la mutation directe), avec un step `gameplay:flush` en fin de lane `fixed` (stage `Cleanup`, `after: request-cleanup`). `GameplayPlugin` branche `world.onRemove(RigidBody2D, …)` pour détruire le body runtime (`inertia.destroyRigidBody`) et nettoyer `runtimeBodiesStorage` — fin du leak. Les systèmes qui itèrent un storage script externe (`RigidBody2DRequestSystem`, `ScriptTransformRequestSystem`, `ScriptTransformFeedbackSystem`) restent en mutation directe (pas d'itération de query world → pas de hazard).
 
 ---
 
@@ -200,4 +200,4 @@ world.query(Position).without(Frozen).optional(Velocity)                 // comb
 - [x] Phase 5 — multi-world + `ComponentRegistry` (+ auto-define livré en avance ; supprime aussi l'erreur tsc pré-existante de `define-component`)
 - [x] Phase 6 — correctifs restants (`hasComponent` no-throw sur entité morte, message `component.name`, `addComponent(instance)`) — auto-define déjà fait en Phase 5
 - [x] Phase 7 — filtres `without`/optionnels + événements de cycle de vie
-- [ ] Migration `gameplay` (doc séparé)
+- [x] Migration `gameplay` — systèmes en `each`, cleanup via `world.commands` + step de flush en fin de lane fixed, `onRemove(RigidBody2D)` nettoie `runtimeBodiesStorage` (+ `destroyRigidBody`)
