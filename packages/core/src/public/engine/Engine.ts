@@ -5,7 +5,7 @@ import { EventBus } from "./EventBus";
 import { Scheduler } from "./Scheduler";
 import { ServiceRegistry } from "./ServiceRegistry";
 import { FrameClock, startRafLoop } from "../../private";
-import { SceneContext, SceneManager } from "../scene";
+import { SceneManager } from "../scene";
 
 import {
   BootTimeoutError,
@@ -27,7 +27,7 @@ const DEFAULT_FIXED_DELTA = 1 / 60;
 const DEFAULT_MAX_SUB_STEPS = 5;
 const DEFAULT_BOOT_TIMEOUT = 10_000;
 
-export class Engine implements SceneContext {
+export class Engine {
   private readonly logger: Logger;
 
   public readonly events: EventBus<EngineEvents>;
@@ -52,7 +52,7 @@ export class Engine implements SceneContext {
     this.events = new EventBus<EngineEvents>();
     this.services = new ServiceRegistry();
     this.scheduler = new Scheduler();
-    this.scene = new SceneManager(this);
+    this.scene = new SceneManager(this.services, this.events, this.scheduler);
 
     this.plugins = [];
 

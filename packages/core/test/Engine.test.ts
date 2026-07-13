@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { Engine } from "../src/public/engine/Engine";
 import { Plugin } from "../src/public/engine/Plugin";
 import { ServiceRegistry } from "../src/public/engine/ServiceRegistry";
+import { Scene } from "../src/public/scene/Scene";
+import { SceneContext } from "../src/public/scene/SceneContext";
 import {
   DependencyCycleError,
   MissingDependencyError,
@@ -170,5 +172,42 @@ describe("Engine — topological boot", () => {
     engine.use(new TestPlugin("stuck", {}, undefined, /*resolveReady*/ false));
 
     await expect(engine.start()).rejects.toThrowError(/boot timed out/i);
+  });
+});
+
+class ProbeScene extends Scene {
+  public constructor(
+    name: string,
+    private readonly log: string[],
+  ) {
+    super(name);
+  }
+
+  public override onCreate(ctx: SceneContext): void {
+    ctx.scheduler.add("update", () => this.log.push(this.name), {
+      name: `${this.name}:step`,
+      stage: "Logic",
+    });
+  }
+}
+
+describe("Engine — scene-scoped scheduler", () => {
+  it("removes a scene's steps when it is replaced", async () => {
+    const loop = new ManualLoop();
+    const engine = new Engine({ loop: loop.factory });
+    const log: string[] = [];
+
+    await engine.start();
+
+    await engine.scene.set(new ProbeScene("A", log));
+    loop.frame(0.016);
+    expect(log).toEqual(["A"]);
+
+    await engine.scene.set(new ProbeScene("B", log));
+    log.length = 0;
+    loop.frame(0.016);
+
+    // A's step was torn down with its scene; only B's runs now.
+    expect(log).toEqual(["B"]);
   });
 });
