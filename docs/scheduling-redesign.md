@@ -177,7 +177,7 @@ On implémente **une phase à la fois** ; après validation de l'auteur, on coch
 - [x] **Phase 1 — Boucle** : réorg Engine (fixed→update→render, alpha, compteurs, step `scene:update`, `FrameClock`, seam `advanceFixed`, driver de boucle injectable). _(6 tests Engine verts ; sandbox sert proprement sous Vite après fix d'un import cassé pré-existant.)_
 - [x] **Phase 2 — Boot topo** : `provides/requires` sur tous les plugins, tri topo (Kahn) + `MissingDependencyError`/`DependencyCycleError`/`DuplicateProviderError` + `BootTimeoutError`, assertion post-install, `Plugin.order`/`setOrder` supprimés. _(4 tests boot verts ; tous les packages compilent.)_
 - [ ] **Phase 3 — Physics dt** : `PhysicsWorld.step(dt)` + `world.timestep = dt`.
-- [ ] **Phase 4 — Re-lanes ECS** : split `GameplayPlugin` en étapes fixed/render + `scriptManager.fixedUpdate` branché.
+- [x] **Phase 4 — Re-lanes ECS** : split `GameplayPlugin` en étapes fixed/render (adaptateur `registerSystem`) + `scriptManager.fixedUpdate` branché (bug #1) + `uninstall` retire les handles. `SpriteRenderSystem` en `render/PreRender`. _(test de déterminisme gameplay vert : `onFixedUpdate` s'exécute + pipeline reproductible.)_
 - [ ] **Phase 5 — Suppr. `NexusScheduler`** : suppression fichier + export.
 - [ ] **Phase 6 — Fix input** : `clear` → `endFrame`, ajout `beginFrame`/`endFrame`.
 - [ ] **Phase 7 — Set éditeur + `SceneContext.scheduler`**.
