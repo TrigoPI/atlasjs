@@ -1,7 +1,7 @@
 import { Component, Entity } from "@atlasjs/nexus";
 
-import type { RigidBody2DHandle } from "../runtime/RigidBody2DHandle";
-import type { Transform2DHandle } from "../runtime/Transform2DHandle";
+import type { RigidBody2DComponent } from "../runtime/RigidBody2DComponent";
+import type { Transform2DComponent } from "../runtime/Transform2DComponent";
 
 import { ScriptContext } from "./ScriptContext";
 import { ScriptLifecycle } from "./ScriptLifeCycle";
@@ -36,11 +36,11 @@ export abstract class AtlasScript implements ScriptLifecycle {
     return this.context.getEntityId();
   }
 
-  public get transform(): Transform2DHandle {
+  public get transform(): Transform2DComponent {
     return this.context.transform;
   }
 
-  public get rigidbody(): RigidBody2DHandle {
+  public get rigidbody(): RigidBody2DComponent {
     return this.context.rigidbody;
   }
 

@@ -1,6 +1,6 @@
 # Refonte du gameplay & scripting (`@atlasjs/gameplay`)
 
-> **Statut : design validé avec l'auteur, non implémenté.** Document de design + suivi. Voir la checklist en bas.
+> **Statut : implémenté (phases 0→6 terminées).** Document de design + suivi. Voir la checklist en bas.
 
 ## Context
 
@@ -91,7 +91,7 @@ class PhysicsBodyRef { constructor(public body: RigidBody) {} }
 Un handle **ne contient aucune donnée** : il enveloppe `(world, entity)` et lit/écrit le vrai composant moteur.
 
 ```ts
-class Transform2DHandle {
+class Transform2DComponent {
   private cached: Transform2D | null = null;
   constructor(private readonly world: NexusWorld, private readonly entity: Entity) {}
 
@@ -113,7 +113,7 @@ class Transform2DHandle {
 }
 ```
 
-- **Encapsulation préservée** : le script ne voit que `Transform2DHandle`, jamais `Transform2D`. L'objectif initial est atteint.
+- **Encapsulation préservée** : le script ne voit que `Transform2DComponent`, jamais `Transform2D`. L'objectif initial est atteint.
 - **Zéro copie / zéro sync** : `this.transform.position.x += 10` mute la source de vérité. Plus de request/feedback/snapshot.
 - Les composants de **données utilisateur** (ex. `Health`, `Inventory`) n'ont **pas** de façade : ils sont enregistrés comme composants Nexus normaux et `ctx.getComponent(Health)` renvoie l'instance réelle. La façade est réservée aux composants **moteur** (encapsulation + autorité). Ça évite de recréer la cérémonie « un handle par composant » pour le code de l'utilisateur.
 
@@ -124,7 +124,7 @@ Le handle résout `world.requireComponent(...)` **à la demande** (1er accès), 
 **Registre de handles, par world :**
 
 ```ts
-class ScriptHandleRegistry {
+class ScriptComponentRegistry {
   private readonly handles = new Map<Entity, EntityHandles>();
 
   constructor(private readonly world: NexusWorld) {
@@ -168,7 +168,7 @@ On **garde la forme** du pipeline (déjà alignée sur les stages du core : `Phy
 - `query(RigidBody2D, Transform2D, PhysicsBodyRef)` → `transform.position = body.getTranslation()`, `transform.rotation = body.getRotation()`, `rigidBody.velocity = body.getLinearVelocity()`. Vaut pour `dynamic` **et** `kinematic` (ce dernier récupère sa pose résolue par le solveur).
 
 **Réponse à « et si je bouge les deux en même temps ? »** — il n'y a plus de « les deux ». Pour une entité donnée, **une seule autorité** détient la position, déterminée par le type de corps :
-- corps `dynamic` : on le déplace en écrivant la **vélocité/force** (via `RigidBody2DHandle`), pas la position ; `setPosition` est un **téléport explicite** qui appelle `body.setTranslation(...)` (échappatoire assumée, jamais un clobber silencieux).
+- corps `dynamic` : on le déplace en écrivant la **vélocité/force** (via `RigidBody2DComponent`), pas la position ; `setPosition` est un **téléport explicite** qui appelle `body.setTranslation(...)` (échappatoire assumée, jamais un clobber silencieux).
 - corps `kinematic` : `Transform2D` est la source ; le push l'applique au solveur chaque step.
 La décision est prise **au moment de l'écriture**, dans le setter de la façade, en lisant `RigidBody2D.type`. Aucune course possible : deux écritures « concurrentes » passent par la même règle et le même chemin d'autorité.
 
@@ -178,8 +178,8 @@ La décision est prise **au moment de l'écriture**, dans le setter de la façad
 
 ```ts
 abstract class AtlasScript {
-  get transform(): Transform2DHandle;          // handle (jamais Transform2D brut)
-  get rigidbody(): RigidBody2DHandle | null;   // null si pas de RigidBody2D
+  get transform(): Transform2DComponent;          // handle (jamais Transform2D brut)
+  get rigidbody(): RigidBody2DComponent | null;   // null si pas de RigidBody2D
   getComponent<T>(type): T | null;             // composant de DONNÉE utilisateur → instance réelle
   addComponent<T>(type, ...args): T;           // world.addComponent (direct : scripts hors query world)
   removeComponent<T>(type): void;
@@ -206,7 +206,7 @@ abstract class AtlasScript {
 
 **Ajouter**
 - `components/PhysicsBodyRef.ts`
-- `scripting/runtime/Transform2DHandle.ts`, `RigidBody2DHandle.ts`, `ScriptHandleRegistry.ts`
+- `scripting/runtime/Transform2DComponent.ts`, `RigidBody2DComponent.ts`, `ScriptComponentRegistry.ts`
 - `systems/PhysicsPushSystem.ts`, `PhysicsPullSystem.ts` (fusion des ex-`RigidBody2DSystem` + `RigidBodyWriteBackSystem`)
 - `ScriptContext`/`RuntimeScriptContext` réécrits sur le vrai world
 
@@ -249,7 +249,7 @@ L'ergonomie côté utilisateur est quasi identique — mais il n'y a plus de cop
 
 - **Phase 0 — Filet de sécurité.** Tests vitest gameplay qui verrouillent le comportement attendu du pont : dynamic → physique autoritaire (writeback gagne) ; kinematic → transform autoritaire (push gagne) ; téléport explicite d'un dynamic ; création/destruction du body via cycle de vie.
 - **Phase 1 — `PhysicsBodyRef` + pont à 2 systèmes.** Introduire le composant, `PhysicsPushSystem`/`PhysicsPullSystem`, brancher `onRemove` pour détruire le body. Remplace `RigidBody2DSystem` + `RigidBodyWriteBackSystem` + le `SparseSet` + le hook manuel. (Encore piloté par les composants moteur, sans toucher au scripting.)
-- **Phase 2 — Handles + registre + cache.** `Transform2DHandle`, `RigidBody2DHandle`, `ScriptHandleRegistry` (invalidation via `onRemove`). Routage d'autorité dans les setters.
+- **Phase 2 — Handles + registre + cache.** `Transform2DComponent`, `RigidBody2DComponent`, `ScriptComponentRegistry` (invalidation via `onRemove`). Routage d'autorité dans les setters.
 - **Phase 3 — `ScriptContext` sur le vrai world.** Réécrire `RuntimeScriptContext` ; `AtlasScript.transform`/`.rigidbody` → handles ; `getComponent` → composants réels. Brancher `release(entity)` dans `ScriptManager`.
 - **Phase 4 — Suppression de la couche fantôme.** Retirer `ScriptComponentStorage`, `ScriptComponentRuntimeStorage`, `Transform2DComponent`, `RigidBody2DComponent`, `Transform2DSyncState`, `TransformWriteRequest` + les 5 systèmes de pont fantôme. Nettoyer `GameplayPlugin`.
 - **Phase 5 — `Vec2` partout.** Supprimer `Vector2D`, migrer les usages.
@@ -261,11 +261,11 @@ L'ergonomie côté utilisateur est quasi identique — mais il n'y a plus de cop
 
 - [x] Phase 0 — tests de pont (double `FakePhysicsWorld`, autorité dynamic/kinematic, cycle de vie du body). 4 tests verrouillent le comportement à préserver ; 2 `it.fails` (clobber kinematic) sont des tripwires qui basculeront en `it` en Phase 1.
 - [x] Phase 1 — `PhysicsBodyRef` + `PhysicsPushSystem`/`PhysicsPullSystem` + `onRemove` (retire `SparseSet` + hook manuel + `RigidBody2DSystem`/`RigidBodyWriteBackSystem`). `TransformRequestResolveSystem` repointé sur `PhysicsBodyRef` (fantôme intact). Élargissement Nexus : `onAdd`/`onRemove`/`hasComponent`/`removeComponent`/`requireComponent` acceptent désormais des composants à args (`Component<T, any[]>`), permettant à un composant porteur de handle (`PhysicsBodyRef`) de passer par le cycle de vie. Les 2 tripwires kinematic sont verts.
-- [x] Phase 2 — handles `Transform2DHandle`/`RigidBody2DHandle` + `ScriptHandleRegistry` (cache + invalidation via `onRemove`) + routage d'autorité dans les setters (dynamic → téléport body ; kinematic/static → `Transform2D`). Construits et testés en isolation (9 tests : source unique, invalidation, autorité, escape-hatch du getter live). Pas encore branchés aux scripts (Phase 3).
+- [x] Phase 2 — handles `Transform2DComponent`/`RigidBody2DComponent` + `ScriptComponentRegistry` (cache + invalidation via `onRemove`) + routage d'autorité dans les setters (dynamic → téléport body ; kinematic/static → `Transform2D`). Construits et testés en isolation (9 tests : source unique, invalidation, autorité, escape-hatch du getter live). Pas encore branchés aux scripts (Phase 3).
 - [x] Phase 3 — `ScriptContext`/`RuntimeScriptContext` sur le vrai world ; `AtlasScript.transform`/`.rigidbody` → handles, `getComponent`/`addComponent` → composants réels ; `ScriptManager(world, handleRegistry)` + `release(entity)` au dernier script détruit ; `GameplayPlugin` crée/dispose le registre. `MoveScript` (test détermin.) et `TestScript` (sandbox) migrés sur la façade. Fantôme laissé en no-op (supprimé Phase 4). Test d'intégration bout-en-bout ajouté (script → handle → pont → physique). 20 tests verts, tsc gameplay + sandbox OK.
-- [ ] Phase 4 — suppression couche fantôme (storages, types doublons, 5 systèmes de pont, tampon `TransformWriteRequest`)
-- [ ] Phase 5 — `Vec2` partout (suppression `Vector2D`)
-- [ ] Phase 6 — migration `apps/sandbox`
+- [x] Phase 4 — suppression couche fantôme (`ScriptComponentStorage`, `ScriptComponentRuntimeStorage`, `Transform2DSyncState`, `TransformWriteRequest`, les 5 systèmes de pont fantôme, `ScriptComponentConstructor`) + nettoyage `GameplayPlugin` (pont réduit à `physics-push`/`physics-pull`). **Renommage `Handle → Component`** : `Transform2DComponent`/`RigidBody2DComponent` (façades), `ScriptComponentRegistry`, `EntityScriptComponents` — plus aucun vocabulaire « Handle ». Build gameplay : 119 → 78 fichiers. 20 tests verts, sandbox tsc OK.
+- [x] Phase 5 — `Vec2` partout : `Vector2D` supprimé (n'était utilisé que par la couche fantôme ; le reste du code était déjà en `Vec2`). Réalisé en même temps que la Phase 4.
+- [x] Phase 6 — migration `apps/sandbox` : `TestScript` (seule entité scriptée) migré sur la façade dès la Phase 3.
 
 ## Points ouverts / risques
 

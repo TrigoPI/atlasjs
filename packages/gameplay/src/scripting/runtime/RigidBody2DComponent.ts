@@ -4,7 +4,7 @@ import { Entity, NexusWorld } from "@atlasjs/nexus";
 
 import { RigidBody2D } from "../../components";
 
-export class RigidBody2DHandle {
+export class RigidBody2DComponent {
   private readonly world: NexusWorld;
   private readonly entity: Entity;
   private cached: RigidBody2D | null;

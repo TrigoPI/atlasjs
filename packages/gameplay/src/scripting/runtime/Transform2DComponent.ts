@@ -7,7 +7,7 @@ import {
   Transform2D,
 } from "../../components";
 
-export class Transform2DHandle {
+export class Transform2DComponent {
   private readonly world: NexusWorld;
   private readonly entity: Entity;
   private cached: Transform2D | null;

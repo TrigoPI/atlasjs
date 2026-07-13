@@ -11,27 +11,16 @@ import { Entity, NEXUS, NexusWorld, Unsubscribe } from "@atlasjs/nexus";
 import {
   PhysicsPullSystem,
   PhysicsPushSystem,
-  RigidBody2DRequestSystem,
-  ScriptTransformFeedbackSystem,
-  ScriptTransformRequestSystem,
   SpriteRenderSystem,
-  TransformRequestResolveSystem,
-  TransformWriteRequestCleanupSystem,
 } from "./systems";
 
-import {
-  ScriptComponentRuntimeStorage,
-  ScriptComponentStorage,
-  ScriptHandleRegistry,
-  ScriptManager,
-} from "./scripting";
+import { ScriptComponentRegistry, ScriptManager } from "./scripting";
 
 import {
   PhysicsBodyRef,
   RigidBody2D,
   SpriteRender,
   Transform2D,
-  TransformWriteRequest,
 } from "./components";
 
 export class GameplayPlugin extends Plugin {
@@ -57,29 +46,21 @@ export class GameplayPlugin extends Plugin {
     const nebula: NebulaRenderer = await engine.services.wait(NEBULA_RENDERER);
     const inertia: PhysicsWorld = await engine.services.wait(INERTIAL_ENGINE);
 
-    const componentStorage: ScriptComponentStorage = new ScriptComponentStorage();
-    const runtimeStorage: ScriptComponentRuntimeStorage = new ScriptComponentRuntimeStorage();
-    const handleRegistry: ScriptHandleRegistry = new ScriptHandleRegistry(world);
+    const componentRegistry: ScriptComponentRegistry = new ScriptComponentRegistry(world);
 
-    this.scriptManager = new ScriptManager(world, handleRegistry);
+    this.scriptManager = new ScriptManager(world, componentRegistry);
 
-    const scriptTransformRequestSystem = new ScriptTransformRequestSystem(componentStorage, runtimeStorage);
-    const rigidBody2DRequestSystem = new RigidBody2DRequestSystem(componentStorage);
     const physicsPushSystem = new PhysicsPushSystem(inertia);
     const physicsPullSystem = new PhysicsPullSystem();
-    const transformRequestResolveSystem = new TransformRequestResolveSystem();
-    const scriptTransformFeedbackSystem = new ScriptTransformFeedbackSystem(componentStorage, runtimeStorage);
-    const transformWriteRequestCleanupSystem = new TransformWriteRequestCleanupSystem();
     const spriteRenderSystem = new SpriteRenderSystem(nebula);
 
     world
       .defineComponent(RigidBody2D)
       .defineComponent(Transform2D)
       .defineComponent(SpriteRender)
-      .defineComponent(PhysicsBodyRef)
-      .defineComponent(TransformWriteRequest);
+      .defineComponent(PhysicsBodyRef);
 
-    this.unsubscribers.push(() => handleRegistry.dispose());
+    this.unsubscribers.push(() => componentRegistry.dispose());
     this.unsubscribers.push(
       world.onRemove(PhysicsBodyRef, (_entity: Entity, ref: PhysicsBodyRef) => {
         inertia.destroyRigidBody(ref.body);
@@ -102,47 +83,16 @@ export class GameplayPlugin extends Plugin {
     );
 
     this.handles.push(
-      registerSystem(fixed, world, scriptTransformRequestSystem, {
-        name: "gameplay:script-transform-request",
-        stage: "PhysicsRequest",
-      }),
-      registerSystem(fixed, world, rigidBody2DRequestSystem, {
-        name: "gameplay:rigidbody-request",
-        stage: "PhysicsRequest",
-        after: "gameplay:script-transform-request",
-      }),
       registerSystem(fixed, world, physicsPushSystem, {
         name: "gameplay:physics-push",
         stage: "PhysicsRequest",
-        after: "gameplay:rigidbody-request",
       }),
-      registerSystem(fixed, world, transformRequestResolveSystem, {
-        name: "gameplay:transform-resolve",
-        stage: "PhysicsRequest",
-        after: "gameplay:physics-push",
-      }),
-    );
-
-    this.handles.push(
       registerSystem(fixed, world, physicsPullSystem, {
         name: "gameplay:physics-pull",
         stage: "PhysicsWriteback",
       }),
-      registerSystem(fixed, world, scriptTransformFeedbackSystem, {
-        name: "gameplay:script-feedback",
-        stage: "PhysicsWriteback",
-        after: "gameplay:physics-pull",
-      }),
     );
 
-    this.handles.push(
-      registerSystem(fixed, world, transformWriteRequestCleanupSystem, {
-        name: "gameplay:request-cleanup",
-        stage: "Cleanup",
-      }),
-    );
-
-    
     this.handles.push(
       update.add((ctx) => this.scriptManager.update(ctx.dt), {
         name: "gameplay:script-update",

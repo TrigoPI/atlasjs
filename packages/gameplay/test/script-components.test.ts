@@ -3,16 +3,16 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Entity } from "@atlasjs/nexus";
 
 import { RigidBody2D, Transform2D } from "../src/components";
-import { ScriptHandleRegistry } from "../src/scripting";
+import { ScriptComponentRegistry } from "../src/scripting";
 import { createHarness, Harness } from "./helpers/harness";
 
-describe("Gameplay — script handles (façade over the real ECS)", () => {
+describe("Gameplay — script components (façade over the real ECS)", () => {
   let h: Harness;
-  let registry: ScriptHandleRegistry;
+  let registry: ScriptComponentRegistry;
 
   beforeEach(async () => {
     h = await createHarness();
-    registry = new ScriptHandleRegistry(h.world);
+    registry = new ScriptComponentRegistry(h.world);
   });
 
   afterEach(() => {
@@ -136,7 +136,7 @@ describe("Gameplay — script handles (façade over the real ECS)", () => {
 
   // --- RigidBody2D handle proxies the real component ---
 
-  it("RigidBody2DHandle writes through to the real component", () => {
+  it("RigidBody2DComponent writes through to the real component", () => {
     const e: Entity = h.world.createEntity();
     h.world.addComponent(e, RigidBody2D);
 
