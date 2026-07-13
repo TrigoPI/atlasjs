@@ -14,6 +14,15 @@ export abstract class ScriptComponent<TEngine extends object> {
   protected readonly entity: Entity;
 
   public constructor(world: NexusWorld, entity: Entity) {
+    const ctor: ScriptComponentCtor<this, TEngine, unknown[]> = this
+      .constructor as unknown as ScriptComponentCtor<this, TEngine, unknown[]>;
+
+    if (ctor.engine === undefined) {
+      throw new Error(
+        `[ScriptComponent] "${ctor.name}" must declare a static "engine" backing component.`,
+      );
+    }
+
     this.world = world;
     this.entity = entity;
   }

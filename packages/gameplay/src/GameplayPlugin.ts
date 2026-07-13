@@ -1,5 +1,5 @@
 import { createLogger, Logger } from "@atlasjs/utils";
-import { Engine, Plugin, StepHandle } from "@atlasjs/core";
+import { Engine, Plugin, StepContext, StepHandle } from "@atlasjs/core";
 import { NEBULA_RENDERER, NebulaRenderer } from "@atlasjs/nebula";
 import { INERTIAL_ENGINE, PhysicsWorld } from "@atlasjs/inertia";
 import { Entity, NEXUS, NexusWorld, Unsubscribe } from "@atlasjs/nexus";
@@ -47,9 +47,9 @@ export class GameplayPlugin extends Plugin {
 
     this.scriptManager = new ScriptManager(world);
 
-    const physicsPushSystem = new PhysicsPushSystem(inertia);
-    const physicsPullSystem = new PhysicsPullSystem();
-    const spriteRenderSystem = new SpriteRenderSystem(nebula);
+    const physicsPushSystem: PhysicsPushSystem = new PhysicsPushSystem(inertia);
+    const physicsPullSystem: PhysicsPullSystem = new PhysicsPullSystem();
+    const spriteRenderSystem: SpriteRenderSystem = new SpriteRenderSystem(nebula);
 
     world
       .defineComponent(RigidBody2D)
@@ -90,7 +90,7 @@ export class GameplayPlugin extends Plugin {
     );
 
     this.handles.push(
-      update.add((ctx) => this.scriptManager.update(ctx.dt), {
+      update.add((ctx: StepContext) => this.scriptManager.update(ctx.dt), {
         name: "gameplay:script-update",
         stage: "Logic",
       }),

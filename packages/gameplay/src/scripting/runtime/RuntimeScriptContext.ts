@@ -1,6 +1,6 @@
 import { Component, Entity, NexusWorld } from "@atlasjs/nexus";
 
-import { ScriptComponentCtor, ScriptContext } from "../core";
+import { ScriptComponent, ScriptComponentCtor, ScriptContext } from "../core";
 
 // prettier-ignore
 export class RuntimeScriptContext implements ScriptContext {
@@ -40,8 +40,8 @@ export class RuntimeScriptContext implements ScriptContext {
     return this.world.getComponent(this.entity, type);
   }
 
-  public addComponent<TComponent extends object, TArgs extends unknown[]>(type: Component<TComponent, TArgs>, ...args: TArgs): TComponent;
   public addComponent<TFacade, TEngine extends object, TArgs extends unknown[]>(type: ScriptComponentCtor<TFacade, TEngine, TArgs>, ...args: TArgs): TFacade;
+  public addComponent<TComponent extends object, TArgs extends unknown[]>(type: Component<TComponent, TArgs>, ...args: TArgs): TComponent;
   public addComponent<TComponent extends object, TArgs extends unknown[]>(type: Component<TComponent, TArgs> | ScriptComponentCtor<TComponent, object, TArgs>, ...args: TArgs): TComponent {
     if (this.isFacade(type)) {
       if (!this.world.hasComponent(this.entity, type.engine)) {
@@ -75,8 +75,8 @@ export class RuntimeScriptContext implements ScriptContext {
   }
 
   private isFacade<TComponent extends object, TArgs extends unknown[]>(
-    type:Component<TComponent, TArgs> | ScriptComponentCtor<TComponent, object, TArgs>,
+    type: Component<TComponent, TArgs> | ScriptComponentCtor<TComponent, object, TArgs>,
   ): type is ScriptComponentCtor<TComponent, object, TArgs> {
-    return "engine" in type;
+    return type.prototype instanceof ScriptComponent;
   }
 }

@@ -4,6 +4,7 @@ import { ScriptComponentCtor } from "./ScriptComponent";
 import { ScriptContext } from "./ScriptContext";
 import { ScriptLifecycle } from "./ScriptLifeCycle";
 
+// prettier-ignore
 export abstract class AtlasScript implements ScriptLifecycle {
   private __context?: ScriptContext;
 
@@ -46,18 +47,9 @@ export abstract class AtlasScript implements ScriptLifecycle {
     return this.context.getComponent(type);
   }
 
-  public addComponent<TFacade, TEngine extends object, TArgs extends unknown[]>(
-    type: ScriptComponentCtor<TFacade, TEngine, TArgs>,
-    ...args: TArgs
-  ): TFacade;
-  public addComponent<TComponent extends object, TArgs extends unknown[]>(
-    type: Component<TComponent, TArgs>,
-    ...args: TArgs
-  ): TComponent;
-  public addComponent<TComponent extends object, TArgs extends unknown[]>(
-    type: Component<TComponent, TArgs> | ScriptComponentCtor<TComponent, object, TArgs>,
-    ...args: TArgs
-  ): TComponent {
+  public addComponent<TFacade, TEngine extends object, TArgs extends unknown[]>(type: ScriptComponentCtor<TFacade, TEngine, TArgs>, ...args: TArgs): TFacade;
+  public addComponent<TComponent extends object, TArgs extends unknown[]>(type: Component<TComponent, TArgs>, ...args: TArgs): TComponent;
+  public addComponent<TComponent extends object, TArgs extends unknown[]>(type: Component<TComponent, TArgs> | ScriptComponentCtor<TComponent, object, TArgs>, ...args: TArgs): TComponent {
     return this.context.addComponent(
       type as Component<TComponent, TArgs>,
       ...args,
