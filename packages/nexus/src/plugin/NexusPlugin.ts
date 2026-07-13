@@ -2,7 +2,7 @@ import { Engine, Plugin, StepHandle } from "@atlasjs/core";
 import { createLogger, Logger } from "@atlasjs/utils";
 
 import { NEXUS } from "./token";
-import { NexusWorld } from "./NexusWorld";
+import { NexusWorld } from "../world";
 
 export class NexusPlugin extends Plugin {
   private readonly logger: Logger;

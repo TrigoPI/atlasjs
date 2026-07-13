@@ -1,4 +1,4 @@
-import { ComponentID, Component } from "./nexus-types";
+import { ComponentID, Component } from "../types";
 import { defaultComponentRegistry } from "./ComponentRegistry";
 
 export function defineComponent<T extends object>(

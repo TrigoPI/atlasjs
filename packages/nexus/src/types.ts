@@ -1,4 +1,4 @@
-import { NexusWorld } from "./NexusWorld";
+import type { NexusWorld } from "./world/NexusWorld";
 
 export type Entity = number & { readonly __kind: "Entity" };
 export type ComponentID = number & { readonly __kind: "ComponentID" };

@@ -2,10 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { Engine } from "@atlasjs/core";
 
-import { NEXUS } from "../src/token";
-import { NexusPlugin } from "../src/NexusPlugin";
-import { NexusWorld } from "../src/NexusWorld";
-import { Entity } from "../src/nexus-types";
+import { NEXUS, NexusPlugin, NexusWorld, Entity } from "../src";
 
 class Tag {}
 

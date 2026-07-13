@@ -1,4 +1,4 @@
-import { Component, Entity } from "../nexus-types";
+import { Component, Entity } from "../types";
 
 export interface Query<T extends unknown[] = unknown[]> {
   readonly size: number;

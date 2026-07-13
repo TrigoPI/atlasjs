@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { NexusWorld } from "../src/NexusWorld";
-import { Entity } from "../src/nexus-types";
+import { NexusWorld, Entity } from "../src";
 
 class Position {
   public x: number;

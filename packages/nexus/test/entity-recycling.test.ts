@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { NexusWorld } from "../src/NexusWorld";
-import { Entity } from "../src/nexus-types";
-import { entityGeneration, entityIndex } from "../src/entity";
+import { NexusWorld, Entity, entityGeneration, entityIndex } from "../src";
 
 class Health {
   public value: number;

@@ -1,4 +1,4 @@
-import { Component, ComponentID } from "./nexus-types";
+import { Component, ComponentID } from "../types";
 
 export class ComponentRegistry {
   private readonly ids: Map<Component, ComponentID>;

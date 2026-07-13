@@ -1,4 +1,4 @@
-import { Entity } from "./nexus-types";
+import { Entity } from "../types";
 import { SparseSet } from "./SparseSet";
 
 export interface IComponentStore<T = any> {

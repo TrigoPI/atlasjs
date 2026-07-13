@@ -1,4 +1,4 @@
-import { Entity } from "./nexus-types";
+import { Entity } from "../types";
 
 export const ENTITY_INDEX_BITS: number = 21;
 export const ENTITY_INDEX_CAPACITY: number = 1 << ENTITY_INDEX_BITS;

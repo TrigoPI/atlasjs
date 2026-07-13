@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { NexusWorld } from "../src/NexusWorld";
-import { ComponentRegistry } from "../src/ComponentRegistry";
-import { Entity, Unsubscribe } from "../src/nexus-types";
+import { NexusWorld, ComponentRegistry, Entity, Unsubscribe } from "../src";
 
 class Position {
   public x: number;

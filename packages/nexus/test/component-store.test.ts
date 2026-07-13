@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { IComponentStore, SparseSetStore } from "../src/ComponentStore";
-import { Entity } from "../src/nexus-types";
+import { IComponentStore, SparseSetStore, Entity } from "../src";
 
 const e = (n: number): Entity => n as Entity;
 

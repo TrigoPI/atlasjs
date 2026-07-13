@@ -1,5 +1,5 @@
-import { IComponentStore } from "../ComponentStore";
-import { Component, Entity } from "../nexus-types";
+import { IComponentStore } from "../component";
+import { Component, Entity } from "../types";
 import { Query } from "./Query";
 
 export type StoreResolver = (

@@ -1,4 +1,4 @@
-import { Component, Entity } from "./nexus-types";
+import { Component, Entity } from "../types";
 
 // prettier-ignore
 export interface CommandBuffer {

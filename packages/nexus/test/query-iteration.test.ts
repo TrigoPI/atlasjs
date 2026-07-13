@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { NexusWorld } from "../src/NexusWorld";
-import { Entity } from "../src/nexus-types";
-import { Query } from "../src/query";
+import { NexusWorld, Entity, Query } from "../src";
 
 class Position {}
 class Velocity {}

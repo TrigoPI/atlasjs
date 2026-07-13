@@ -1,4 +1,4 @@
-import { NexusSystemContext } from "./nexus-types";
+import { NexusSystemContext } from "../types";
 
 export interface NexusSystem {
   update(context: NexusSystemContext): void;

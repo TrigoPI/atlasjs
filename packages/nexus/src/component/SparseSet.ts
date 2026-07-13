@@ -1,5 +1,5 @@
-import { Entity } from ".";
-import { entityIndex } from "./entity";
+import { Entity } from "../types";
+import { entityIndex } from "../entity";
 
 export class SparseSet<T> {
   private readonly sparse: number[];

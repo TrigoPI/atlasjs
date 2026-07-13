@@ -1,13 +1,14 @@
 import { createLogger, Logger } from "@atlasjs/utils";
 
-import { Query, EmptyQuery, NexusQuery, StoreResolver } from "./query";
-import { EntityManager } from "./EntityManager";
-import { IComponentStore, SparseSetStore } from "./ComponentStore";
-import { CommandBuffer, NexusCommandBuffer } from "./CommandBuffer";
+import { Query, EmptyQuery, NexusQuery, StoreResolver } from "../query";
+import { EntityManager } from "../entity";
+import { CommandBuffer, NexusCommandBuffer } from "../command";
 import {
   ComponentRegistry,
   defaultComponentRegistry,
-} from "./ComponentRegistry";
+  IComponentStore,
+  SparseSetStore,
+} from "../component";
 
 import {
   Component,
@@ -16,7 +17,7 @@ import {
   ComponentListener,
   Entity,
   Unsubscribe,
-} from "./nexus-types";
+} from "../types";
 
 export class NexusWorld {
   private readonly logger: Logger;

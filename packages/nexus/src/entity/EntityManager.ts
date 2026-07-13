@@ -1,4 +1,4 @@
-import { Entity } from "./nexus-types";
+import { Entity } from "../types";
 import { entityGeneration, entityIndex, makeEntity } from "./entity";
 
 export class EntityManager {

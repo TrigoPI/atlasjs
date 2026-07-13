@@ -1,4 +1,4 @@
-import { Component, Entity } from "../nexus-types";
+import { Component, Entity } from "../types";
 import { Query } from "./Query";
 
 export class EmptyQuery<T extends unknown[] = unknown[]> implements Query<T> {
