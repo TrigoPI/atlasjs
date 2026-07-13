@@ -40,32 +40,26 @@ describe("query intersection", () => {
     expect(query.size).toBe(0);
   });
 
-  // === Known bug — safety net for docs/nexus-ecs-redesign.md, Phase 3/4 ===
-  // Removing the base component of a query mid-iteration swap-removes from the
-  // dense array being walked, so entities get skipped (this is exactly what
-  // TransformWriteRequestCleanupSystem does in gameplay). The redesign fixes it
-  // via the command buffer (deferred removal) + a fail-fast iteration guard.
-  // Convert `it.fails` -> `it` once that lands (it will start failing here).
-
-  it.fails("visits every entity when removing during iteration", () => {
+  // Phase 3 fail-fast guard: removing the base component mid-iteration used to
+  // swap-remove from the dense array being walked and silently skip entities
+  // (exactly what TransformWriteRequestCleanupSystem does in gameplay). The
+  // guard now turns that into a loud, actionable error instead of a silent bug.
+  it("throws a clear error when the base store is mutated during iteration", () => {
     const world: NexusWorld = new NexusWorld();
     world.defineComponent(Frozen);
 
-    const entities: Entity[] = [];
     for (let i = 0; i < 6; i++) {
-      const entity: Entity = world.createEntity();
-      world.addComponent(entity, Frozen);
-      entities.push(entity);
+      world.addComponent(world.createEntity(), Frozen);
     }
 
-    const visited: Entity[] = [];
-    const query: Query = world.query(Frozen);
-    for (const entity of query.entities()) {
-      visited.push(entity);
-      world.removeComponent(entity, Frozen);
-    }
-
-    expect(new Set(visited)).toEqual(new Set(entities));
-    expect(world.query(Frozen).size).toBe(0);
+    expect(() => {
+      for (const entity of world.query(Frozen).entities()) {
+        world.removeComponent(entity, Frozen);
+      }
+    }).toThrow(/structural change during query iteration/i);
   });
+
+  // Phase 4 (command buffer): deferred removal must let the loop drain every
+  // entity without tripping the guard. Enable once world.commands lands.
+  it.todo("drains every entity when removal is deferred via world.commands");
 });

@@ -106,9 +106,11 @@ world.query(RigidBody2D, Transform2D).each((entity, rb, tr) => {
 });
 ```
 
-`each` hoiste `denseEntities()`/les stores une fois, boucle en `for` classique, et lit chaque composant par index dans le store correspondant. Pas de générateur sur le chemin chaud.
+`each` hoiste `getEntities()`/les stores une fois, boucle en `for` classique, et lit chaque composant via `store.get(entity)` (une seule résolution par store/entité, `undefined` = absent). Pas de générateur sur le chemin chaud. **Zéro alloc par entité** : les composants sont rassemblés dans un tableau `args` **réutilisé** entre les itérations, et `fn.apply(undefined, args)` le lit en place (pas de spread qui réallouerait). L'itérateur `[Symbol.iterator]` (confort `for...of`) alloue un tuple par entité — c'est le chemin non-chaud, assumé.
 
-**Garde-fou fail-fast :** `each`/l'itérateur capturent `baseStore.version` au début et le revérifient ; une mutation structurelle directe du store itéré lève une erreur explicite (« utilise `world.commands` »).
+Comme `world.query` construit `stores` dans l'ordre des types demandés, `each` restitue les composants **dans l'ordre demandé** même si le base store (le plus petit) est un autre.
+
+**Garde-fou fail-fast :** `each`/`entities`/l'itérateur capturent `baseStore.version` au début et le revérifient **à chaque tour** ; une mutation structurelle directe du store itéré lève une erreur explicite listant les composants concernés (« defer it with world.commands »). Le bug silencieux d'entités sautées devient un throw immédiat et actionnable.
 
 ### 4. Command buffer + flush hybride
 
@@ -169,7 +171,7 @@ On remplace l'état module-global mutable + monkeypatch par un `ComponentRegistr
 - [x] Phase 0 — vitest + tests de non-régression (mutation-pendant-itération, recyclage, intersection)
 - [x] Phase 1 — générations d'entités
 - [x] Phase 2 — `IComponentStore` + `SparseSetStore` + `version`
-- [ ] Phase 3 — query typée `each`/tuples + garde-fou fail-fast
+- [x] Phase 3 — query typée `each`/tuples + garde-fou fail-fast
 - [ ] Phase 4 — command buffer + flush hybride (auto sync points + `world.flush()`)
 - [ ] Phase 5 — multi-world + `ComponentRegistry`
 - [ ] Phase 6 — correctifs (auto-define, `hasComponent`, messages, `addComponent(instance)`)

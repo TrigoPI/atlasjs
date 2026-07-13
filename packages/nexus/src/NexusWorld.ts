@@ -161,7 +161,9 @@ export class NexusWorld {
     return instance;
   }
 
-  public query(...types: Component<any, any>[]): Query {
+  public query<T extends object[]>(
+    ...types: { [K in keyof T]: Component<T[K], any[]> }
+  ): Query<T> {
     if (types.length === 0) {
       throw new Error("Query requires at least one component type.");
     }
@@ -172,7 +174,7 @@ export class NexusWorld {
       const store: IComponentStore | undefined = this.findStore(type);
 
       if (store === undefined) {
-        return new EmptyQuery();
+        return new EmptyQuery<T>();
       }
 
       stores.push(store);
@@ -186,7 +188,7 @@ export class NexusWorld {
       }
     }
 
-    return new NexusQuery(stores, baseStore);
+    return new NexusQuery<T>(stores, baseStore, types as Component[]);
   }
 
   public destroy(): void {
