@@ -13,7 +13,7 @@ export class InputPlugin extends Plugin {
   private opts: InputPluginOptions;
 
   public constructor(opts: InputPluginOptions) {
-    super("input", 5);
+    super("input", { provides: [INPUT] });
     this.opts = opts;
     this.input = null;
     this.backend = null;

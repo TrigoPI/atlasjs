@@ -9,7 +9,7 @@ export class NexusPlugin extends Plugin {
   private readonly world: NexusWorld;
 
   public constructor() {
-    super("nexus-plugin");
+    super("nexus-plugin", { provides: [NEXUS] });
     this.logger = createLogger(NexusPlugin.name);
     this.world = new NexusWorld();
   }

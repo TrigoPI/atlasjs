@@ -12,7 +12,10 @@ export class EditorPlugin extends Plugin {
   private picker: Picker | null;
 
   public constructor() {
-    super("editor");
+    super("editor", {
+      requires: [INPUT, NEBULA_RENDERER],
+      provides: [PICKING],
+    });
     this.logger = createLogger(EditorPlugin.name);
     this.picker = null;
   }

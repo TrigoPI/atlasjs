@@ -1,7 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { Engine } from "../src/public/engine/Engine";
-import { StepContext } from "../src/public/engine/types";
+import { Plugin } from "../src/public/engine/Plugin";
+import { ServiceRegistry } from "../src/public/engine/ServiceRegistry";
+import {
+  DependencyCycleError,
+  MissingDependencyError,
+} from "../src/public/engine/PluginErrors";
+import { ServiceToken, StepContext } from "../src/public/engine/types";
 
 class ManualLoop {
   public onTick: ((dt: number) => void) | null = null;
@@ -99,5 +105,70 @@ describe("Engine — frame loop", () => {
   it("stops the loop on engine.stop()", () => {
     engine.stop();
     expect(loop.stopped).toBe(true);
+  });
+});
+
+const noopLoop = () => () => {};
+
+class TestPlugin extends Plugin {
+  public constructor(
+    id: string,
+    deps: {
+      provides?: readonly ServiceToken<unknown>[];
+      requires?: readonly ServiceToken<unknown>[];
+    },
+    private readonly log?: string[],
+    private readonly resolveReady: boolean = true,
+  ) {
+    super(id, deps);
+  }
+
+  public install(engine: Engine): void {
+    this.log?.push(this.id);
+    for (const token of this.provides) engine.services.provide(token, {});
+    if (this.resolveReady) this.deferred.resolve();
+  }
+
+  public uninstall(): void {}
+}
+
+describe("Engine — topological boot", () => {
+  it("installs providers before their consumers regardless of registration order", async () => {
+    const TA = ServiceRegistry.createToken<object>("A");
+    const order: string[] = [];
+
+    const engine = new Engine({ loop: noopLoop });
+    // Register the consumer FIRST to prove ordering is by dependency, not order.
+    engine.use(new TestPlugin("consumer", { requires: [TA] }, order));
+    engine.use(new TestPlugin("provider", { provides: [TA] }, order));
+
+    await engine.start();
+
+    expect(order).toEqual(["provider", "consumer"]);
+  });
+
+  it("throws MissingDependencyError when a required service has no provider", async () => {
+    const TMissing = ServiceRegistry.createToken<object>("missing");
+    const engine = new Engine({ loop: noopLoop });
+    engine.use(new TestPlugin("needy", { requires: [TMissing] }));
+
+    await expect(engine.start()).rejects.toBeInstanceOf(MissingDependencyError);
+  });
+
+  it("throws DependencyCycleError on a dependency cycle", async () => {
+    const TA = ServiceRegistry.createToken<object>("A");
+    const TB = ServiceRegistry.createToken<object>("B");
+    const engine = new Engine({ loop: noopLoop });
+    engine.use(new TestPlugin("a", { provides: [TA], requires: [TB] }));
+    engine.use(new TestPlugin("b", { provides: [TB], requires: [TA] }));
+
+    await expect(engine.start()).rejects.toBeInstanceOf(DependencyCycleError);
+  });
+
+  it("fails boot (does not hang) when a plugin never becomes ready", async () => {
+    const engine = new Engine({ loop: noopLoop, bootTimeout: 50 });
+    engine.use(new TestPlugin("stuck", {}, undefined, /*resolveReady*/ false));
+
+    await expect(engine.start()).rejects.toThrowError(/boot timed out/i);
   });
 });

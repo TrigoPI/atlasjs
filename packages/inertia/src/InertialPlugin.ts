@@ -9,7 +9,7 @@ export class InertialPlugin extends Plugin {
   private readonly logger: Logger;
 
   public constructor(world: PhysicsWorld) {
-    super("inertia-plungin");
+    super("inertia-plugin", { provides: [INERTIAL_ENGINE] });
     this.world = world;
     this.logger = createLogger(InertialPlugin.name);
   }

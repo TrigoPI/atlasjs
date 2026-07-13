@@ -12,7 +12,7 @@ export class NebulaPlugin extends Plugin {
   private unsubscribe: Unsubscribe | null;
 
   public constructor(renderer: Renderer) {
-    super("nebula-plugin");
+    super("nebula-plugin", { provides: [NEBULA_RENDERER] });
     this.logger = createLogger(NebulaPlugin.name);
     this.renderer = renderer;
     this.unsubscribe = null;

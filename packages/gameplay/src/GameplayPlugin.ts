@@ -37,7 +37,10 @@ export class GameplayPlugin extends Plugin {
   private scriptManager!: ScriptManager;
 
   public constructor() {
-    super("gameplay-plugin");
+    super("gameplay-plugin", {
+      requires: [NEXUS, NEBULA_RENDERER, INERTIAL_ENGINE],
+      provides: [SCRIPT_MANAGER],
+    });
     this.logger = createLogger(GameplayPlugin.name);
   }
 
