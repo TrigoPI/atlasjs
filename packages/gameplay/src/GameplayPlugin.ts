@@ -2,10 +2,17 @@ import { createLogger, Logger } from "@atlasjs/utils";
 import { Engine, Plugin, StepHandle } from "@atlasjs/core";
 import { NEBULA_RENDERER, NebulaRenderer } from "@atlasjs/nebula";
 import { INERTIAL_ENGINE, PhysicsWorld, RigidBody } from "@atlasjs/inertia";
-import { NEXUS, NexusWorld, SparseSet, Unsubscribe } from "@atlasjs/nexus";
 
 import { SCRIPT_MANAGER } from "./tokens";
 import { registerSystem } from "./registerSystem";
+
+import {
+  Entity,
+  NEXUS,
+  NexusWorld,
+  SparseSet,
+  Unsubscribe,
+} from "@atlasjs/nexus";
 
 import {
   RigidBody2DRequestSystem,
@@ -75,10 +82,8 @@ export class GameplayPlugin extends Plugin {
       .defineComponent(SpriteRender)
       .defineComponent(TransformWriteRequest);
 
-    // Destroying an entity (or removing RigidBody2D) tears down its runtime body,
-    // keeping the external SparseSet from leaking recycled entity slots.
     this.unsubscribers.push(
-      world.onRemove(RigidBody2D, (entity) => {
+      world.onRemove(RigidBody2D, (entity: Entity) => {
         const body: RigidBody | undefined = runtimeBodiesStorage.get(entity);
         if (body !== undefined) {
           inertia.destroyRigidBody(body);
@@ -137,16 +142,7 @@ export class GameplayPlugin extends Plugin {
       }),
     );
 
-    // Sync point: apply the frame's deferred structural changes (e.g. the
-    // cleanup's TransformWriteRequest removals) at the end of the fixed lane.
-    this.handles.push(
-      fixed.add(() => world.flush(), {
-        name: "gameplay:flush",
-        stage: "Cleanup",
-        after: "gameplay:request-cleanup",
-      }),
-    );
-
+    
     this.handles.push(
       update.add((ctx) => this.scriptManager.update(ctx.dt), {
         name: "gameplay:script-update",

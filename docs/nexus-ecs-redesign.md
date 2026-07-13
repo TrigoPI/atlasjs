@@ -133,7 +133,7 @@ class NexusWorld {
 - **`spawn()` est immédiat** : créer une entité nue ne touche aucun store de composant, donc c'est sûr en pleine itération. Le handle est utilisable tout de suite (par les `add` différés qui suivent). Seules les mutations de composants/structure sont différées.
 - **Direct** (`world.addComponent`, …) : appliqué tout de suite. Pour setup, spawn au chargement, éditeur, tests.
 - **Différé** (`world.commands.add/set/remove/destroy`, …) : accumulé dans une file de thunks, rejoué au `flush()`. Pour la mutation pendant une query.
-- **Flush hybride** : le scheduler flushe automatiquement aux sync points (fin de stage/lane) ; `world.flush()` reste disponible pour forcer dans un système précis. Le câblage auto est fait à la migration de gameplay (nexus fournit la primitive `flush()`).
+- **Flush hybride** : le flush auto est câblé au niveau **core** — chaque lane se termine par une étape `Sync` (anchor 1000, cf. `scheduling-redesign.md`), et `NexusPlugin` y enregistre un step `nexus:flush` dans les 3 lanes. Tout plugin utilisant le world en bénéficie **sans le câbler**. `world.flush()` reste disponible pour forcer manuellement dans un système précis.
 - Ordre d'application déterministe = ordre d'enregistrement. `destroy` est idempotent (double-destroy dans un même flush toléré).
 - **Pas de dépendance circulaire** : `NexusCommandBuffer` ne dépend pas de `NexusWorld` mais d'une interface minimale `CommandTarget` (les 6 opérations qu'il diffère). `NexusWorld` la satisfait structurellement et se passe lui-même (`new NexusCommandBuffer(this)`) — inversion de dépendance, le buffer ne connaît que ce qu'il touche.
 
@@ -186,7 +186,7 @@ world.query(Position).without(Frozen).optional(Velocity)                 // comb
 - **Phase 6 — Correctifs & ergo.** Auto-define, `hasComponent`, messages, `addComponent(instance)`.
 - **Phase 7 (ergo) — Filtres `without`/optionnels, événements de cycle de vie.** Builder `without`/`optional` sur la query via `StoreResolver` ; `world.onAdd`/`onRemove` médiés par le world.
 
-> **Migration `gameplay` (faite).** Systèmes de lecture passés en `world.query(...).each(...)` (`RigidBody2DSystem`, `RigidBodyWriteBackSystem`, `SpriteRenderSystem`, `TransformRequestResolveSystem`). `TransformWriteRequestCleanupSystem` mute via `world.commands.remove` (le garde-fou rejetterait la mutation directe), avec un step `gameplay:flush` en fin de lane `fixed` (stage `Cleanup`, `after: request-cleanup`). `GameplayPlugin` branche `world.onRemove(RigidBody2D, …)` pour détruire le body runtime (`inertia.destroyRigidBody`) et nettoyer `runtimeBodiesStorage` — fin du leak. Les systèmes qui itèrent un storage script externe (`RigidBody2DRequestSystem`, `ScriptTransformRequestSystem`, `ScriptTransformFeedbackSystem`) restent en mutation directe (pas d'itération de query world → pas de hazard).
+> **Migration `gameplay` (faite).** Systèmes de lecture passés en `world.query(...).each(...)` (`RigidBody2DSystem`, `RigidBodyWriteBackSystem`, `SpriteRenderSystem`, `TransformRequestResolveSystem`). `TransformWriteRequestCleanupSystem` mute via `world.commands.remove` (le garde-fou rejetterait la mutation directe) ; le flush est assuré par le step `nexus:flush` de `NexusPlugin` à l'étape `Sync` de la lane (après `Cleanup`), plus besoin de step gameplay dédié. `GameplayPlugin` branche `world.onRemove(RigidBody2D, …)` pour détruire le body runtime (`inertia.destroyRigidBody`) et nettoyer `runtimeBodiesStorage` — fin du leak. Les systèmes qui itèrent un storage script externe (`RigidBody2DRequestSystem`, `ScriptTransformRequestSystem`, `ScriptTransformFeedbackSystem`) restent en mutation directe (pas d'itération de query world → pas de hazard).
 
 ---
 
@@ -196,7 +196,7 @@ world.query(Position).without(Frozen).optional(Velocity)                 // comb
 - [x] Phase 1 — générations d'entités
 - [x] Phase 2 — `IComponentStore` + `SparseSetStore` + `version`
 - [x] Phase 3 — query typée `each`/tuples + garde-fou fail-fast
-- [x] Phase 4 — command buffer + flush hybride (`world.commands` + `world.flush()` ; câblage auto scheduler à la migration gameplay)
+- [x] Phase 4 — command buffer + flush hybride (`world.commands` + `world.flush()` ; flush auto câblé au core via l'étape `Sync` de lane, enregistré par `NexusPlugin`)
 - [x] Phase 5 — multi-world + `ComponentRegistry` (+ auto-define livré en avance ; supprime aussi l'erreur tsc pré-existante de `define-component`)
 - [x] Phase 6 — correctifs restants (`hasComponent` no-throw sur entité morte, message `component.name`, `addComponent(instance)`) — auto-define déjà fait en Phase 5
 - [x] Phase 7 — filtres `without`/optionnels + événements de cycle de vie
