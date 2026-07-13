@@ -261,7 +261,7 @@ L'ergonomie côté utilisateur est quasi identique — mais il n'y a plus de cop
 
 - [x] Phase 0 — tests de pont (double `FakePhysicsWorld`, autorité dynamic/kinematic, cycle de vie du body). 4 tests verrouillent le comportement à préserver ; 2 `it.fails` (clobber kinematic) sont des tripwires qui basculeront en `it` en Phase 1.
 - [x] Phase 1 — `PhysicsBodyRef` + `PhysicsPushSystem`/`PhysicsPullSystem` + `onRemove` (retire `SparseSet` + hook manuel + `RigidBody2DSystem`/`RigidBodyWriteBackSystem`). `TransformRequestResolveSystem` repointé sur `PhysicsBodyRef` (fantôme intact). Élargissement Nexus : `onAdd`/`onRemove`/`hasComponent`/`removeComponent`/`requireComponent` acceptent désormais des composants à args (`Component<T, any[]>`), permettant à un composant porteur de handle (`PhysicsBodyRef`) de passer par le cycle de vie. Les 2 tripwires kinematic sont verts.
-- [ ] Phase 2 — handles `Transform2DHandle`/`RigidBody2DHandle` + `ScriptHandleRegistry` (cache + invalidation par events) + routage d'autorité
+- [x] Phase 2 — handles `Transform2DHandle`/`RigidBody2DHandle` + `ScriptHandleRegistry` (cache + invalidation via `onRemove`) + routage d'autorité dans les setters (dynamic → téléport body ; kinematic/static → `Transform2D`). Construits et testés en isolation (9 tests : source unique, invalidation, autorité, escape-hatch du getter live). Pas encore branchés aux scripts (Phase 3).
 - [ ] Phase 3 — `ScriptContext` sur le vrai world + `release(entity)` dans `ScriptManager`
 - [ ] Phase 4 — suppression couche fantôme (storages, types doublons, 5 systèmes de pont, tampon `TransformWriteRequest`)
 - [ ] Phase 5 — `Vec2` partout (suppression `Vector2D`)

@@ -1,72 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { Engine, Plugin, ServiceToken } from "@atlasjs/core";
-import { NEXUS, NexusPlugin, NexusWorld, Entity } from "@atlasjs/nexus";
-import { NEBULA_RENDERER } from "@atlasjs/nebula";
-import { INERTIAL_ENGINE, InertialPlugin } from "@atlasjs/inertia";
+import { Entity } from "@atlasjs/nexus";
 
-import { GameplayPlugin } from "../src/GameplayPlugin";
 import { RigidBody2D, Transform2D } from "../src/components";
-import { FakePhysicsWorld } from "./helpers/fake-physics";
-
-const FIXED = 0.1;
-
-/** Provides a stub value under a token so GameplayPlugin's deps resolve. */
-class Provide extends Plugin {
-  public constructor(
-    id: string,
-    private readonly token: ServiceToken<unknown>,
-    private readonly value: unknown,
-  ) {
-    super(id, { provides: [token] });
-  }
-  public install(engine: Engine): void {
-    engine.services.provide(this.token, this.value);
-    this.deferred.resolve();
-  }
-  public uninstall(): void {}
-}
-
-// The fixed lane never touches the renderer (SpriteRenderSystem runs in the
-// render lane), so a minimal stub is enough to construct the systems.
-const fakeNebula = { createSampler: () => ({}), scene: { addChild: () => {} } };
-
-interface Harness {
-  world: NexusWorld;
-  physics: FakePhysicsWorld;
-  /** Runs one frame carrying `ticks` fixed sub-steps (+ half a step of slack). */
-  frame(ticks?: number): void;
-}
-
-async function createHarness(): Promise<Harness> {
-  let onTick: ((dt: number) => void) | null = null;
-
-  const physics: FakePhysicsWorld = new FakePhysicsWorld();
-
-  const engine = new Engine({
-    fixedDelta: FIXED,
-    maxSubSteps: 64,
-    loop: (cb) => {
-      onTick = cb;
-      return () => {};
-    },
-  });
-
-  engine.use(new NexusPlugin());
-  engine.use(new Provide("stub-nebula", NEBULA_RENDERER, fakeNebula));
-  engine.use(new InertialPlugin(physics));
-  engine.use(new GameplayPlugin());
-
-  await engine.start();
-
-  const world = engine.services.get<NexusWorld>(NEXUS);
-
-  return {
-    world,
-    physics,
-    frame: (ticks: number = 1): void => onTick!(ticks * FIXED + FIXED * 0.5),
-  };
-}
+import { createHarness, Harness } from "./helpers/harness";
 
 describe("Gameplay — physics bridge authority", () => {
   let h: Harness;
