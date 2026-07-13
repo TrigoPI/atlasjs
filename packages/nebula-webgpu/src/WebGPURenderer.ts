@@ -5,7 +5,11 @@ import { WebGPUGuard } from "./utils";
 import { WebGPUGeometry } from "./geometry";
 import { WebGPUPipeline } from "./pipeline";
 import { WebGPURenderContext } from "./states";
-import { WebGPUBindingGroupCache, WebGPUShaderCache } from "./caches";
+import {
+  WebGPUBindingGroupCache,
+  WebGPUPipelineCache,
+  WebGPUShaderCache,
+} from "./caches";
 import { WebGPUSampler, WebGPUTexture2D } from "./resources";
 import { WebGPUShader, WebGPUMaterial } from "./material";
 import { WebGPUShaders } from "./resources";
@@ -21,7 +25,6 @@ import {
   WebGPUBinder,
   WebGPUBindingGroup,
   WebGPUBindingGroupDefinition,
-  WebGPUBindingGroupLayout,
   WebGPUCompiledBindingGroup,
 } from "./bindings";
 
@@ -33,7 +36,6 @@ import {
   SamplerDescriptor,
   ShaderDescriptor,
   IndexFormat,
-  Pipeline,
   Primitive,
   Texture2DDescriptor,
   Geometry,
@@ -42,6 +44,8 @@ import {
   UniformType,
   BindingGroup,
   BindingGroupDefinition,
+  RenderState,
+  DEFAULT_RENDER_STATE,
 } from "@atlasjs/nebula";
 
 import {
@@ -64,6 +68,7 @@ export class WebGPURenderer implements Renderer {
 
   private bindingGroupCache!: WebGPUBindingGroupCache;
   private shaderCache!: WebGPUShaderCache;
+  private pipelineCache!: WebGPUPipelineCache;
   private globalBindings!: WebGPUBindingGroup;
 
   private clock: Clock;
@@ -82,6 +87,7 @@ export class WebGPURenderer implements Renderer {
   public destroy(): void {
     this.shaderCache.destroy();
     this.bindingGroupCache.destroy();
+    this.pipelineCache.destroy();
   }
 
   public getViewport(): Box2 {
@@ -116,45 +122,61 @@ export class WebGPURenderer implements Renderer {
     return this.createGeometry(quad);
   }
 
-  public createPipeline(shader: Shader, geometry: Geometry): WebGPUPipeline {
+  private getOrCreatePipeline(
+    shader: WebGPUShader,
+    geometry: WebGPUGeometry,
+    renderState: RenderState,
+  ): WebGPUPipeline {
     const topology: GPUPrimitiveTopology = "triangle-list";
-    const webGPUShader: WebGPUShader = WebGPUGuard.asWebGPUShader(shader);
-    const webGPUGeometry: WebGPUGeometry =
-      WebGPUGuard.asWebGPUGeometry(geometry);
 
-    const globalLayout: WebGPUBindingGroupLayout =
-      this.bindingGroupCache.getOrCreateLayout(webGPUShader.globalDefinition);
+    const key: string = [
+      shader.id,
+      geometry.vertexBuffer.layout.getId(),
+      this.format,
+      topology,
+      renderState.blend,
+      renderState.cull,
+      renderState.depthTest ? "d" : "n",
+    ].join("|");
 
-    const objectLayout: WebGPUBindingGroupLayout =
-      this.bindingGroupCache.getOrCreateLayout(webGPUShader.objectDefinition);
+    return this.pipelineCache.getOrCreate(key, () =>
+      this.buildPipeline(shader, geometry, renderState, topology),
+    );
+  }
 
-    const materialLayout: WebGPUBindingGroupLayout =
-      this.bindingGroupCache.getOrCreateLayout(webGPUShader.materialDefinition);
+  private buildPipeline(
+    shader: WebGPUShader,
+    geometry: WebGPUGeometry,
+    renderState: RenderState,
+    topology: GPUPrimitiveTopology,
+  ): WebGPUPipeline {
+    const globalGroup: GPUBindGroupLayout =
+      this.bindingGroupCache.getOrCreateGPULayout(shader.globalDefinition);
 
-    const globalGroup: GPUBindGroupLayout = this.device.createBindGroupLayout({
-      entries: [...globalLayout.bindGroupLayoutEntries],
-    });
+    const objectGroup: GPUBindGroupLayout =
+      this.bindingGroupCache.getOrCreateGPULayout(shader.objectDefinition);
 
-    const objectGroup: GPUBindGroupLayout = this.device.createBindGroupLayout({
-      entries: [...objectLayout.bindGroupLayoutEntries],
-    });
+    const materialGroup: GPUBindGroupLayout =
+      this.bindingGroupCache.getOrCreateGPULayout(shader.materialDefinition);
 
-    //prettier-ignore
-    const materialGroup: GPUBindGroupLayout = this.device.createBindGroupLayout({
-        entries: [...materialLayout.bindGroupLayoutEntries],
-    });
+    const bindGroupLayouts: GPUBindGroupLayout[] = [
+      globalGroup,
+      objectGroup,
+      materialGroup,
+    ];
 
     const layout: GPUPipelineLayout = this.device.createPipelineLayout({
-      bindGroupLayouts: [globalGroup, objectGroup, materialGroup],
+      bindGroupLayouts,
     });
 
     return new WebGPUPipeline(this.device, {
       topology,
       layout,
-      alphaBlend: true,
+      bindGroupLayouts,
+      renderState,
       format: this.format,
-      geometry: webGPUGeometry,
-      shader: webGPUShader,
+      geometry,
+      shader,
     });
   }
 
@@ -195,9 +217,12 @@ export class WebGPURenderer implements Renderer {
     return new WebGPUBindingGroup(definition);
   }
 
-  public createMaterial(shader: Shader): WebGPUMaterial {
+  public createMaterial(
+    shader: Shader,
+    renderState: RenderState = DEFAULT_RENDER_STATE,
+  ): WebGPUMaterial {
     WebGPUGuard.assertWebGPUShader(shader);
-    return new WebGPUMaterial(shader);
+    return new WebGPUMaterial(shader, renderState);
   }
 
   public createGeometry(primitive: Primitive): WebGPUGeometry {
@@ -275,6 +300,7 @@ export class WebGPURenderer implements Renderer {
     this.globalBindings = new WebGPUBindingGroup(globalBindingsDefinition);
     this.bindingGroupCache = new WebGPUBindingGroupCache(this.device);
     this.shaderCache = new WebGPUShaderCache(this.device);
+    this.pipelineCache = new WebGPUPipelineCache();
 
     this.logger.log("WebGPURenderer initialized successfully.");
   }
@@ -310,23 +336,32 @@ export class WebGPURenderer implements Renderer {
 
   public draw(
     geometry: Geometry,
-    pipeline: Pipeline,
     material: Material,
     bindings: BindingGroup,
   ): void {
     const ctx: WebGPURenderContext = this.assertContext();
 
-    WebGPUGuard.assertWebGPUGeometry(geometry);
-    WebGPUGuard.assertWebGPUPipeline(pipeline);
-    WebGPUGuard.assertWebGPUMaterial(material);
-    WebGPUGuard.assertWebGPUBindingGroup(bindings);
+    const geo: WebGPUGeometry = geometry as WebGPUGeometry;
+    const mat: WebGPUMaterial = material as WebGPUMaterial;
+    const binds: WebGPUBindingGroup = bindings as WebGPUBindingGroup;
 
-    this.assertGeometryCompatibleWithPipeline(geometry, pipeline);
-    this.bindPipeline(ctx, pipeline);
-    this.bindGlobalGroup(ctx, pipeline);
-    this.bindObjectGroup(ctx, bindings, pipeline);
-    this.bindMaterial(ctx, material, pipeline);
-    this.bindGeometryAndDrawIndexed(ctx, geometry);
+    if (__DEV__) {
+      WebGPUGuard.assertWebGPUGeometry(geometry);
+      WebGPUGuard.assertWebGPUMaterial(material);
+      WebGPUGuard.assertWebGPUBindingGroup(bindings);
+    }
+
+    const pipe: WebGPUPipeline = this.getOrCreatePipeline(
+      mat.shader,
+      geo,
+      mat.renderState,
+    );
+
+    this.bindPipeline(ctx, pipe);
+    this.bindGlobalGroup(ctx, pipe);
+    this.bindObjectGroup(ctx, binds, pipe);
+    this.bindMaterial(ctx, mat, pipe);
+    this.bindGeometryAndDrawIndexed(ctx, geo);
   }
 
   public endFrame(): void {
@@ -399,15 +434,12 @@ export class WebGPURenderer implements Renderer {
     material: WebGPUMaterial,
     pipeline: WebGPUPipeline,
   ): void {
-    const webGPUMaterial: WebGPUMaterial =
-      WebGPUGuard.asWebGPUMaterial(material);
-
     const materialBindGroupLayout: GPUBindGroupLayout =
       pipeline.getBindGroupLayout(BINDING_GROUP_MATERIAL);
 
     const compiledMaterial: WebGPUCompiledBindingGroup =
       this.bindingGroupCache.get(
-        webGPUMaterial.bindingGroup,
+        material.bindingGroup,
         materialBindGroupLayout,
       );
 
@@ -441,20 +473,5 @@ export class WebGPURenderer implements Renderer {
     }
 
     return this.currentRenderContext;
-  }
-
-  private assertGeometryCompatibleWithPipeline(
-    geometry: WebGPUGeometry,
-    pipeline: WebGPUPipeline,
-  ): void {
-    const geometryLayoutId: string = geometry.vertexBuffer.layout.getId();
-    const pipelineLayoutId: string =
-      pipeline.geometry.vertexBuffer.layout.getId();
-
-    if (geometryLayoutId !== pipelineLayoutId) {
-      throw new Error(
-        `Geometry layout '${geometryLayoutId}' is incompatible with pipeline '${pipeline.id}'. Expected '${pipelineLayoutId}'.`,
-      );
-    }
   }
 }

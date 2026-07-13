@@ -32,7 +32,15 @@ export type BindingGroupPropertyType = ShaderValueType;
 export type MaterialValue = BindingValue;
 
 export type FilterMode = "nearest" | "linear";
+export type BlendMode = "opaque" | "alpha" | "additive" | "multiply";
+export type CullMode = "none" | "front" | "back";
 export type IndexFormat = "uint16" | "uint32";
+
+export type RenderState = {
+  readonly blend: BlendMode;
+  readonly depthTest: boolean;
+  readonly cull: CullMode;
+};
 export type AddressMode = "clamp-to-edge" | "repeat" | "mirror-repeat";
 export type ShaderResourceType = "uniform-buffer" | "sampler" | "texture-2d";
 export type ResourcePropertyType = "texture2D" | "sampler";
@@ -185,7 +193,7 @@ export type ShaderDescriptor = {
 export type PipelineDescriptor = {
   readonly shader: Shader;
   readonly geometry: Geometry;
-  readonly alphaBlend: boolean;
+  readonly renderState: RenderState;
 };
 
 export type UniformPropertyLayout = {

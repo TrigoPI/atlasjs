@@ -1,5 +1,5 @@
 import { Disposable } from "../utils";
-import { BindingValue } from "../core-types";
+import { BindingValue, RenderState } from "../core-types";
 import { BindingGroup } from "../bindings";
 
 import { Shader } from "./Shader";
@@ -8,6 +8,7 @@ export interface Material extends Disposable {
   readonly __kind: string;
   readonly shader: Shader;
   readonly bindingGroup: BindingGroup;
+  readonly renderState: RenderState;
 
   has(name: string): boolean;
   get<T extends BindingValue = BindingValue>(name: string): T;

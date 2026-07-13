@@ -5,7 +5,6 @@ import {
   Renderer,
   Geometry,
   Shader,
-  Pipeline,
   Sampler,
   Texture2D,
   Material,
@@ -17,7 +16,6 @@ export class SpriteRenderer {
   private readonly renderer: Renderer;
   private readonly geometry: Geometry;
   private readonly shader: Shader;
-  private readonly pipeline: Pipeline;
   private readonly defaultSampler: Sampler;
   private readonly materialCache: Map<string, Material>;
   private readonly objectBindingGroupCache: WeakMap<Sprite, BindingGroup>;
@@ -30,7 +28,6 @@ export class SpriteRenderer {
     this.shader = this.initShader();
 
     this.geometry = renderer.createGeometry(new Quad());
-    this.pipeline = renderer.createPipeline(this.shader, this.geometry);
 
     this.materialCache = new Map();
     this.objectBindingGroupCache = new WeakMap();
@@ -61,7 +58,7 @@ export class SpriteRenderer {
 
     bindingGroup.set("model", this.modelMatrix).set("sourceRect", sourceRect);
 
-    this.renderer.draw(this.geometry, this.pipeline, material, bindingGroup);
+    this.renderer.draw(this.geometry, material, bindingGroup);
   }
 
   private getOrCreateMaterial(texture: Texture2D, sampler: Sampler): Material {

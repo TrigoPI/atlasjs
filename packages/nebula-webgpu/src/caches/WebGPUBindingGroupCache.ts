@@ -12,12 +12,14 @@ export class WebGPUBindingGroupCache implements Disposable {
   private compiledRefs: Set<WebGPUCompiledBindingGroup>;
   private compiled: WeakMap<WebGPUBindingGroup, WebGPUCompiledBindingGroup>;
   private layouts: WeakMap<WebGPUBindingGroupDefinition, WebGPUBindingGroupLayout>;
+  private gpuLayouts: WeakMap<WebGPUBindingGroupLayout, GPUBindGroupLayout>;
 
   public constructor(device: GPUDevice) {
     this.device = device;
     this.compiledRefs = new Set();
     this.layouts = new WeakMap();
     this.compiled = new WeakMap();
+    this.gpuLayouts = new WeakMap();
   }
 
   public getOrCreateLayout(
@@ -32,6 +34,22 @@ export class WebGPUBindingGroupCache implements Disposable {
     }
 
     return layout;
+  }
+
+  public getOrCreateGPULayout(
+    definition: WebGPUBindingGroupDefinition,
+  ): GPUBindGroupLayout {
+    const layout: WebGPUBindingGroupLayout = this.getOrCreateLayout(definition);
+    let gpuLayout: GPUBindGroupLayout | undefined = this.gpuLayouts.get(layout);
+
+    if (!gpuLayout) {
+      gpuLayout = this.device.createBindGroupLayout({
+        entries: [...layout.bindGroupLayoutEntries],
+      });
+      this.gpuLayouts.set(layout, gpuLayout);
+    }
+
+    return gpuLayout;
   }
 
   public get(
@@ -82,6 +100,7 @@ export class WebGPUBindingGroupCache implements Disposable {
     this.compiledRefs.clear();
     this.compiled = new WeakMap();
     this.layouts = new WeakMap();
+    this.gpuLayouts = new WeakMap();
   }
 
   public destroy(): void {

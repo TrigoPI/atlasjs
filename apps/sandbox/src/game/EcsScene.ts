@@ -29,11 +29,14 @@ export class EcsScene extends Scene {
       width: swordImage.width,
     });
 
-    const player: Entity = nexus.createEntity();
+    const player1: Entity = nexus.createEntity();
+    const player2: Entity = nexus.createEntity();
 
-    nexus.addComponent(player, SpriteRender, swordTexture);
+    nexus.addComponent(player1, SpriteRender, swordTexture);
+    nexus.addComponent(player2, SpriteRender, swordTexture);
 
-    scriptManager.attach(player, TestScript);
+    scriptManager.attach(player1, TestScript);
+    scriptManager.attach(player2, TestScript);
   }
 
   private async getImage(src: string): Promise<ImageBitmap> {

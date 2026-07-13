@@ -3,6 +3,7 @@ import { WebGPUGeometry } from "./geometry";
 
 import {
   PipelineDescriptor,
+  RenderState,
   TextureFormat,
   VertexLayoutDescriptor,
   UniformType,
@@ -31,7 +32,7 @@ export type WebGPUPipelineCacheDescriptor = {
   vertexLayout: VertexLayoutDescriptor;
   format: GPUTextureFormat;
   topology?: GPUPrimitiveTopology;
-  alphaBlend?: boolean;
+  renderState?: RenderState;
 };
 
 export type WebGPUPipelineDescriptor = PipelineDescriptor & {
@@ -40,6 +41,7 @@ export type WebGPUPipelineDescriptor = PipelineDescriptor & {
   format: GPUTextureFormat;
   topology: GPUPrimitiveTopology;
   layout?: GPUPipelineLayout;
+  bindGroupLayouts?: ReadonlyArray<GPUBindGroupLayout>;
 };
 
 export type GlobalBindingDefinition = {

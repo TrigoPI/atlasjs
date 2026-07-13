@@ -1,4 +1,4 @@
-import { Pipeline, VertexBufferLayout } from "@atlasjs/nebula";
+import { BlendMode, Pipeline, VertexBufferLayout } from "@atlasjs/nebula";
 import { WebGPUPipelineDescriptor } from "../webgpu-types";
 import { WebGPUGeometry } from "../geometry";
 import { WebGPUMapper } from "../utils";
@@ -10,6 +10,8 @@ export class WebGPUPipeline implements Pipeline {
   public readonly pipeline: GPURenderPipeline;
   public readonly geometry: WebGPUGeometry;
 
+  private readonly bindGroupLayouts: ReadonlyArray<GPUBindGroupLayout>;
+
   public constructor(device: GPUDevice, descriptor: WebGPUPipelineDescriptor) {
     const layout: VertexBufferLayout = descriptor.geometry.vertexBuffer.layout;
     const webgpuBufferLayout: GPUVertexBufferLayout =
@@ -17,6 +19,7 @@ export class WebGPUPipeline implements Pipeline {
 
     this.geometry = descriptor.geometry;
     this.descriptor = descriptor;
+    this.bindGroupLayouts = descriptor.bindGroupLayouts ?? [];
     this.id = this.createPipelineId();
 
     this.pipeline = device.createRenderPipeline({
@@ -32,25 +35,30 @@ export class WebGPUPipeline implements Pipeline {
         targets: [
           {
             format: this.descriptor.format,
-            blend: this.getBlend(descriptor),
+            blend: this.getBlend(descriptor.renderState.blend),
           },
         ],
       },
-      primitive: { topology: this.descriptor.topology },
+      primitive: {
+        topology: this.descriptor.topology,
+        cullMode: descriptor.renderState.cull,
+      },
     });
   }
 
   public destroy(): void {}
 
   public getBindGroupLayout(index: number): GPUBindGroupLayout {
-    return this.pipeline.getBindGroupLayout(index);
+    return this.bindGroupLayouts[index] ?? this.pipeline.getBindGroupLayout(index);
   }
 
-  private getBlend(
-    descriptor: WebGPUPipelineDescriptor,
-  ): GPUBlendState | undefined {
-    return descriptor.alphaBlend
-      ? {
+  private getBlend(blend: BlendMode): GPUBlendState | undefined {
+    switch (blend) {
+      case "opaque":
+        return undefined;
+
+      case "alpha":
+        return {
           color: {
             srcFactor: "src-alpha",
             dstFactor: "one-minus-src-alpha",
@@ -61,17 +69,34 @@ export class WebGPUPipeline implements Pipeline {
             dstFactor: "one-minus-src-alpha",
             operation: "add",
           },
-        }
-      : undefined;
+        };
+
+      case "additive":
+        return {
+          color: { srcFactor: "src-alpha", dstFactor: "one", operation: "add" },
+          alpha: { srcFactor: "one", dstFactor: "one", operation: "add" },
+        };
+
+      case "multiply":
+        return {
+          color: { srcFactor: "dst", dstFactor: "zero", operation: "add" },
+          alpha: { srcFactor: "dst-alpha", dstFactor: "zero", operation: "add" },
+        };
+    }
   }
 
   private createPipelineId(): string {
+    const state: WebGPUPipelineDescriptor["renderState"] =
+      this.descriptor.renderState;
+
     return [
       this.descriptor.shader.id,
       this.descriptor.geometry.vertexBuffer.layout.getId(),
       this.descriptor.format,
       this.descriptor.topology,
-      this.descriptor.alphaBlend ? "a" : "o",
+      state.blend,
+      state.cull,
+      state.depthTest ? "d" : "n",
     ].join("|");
   }
 }
