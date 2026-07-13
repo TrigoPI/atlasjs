@@ -174,7 +174,7 @@ Garder tous les `StepHandle` pour `uninstall`.
 On implémente **une phase à la fois** ; après validation de l'auteur, on coche la case et on commit avant de passer à la suivante.
 
 - [x] **Phase 0 — Scheduler additif** : nouveau `Scheduler` (lanes/stages/sets/handles/`StepContext`) + façade de compat (`onUpdate/…(fn,{priority,id})` mappe `priority`→stage synthétique, wrap `(dt)→(ctx)`). Rien d'autre ne bouge, sandbox inchangée. _(vitest + 15 tests verts ; core build + monorepo OK.)_
-- [ ] **Phase 1 — Boucle** : réorg Engine (fixed→update→render, alpha, compteurs, step `scene:update`, `FrameClock`).
+- [x] **Phase 1 — Boucle** : réorg Engine (fixed→update→render, alpha, compteurs, step `scene:update`, `FrameClock`, seam `advanceFixed`, driver de boucle injectable). _(6 tests Engine verts ; sandbox sert proprement sous Vite après fix d'un import cassé pré-existant.)_
 - [ ] **Phase 2 — Boot topo** : `provides/requires` sur tous les plugins, tri topo + `MissingDependencyError`/`DependencyCycleError` + timeout de boot, `order` = no-op déprécié.
 - [ ] **Phase 3 — Physics dt** : `PhysicsWorld.step(dt)` + `world.timestep = dt`.
 - [ ] **Phase 4 — Re-lanes ECS** : split `GameplayPlugin` en étapes fixed/render + `scriptManager.fixedUpdate` branché.

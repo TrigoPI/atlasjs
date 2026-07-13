@@ -5,9 +5,15 @@ import { EventBus } from "./EventBus";
 import { Scheduler } from "./Scheduler";
 import { ServiceRegistry } from "./ServiceRegistry";
 
-import { startRafLoop } from "../../private";
+import { FrameClock, startRafLoop } from "../../private";
 import { SceneContext, SceneManager } from "../scene";
-import { EngineEvents, EngineOptions, StopLoop } from "./types";
+import {
+  EngineEvents,
+  EngineOptions,
+  LoopFactory,
+  StepContext,
+  StopLoop,
+} from "./types";
 
 const DEFAULT_FIXED_DELTA = 1 / 60;
 const DEFAULT_MAX_SUB_STEPS = 5;
@@ -27,7 +33,8 @@ export class Engine implements SceneContext {
   private maxSubSteps: number;
 
   private booted: boolean;
-  private acc: number;
+  private readonly clock: FrameClock;
+  private readonly loopFactory: LoopFactory;
 
   public constructor(opts: EngineOptions = {}) {
     this.logger = createLogger(Engine.name);
@@ -42,9 +49,15 @@ export class Engine implements SceneContext {
     this.fixedDelta = opts.fixedDelta ?? DEFAULT_FIXED_DELTA;
     this.maxSubSteps = opts.maxSubSteps ?? DEFAULT_MAX_SUB_STEPS;
 
-    this.acc = 0;
+    this.clock = new FrameClock();
+    this.loopFactory = opts.loop ?? startRafLoop;
     this.booted = false;
     this.stopLoop = null;
+
+    this.scheduler.update.add((ctx: StepContext) => this.scene.update(ctx.dt), {
+      name: "scene:update",
+      stage: "Early",
+    });
   }
 
   public isBooted(): boolean {
@@ -102,20 +115,27 @@ export class Engine implements SceneContext {
   }
 
   private startLoop(): void {
-    this.stopLoop = startRafLoop((dt) => {
-      this.scene.update(dt);
-      this.scheduler.runUpdate(dt);
+    this.stopLoop = this.loopFactory((dt) => {
+      this.clock.acc += dt;
+      this.clock.elapsed += dt;
 
-      this.acc += dt;
-      let steps: number = 0;
+      this.advanceFixed(this.maxSubSteps);
+      this.scheduler.runLane("update", this.clock.context(dt, 1));
 
-      while (this.acc >= this.fixedDelta && steps < this.maxSubSteps) {
-        this.scheduler.runFixedUpdate(this.fixedDelta);
-        this.acc -= this.fixedDelta;
-        steps++;
-      }
-
-      this.scheduler.runRender(dt);
+      this.clock.frame++;
+      const alpha: number = this.clock.acc / this.fixedDelta;
+      this.scheduler.runLane("render", this.clock.context(dt, alpha));
     });
+  }
+
+  public advanceFixed(maxSteps: number): void {
+    let steps: number = 0;
+
+    while (this.clock.acc >= this.fixedDelta && steps < maxSteps) {
+      this.clock.tick++;
+      this.scheduler.runLane("fixed", this.clock.context(this.fixedDelta, 1));
+      this.clock.acc -= this.fixedDelta;
+      steps++;
+    }
   }
 }

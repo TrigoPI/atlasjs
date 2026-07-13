@@ -6,7 +6,8 @@ import { NexusPlugin } from "@atlasjs/nexus";
 import { InertialPlugin } from "@atlasjs/inertia";
 import { RapierPhysicsWorld } from "@atlasjs/rapier";
 import { GameplayPlugin } from "@atlasjs/gameplay";
-import { NebulaPlugin, WebGPURenderer } from "@atlasjs/nebula";
+import { NebulaPlugin } from "@atlasjs/nebula";
+import { WebGPURenderer } from "@atlasjs/nebula-webgpu";
 
 import { EcsScene } from "./game";
 

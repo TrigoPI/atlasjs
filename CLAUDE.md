@@ -136,6 +136,8 @@ Before modifying the project:
 - Consider runtime performance when introducing new abstractions.
 - Preserve the plugin-based philosophy of the engine.
 - Avoid introducing unnecessary 2D-only assumptions into foundational APIs.
+- Avoid adding comments
+- Always type the code, even if the type is trivial. (Function parameters, variables, class params)
 
 Architecture consistency is generally more important than implementing the quickest possible solution.
 

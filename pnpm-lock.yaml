@@ -47,6 +47,9 @@ importers:
       '@atlasjs/nebula':
         specifier: workspace:*
         version: link:../../packages/nebula
+      '@atlasjs/nebula-webgpu':
+        specifier: workspace:*
+        version: link:../../packages/nebula-webgpu
       '@atlasjs/nexus':
         specifier: workspace:*
         version: link:../../packages/nexus
