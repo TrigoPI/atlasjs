@@ -174,6 +174,8 @@ La décision est prise **au moment de l'écriture**, dans le setter de la façad
 
 ### 5. API de script
 
+> **Raffiné depuis :** l'accès aux façades décrit ici (getters magiques `this.transform`/`this.rigidbody`) est remplacé par un accès unifié façon Unity `GetComponent` — voir `gameplay-scripting-components.md`.
+
 `ScriptContext` enveloppe le vrai world. `AtlasScript` expose des accès façon Unity :
 
 ```ts
