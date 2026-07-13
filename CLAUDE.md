@@ -138,6 +138,7 @@ Before modifying the project:
 - Avoid introducing unnecessary 2D-only assumptions into foundational APIs.
 - Avoid adding comments
 - Always type the code, even if the type is trivial. (Function parameters, variables, class params)
+- Avoid circular dependencies
 
 Architecture consistency is generally more important than implementing the quickest possible solution.
 

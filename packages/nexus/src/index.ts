@@ -6,6 +6,7 @@ export * from "./entity";
 export * from "./token";
 
 export * from "./ComponentStore";
+export * from "./CommandBuffer";
 export * from "./EntityManager";
 export * from "./NexusWorld";
 export * from "./SparseSet";

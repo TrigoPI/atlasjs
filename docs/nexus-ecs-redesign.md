@@ -116,7 +116,7 @@ Comme `world.query` construit `stores` dans l'ordre des types demandés, `each` 
 
 ```ts
 export interface CommandBuffer {
-  spawn(): Entity;                                          // id réservé, entité créée au flush
+  spawn(): Entity;                                          // immédiat (voir ci-dessous)
   destroy(entity: Entity): void;
   add<T, A extends unknown[]>(e: Entity, c: Component<T, A>, ...args: A): void;
   set<T, A extends unknown[]>(e: Entity, c: Component<T, A>, ...args: A): void;
@@ -130,10 +130,12 @@ class NexusWorld {
 }
 ```
 
+- **`spawn()` est immédiat** : créer une entité nue ne touche aucun store de composant, donc c'est sûr en pleine itération. Le handle est utilisable tout de suite (par les `add` différés qui suivent). Seules les mutations de composants/structure sont différées.
 - **Direct** (`world.addComponent`, …) : appliqué tout de suite. Pour setup, spawn au chargement, éditeur, tests.
-- **Différé** (`world.commands.add`, …) : accumulé, appliqué au `flush()`. Pour la mutation pendant une query.
-- **Flush hybride** : le scheduler flush automatiquement aux sync points (fin de stage/lane) ; `world.flush()` reste disponible pour forcer dans un système précis.
-- Ordre d'application déterministe = ordre d'enregistrement des commandes.
+- **Différé** (`world.commands.add/set/remove/destroy`, …) : accumulé dans une file de thunks, rejoué au `flush()`. Pour la mutation pendant une query.
+- **Flush hybride** : le scheduler flushe automatiquement aux sync points (fin de stage/lane) ; `world.flush()` reste disponible pour forcer dans un système précis. Le câblage auto est fait à la migration de gameplay (nexus fournit la primitive `flush()`).
+- Ordre d'application déterministe = ordre d'enregistrement. `destroy` est idempotent (double-destroy dans un même flush toléré).
+- **Pas de dépendance circulaire** : `NexusCommandBuffer` ne dépend pas de `NexusWorld` mais d'une interface minimale `CommandTarget` (les 6 opérations qu'il diffère). `NexusWorld` la satisfait structurellement et se passe lui-même (`new NexusCommandBuffer(this)`) — inversion de dépendance, le buffer ne connaît que ce qu'il touche.
 
 ### 5. Multi-world
 
@@ -172,7 +174,7 @@ On remplace l'état module-global mutable + monkeypatch par un `ComponentRegistr
 - [x] Phase 1 — générations d'entités
 - [x] Phase 2 — `IComponentStore` + `SparseSetStore` + `version`
 - [x] Phase 3 — query typée `each`/tuples + garde-fou fail-fast
-- [ ] Phase 4 — command buffer + flush hybride (auto sync points + `world.flush()`)
+- [x] Phase 4 — command buffer + flush hybride (`world.commands` + `world.flush()` ; câblage auto scheduler à la migration gameplay)
 - [ ] Phase 5 — multi-world + `ComponentRegistry`
 - [ ] Phase 6 — correctifs (auto-define, `hasComponent`, messages, `addComponent(instance)`)
 - [ ] Phase 7 (différé) — filtres `without`/optionnels + événements de cycle de vie

@@ -4,6 +4,7 @@ import { defineComponent } from "./define-component";
 import { Query, EmptyQuery, NexusQuery } from "./query";
 import { EntityManager } from "./EntityManager";
 import { IComponentStore, SparseSetStore } from "./ComponentStore";
+import { CommandBuffer, NexusCommandBuffer } from "./CommandBuffer";
 
 import {
   Component,
@@ -17,11 +18,21 @@ export class NexusWorld {
   private readonly logger: Logger;
   private readonly entityManager: EntityManager;
   private readonly stores: Map<ComponentID, IComponentStore<any>>;
+  private readonly commandBuffer: NexusCommandBuffer;
 
   public constructor() {
     this.logger = createLogger(NexusWorld.name);
     this.entityManager = new EntityManager();
     this.stores = new Map();
+    this.commandBuffer = new NexusCommandBuffer(this);
+  }
+
+  public get commands(): CommandBuffer {
+    return this.commandBuffer;
+  }
+
+  public flush(): void {
+    this.commandBuffer.flush();
   }
 
   public exists(entity: Entity): boolean {
@@ -193,6 +204,7 @@ export class NexusWorld {
 
   public destroy(): void {
     this.logger.log(`Destroying NexusWorld.`);
+    this.commandBuffer.clear();
     this.entityManager.clear();
     this.stores.clear();
   }

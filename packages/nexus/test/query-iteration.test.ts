@@ -59,7 +59,30 @@ describe("query intersection", () => {
     }).toThrow(/structural change during query iteration/i);
   });
 
-  // Phase 4 (command buffer): deferred removal must let the loop drain every
-  // entity without tripping the guard. Enable once world.commands lands.
-  it.todo("drains every entity when removal is deferred via world.commands");
+  // Phase 4 (command buffer): deferred removal lets the loop drain every entity
+  // without tripping the guard — the fix the guard was pointing systems toward.
+  it("drains every entity when removal is deferred via world.commands", () => {
+    const world: NexusWorld = new NexusWorld();
+    world.defineComponent(Frozen);
+
+    const entities: Entity[] = [];
+    for (let i = 0; i < 6; i++) {
+      const entity: Entity = world.createEntity();
+      world.addComponent(entity, Frozen);
+      entities.push(entity);
+    }
+
+    const visited: Entity[] = [];
+    for (const entity of world.query(Frozen).entities()) {
+      visited.push(entity);
+      world.commands.remove(entity, Frozen); // deferred: no version bump mid-loop
+    }
+
+    // Every entity visited, no throw, removals not applied yet.
+    expect(new Set(visited)).toEqual(new Set(entities));
+    expect(world.query(Frozen).size).toBe(6);
+
+    world.flush();
+    expect(world.query(Frozen).size).toBe(0);
+  });
 });
