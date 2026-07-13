@@ -22,7 +22,7 @@ The engine foundation of AtlasJS: the game loop, the scheduler, the plugin syste
 **One authority.** The `Scheduler` orders *all* per-frame work. Nothing else schedules (Nexus is a pure data-store; plugins register steps here).
 
 - **Lanes**: `fixed` (simulation, fixed timestep), `update` (variable-rate logic), `render` (presentation).
-- **Stages**: each lane has a fixed, ordered, named list of stages (`Stages.ts`) — coarse ordering. E.g. fixed: `PreSim → ScriptFixed → PhysicsRequest → PhysicsStep → PhysicsWriteback → Cleanup`.
+- **Stages**: each lane has a fixed, ordered, named list of stages (`Stages.ts`) — coarse ordering. E.g. fixed: `PreSim → ScriptFixed → PhysicsRequest → PhysicsStep → PhysicsWriteback → Cleanup → Sync`. Every lane ends with a trailing **`Sync`** stage (anchor 1000): the sync point where cross-cutting barriers run after all other work — e.g. `NexusPlugin` flushes the ECS command buffer here so deferred structural changes apply before the next lane/frame.
 - **`before` / `after`**: fine ordering *within a stage* (topological sort). Cross-stage constraints are rejected — use stage order instead.
 - Registration: `scheduler.<lane>.add(fn, { name, stage, before?, after?, enabled? }) → StepHandle`. `StepHandle.remove()` / `setEnabled()`. Group with `scheduler.createSet(name)` → `StepSet` (`add` / `enable` / `disable` / `remove`) — used for editor-mode and per-scene steps.
 - Every step receives a `StepContext` `{ dt, alpha, tick, frame, elapsed }`, never a bare `dt`. `alpha` is the fixed-step interpolation factor (render lane); `tick` is the rollback anchor.

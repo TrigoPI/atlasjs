@@ -1,0 +1,107 @@
+import { describe, expect, it } from "vitest";
+
+import { NexusWorld, Entity, Query } from "../src";
+
+class Position {}
+class Velocity {}
+class Frozen {}
+
+describe("query intersection", () => {
+  it("yields only entities holding every requested component", () => {
+    const world: NexusWorld = new NexusWorld();
+    world.defineComponent(Position).defineComponent(Velocity);
+
+    const moving: Entity = world.createEntity();
+    world.addComponent(moving, Position);
+    world.addComponent(moving, Velocity);
+
+    const still: Entity = world.createEntity();
+    world.addComponent(still, Position);
+
+    const query: Query = world.query(Position, Velocity);
+    const result: Entity[] = [...query.entities()];
+
+    expect(result).toEqual([moving]);
+    expect(query.has(moving)).toBe(true);
+    expect(query.has(still)).toBe(false);
+  });
+
+  it("returns an empty query when a requested component was never stored", () => {
+    const world: NexusWorld = new NexusWorld();
+    world.defineComponent(Position).defineComponent(Frozen);
+
+    const entity: Entity = world.createEntity();
+    world.addComponent(entity, Position);
+
+    const query: Query = world.query(Position, Frozen);
+    expect([...query.entities()]).toEqual([]);
+    expect(query.size).toBe(0);
+  });
+
+  // Phase 3 fail-fast guard: removing the base component mid-iteration used to
+  // swap-remove from the dense array being walked and silently skip entities
+  // (exactly what TransformWriteRequestCleanupSystem does in gameplay). The
+  // guard now turns that into a loud, actionable error instead of a silent bug.
+  it("throws a clear error when the base store is mutated during iteration", () => {
+    const world: NexusWorld = new NexusWorld();
+    world.defineComponent(Frozen);
+
+    for (let i = 0; i < 6; i++) {
+      world.addComponent(world.createEntity(), Frozen);
+    }
+
+    expect(() => {
+      for (const entity of world.query(Frozen).entities()) {
+        world.removeComponent(entity, Frozen);
+      }
+    }).toThrow(/structural change during query iteration/i);
+  });
+
+  // The version guard is checked before the bounds test, so even removing the
+  // last matching entity (which shrinks the base to/below the index) is caught
+  // rather than exiting silently — the small-count boundary hole.
+  it.each([1, 2, 3])(
+    "throws even at the boundary with %i entities",
+    (count: number) => {
+      const world: NexusWorld = new NexusWorld();
+      world.defineComponent(Frozen);
+
+      for (let i = 0; i < count; i++) {
+        world.addComponent(world.createEntity(), Frozen);
+      }
+
+      expect(() => {
+        for (const entity of world.query(Frozen).entities()) {
+          world.removeComponent(entity, Frozen);
+        }
+      }).toThrow(/structural change during query iteration/i);
+    },
+  );
+
+  // Phase 4 (command buffer): deferred removal lets the loop drain every entity
+  // without tripping the guard — the fix the guard was pointing systems toward.
+  it("drains every entity when removal is deferred via world.commands", () => {
+    const world: NexusWorld = new NexusWorld();
+    world.defineComponent(Frozen);
+
+    const entities: Entity[] = [];
+    for (let i = 0; i < 6; i++) {
+      const entity: Entity = world.createEntity();
+      world.addComponent(entity, Frozen);
+      entities.push(entity);
+    }
+
+    const visited: Entity[] = [];
+    for (const entity of world.query(Frozen).entities()) {
+      visited.push(entity);
+      world.commands.remove(entity, Frozen); // deferred: no version bump mid-loop
+    }
+
+    // Every entity visited, no throw, removals not applied yet.
+    expect(new Set(visited)).toEqual(new Set(entities));
+    expect(world.query(Frozen).size).toBe(6);
+
+    world.flush();
+    expect(world.query(Frozen).size).toBe(0);
+  });
+});

@@ -1,5 +1,5 @@
 import { ServiceRegistry, ServiceToken } from "@atlasjs/core";
-import { NexusWorld } from "./NexusWorld";
+import { NexusWorld } from "../world";
 
 export const NEXUS: ServiceToken<NexusWorld> =
   ServiceRegistry.createToken("NEXUS");

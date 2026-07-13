@@ -1,12 +1,7 @@
 import { NebulaRenderer, Sampler, Sprite } from "@atlasjs/nebula";
 import { SpriteRender, Transform2D } from "../components";
 
-import {
-  NexusSystem,
-  NexusSystemContext,
-  Query,
-  SparseSet,
-} from "@atlasjs/nexus";
+import { NexusSystem, NexusSystemContext, SparseSet } from "@atlasjs/nexus";
 
 export class SpriteRenderSystem implements NexusSystem {
   private readonly mountedEntities: SparseSet<Sprite>;
@@ -23,15 +18,7 @@ export class SpriteRenderSystem implements NexusSystem {
   }
 
   public update({ world }: NexusSystemContext): void {
-    const query: Query = world.query(Transform2D, SpriteRender);
-
-    for (let entity of query.entities()) {
-      const [transform, spriteRender] = world.requireComponents(
-        entity,
-        Transform2D,
-        SpriteRender,
-      );
-
+    world.query(Transform2D, SpriteRender).each((entity, transform, spriteRender) => {
       let sprite: Sprite | undefined = this.mountedEntities.get(entity);
 
       if (!sprite) {
@@ -45,6 +32,6 @@ export class SpriteRenderSystem implements NexusSystem {
         .setRotation(transform.rotation)
         .setScale(transform.scale.x, transform.scale.y)
         .setVisible(spriteRender.visible);
-    }
+    });
   }
 }

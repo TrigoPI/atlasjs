@@ -31,6 +31,19 @@ describe("Scheduler — stage ordering", () => {
     expect(t.log).toEqual(["presim", "step", "cleanup"]);
   });
 
+  it("runs the trailing Sync stage after every other stage of the lane", () => {
+    const s = new Scheduler();
+    const t = trace();
+
+    s.fixed.add(t.push("sync"), { name: "sync", stage: "Sync" });
+    s.fixed.add(t.push("cleanup"), { name: "cleanup", stage: "Cleanup" });
+    s.fixed.add(t.push("presim"), { name: "presim", stage: "PreSim" });
+
+    s.runLane("fixed", CTX);
+
+    expect(t.log).toEqual(["presim", "cleanup", "sync"]);
+  });
+
   it("orders within a stage by before/after constraints", () => {
     const s = new Scheduler();
     const t = trace();

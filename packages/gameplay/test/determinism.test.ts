@@ -78,7 +78,50 @@ async function runFixed(ticks: number): Promise<number> {
   return transform!.position.x;
 }
 
+// Runs `count` scripted entities through one frame of `ticks` fixed steps and
+// returns each entity's resulting x. Exercises the TransformWriteRequest
+// cleanup with N>1 entities — the case the old swap-remove-during-iteration
+// bug silently skipped and the fail-fast guard would now reject if the cleanup
+// mutated the world directly instead of via world.commands.
+async function runFixedMany(ticks: number, count: number): Promise<number[]> {
+  let onTick: ((dt: number) => void) | null = null;
+
+  const engine = new Engine({
+    fixedDelta: FIXED,
+    maxSubSteps: ticks + 5,
+    loop: (cb) => {
+      onTick = cb;
+      return () => {};
+    },
+  });
+
+  engine.use(new NexusPlugin());
+  engine.use(new Provide("stub-nebula", NEBULA_RENDERER, fakeNebula));
+  engine.use(new Provide("stub-inertia", INERTIAL_ENGINE, fakeInertia));
+  engine.use(new GameplayPlugin());
+
+  await engine.start();
+
+  const world = engine.services.get<NexusWorld>(NEXUS);
+  const scripts = engine.services.get<ScriptManager>(SCRIPT_MANAGER);
+
+  const entities = Array.from({ length: count }, () => {
+    const entity = world.createEntity();
+    scripts.attach(entity, MoveScript);
+    return entity;
+  });
+
+  onTick!(ticks * FIXED + FIXED * 0.5);
+
+  return entities.map((e) => world.getComponent(e, Transform2D)!.position.x);
+}
+
 describe("Gameplay — fixed pipeline determinism", () => {
+  it("advances every entity without skipping (cleanup via command buffer)", async () => {
+    const xs = await runFixedMany(4, 5);
+    expect(xs).toEqual([4, 4, 4, 4, 4]);
+  });
+
   it("fires script onFixedUpdate every tick (bug #1) and advances the transform", async () => {
     const x = await runFixed(5);
     expect(x).toBe(5);

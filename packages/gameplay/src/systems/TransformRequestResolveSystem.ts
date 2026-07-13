@@ -5,7 +5,6 @@ import {
   NexusSystem,
   NexusSystemContext,
   NexusWorld,
-  Query,
   SparseSet,
 } from "@atlasjs/nexus";
 
@@ -18,10 +17,7 @@ export class TransformRequestResolveSystem implements NexusSystem {
 
   //prettier-ignore
   public update({ world }: NexusSystemContext): void {
-    const query: Query = world.query(TransformWriteRequest);
-
-    for (const entity of query.entities()) {
-      const [request, transform] = world.requireComponents(entity, TransformWriteRequest, Transform2D);
+    world.query(TransformWriteRequest, Transform2D).each((entity, request, transform) => {
       const rigidBodyRuntime: RigidBody | undefined = this.runtimeBodies.get(entity);
 
       if (this.hasPhysicsControl(world, entity, rigidBodyRuntime)) {
@@ -45,7 +41,7 @@ export class TransformRequestResolveSystem implements NexusSystem {
       if (request.hasScale) {
         transform.scale.copyFrom(request.scale);
       }
-    }
+    });
   }
 
   private hasPhysicsControl(

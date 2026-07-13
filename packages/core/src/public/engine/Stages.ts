@@ -7,6 +7,7 @@ export const FIXED_STAGES: readonly Stage[] = [
   { name: "PhysicsStep", anchor: 300 },
   { name: "PhysicsWriteback", anchor: 400 },
   { name: "Cleanup", anchor: 900 },
+  { name: "Sync", anchor: 1000 },
 ] as const;
 
 export const UPDATE_STAGES: readonly Stage[] = [
@@ -14,6 +15,7 @@ export const UPDATE_STAGES: readonly Stage[] = [
   { name: "Logic", anchor: 300 },
   { name: "Editor", anchor: 700 },
   { name: "Late", anchor: 900 },
+  { name: "Sync", anchor: 1000 },
 ] as const;
 
 export const RENDER_STAGES: readonly Stage[] = [
@@ -21,6 +23,7 @@ export const RENDER_STAGES: readonly Stage[] = [
   { name: "Main", anchor: 200 },
   { name: "Overlays", anchor: 300 },
   { name: "Debug", anchor: 400 },
+  { name: "Sync", anchor: 1000 },
 ] as const;
 
 export const STAGES_BY_LANE: Readonly<Record<Lane, readonly Stage[]>> = {

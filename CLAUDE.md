@@ -98,7 +98,8 @@ Current documents:
 
 - `docs/shaders-materials-redesign.md` — validated redesign of the Nebula shader/material authoring API (WGSL as single source of truth via reflection, layered easy/advanced paths, package split).
 - `docs/material-graph-serialization.md` — long-term vision (design only, not implemented): material serialization (load/save) and a node-graph material editor, code-first first with the editor plugging onto the lib. Two tiers (material instance + graph template), graph compiles to WGSL through the existing pipeline.
-- `docs/scheduling-redesign.md` — implemented refactor of the engine scheduling/loop: single ordering authority (lanes → named stages → before/after), rollback-ready fixed step (`advanceFixed`, `fixedDelta` drives physics), declared plugin dependencies with topological boot, removable/groupable steps (`StepHandle`/`StepSet`), fixed→update→render loop with interpolation alpha. `scheduler.<lane>.add(fn, spec)` is the registration API. See the checklist at the bottom of the doc.
+- `docs/scheduling-redesign.md` — implemented refactor of the engine scheduling/loop: single ordering authority (lanes → named stages → before/after), rollback-ready fixed step (`advanceFixed`, `fixedDelta` drives physics), declared plugin dependencies with topological boot, removable/groupable steps (`StepHandle`/`StepSet`), fixed→update→render loop with interpolation alpha. `scheduler.<lane>.add(fn, spec)` is the registration API. Every lane ends with a trailing `Sync` stage (anchor 1000) — the sync point where cross-cutting barriers like the Nexus command-buffer flush run. See the checklist at the bottom of the doc.
+- `docs/nexus-ecs-redesign.md` — implemented refactor + `gameplay` migration of the Nexus ECS: generational entities (safe recycling), swappable `IComponentStore` backend (sparse-set today, SoA/archetype later without touching consumers), typed `world.query(...).each((e, a, b) => …)` with a fail-fast structural-change guard, hybrid command buffer (`world.commands` + `world.flush()`, auto-flushed at the scheduler `Sync` stage by `NexusPlugin`), multi-world via injectable `ComponentRegistry`, query `without`/`optional` filters, and `world.onAdd`/`onRemove` lifecycle events. See the checklist at the bottom of the doc.
 
 ---
 
@@ -138,6 +139,7 @@ Before modifying the project:
 - Avoid introducing unnecessary 2D-only assumptions into foundational APIs.
 - Avoid adding comments
 - Always type the code, even if the type is trivial. (Function parameters, variables, class params)
+- Avoid circular dependencies
 
 Architecture consistency is generally more important than implementing the quickest possible solution.
 

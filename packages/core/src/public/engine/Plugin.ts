@@ -3,9 +3,7 @@ import { Engine } from "./Engine";
 import { ServiceToken } from "./types";
 
 export type PluginDependencies = {
-  /** Service tokens this plugin provides to the registry. */
   provides?: readonly ServiceToken<unknown>[];
-  /** Service tokens this plugin needs from other plugins. */
   requires?: readonly ServiceToken<unknown>[];
 };
 

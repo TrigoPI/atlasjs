@@ -1,4 +1,4 @@
-import { NexusWorld } from "./NexusWorld";
+import type { NexusWorld } from "./world/NexusWorld";
 
 export type Entity = number & { readonly __kind: "Entity" };
 export type ComponentID = number & { readonly __kind: "ComponentID" };
@@ -8,13 +8,16 @@ export type Component<
   TArgs extends unknown[] = [],
 > = new (...args: TArgs) => TComponent;
 
-export type ComponentData<T extends object> = Component<T> & {
-  componentID: ComponentID;
-};
-
 export type ComponentList<T extends object[], TArgs extends unknown[]> = {
   [K in keyof T]: Component<T[K], TArgs>;
 };
+
+export type ComponentListener<T extends object = object> = (
+  entity: Entity,
+  component: T,
+) => void;
+
+export type Unsubscribe = () => void;
 
 export type NexusSystemContext = {
   readonly world: NexusWorld;
