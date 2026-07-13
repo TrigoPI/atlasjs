@@ -1,3 +1,3 @@
 export * from "./core";
-export * from "./runtime";
 export * from "./components";
+export * from "./runtime";

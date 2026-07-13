@@ -1,50 +1,82 @@
-import { Vector2D } from "../maths";
+import { Vec2 } from "@atlasjs/math";
 
-export class Transform2DComponent {
-  public position: Vector2D;
-  public scale: Vector2D;
-  public rotation: number;
+import { PhysicsBodyRef, RigidBody2D, Transform2D } from "../../components";
 
-  constructor(
-    position: Vector2D = new Vector2D(0, 0),
-    scale: Vector2D = new Vector2D(1, 1),
-    rotation: number = 0,
-  ) {
-    this.rotation = rotation;
-    this.position = position;
-    this.scale = scale;
+import { ScriptComponent } from "../core";
+
+export class Transform2DComponent extends ScriptComponent<Transform2D> {
+  public static readonly engine = Transform2D;
+
+  public get position(): Vec2 {
+    return this.resolve().position;
   }
 
-  public copy(transform: Transform2DComponent): Transform2DComponent {
-    this.position.copy(transform.position);
-    this.scale.copy(transform.scale);
-    this.rotation = transform.rotation;
+  public set position(value: Vec2) {
+    this.setPosition(value.x, value.y);
+  }
+
+  public get rotation(): number {
+    return this.resolve().rotation;
+  }
+
+  public set rotation(value: number) {
+    this.setRotation(value);
+  }
+
+  public get scale(): Vec2 {
+    return this.resolve().scale;
+  }
+
+  public set scale(value: Vec2) {
+    this.setScale(value.x, value.y);
+  }
+
+  public setPosition(x: number, y: number): this {
+    this.resolve().position.set(x, y);
+
+    const body: PhysicsBodyRef | undefined = this.controllingBody();
+    if (body !== undefined) {
+      body.body.setTranslation(x, y);
+    }
+
     return this;
   }
 
-  public translate(x: number, y: number): Transform2DComponent {
-    this.position.x += x;
-    this.position.y += y;
+  public setRotation(rotation: number): this {
+    this.resolve().rotation = rotation;
+
+    const body: PhysicsBodyRef | undefined = this.controllingBody();
+    if (body !== undefined) {
+      body.body.setRotation(rotation);
+    }
+
     return this;
   }
 
-  public rotate(angle: number): Transform2DComponent {
-    this.rotation += angle;
+  public setScale(x: number, y: number): this {
+    this.resolve().scale.set(x, y);
     return this;
   }
 
-  public setPosition(x: number, y: number): Transform2DComponent {
-    this.position.set(x, y);
-    return this;
+  public translate(dx: number, dy: number): this {
+    const position: Vec2 = this.resolve().position;
+    return this.setPosition(position.x + dx, position.y + dy);
   }
 
-  public setScale(x: number, y: number): Transform2DComponent {
-    this.scale.set(x, y);
-    return this;
+  public rotate(angle: number): this {
+    return this.setRotation(this.resolve().rotation + angle);
   }
 
-  public setRotation(rotation: number): Transform2DComponent {
-    this.rotation = rotation;
-    return this;
+  private controllingBody(): PhysicsBodyRef | undefined {
+    const rigidBody: RigidBody2D | undefined = this.world.getComponent(
+      this.entity,
+      RigidBody2D,
+    );
+
+    if (rigidBody === undefined || rigidBody.type !== "dynamic") {
+      return undefined;
+    }
+
+    return this.world.getComponent(this.entity, PhysicsBodyRef);
   }
 }

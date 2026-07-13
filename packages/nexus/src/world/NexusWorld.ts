@@ -47,14 +47,14 @@ export class NexusWorld {
   }
 
   public onAdd<TComponent extends object>(
-    component: Component<TComponent>,
+    component: Component<TComponent, any[]>,
     listener: ComponentListener<TComponent>,
   ): Unsubscribe {
     return this.subscribe(this.addListeners, component, listener);
   }
 
   public onRemove<TComponent extends object>(
-    component: Component<TComponent>,
+    component: Component<TComponent, any[]>,
     listener: ComponentListener<TComponent>,
   ): Unsubscribe {
     return this.subscribe(this.removeListeners, component, listener);
@@ -66,7 +66,7 @@ export class NexusWorld {
 
   public hasComponent<TComponent extends object>(
     entity: Entity,
-    component: Component<TComponent>,
+    component: Component<TComponent, any[]>,
   ): boolean {
     if (!this.entityManager.has(entity)) {
       return false;
@@ -90,7 +90,7 @@ export class NexusWorld {
 
   public removeComponent<TComponent extends object>(
     entity: Entity,
-    type: Component<TComponent>,
+    type: Component<TComponent, any[]>,
   ): boolean {
     this.assertEntityExists(entity);
 
@@ -162,7 +162,7 @@ export class NexusWorld {
 
   public requireComponent<TComponent extends object>(
     entity: Entity,
-    type: Component<TComponent>,
+    type: Component<TComponent, any[]>,
   ): TComponent {
     const component: TComponent | undefined = this.getComponent(entity, type);
 
@@ -312,7 +312,7 @@ export class NexusWorld {
 
   private subscribe<TComponent extends object>(
     listeners: Map<ComponentID, Set<ComponentListener>>,
-    component: Component<TComponent>,
+    component: Component<TComponent, any[]>,
     listener: ComponentListener<TComponent>,
   ): Unsubscribe {
     const id: ComponentID = this.registry.register(component);

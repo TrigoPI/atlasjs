@@ -1,8 +1,7 @@
-import { Entity } from "@atlasjs/nexus";
+import { Entity, NexusWorld } from "@atlasjs/nexus";
 
 import { RuntimeScriptContext } from "./RuntimeScriptContext";
 import { IncrementalScriptIdGenerator } from "./IncrementalScriptIdGenerator";
-import { ScriptComponentStorage } from "./ScriptComponentStorage";
 
 import {
   AtlasScript,
@@ -15,13 +14,13 @@ export class ScriptManager {
   private readonly records: Map<ScriptID, ScriptInstanceRecord>;
   private readonly recordsByEntity: Map<Entity, Set<ScriptID>>;
   private readonly idGenerator: IncrementalScriptIdGenerator;
-  private readonly componentStorage: ScriptComponentStorage;
+  private readonly world: NexusWorld;
 
   private readonly pendingCreate: ScriptID[];
   private readonly pendingDestroy: ScriptID[];
 
-  public constructor(storage: ScriptComponentStorage) {
-    this.componentStorage = storage;
+  public constructor(world: NexusWorld) {
+    this.world = world;
 
     this.pendingCreate = [];
     this.pendingDestroy = [];
@@ -38,7 +37,7 @@ export class ScriptManager {
     const instance: TScript = new ScriptType();
     const context: RuntimeScriptContext = new RuntimeScriptContext(
       entityId,
-      this.componentStorage,
+      this.world,
     );
 
     instance.__bindContext(context);

@@ -1,43 +1,57 @@
+import { Vec2 } from "@atlasjs/math";
 import { RigidBodyType } from "@atlasjs/inertia";
-import { Vector2D } from "../maths";
 
-export class RigidBody2DComponent {
-  public type: RigidBodyType;
+import { RigidBody2D } from "../../components";
 
-  public mass: number;
-  public rotation: number;
-  public angularVelocity: number;
+import { ScriptComponent } from "../core";
 
-  public position: Vector2D;
-  public velocity: Vector2D;
+export class RigidBody2DComponent extends ScriptComponent<RigidBody2D> {
+  public static readonly engine = RigidBody2D;
 
-  public constructor() {
-    this.type = "dynamic";
-    this.mass = 1;
-    this.rotation = 0;
-    this.angularVelocity = 0;
-
-    this.position = new Vector2D(0, 0);
-    this.velocity = new Vector2D(0, 0);
+  public get type(): RigidBodyType {
+    return this.resolve().type;
   }
 
-  public setMass(mass: number): RigidBody2DComponent {
-    this.mass = mass;
+  public set type(value: RigidBodyType) {
+    this.resolve().type = value;
+  }
+
+  public get mass(): number {
+    return this.resolve().mass;
+  }
+
+  public set mass(value: number) {
+    this.resolve().mass = value;
+  }
+
+  public get velocity(): Vec2 {
+    return this.resolve().velocity;
+  }
+
+  public set velocity(value: Vec2) {
+    this.resolve().velocity.copyFrom(value);
+  }
+
+  public get angularVelocity(): number {
+    return this.resolve().angularVelocity;
+  }
+
+  public set angularVelocity(value: number) {
+    this.resolve().angularVelocity = value;
+  }
+
+  public setVelocity(x: number, y: number): this {
+    this.resolve().velocity.set(x, y);
     return this;
   }
 
-  public setRotation(rotation: number): RigidBody2DComponent {
-    this.rotation = rotation;
+  public setMass(mass: number): this {
+    this.resolve().mass = mass;
     return this;
   }
 
-  public setAngularVelocity(angularVelocity: number): RigidBody2DComponent {
-    this.angularVelocity = angularVelocity;
-    return this;
-  }
-
-  public setVelocity(velocity: Vector2D): RigidBody2DComponent {
-    this.velocity.copy(velocity);
+  public setAngularVelocity(angularVelocity: number): this {
+    this.resolve().angularVelocity = angularVelocity;
     return this;
   }
 }
