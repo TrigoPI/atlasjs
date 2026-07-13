@@ -1,4 +1,4 @@
-import { Engine, Plugin, PRIORITY } from "@atlasjs/core";
+import { Engine, Plugin, StepHandle } from "@atlasjs/core";
 import { createLogger, Logger } from "@atlasjs/utils";
 
 import { DomInputBackend, BackendInput } from "../private";
@@ -10,13 +10,15 @@ export class InputPlugin extends Plugin {
 
   private backend: DomInputBackend | null;
   private input: BackendInput | null;
+  private endFrameStep: StepHandle | null;
   private opts: InputPluginOptions;
 
   public constructor(opts: InputPluginOptions) {
-    super("input", 5);
+    super("input", { provides: [INPUT] });
     this.opts = opts;
     this.input = null;
     this.backend = null;
+    this.endFrameStep = null;
 
     this.logger = createLogger(InputPlugin.name);
   }
@@ -30,9 +32,9 @@ export class InputPlugin extends Plugin {
 
     backend.attach(this.opts.target ?? window);
 
-    engine.scheduler.onUpdate(() => input.clear(), {
-      name: "input:update",
-      priority: PRIORITY.UPDATE_INPUT_BEGIN,
+    this.endFrameStep = engine.scheduler.update.add(() => input.endFrame(), {
+      name: "input:end-frame",
+      stage: "Late",
     });
 
     engine.services.provide(INPUT, input);
@@ -42,9 +44,11 @@ export class InputPlugin extends Plugin {
   }
 
   public uninstall(): void {
+    this.endFrameStep?.remove();
     this.backend?.detach();
     this.input?.clearAll();
 
+    this.endFrameStep = null;
     this.backend = null;
     this.input = null;
   }

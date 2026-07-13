@@ -98,6 +98,7 @@ Current documents:
 
 - `docs/shaders-materials-redesign.md` — validated redesign of the Nebula shader/material authoring API (WGSL as single source of truth via reflection, layered easy/advanced paths, package split).
 - `docs/material-graph-serialization.md` — long-term vision (design only, not implemented): material serialization (load/save) and a node-graph material editor, code-first first with the editor plugging onto the lib. Two tiers (material instance + graph template), graph compiles to WGSL through the existing pipeline.
+- `docs/scheduling-redesign.md` — implemented refactor of the engine scheduling/loop: single ordering authority (lanes → named stages → before/after), rollback-ready fixed step (`advanceFixed`, `fixedDelta` drives physics), declared plugin dependencies with topological boot, removable/groupable steps (`StepHandle`/`StepSet`), fixed→update→render loop with interpolation alpha. `scheduler.<lane>.add(fn, spec)` is the registration API. See the checklist at the bottom of the doc.
 
 ---
 
@@ -135,6 +136,8 @@ Before modifying the project:
 - Consider runtime performance when introducing new abstractions.
 - Preserve the plugin-based philosophy of the engine.
 - Avoid introducing unnecessary 2D-only assumptions into foundational APIs.
+- Avoid adding comments
+- Always type the code, even if the type is trivial. (Function parameters, variables, class params)
 
 Architecture consistency is generally more important than implementing the quickest possible solution.
 

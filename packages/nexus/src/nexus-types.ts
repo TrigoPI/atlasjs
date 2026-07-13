@@ -3,8 +3,6 @@ import { NexusWorld } from "./NexusWorld";
 export type Entity = number & { readonly __kind: "Entity" };
 export type ComponentID = number & { readonly __kind: "ComponentID" };
 
-export type SystemPhase = "startup" | "fixedUpdate" | "update" | "lateUpdate";
-
 export type Component<
   TComponent extends object = object,
   TArgs extends unknown[] = [],

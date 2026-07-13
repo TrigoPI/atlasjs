@@ -6,7 +6,7 @@ export class AssetPlugin extends Plugin {
   private assets: AssetManager | null;
 
   public constructor() {
-    super("asset", 1);
+    super("asset", { provides: [ASSETS] });
     this.assets = null;
   }
 

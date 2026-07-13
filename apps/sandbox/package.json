@@ -15,6 +15,7 @@
     "@atlasjs/core": "workspace:*",
     "@atlasjs/math": "workspace:*",
     "@atlasjs/nebula": "workspace:*",
+    "@atlasjs/nebula-webgpu": "workspace:*",
     "@atlasjs/inertia": "workspace:*",
     "@atlasjs/rapier": "workspace:*",
     "@atlasjs/input": "workspace:*",

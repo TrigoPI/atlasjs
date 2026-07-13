@@ -7,6 +7,13 @@
       "runtimeArgs": ["--filter", "webgpu", "dev"],
       "port": 5173,
       "autoPort": true
+    },
+    {
+      "name": "sandbox",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "sandbox", "dev"],
+      "port": 5174,
+      "autoPort": true
     }
   ]
 }

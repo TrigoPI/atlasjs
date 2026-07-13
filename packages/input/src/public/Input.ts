@@ -9,4 +9,5 @@ export interface Input {
   isDown(key: Key): boolean;
   isPressed(key: Key): boolean;
   isReleased(key: Key): boolean;
+  endFrame(): void;
 }

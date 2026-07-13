@@ -1,4 +1,4 @@
-import { Engine, Plugin, PRIORITY, Unsubscribe } from "@atlasjs/core";
+import { Engine, Plugin, StepHandle } from "@atlasjs/core";
 import { Logger, createLogger } from "@atlasjs/utils";
 
 import { Renderer } from "./core";
@@ -9,22 +9,22 @@ export class NebulaPlugin extends Plugin {
   private readonly renderer: Renderer;
   private readonly logger: Logger;
 
-  private unsubscribe: Unsubscribe | null;
+  private renderStep: StepHandle | null;
 
   public constructor(renderer: Renderer) {
-    super("nebula-plugin");
+    super("nebula-plugin", { provides: [NEBULA_RENDERER] });
     this.logger = createLogger(NebulaPlugin.name);
     this.renderer = renderer;
-    this.unsubscribe = null;
+    this.renderStep = null;
   }
 
   public async install(engine: Engine): Promise<void> {
     const renderer: NebulaRenderer = new NebulaRenderer(this.renderer);
     await renderer.init();
 
-    engine.scheduler.onRender(() => renderer.render(), {
+    this.renderStep = engine.scheduler.render.add(() => renderer.render(), {
       name: "nebula:render",
-      priority: PRIORITY.RENDER_MAIN,
+      stage: "Main",
     });
 
     engine.services.provide(NEBULA_RENDERER, renderer);
@@ -35,7 +35,8 @@ export class NebulaPlugin extends Plugin {
 
   public async uninstall(): Promise<void> {
     this.logger.log("Uninstalling Nebula Plugin...");
+    this.renderStep?.remove();
+    this.renderStep = null;
     this.renderer.destroy();
-    this.unsubscribe?.();
   }
 }

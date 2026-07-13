@@ -1,10 +1,11 @@
 import { createLogger, Logger } from "@atlasjs/utils";
-import { Engine, Plugin, PRIORITY } from "@atlasjs/core";
+import { Engine, Plugin, StepHandle } from "@atlasjs/core";
 import { NEBULA_RENDERER, NebulaRenderer } from "@atlasjs/nebula";
 import { INERTIAL_ENGINE, PhysicsWorld, RigidBody } from "@atlasjs/inertia";
-import { NEXUS, NexusWorld, SparseSet, SystemScheduler } from "@atlasjs/nexus";
+import { NEXUS, NexusWorld, SparseSet } from "@atlasjs/nexus";
 
 import { SCRIPT_MANAGER } from "./tokens";
+import { registerSystem } from "./registerSystem";
 
 import {
   RigidBody2DRequestSystem,
@@ -33,12 +34,16 @@ import {
 export class GameplayPlugin extends Plugin {
   private readonly logger: Logger;
 
-  private systemManager!: SystemScheduler;
   private scriptManager!: ScriptManager;
+  private handles: StepHandle[];
 
   public constructor() {
-    super("gameplay-plugin");
+    super("gameplay-plugin", {
+      requires: [NEXUS, NEBULA_RENDERER, INERTIAL_ENGINE],
+      provides: [SCRIPT_MANAGER],
+    });
     this.logger = createLogger(GameplayPlugin.name);
+    this.handles = [];
   }
 
   //prettier-ignore
@@ -51,19 +56,16 @@ export class GameplayPlugin extends Plugin {
     const runtimeStorage: ScriptComponentRuntimeStorage = new ScriptComponentRuntimeStorage();
     const runtimeBodiesStorage: SparseSet<RigidBody> = new SparseSet();
 
-    this.systemManager = new SystemScheduler(world);
     this.scriptManager = new ScriptManager(componentStorage);
 
-    const scriptTransformRequestSystem: ScriptTransformRequestSystem = new ScriptTransformRequestSystem(componentStorage, runtimeStorage);
-    const rigidBody2DRequestSystem: RigidBody2DRequestSystem = new RigidBody2DRequestSystem(componentStorage);
-
-    const transformRequestResolveSystem: TransformRequestResolveSystem = new TransformRequestResolveSystem(runtimeBodiesStorage);
-    const scriptTransformFeedbackSystem: ScriptTransformFeedbackSystem = new ScriptTransformFeedbackSystem(componentStorage, runtimeStorage);
-    const transformWriteRequestCleanupSystem: TransformWriteRequestCleanupSystem = new TransformWriteRequestCleanupSystem();
-
-    const rigidBody2dSystem: RigidBody2DSystem = new RigidBody2DSystem(inertia, runtimeBodiesStorage);
-    const spriteRenderSystem: SpriteRenderSystem = new SpriteRenderSystem(nebula);
-    const rigidBodyWriteBackSystem: RigidBodyWriteBackSystem = new RigidBodyWriteBackSystem(runtimeBodiesStorage);
+    const scriptTransformRequestSystem = new ScriptTransformRequestSystem(componentStorage, runtimeStorage);
+    const rigidBody2DRequestSystem = new RigidBody2DRequestSystem(componentStorage);
+    const rigidBody2dSystem = new RigidBody2DSystem(inertia, runtimeBodiesStorage);
+    const transformRequestResolveSystem = new TransformRequestResolveSystem(runtimeBodiesStorage);
+    const rigidBodyWriteBackSystem = new RigidBodyWriteBackSystem(runtimeBodiesStorage);
+    const scriptTransformFeedbackSystem = new ScriptTransformFeedbackSystem(componentStorage, runtimeStorage);
+    const transformWriteRequestCleanupSystem = new TransformWriteRequestCleanupSystem();
+    const spriteRenderSystem = new SpriteRenderSystem(nebula);
 
     world
       .defineComponent(RigidBody2D)
@@ -71,20 +73,69 @@ export class GameplayPlugin extends Plugin {
       .defineComponent(SpriteRender)
       .defineComponent(TransformWriteRequest);
 
-    this.systemManager
-      .add("update", scriptTransformRequestSystem)
-      .add("update", rigidBody2DRequestSystem)
-      .add("update", rigidBody2dSystem)
-      .add("update", transformRequestResolveSystem)
-      .add("update", rigidBodyWriteBackSystem)
-      .add("update", scriptTransformFeedbackSystem)
-      .add("update", spriteRenderSystem)
-      .add("update", transformWriteRequestCleanupSystem);
+    const { fixed, update, render } = engine.scheduler;
 
-    engine.scheduler.onUpdate((dt: number) => this.update(dt), {
-      name: "sprite-render-system:update",
-      priority: PRIORITY.UPDATE_ECS,
-    });
+    this.handles.push(
+      fixed.add(() => this.scriptManager.fixedUpdate(), {
+        name: "gameplay:script-fixed",
+        stage: "ScriptFixed",
+      }),
+    );
+
+    this.handles.push(
+      registerSystem(fixed, world, scriptTransformRequestSystem, {
+        name: "gameplay:script-transform-request",
+        stage: "PhysicsRequest",
+      }),
+      registerSystem(fixed, world, rigidBody2DRequestSystem, {
+        name: "gameplay:rigidbody-request",
+        stage: "PhysicsRequest",
+        after: "gameplay:script-transform-request",
+      }),
+      registerSystem(fixed, world, rigidBody2dSystem, {
+        name: "gameplay:rigidbody-create",
+        stage: "PhysicsRequest",
+        after: "gameplay:rigidbody-request",
+      }),
+      registerSystem(fixed, world, transformRequestResolveSystem, {
+        name: "gameplay:transform-resolve",
+        stage: "PhysicsRequest",
+        after: "gameplay:rigidbody-create",
+      }),
+    );
+
+    this.handles.push(
+      registerSystem(fixed, world, rigidBodyWriteBackSystem, {
+        name: "gameplay:rigidbody-writeback",
+        stage: "PhysicsWriteback",
+      }),
+      registerSystem(fixed, world, scriptTransformFeedbackSystem, {
+        name: "gameplay:script-feedback",
+        stage: "PhysicsWriteback",
+        after: "gameplay:rigidbody-writeback",
+      }),
+    );
+
+    this.handles.push(
+      registerSystem(fixed, world, transformWriteRequestCleanupSystem, {
+        name: "gameplay:request-cleanup",
+        stage: "Cleanup",
+      }),
+    );
+
+    this.handles.push(
+      update.add((ctx) => this.scriptManager.update(ctx.dt), {
+        name: "gameplay:script-update",
+        stage: "Logic",
+      }),
+    );
+
+    this.handles.push(
+      registerSystem(render, world, spriteRenderSystem, {
+        name: "gameplay:sprite-render",
+        stage: "PreRender",
+      }),
+    );
 
     this.logger.log("GameplayPlugin installed.");
     engine.services.provide(SCRIPT_MANAGER, this.scriptManager);
@@ -92,13 +143,9 @@ export class GameplayPlugin extends Plugin {
     this.deferred.resolve();
   }
 
-  public update(dt: number): void {
-    this.scriptManager.update(dt);
-    this.systemManager.runPhase("update", dt);
-    this.systemManager.runPhase("lateUpdate", dt);
-  }
-
   public uninstall(): void {
     this.logger.log("Uninstalling GameplayPlugin.");
+    for (const handle of this.handles) handle.remove();
+    this.handles = [];
   }
 }
