@@ -1,15 +1,35 @@
 import { Entity } from "./nexus-types";
 import { SparseSet } from "./SparseSet";
 
-export class ComponentStore<T = any> {
+export interface IComponentStore<T = any> {
+  readonly size: number;
+  readonly version: number;
+  has(entity: Entity): boolean;
+  get(entity: Entity): T | undefined;
+  set(entity: Entity, component: T): void;
+  delete(entity: Entity): boolean;
+  getEntities(): ReadonlyArray<Entity>;
+  entities(): IterableIterator<Entity>;
+  values(): IterableIterator<T>;
+  entries(): IterableIterator<[Entity, T]>;
+}
+
+export class SparseSetStore<T = any> implements IComponentStore<T> {
   private readonly store: SparseSet<T>;
+
+  private structuralVersion: number;
 
   public constructor() {
     this.store = new SparseSet<T>();
+    this.structuralVersion = 0;
   }
 
   public get size(): number {
     return this.store.size;
+  }
+
+  public get version(): number {
+    return this.structuralVersion;
   }
 
   public has(entity: Entity): boolean {
@@ -25,11 +45,19 @@ export class ComponentStore<T = any> {
   }
 
   public set(entity: Entity, component: T): void {
-    this.store.set(entity, component);
+    if (this.store.set(entity, component)) {
+      this.structuralVersion++;
+    }
   }
 
   public delete(entity: Entity): boolean {
-    return this.store.delete(entity);
+    const removed: boolean = this.store.delete(entity);
+
+    if (removed) {
+      this.structuralVersion++;
+    }
+
+    return removed;
   }
 
   public *entities(): IterableIterator<Entity> {

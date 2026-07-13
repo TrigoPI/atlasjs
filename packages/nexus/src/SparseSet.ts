@@ -69,12 +69,12 @@ export class SparseSet<T> {
     return this.data[index];
   }
 
-  public set(entity: Entity, value: T): void {
+  public set(entity: Entity, value: T): boolean {
     const index: number = this.sparse[entityIndex(entity)];
 
     if (index !== undefined && this.dense[index] === entity) {
       this.data[index] = value;
-      return;
+      return false;
     }
 
     const nextIndex: number = this.dense.length;
@@ -82,6 +82,8 @@ export class SparseSet<T> {
     this.sparse[entityIndex(entity)] = nextIndex;
     this.dense.push(entity);
     this.data.push(value);
+
+    return true;
   }
 
   public clear(): void {

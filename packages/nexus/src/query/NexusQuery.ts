@@ -1,12 +1,12 @@
-import { ComponentStore } from "../ComponentStore";
+import { IComponentStore } from "../ComponentStore";
 import { Entity } from "../nexus-types";
 import { Query } from "./Query";
 
 export class NexusQuery implements Query {
-  private readonly stores: ComponentStore[];
-  private readonly baseStore: ComponentStore;
+  private readonly stores: IComponentStore[];
+  private readonly baseStore: IComponentStore;
 
-  constructor(stores: ComponentStore[], baseStore: ComponentStore) {
+  constructor(stores: IComponentStore[], baseStore: IComponentStore) {
     this.stores = stores;
     this.baseStore = baseStore;
   }

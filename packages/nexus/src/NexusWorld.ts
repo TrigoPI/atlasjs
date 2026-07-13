@@ -3,7 +3,7 @@ import { createLogger, Logger } from "@atlasjs/utils";
 import { defineComponent } from "./define-component";
 import { Query, EmptyQuery, NexusQuery } from "./query";
 import { EntityManager } from "./EntityManager";
-import { ComponentStore } from "./ComponentStore";
+import { IComponentStore, SparseSetStore } from "./ComponentStore";
 
 import {
   Component,
@@ -16,7 +16,7 @@ import {
 export class NexusWorld {
   private readonly logger: Logger;
   private readonly entityManager: EntityManager;
-  private readonly stores: Map<ComponentID, ComponentStore<any>>;
+  private readonly stores: Map<ComponentID, IComponentStore<any>>;
 
   public constructor() {
     this.logger = createLogger(NexusWorld.name);
@@ -34,7 +34,7 @@ export class NexusWorld {
   ): boolean {
     this.assertEntityExists(entity);
 
-    const store: ComponentStore<TComponent> | undefined =
+    const store: IComponentStore<TComponent> | undefined =
       this.findStore(component);
 
     if (store === undefined) {
@@ -46,7 +46,7 @@ export class NexusWorld {
 
   public getStore<TComponent extends object>(
     type: Component<TComponent>,
-  ): ComponentStore<TComponent> {
+  ): IComponentStore<TComponent> {
     return this.getOrCreateStore(type);
   }
 
@@ -56,7 +56,7 @@ export class NexusWorld {
   ): boolean {
     this.assertEntityExists(entity);
 
-    const store: ComponentStore<TComponent> | undefined = this.findStore(type);
+    const store: IComponentStore<TComponent> | undefined = this.findStore(type);
 
     if (store === undefined) {
       return false;
@@ -93,7 +93,7 @@ export class NexusWorld {
   ): TComponent | undefined {
     this.assertEntityExists(entity);
 
-    const store: ComponentStore<TComponent> | undefined = this.findStore(type);
+    const store: IComponentStore<TComponent> | undefined = this.findStore(type);
 
     if (store === undefined) {
       return undefined;
@@ -132,7 +132,7 @@ export class NexusWorld {
     ...args: TArgs
   ): TComponent {
     this.assertEntityExists(entity);
-    const store: ComponentStore<TComponent> =
+    const store: IComponentStore<TComponent> =
       this.getOrCreateStore<TComponent>(component);
 
     if (store.has(entity)) {
@@ -153,7 +153,7 @@ export class NexusWorld {
     ...args: TArgs
   ): TComponent {
     this.assertEntityExists(entity);
-    const store: ComponentStore<TComponent> = this.getOrCreateStore(component);
+    const store: IComponentStore<TComponent> = this.getOrCreateStore(component);
 
     const instance: TComponent = new component(...args);
     store.set(entity, instance);
@@ -166,10 +166,10 @@ export class NexusWorld {
       throw new Error("Query requires at least one component type.");
     }
 
-    const stores: ComponentStore<any>[] = [];
+    const stores: IComponentStore<any>[] = [];
 
     for (const type of types) {
-      const store: ComponentStore | undefined = this.findStore(type);
+      const store: IComponentStore | undefined = this.findStore(type);
 
       if (store === undefined) {
         return new EmptyQuery();
@@ -178,7 +178,7 @@ export class NexusWorld {
       stores.push(store);
     }
 
-    let baseStore: ComponentStore = stores[0];
+    let baseStore: IComponentStore = stores[0];
 
     for (let i = 1; i < stores.length; i++) {
       if (stores[i].size < baseStore.size) {
@@ -197,10 +197,10 @@ export class NexusWorld {
 
   private getOrCreateStore<TComponent extends object>(
     component: Component<TComponent>,
-  ): ComponentStore<TComponent> {
+  ): IComponentStore<TComponent> {
     this.assertComponentData(component);
 
-    let store: ComponentStore<any> | undefined = this.stores.get(
+    let store: IComponentStore<any> | undefined = this.stores.get(
       component.componentID,
     );
 
@@ -208,7 +208,7 @@ export class NexusWorld {
       return store;
     }
 
-    store = new ComponentStore<TComponent>();
+    store = new SparseSetStore<TComponent>();
     this.stores.set(component.componentID, store);
 
     return store;
@@ -216,10 +216,10 @@ export class NexusWorld {
 
   private findStore<TComponent extends object>(
     component: Component<TComponent>,
-  ): ComponentStore<TComponent> | undefined {
+  ): IComponentStore<TComponent> | undefined {
     this.assertComponentData(component);
     return this.stores.get(component.componentID) as
-      | ComponentStore<TComponent>
+      | IComponentStore<TComponent>
       | undefined;
   }
 

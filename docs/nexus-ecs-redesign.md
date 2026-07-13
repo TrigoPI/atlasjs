@@ -64,17 +64,21 @@ Les `SparseSet` indexent `sparse` par `entityIndex(e)` (compact, borné par le p
 C'est ce qui rend la migration SoA/archetype indolore. On introduit une interface de store ; `SparseSetStore` en est l'implémentation actuelle. `ComponentStore` cesse d'être un wrapper mort et devient **ce seam** (+ point d'accroche des événements de cycle de vie).
 
 ```ts
-export interface IComponentStore<T> {
+export interface IComponentStore<T = any> {
   readonly size: number;
   readonly version: number;              // incrémenté à chaque mutation structurelle
-  has(index: number): boolean;
-  get(index: number): T | undefined;
-  set(index: number, value: T): void;
-  delete(index: number): boolean;
-  denseEntities(): ReadonlyArray<number>; // indices, pour l'itération de query
-  denseValues(): ReadonlyArray<T>;
+  has(entity: Entity): boolean;
+  get(entity: Entity): T | undefined;
+  set(entity: Entity, component: T): void;
+  delete(entity: Entity): boolean;
+  getEntities(): ReadonlyArray<Entity>;  // dense (Entity complètes), pour l'itération de query
+  entities(): IterableIterator<Entity>;
+  values(): IterableIterator<T>;
+  entries(): IterableIterator<[Entity, T]>;
 }
 ```
+
+`version` n'est incrémenté que sur changement **structurel** (ajout/suppression), pas sur écrasement d'une valeur existante — c'est ce que le garde-fou de la Phase 3 échantillonne pour détecter une mutation pendant itération. `SparseSet.set` renvoie désormais un booléen (inséré vs écrasé) pour alimenter ce compteur.
 
 Les systèmes ne voient jamais cette interface : ils passent par `query`. Demain, un `ArchetypeStore` ou un `SoAStore` (adossé à des `Float32Array`) remplace `SparseSetStore` sans toucher gameplay.
 
@@ -164,7 +168,7 @@ On remplace l'état module-global mutable + monkeypatch par un `ComponentRegistr
 
 - [x] Phase 0 — vitest + tests de non-régression (mutation-pendant-itération, recyclage, intersection)
 - [x] Phase 1 — générations d'entités
-- [ ] Phase 2 — `IComponentStore` + `SparseSetStore` + `version`
+- [x] Phase 2 — `IComponentStore` + `SparseSetStore` + `version`
 - [ ] Phase 3 — query typée `each`/tuples + garde-fou fail-fast
 - [ ] Phase 4 — command buffer + flush hybride (auto sync points + `world.flush()`)
 - [ ] Phase 5 — multi-world + `ComponentRegistry`
