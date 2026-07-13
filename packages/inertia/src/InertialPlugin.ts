@@ -17,7 +17,7 @@ export class InertialPlugin extends Plugin {
   public async install(engine: Engine): Promise<void> {
     await this.world.init?.();
 
-    engine.scheduler.onFixedUpdate(() => this.world.step(), {
+    engine.scheduler.onFixedUpdate((dt: number) => this.world.step(dt), {
       name: "inertia:step",
       priority: PRIORITY.FIXED_PHYSICS_STEP,
     });

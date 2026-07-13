@@ -6,7 +6,7 @@ import { RigidBody } from "./RigidBody";
 
 export interface PhysicsWorld {
   init?(): Promise<void>;
-  step(): void;
+  step(dt: number): void;
   setGravity(x: number, y: number): void;
   getGravity(): Vec2;
   createRigidBody(descriptor: RigidBodyDesc): RigidBody;

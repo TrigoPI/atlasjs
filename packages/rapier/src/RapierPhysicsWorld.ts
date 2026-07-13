@@ -57,7 +57,8 @@ export class RapierPhysicsWorld implements PhysicsWorld {
     );
   }
 
-  public step(): void {
+  public step(dt: number): void {
+    this.world.timestep = dt;
     this.world.step();
   }
 

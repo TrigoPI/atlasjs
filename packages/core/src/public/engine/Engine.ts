@@ -4,6 +4,9 @@ import { Plugin } from "./Plugin";
 import { EventBus } from "./EventBus";
 import { Scheduler } from "./Scheduler";
 import { ServiceRegistry } from "./ServiceRegistry";
+import { FrameClock, startRafLoop } from "../../private";
+import { SceneContext, SceneManager } from "../scene";
+
 import {
   BootTimeoutError,
   DependencyCycleError,
@@ -11,8 +14,6 @@ import {
   MissingDependencyError,
 } from "./PluginErrors";
 
-import { FrameClock, startRafLoop } from "../../private";
-import { SceneContext, SceneManager } from "../scene";
 import {
   EngineEvents,
   EngineOptions,
