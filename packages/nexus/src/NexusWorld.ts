@@ -1,14 +1,16 @@
 import { createLogger, Logger } from "@atlasjs/utils";
 
-import { defineComponent } from "./define-component";
 import { Query, EmptyQuery, NexusQuery } from "./query";
 import { EntityManager } from "./EntityManager";
 import { IComponentStore, SparseSetStore } from "./ComponentStore";
 import { CommandBuffer, NexusCommandBuffer } from "./CommandBuffer";
+import {
+  ComponentRegistry,
+  defaultComponentRegistry,
+} from "./ComponentRegistry";
 
 import {
   Component,
-  ComponentData,
   ComponentID,
   ComponentList,
   Entity,
@@ -16,12 +18,14 @@ import {
 
 export class NexusWorld {
   private readonly logger: Logger;
+  private readonly registry: ComponentRegistry;
   private readonly entityManager: EntityManager;
   private readonly stores: Map<ComponentID, IComponentStore<any>>;
   private readonly commandBuffer: NexusCommandBuffer;
 
-  public constructor() {
+  public constructor(registry: ComponentRegistry = defaultComponentRegistry) {
     this.logger = createLogger(NexusWorld.name);
+    this.registry = registry;
     this.entityManager = new EntityManager();
     this.stores = new Map();
     this.commandBuffer = new NexusCommandBuffer(this);
@@ -90,7 +94,7 @@ export class NexusWorld {
     component: Component<TComponent, TArgs>,
   ): NexusWorld {
     this.logger.log(`Defining component "${component.name}".`);
-    defineComponent(component);
+    this.registry.register(component);
     return this;
   }
 
@@ -212,18 +216,16 @@ export class NexusWorld {
   private getOrCreateStore<TComponent extends object>(
     component: Component<TComponent>,
   ): IComponentStore<TComponent> {
-    this.assertComponentData(component);
+    const id: ComponentID = this.registry.register(component);
 
-    let store: IComponentStore<any> | undefined = this.stores.get(
-      component.componentID,
-    );
+    let store: IComponentStore<any> | undefined = this.stores.get(id);
 
     if (store !== undefined) {
       return store;
     }
 
     store = new SparseSetStore<TComponent>();
-    this.stores.set(component.componentID, store);
+    this.stores.set(id, store);
 
     return store;
   }
@@ -231,25 +233,18 @@ export class NexusWorld {
   private findStore<TComponent extends object>(
     component: Component<TComponent>,
   ): IComponentStore<TComponent> | undefined {
-    this.assertComponentData(component);
-    return this.stores.get(component.componentID) as
-      | IComponentStore<TComponent>
-      | undefined;
+    const id: ComponentID | undefined = this.registry.get(component);
+
+    if (id === undefined) {
+      return undefined;
+    }
+
+    return this.stores.get(id) as IComponentStore<TComponent> | undefined;
   }
 
   private assertEntityExists(entity: Entity): void {
     if (!this.entityManager.has(entity)) {
       throw new Error(`Entity ${entity} does not exist.`);
-    }
-  }
-
-  private assertComponentData<TComponent extends object>(
-    component: Component<TComponent>,
-  ): asserts component is ComponentData<TComponent> {
-    if ((component as unknown as any)["componentID"] === undefined) {
-      throw new Error(
-        `Component ${component.name} is not a valid ComponentData.`,
-      );
     }
   }
 }

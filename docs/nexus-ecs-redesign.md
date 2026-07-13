@@ -141,7 +141,11 @@ class NexusWorld {
 
 Les `NexusWorld` sont isolés : chacun a ses `stores`, son `EntityManager`, son `CommandBuffer`. Les `ComponentID` restent **globaux et stables par classe** (un composant a le même id dans tous les worlds) — c'est le comportement voulu : chaque world garde une `Map<ComponentID, Store>` distincte, mais l'id d'un composant ne dépend pas du world.
 
-On remplace l'état module-global mutable + monkeypatch par un `ComponentRegistry` explicite (compteur encapsulé), tout en gardant l'auto-définition à la première utilisation. **Cas sérialisation** (déféré, hors scope immédiat) : pour des ids stables entre process/versions, prévoir un registre par nom plutôt que par ordre d'insertion — noté ici pour ne pas s'enfermer.
+On remplace l'état module-global mutable + le monkeypatch de la classe (`ctor.componentID`) par un `ComponentRegistry` explicite : une `Map<Component, ComponentID>` + un compteur encapsulé. Une instance partagée par défaut (`defaultComponentRegistry`) donne les ids stables inter-world ; `NexusWorld` l'accepte en paramètre de constructeur (`new NexusWorld(registry?)`, défaut = partagée) — donc **isolation totale des ids possible** en injectant un registre neuf (tests, hot-reload). Le type `ComponentData` et l'assertion `assertComponentData` disparaissent (plus de champ sur la classe).
+
+**Auto-définition (livrée ici, avancée de la Phase 6) :** `getOrCreateStore` enregistre le composant à la première utilisation ; `findStore` renvoie `undefined` proprement pour un composant jamais utilisé. Plus besoin de `world.defineComponent(X)` explicite, et l'ancienne erreur cryptique `"not a valid ComponentData"` disparaît. `world.defineComponent` reste dispo (explicite + log).
+
+**Cas sérialisation** (déféré, hors scope immédiat) : pour des ids stables entre process/versions, prévoir un registre par nom plutôt que par ordre d'insertion — noté ici pour ne pas s'enfermer.
 
 ### 6. Correctifs & ergonomie
 
@@ -175,7 +179,7 @@ On remplace l'état module-global mutable + monkeypatch par un `ComponentRegistr
 - [x] Phase 2 — `IComponentStore` + `SparseSetStore` + `version`
 - [x] Phase 3 — query typée `each`/tuples + garde-fou fail-fast
 - [x] Phase 4 — command buffer + flush hybride (`world.commands` + `world.flush()` ; câblage auto scheduler à la migration gameplay)
-- [ ] Phase 5 — multi-world + `ComponentRegistry`
-- [ ] Phase 6 — correctifs (auto-define, `hasComponent`, messages, `addComponent(instance)`)
+- [x] Phase 5 — multi-world + `ComponentRegistry` (+ auto-define livré en avance ; supprime aussi l'erreur tsc pré-existante de `define-component`)
+- [ ] Phase 6 — correctifs restants (`hasComponent` no-throw sur entité morte, message `component.name`, `addComponent(instance)`) — auto-define déjà fait en Phase 5
 - [ ] Phase 7 (différé) — filtres `without`/optionnels + événements de cycle de vie
 - [ ] Migration `gameplay` (doc séparé)

@@ -8,10 +8,6 @@ export type Component<
   TArgs extends unknown[] = [],
 > = new (...args: TArgs) => TComponent;
 
-export type ComponentData<T extends object> = Component<T> & {
-  componentID: ComponentID;
-};
-
 export type ComponentList<T extends object[], TArgs extends unknown[]> = {
   [K in keyof T]: Component<T[K], TArgs>;
 };
