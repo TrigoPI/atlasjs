@@ -41,7 +41,7 @@ export class Color {
     this.data[3] = value;
   }
 
-  public set(r: number, g: number, b: number, a: number): void {
+  public set(r: number, g: number, b: number, a: number = 1): void {
     this.data[0] = r;
     this.data[1] = g;
     this.data[2] = b;
