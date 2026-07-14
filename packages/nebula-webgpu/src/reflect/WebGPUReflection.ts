@@ -7,6 +7,12 @@ import {
   UniformType,
 } from "@atlasjs/nebula";
 
+export type WebGPUReflectedStorage = {
+  readonly binding: number;
+  readonly stride: number;
+  readonly members: ReadonlyArray<UniformPropertyLayout>;
+};
+
 export type WebGPUReflectedGroup = {
   readonly group: number;
   readonly uniformBinding: number;
@@ -14,6 +20,7 @@ export type WebGPUReflectedGroup = {
   readonly uniformProperties: ReadonlyArray<UniformPropertyLayout>;
   readonly resourceProperties: ReadonlyArray<ResourcePropertyLayout>;
   readonly properties: ReadonlyArray<BindingGroupProperty>;
+  readonly storage?: WebGPUReflectedStorage;
 };
 
 export type WebGPUReflectedShader = {
@@ -29,13 +36,19 @@ type MemberLike = {
   type: { name: string };
 };
 
+type ArrayTypeLike = {
+  name: string;
+  stride?: number;
+  format?: { members?: MemberLike[] | null } | null;
+};
+
 type VariableLike = {
   name: string;
   binding: number;
   group: number;
   size: number;
   resourceType: number;
-  type: { name: string };
+  type: ArrayTypeLike;
   members: MemberLike[] | null;
 };
 
@@ -89,6 +102,7 @@ export class WebGPUReflection {
 
     let uniformBinding: number = 0;
     let uniformSize: number = 0;
+    let storage: WebGPUReflectedStorage | undefined = undefined;
 
     for (const variable of vars) {
       switch (variable.resourceType) {
@@ -100,6 +114,11 @@ export class WebGPUReflection {
             uniformProperties,
             properties,
           );
+          break;
+        }
+
+        case ResourceType.Storage: {
+          storage = WebGPUReflection.reflectStorage(variable);
           break;
         }
 
@@ -138,7 +157,33 @@ export class WebGPUReflection {
       uniformProperties,
       resourceProperties,
       properties,
+      storage,
     };
+  }
+
+  private static reflectStorage(
+    variable: VariableLike,
+  ): WebGPUReflectedStorage {
+    const members: MemberLike[] | null = variable.type.format?.members ?? null;
+    const stride: number | undefined = variable.type.stride;
+
+    if (!members || stride === undefined) {
+      throw new Error(
+        `Storage binding "${variable.name}" must be a runtime-sized array of a struct.`,
+      );
+    }
+
+    const layout: UniformPropertyLayout[] = members.map(
+      (member: MemberLike) => ({
+        name: member.name,
+        type: WebGPUReflection.mapUniformType(member.type.name),
+        offset: member.offset,
+        size: member.size,
+        align: 0,
+      }),
+    );
+
+    return { binding: variable.binding, stride, members: layout };
   }
 
   private static reflectUniformMembers(

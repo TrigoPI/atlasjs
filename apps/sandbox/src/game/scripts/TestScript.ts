@@ -14,7 +14,7 @@ export class TestScript extends AtlasScript {
 
     this.rigidbody.type = "kinematic";
 
-    this.transform.setScale(3, 3).setPosition(400, 300);
+    this.transform.setScale(3, 3).setPosition(400 * Math.random(), 300);
   }
 
   public onUpdate(dt: number): void {

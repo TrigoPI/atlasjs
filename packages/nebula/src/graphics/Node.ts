@@ -42,6 +42,7 @@ export class Node extends Transformable {
 
     node.parent = this;
     this.children.push(node);
+    node.markDirty();
 
     return this;
   }
@@ -82,16 +83,28 @@ export class Node extends Transformable {
     }
   }
 
-  public updateWorldMatrix(parentWorld?: Mat4): void {
-    if (parentWorld) {
+  public updateWorldMatrix(
+    parentWorld?: Mat4,
+    parentChanged: boolean = false,
+  ): void {
+    if (this.localDirty) {
       this.transformMatrix.identity().fromTransform2D(this.transform);
-      this.worldMatrix.copy(parentWorld).multiply(this.transformMatrix);
-    } else {
-      this.worldMatrix.identity().fromTransform2D(this.transform);
+    }
+
+    const changed: boolean = this.localDirty || parentChanged;
+
+    if (changed) {
+      if (parentWorld) {
+        this.worldMatrix.copy(parentWorld).multiply(this.transformMatrix);
+      } else {
+        this.worldMatrix.copy(this.transformMatrix);
+      }
+
+      this.localDirty = false;
     }
 
     for (let i: number = 0; i < this.children.length; i++) {
-      this.children[i].updateWorldMatrix(this.worldMatrix);
+      this.children[i].updateWorldMatrix(this.worldMatrix, changed);
     }
   }
 

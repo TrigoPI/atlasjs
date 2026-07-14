@@ -1,4 +1,5 @@
 import DinoBlueImage from "../assets/dino_blue.png";
+import { WebGPURenderer } from "@atlasjs/nebula-webgpu";
 
 import {
   type Renderer,
@@ -7,7 +8,6 @@ import {
   Sprite,
   NebulaRenderer,
 } from "@atlasjs/nebula";
-import { WebGPURenderer } from "@atlasjs/nebula-webgpu";
 
 function getCanvas(): HTMLCanvasElement {
   const canvas: HTMLCanvasElement | null = document.getElementById(
@@ -55,6 +55,8 @@ async function getImage(src: string): Promise<ImageBitmap> {
   });
 
   const sprite: Sprite = new Sprite(dinoTexture, sampler);
+
+  sprite.setTint(1, 0.5, 1, 1).setScale(3, 3).setPosition(500, 100);
 
   nebula.scene.addChild(sprite);
   nebula.render();

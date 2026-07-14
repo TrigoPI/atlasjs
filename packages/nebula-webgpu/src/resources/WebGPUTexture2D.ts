@@ -1,12 +1,15 @@
-import { IDGenerator, Texture2D } from "@atlasjs/nebula";
+import { IDGenerator, RenderTarget, TextureFormat } from "@atlasjs/nebula";
 import { WebGPUTexture2DOptions } from "../webgpu-types";
 
-export class WebGPUTexture2D implements Texture2D {
+const DEFAULT_FORMAT: TextureFormat = "rgba8unorm";
+
+export class WebGPUTexture2D implements RenderTarget {
   public readonly __kind: string = "webgpu";
   public readonly id: string;
 
   public readonly width: number;
   public readonly height: number;
+  public readonly format: TextureFormat;
 
   public readonly texture: GPUTexture;
   public readonly view: GPUTextureView;
@@ -16,8 +19,9 @@ export class WebGPUTexture2D implements Texture2D {
 
     this.width = options.width;
     this.height = options.height;
+    this.format = options.format ?? DEFAULT_FORMAT;
 
-    this.texture = this.createTexture(device, options.format);
+    this.texture = this.createTexture(device, this.format);
     this.view = this.texture.createView();
 
     if (options.source) {

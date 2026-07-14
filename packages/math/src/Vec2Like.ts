@@ -2,7 +2,7 @@ export interface Vec2Like {
   x: number;
   y: number;
 
-  copy(): Vec2Like;
+  clone(): Vec2Like;
   copyTo(out: Vec2Like): Vec2Like;
   copyFrom(a: Vec2Like): Vec2Like;
   set(x: number, y: number): Vec2Like;

@@ -5,7 +5,6 @@ import {
   type Texture2D,
   type Sampler,
   type Geometry,
-  type Pipeline,
   type Material,
   type BindingGroup,
   type ShaderDescriptor,
@@ -52,7 +51,6 @@ async function getImage(src: string): Promise<ImageBitmap> {
   const geometry: Geometry = renderer.createQuad();
   const shaderDescriptor: ShaderDescriptor = defineMaterial(MATERIAL_SOURCE);
   const shader = renderer.createShader(shaderDescriptor);
-  const pipeline: Pipeline = renderer.createPipeline(shader, geometry);
 
   const texture: Texture2D = renderer.createTexture2D({
     source: dino,
@@ -81,6 +79,6 @@ async function getImage(src: string): Promise<ImageBitmap> {
     .set("model", model);
 
   renderer.beginFrame();
-  renderer.draw(geometry, pipeline, material, objectBindings);
+  renderer.draw(geometry, material, objectBindings);
   renderer.endFrame();
 })();

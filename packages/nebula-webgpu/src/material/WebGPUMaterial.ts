@@ -1,4 +1,9 @@
-import { Material, BindingValue } from "@atlasjs/nebula";
+import {
+  Material,
+  BindingValue,
+  RenderState,
+  DEFAULT_RENDER_STATE,
+} from "@atlasjs/nebula";
 import { WebGPUBindingGroup } from "../bindings";
 
 import { WebGPUShader } from "./WebGPUShader";
@@ -7,9 +12,15 @@ export class WebGPUMaterial implements Material {
   public readonly __kind: string = "webgpu";
   public readonly shader: WebGPUShader;
   public readonly bindingGroup: WebGPUBindingGroup;
+  public readonly renderState: RenderState;
 
-  public constructor(shader: WebGPUShader, bindingGroup?: WebGPUBindingGroup) {
+  public constructor(
+    shader: WebGPUShader,
+    renderState: RenderState = DEFAULT_RENDER_STATE,
+    bindingGroup?: WebGPUBindingGroup,
+  ) {
     this.shader = shader;
+    this.renderState = renderState;
     this.bindingGroup =
       bindingGroup ?? new WebGPUBindingGroup(shader.materialDefinition);
   }
@@ -32,6 +43,10 @@ export class WebGPUMaterial implements Material {
   }
 
   public clone(): Material {
-    return new WebGPUMaterial(this.shader, this.bindingGroup.clone());
+    return new WebGPUMaterial(
+      this.shader,
+      this.renderState,
+      this.bindingGroup.clone(),
+    );
   }
 }

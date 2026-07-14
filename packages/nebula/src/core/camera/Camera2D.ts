@@ -1,7 +1,9 @@
 import { Mat4, Vec2 } from "@atlasjs/math";
 
+import { Camera } from "./Camera";
+
 //prettier-ignore
-export class Camera2D {
+export class Camera2D implements Camera {
   public readonly view: Mat4;
   public readonly projection: Mat4;
   public readonly viewProjection: Mat4;

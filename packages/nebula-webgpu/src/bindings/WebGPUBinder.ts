@@ -8,6 +8,10 @@ export class WebGPUBinder {
     context: WebGPURenderContext,
     pipeline: WebGPUPipeline,
   ): void {
+    if (context.renderState.pipeline === pipeline) {
+      return;
+    }
+
     context.renderPass.setPipeline(pipeline.pipeline);
     context.renderState.pipeline = pipeline;
     context.renderState.shader = pipeline.descriptor.shader;
@@ -18,6 +22,10 @@ export class WebGPUBinder {
     vertexBuffer: WebGPUVertexBuffer,
     slot: number = 0,
   ): void {
+    if (context.renderState.vertexBuffer === vertexBuffer) {
+      return;
+    }
+
     context.renderPass.setVertexBuffer(slot, vertexBuffer.buffer);
     context.renderState.vertexBuffer = vertexBuffer;
   }
@@ -26,6 +34,10 @@ export class WebGPUBinder {
     context: WebGPURenderContext,
     indexBuffer: WebGPUIndexBuffer,
   ): void {
+    if (context.renderState.indexBuffer === indexBuffer) {
+      return;
+    }
+
     context.renderPass.setIndexBuffer(indexBuffer.buffer, indexBuffer.format);
     context.renderState.indexBuffer = indexBuffer;
   }
@@ -34,6 +46,10 @@ export class WebGPUBinder {
     context: WebGPURenderContext,
     geometry: WebGPUGeometry,
   ): void {
+    if (context.renderState.geometry === geometry) {
+      return;
+    }
+
     this.bindVertexBuffer(context, geometry.vertexBuffer, 0);
     this.bindIndexBuffer(context, geometry.indexBuffer);
     context.renderState.geometry = geometry;
@@ -44,6 +60,10 @@ export class WebGPUBinder {
     group: number,
     bindGroup: GPUBindGroup,
   ): void {
+    if (context.renderState.bindGroups.get(group) === bindGroup) {
+      return;
+    }
+
     context.renderPass.setBindGroup(group, bindGroup);
     context.renderState.bindGroups.set(group, bindGroup);
   }

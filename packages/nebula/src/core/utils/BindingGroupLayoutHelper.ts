@@ -5,13 +5,7 @@ import { ShaderTypeGuard } from "./ShaderTypeGuard";
 
 import { BindingValue, UniformPropertyLayout } from "../core-types";
 
-/**
- * Packs binding values into a uniform buffer. Offsets/sizes are supplied by the
- * caller (derived from WGSL reflection) — this helper only writes JS values
- * into bytes; it never computes alignment itself.
- */
 export class BindingGroupLayoutHelper {
-
   public static packUniformBuffer(
     size: number,
     properties: ReadonlyArray<UniformPropertyLayout>,
@@ -26,7 +20,28 @@ export class BindingGroupLayoutHelper {
 
     for (const property of properties) {
       const value: BindingValue = get(property.name);
-      BindingGroupLayoutHelper.writeUniformValue(view, property, value);
+      BindingGroupLayoutHelper.writeUniformValue(view, property, value, 0);
+    }
+
+    return buffer;
+  }
+
+  public static packStorageArray(
+    stride: number,
+    count: number,
+    properties: ReadonlyArray<UniformPropertyLayout>,
+    get: (index: number, name: string) => BindingValue,
+  ): ArrayBuffer {
+    const buffer: ArrayBuffer = new ArrayBuffer(stride * count);
+    const view: DataView = new DataView(buffer);
+
+    for (let index: number = 0; index < count; index++) {
+      const base: number = index * stride;
+
+      for (const property of properties) {
+        const value: BindingValue = get(index, property.name);
+        BindingGroupLayoutHelper.writeUniformValue(view, property, value, base);
+      }
     }
 
     return buffer;
@@ -36,8 +51,9 @@ export class BindingGroupLayoutHelper {
     view: DataView,
     property: UniformPropertyLayout,
     value: BindingValue,
+    baseOffset: number,
   ): void {
-    const offset: number = property.offset;
+    const offset: number = baseOffset + property.offset;
 
     switch (property.type) {
       case "float":

@@ -1,4 +1,10 @@
-import { TypeLayoutInfo, UniformType } from "./core-types";
+import { RenderState, TypeLayoutInfo, UniformType } from "./core-types";
+
+export const DEFAULT_RENDER_STATE: RenderState = {
+  blend: "alpha",
+  depthTest: false,
+  cull: "none",
+};
 
 export const FLOAT = 4;
 export const INT = 4;
