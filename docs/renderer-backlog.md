@@ -10,12 +10,12 @@ Ordre conseillé en bas du doc.
 
 ## A. Suites naturelles du renderer (bâtissent sur l'archi en place)
 
-### A1. Rendu de formes / primitives — _reco n°1, meilleur ratio valeur/effort_
+### A1. Rendu de formes / primitives — **✅ fait** (voir `docs/shapes-primitives-design.md`)
 
-- **Constat** : `Shape` et `Rect` existent comme nœuds et `Shape.color` est déclaré, mais `SceneRenderer` ne dessine **que** les `Sprite` (`drawNode`/`collect` filtrent `node instanceof Sprite`). Rects/formes/lignes ne s'affichent pas ; `Shape.color` est inutilisé.
-- **Objectif** : un rendu de quads colorés (puis lignes/cercles) via un batch dédié ou le chemin material générique. Réutilise l'infra batch instancié + shader library posées au refactor.
-- **Fichiers** : `packages/nebula/src/graphics/Shape.ts`, `Rect.ts`, `packages/nebula/src/renderers/SceneRenderer.ts` (dispatch par type de nœud), + un shader/batch built-in côté webgpu.
-- **Portée** : moyenne. Bien cadré.
+- **Constat** : `Shape` et `Rect` existaient comme nœuds et `Shape.color` était déclaré, mais `SceneRenderer` ne dessinait **que** les `Sprite`. Rects/formes/lignes ne s'affichaient pas ; `Shape.color` était inutilisé.
+- **Livré** : rendu de **rects, cercles et lignes** pleins et colorés, tous en quads instanciés partageant un unique shader built-in `"shape"` (`Instance { model, color, params }`, SDF disque avec AA `fwidth` pour le cercle, ligne = rect fin orienté). `Circle`/`Line` ajoutés comme nœuds, `Shape.blend` (défaut `alpha`). Couche render : `DrawCommand` en union taguée (`kind`), `ShapeRenderer`, batchers par kind dans une `RenderQueue` unique (z-interleave sprite↔formes préservé), dispatch + cull viewport dans `SceneRenderer`. Chemin de draw instancié unifié `drawSpriteBatch` → `drawInstancedBatch` (group material optionnel), base backend `WebGPUInstancedBatch` partagée par `WebGPUSpriteBatch`/`WebGPUShapeBatch`.
+- **Fichiers** : `packages/nebula/src/graphics/{Shape,Circle,Line}.ts`, `packages/nebula/src/renderers/{DrawCommand,ShapeRenderer,Batchers,RenderQueue,SceneRenderer,SpriteRenderer}.ts`, `core/renderer/{SpriteBatch,Renderer,ResourceFactory}.ts` ; `packages/nebula-webgpu/src/shaders/shape_instanced.wgsl`, `batch/{WebGPUInstancedBatch,WebGPUShapeBatch,WebGPUSpriteBatch}.ts`, `resources/WebGPUShaderList.ts`, `WebGPURenderer.ts` ; démo `apps/webgpu/src/index.ts`.
+- **Hors scope (suites)** : contours/strokes (fill uniquement), coins arrondis, polygones arbitraires, anchor configurable par forme, materials custom par nœud (cf. A4).
 
 ### A2. Rendu de texte — _gros mais incontournable en 2D_
 
@@ -79,8 +79,8 @@ Ordre conseillé en bas du doc.
 
 ## Ordre conseillé
 
-1. **A1 — formes/primitives** (cadré, comble un trou 2D évident, réutilise le batch).
-2. **A2 — texte** (gros morceau, l'archi est prête).
+1. ~~**A1 — formes/primitives**~~ ✅ fait (voir `docs/shapes-primitives-design.md`).
+2. **A2 — texte** (gros morceau, l'archi est prête ; se branche comme 3ᵉ batcher sur la couche render posée en A1).
 3. **B1 — cycle de vie des ressources** (à traiter dès que les scènes deviennent dynamiques / avant l'éditeur).
 4. **B2 — éditeur** (session dédiée, si l'éditeur est une cible).
-5. Le reste (A3/A4/C) au fil de l'eau ; **B4 (depth)** seulement si la 3D redevient prioritaire. (~~B3 resize~~ ✅ fait.)
+5. Le reste (A3/A4/C) au fil de l'eau ; **B4 (depth)** seulement si la 3D redevient prioritaire. (~~B3 resize~~ ✅ fait, ~~A1 formes~~ ✅ fait.)

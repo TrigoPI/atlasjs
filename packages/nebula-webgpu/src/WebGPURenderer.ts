@@ -4,17 +4,26 @@ import { Clock, Logger, createLogger } from "@atlasjs/utils";
 import { WebGPUBlend, WebGPUGuard } from "./utils";
 import { WebGPUGeometry } from "./geometry";
 import { WebGPUPipeline } from "./pipeline";
-import { WebGPUSpriteBatch, WebGPUInstanceBufferPool } from "./batch";
+
 import { WebGPURenderContext } from "./states";
+
+import {
+  WebGPUSpriteBatch,
+  WebGPUShapeBatch,
+  WebGPUInstancedBatch,
+  WebGPUInstanceBufferPool,
+} from "./batch";
+
+import { WebGPUSampler, WebGPUTexture2D } from "./resources";
+import { WebGPUShader, WebGPUMaterial } from "./material";
+import { WebGPUShaders, WebGPUBuiltinShaders } from "./resources";
+import { WebGPUReflection, WebGPUReflectedGroup } from "./reflect";
+
 import {
   WebGPUBindingGroupCache,
   WebGPUPipelineCache,
   WebGPUShaderCache,
 } from "./caches";
-import { WebGPUSampler, WebGPUTexture2D } from "./resources";
-import { WebGPUShader, WebGPUMaterial } from "./material";
-import { WebGPUShaders, WebGPUBuiltinShaders } from "./resources";
-import { WebGPUReflection, WebGPUReflectedGroup } from "./reflect";
 
 import {
   BINDING_GROUP_GLOBAL,
@@ -47,7 +56,7 @@ import {
   BindingGroupDefinition,
   RenderState,
   DEFAULT_RENDER_STATE,
-  SpriteBatch,
+  InstancedBatch,
   PassDescriptor,
   RenderTargetDescriptor,
   Color,
@@ -215,8 +224,12 @@ export class WebGPURenderer implements Renderer {
     shader: WebGPUShader,
     renderState: RenderState,
     format: GPUTextureFormat,
+    hasMaterial: boolean,
   ): GPURenderPipeline {
-    const key: string = `${format}|${renderState.blend}|${renderState.cull}`;
+    const key: string = `${format}|${renderState.blend}|${renderState.cull}|${
+      hasMaterial ? "m" : "n"
+    }|${shader.id}`;
+
     const cached: GPURenderPipeline | undefined =
       this.instancedPipelines.get(key);
 
@@ -230,11 +243,19 @@ export class WebGPURenderer implements Renderer {
     const storageLayout: GPUBindGroupLayout =
       this.getInstancedStorageLayout(shader);
 
-    const materialLayout: GPUBindGroupLayout =
-      this.bindingGroupCache.getOrCreateGPULayout(shader.materialDefinition);
+    const bindGroupLayouts: GPUBindGroupLayout[] = [
+      globalLayout,
+      storageLayout,
+    ];
+
+    if (hasMaterial) {
+      bindGroupLayouts.push(
+        this.bindingGroupCache.getOrCreateGPULayout(shader.materialDefinition),
+      );
+    }
 
     const layout: GPUPipelineLayout = this.device.createPipelineLayout({
-      bindGroupLayouts: [globalLayout, storageLayout, materialLayout],
+      bindGroupLayouts,
     });
 
     const pipeline: GPURenderPipeline = this.device.createRenderPipeline({
@@ -264,9 +285,7 @@ export class WebGPURenderer implements Renderer {
     return pipeline;
   }
 
-  private getInstancedStorageLayout(
-    shader: WebGPUShader,
-  ): GPUBindGroupLayout {
+  private getInstancedStorageLayout(shader: WebGPUShader): GPUBindGroupLayout {
     if (!this.instancedStorageLayout) {
       const binding: number = shader.objectDefinition.storage?.binding ?? 0;
 
@@ -338,6 +357,11 @@ export class WebGPURenderer implements Renderer {
   public createSpriteBatch(): WebGPUSpriteBatch {
     const shader: WebGPUShader = this.getBuiltinShader("sprite");
     return new WebGPUSpriteBatch(shader);
+  }
+
+  public createShapeBatch(): WebGPUShapeBatch {
+    const shader: WebGPUShader = this.getBuiltinShader("shape");
+    return new WebGPUShapeBatch(shader);
   }
 
   public createGeometry(primitive: Primitive): WebGPUGeometry {
@@ -502,32 +526,32 @@ export class WebGPURenderer implements Renderer {
     this.bindGeometryAndDrawIndexed(ctx, geo);
   }
 
-  public drawSpriteBatch(batch: SpriteBatch): void {
+  public drawInstancedBatch(batch: InstancedBatch): void {
     const ctx: WebGPURenderContext = this.assertContext();
 
     if (__DEV__) {
-      WebGPUGuard.assertWebGPUSpriteBatch(batch);
+      WebGPUGuard.assertWebGPUInstancedBatch(batch);
     }
 
-    const spriteBatch: WebGPUSpriteBatch = batch as WebGPUSpriteBatch;
+    const instanced: WebGPUInstancedBatch = batch as WebGPUInstancedBatch;
 
-    if (spriteBatch.count === 0) {
+    if (instanced.count === 0) {
       return;
     }
 
-    const shader: WebGPUShader = this.getBuiltinShader("sprite");
+    const shader: WebGPUShader = instanced.shader;
+    const material: WebGPUBindingGroup | undefined = instanced.materialBindings;
+    const hasMaterial: boolean = material !== undefined;
 
     const pipeline: GPURenderPipeline = this.getInstancedPipeline(
       shader,
-      spriteBatch.renderState,
+      instanced.renderState,
       ctx.format,
+      hasMaterial,
     );
 
     const globalLayout: GPUBindGroupLayout =
       this.bindingGroupCache.getOrCreateGPULayout(shader.globalDefinition);
-
-    const materialLayout: GPUBindGroupLayout =
-      this.bindingGroupCache.getOrCreateGPULayout(shader.materialDefinition);
 
     const storageLayout: GPUBindGroupLayout =
       this.getInstancedStorageLayout(shader);
@@ -535,27 +559,34 @@ export class WebGPURenderer implements Renderer {
     const globalCompiled: WebGPUCompiledBindingGroup =
       this.bindingGroupCache.get(this.globalBindings, globalLayout);
 
-    const materialCompiled: WebGPUCompiledBindingGroup =
-      this.bindingGroupCache.get(spriteBatch.materialBindings, materialLayout);
-
-    const data: ArrayBuffer = spriteBatch.pack();
+    const data: ArrayBuffer = instanced.pack();
 
     const storageBindGroup: GPUBindGroup = this.instancePool.acquire(
       data,
-      spriteBatch.byteSize,
-      spriteBatch.storageBinding,
+      instanced.byteSize,
+      instanced.storageBinding,
       storageLayout,
     );
 
     this.assertBindGroup(globalCompiled.bindGroup);
-    this.assertBindGroup(materialCompiled.bindGroup);
 
     const pass: GPURenderPassEncoder = ctx.renderPass;
     pass.setPipeline(pipeline);
     pass.setBindGroup(BINDING_GROUP_GLOBAL, globalCompiled.bindGroup);
     pass.setBindGroup(BINDING_GROUP_OBJECT, storageBindGroup);
-    pass.setBindGroup(BINDING_GROUP_MATERIAL, materialCompiled.bindGroup);
-    pass.draw(6, spriteBatch.count);
+
+    if (material) {
+      const materialLayout: GPUBindGroupLayout =
+        this.bindingGroupCache.getOrCreateGPULayout(shader.materialDefinition);
+
+      const materialCompiled: WebGPUCompiledBindingGroup =
+        this.bindingGroupCache.get(material, materialLayout);
+
+      this.assertBindGroup(materialCompiled.bindGroup);
+      pass.setBindGroup(BINDING_GROUP_MATERIAL, materialCompiled.bindGroup);
+    }
+
+    pass.draw(6, instanced.count);
   }
 
   public endFrame(): void {
