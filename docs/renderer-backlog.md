@@ -50,11 +50,10 @@ Ordre conseillé en bas du doc.
 - **Fichiers** : `packages/editor/src/**`, `packages/nebula/src/graphics/Node.ts` + `core/camera/Camera2D.ts`.
 - **Portée** : potentiellement grande (session dédiée).
 
-### B3. Resize du canvas
+### B3. Resize du canvas — **✅ fait** (voir `docs/superpowers/specs/2026-07-14-canvas-resize-design.md`)
 - **Constat** : `canvas.width`/`height` fixés une seule fois au load (dans les apps), aucun handler de resize, le `GPUCanvasContext` n'est jamais reconfiguré, la caméra lit `canvas.width` chaque frame mais rien ne suit un redimensionnement.
-- **Objectif** : chemin de resize propre (observer le canvas, reconfigurer le contexte, mettre à jour caméra + éventuels render targets plein écran).
-- **Fichiers** : `packages/nebula-webgpu/src/WebGPURenderer.ts`, apps.
-- **Portée** : petite.
+- **Livré** : `Renderer.resize(width, height)` (pixels logiques) ; `WebGPURenderer` tracke la taille logique à part du backing store physique (× DPR pour HiDPI, caméra en pixels logiques) ; auto-observe par défaut via `ResizeObserver` (`devicePixelContentBoxSize`, option `autoResize` désactivable) ; pas de reconfigure du contexte (le drawing buffer suit `canvas.width/height`) ; passthrough `NebulaRenderer.resize`. Render targets plein écran laissés hors scope (aucun n'existe encore).
+- **Fichiers** : `packages/nebula-webgpu/src/WebGPURenderer.ts`, `packages/nebula/src/core/renderer/Renderer.ts`, `packages/nebula/src/NebulaRenderer.ts`, apps.
 
 ### B4. Depth test (limite 3D restante, volontairement différée)
 - **Constat** : `RenderState.depthTest` et `PassDescriptor.depth` existent mais sont **inertes** (pas de depth attachment).
@@ -75,4 +74,4 @@ Ordre conseillé en bas du doc.
 2. **A2 — texte** (gros morceau, l'archi est prête).
 3. **B1 — cycle de vie des ressources** (à traiter dès que les scènes deviennent dynamiques / avant l'éditeur).
 4. **B2 — éditeur** (session dédiée, si l'éditeur est une cible).
-5. Le reste (A3/A4/B3/C) au fil de l'eau ; **B4 (depth)** seulement si la 3D redevient prioritaire.
+5. Le reste (A3/A4/C) au fil de l'eau ; **B4 (depth)** seulement si la 3D redevient prioritaire. (~~B3 resize~~ ✅ fait.)
