@@ -1,9 +1,10 @@
 import { Bound, Box2 } from "@atlasjs/math";
 import { Clock, Logger, createLogger } from "@atlasjs/utils";
 
-import { WebGPUGuard } from "./utils";
+import { WebGPUBlend, WebGPUGuard } from "./utils";
 import { WebGPUGeometry } from "./geometry";
 import { WebGPUPipeline } from "./pipeline";
+import { WebGPUSpriteBatch, WebGPUInstanceBufferPool } from "./batch";
 import { WebGPURenderContext } from "./states";
 import {
   WebGPUBindingGroupCache,
@@ -46,6 +47,7 @@ import {
   BindingGroupDefinition,
   RenderState,
   DEFAULT_RENDER_STATE,
+  SpriteBatch,
 } from "@atlasjs/nebula";
 
 import {
@@ -69,7 +71,11 @@ export class WebGPURenderer implements Renderer {
   private bindingGroupCache!: WebGPUBindingGroupCache;
   private shaderCache!: WebGPUShaderCache;
   private pipelineCache!: WebGPUPipelineCache;
+  private instancePool!: WebGPUInstanceBufferPool;
   private globalBindings!: WebGPUBindingGroup;
+
+  private readonly instancedPipelines: Map<string, GPURenderPipeline>;
+  private instancedStorageLayout?: GPUBindGroupLayout;
 
   private clock: Clock;
 
@@ -82,12 +88,15 @@ export class WebGPURenderer implements Renderer {
     this.clock = new Clock();
     this.camera = new Camera2D();
     this.binder = new WebGPUBinder();
+    this.instancedPipelines = new Map();
   }
 
   public destroy(): void {
     this.shaderCache.destroy();
     this.bindingGroupCache.destroy();
     this.pipelineCache.destroy();
+    this.instancePool.destroy();
+    this.instancedPipelines.clear();
   }
 
   public getViewport(): Box2 {
@@ -180,6 +189,78 @@ export class WebGPURenderer implements Renderer {
     });
   }
 
+  private getInstancedPipeline(
+    shader: WebGPUShader,
+    renderState: RenderState,
+  ): GPURenderPipeline {
+    const key: string = `${renderState.blend}|${renderState.cull}`;
+    const cached: GPURenderPipeline | undefined =
+      this.instancedPipelines.get(key);
+
+    if (cached) {
+      return cached;
+    }
+
+    const globalLayout: GPUBindGroupLayout =
+      this.bindingGroupCache.getOrCreateGPULayout(shader.globalDefinition);
+
+    const storageLayout: GPUBindGroupLayout =
+      this.getInstancedStorageLayout(shader);
+
+    const materialLayout: GPUBindGroupLayout =
+      this.bindingGroupCache.getOrCreateGPULayout(shader.materialDefinition);
+
+    const layout: GPUPipelineLayout = this.device.createPipelineLayout({
+      bindGroupLayouts: [globalLayout, storageLayout, materialLayout],
+    });
+
+    const pipeline: GPURenderPipeline = this.device.createRenderPipeline({
+      layout,
+      vertex: {
+        module: shader.module,
+        entryPoint: shader.vertexEntryPoint,
+      },
+      fragment: {
+        module: shader.module,
+        entryPoint: shader.fragmentEntryPoint,
+        targets: [
+          {
+            format: this.format,
+            blend: WebGPUBlend.toBlendState(renderState.blend),
+          },
+        ],
+      },
+      primitive: {
+        topology: "triangle-list",
+        cullMode: renderState.cull,
+      },
+    });
+
+    this.instancedPipelines.set(key, pipeline);
+
+    return pipeline;
+  }
+
+  private getInstancedStorageLayout(
+    shader: WebGPUShader,
+  ): GPUBindGroupLayout {
+    if (!this.instancedStorageLayout) {
+      const binding: number = shader.objectDefinition.storage?.binding ?? 0;
+
+      this.instancedStorageLayout = this.device.createBindGroupLayout({
+        entries: [
+          {
+            binding,
+            visibility: GPUShaderStage.VERTEX,
+            buffer: { type: "read-only-storage" },
+          },
+        ],
+      });
+    }
+
+    return this.instancedStorageLayout;
+  }
+
   public createUniformBuffer(type: UniformType): WebGPUUniformBuffer {
     return new WebGPUUniformBuffer(this.device, type);
   }
@@ -223,6 +304,11 @@ export class WebGPURenderer implements Renderer {
   ): WebGPUMaterial {
     WebGPUGuard.assertWebGPUShader(shader);
     return new WebGPUMaterial(shader, renderState);
+  }
+
+  public createSpriteBatch(): WebGPUSpriteBatch {
+    const shader: WebGPUShader = this.createShader(WebGPUShaders.SpriteInstanced);
+    return new WebGPUSpriteBatch(shader);
   }
 
   public createGeometry(primitive: Primitive): WebGPUGeometry {
@@ -301,6 +387,7 @@ export class WebGPURenderer implements Renderer {
     this.bindingGroupCache = new WebGPUBindingGroupCache(this.device);
     this.shaderCache = new WebGPUShaderCache(this.device);
     this.pipelineCache = new WebGPUPipelineCache();
+    this.instancePool = new WebGPUInstanceBufferPool(this.device);
 
     this.logger.log("WebGPURenderer initialized successfully.");
   }
@@ -330,6 +417,7 @@ export class WebGPURenderer implements Renderer {
       textureView,
     });
 
+    this.instancePool.reset();
     this.updateCamera();
     this.updateTime();
   }
@@ -362,6 +450,63 @@ export class WebGPURenderer implements Renderer {
     this.bindObjectGroup(ctx, binds, pipe);
     this.bindMaterial(ctx, mat, pipe);
     this.bindGeometryAndDrawIndexed(ctx, geo);
+  }
+
+  public drawSpriteBatch(batch: SpriteBatch): void {
+    const ctx: WebGPURenderContext = this.assertContext();
+
+    if (__DEV__) {
+      WebGPUGuard.assertWebGPUSpriteBatch(batch);
+    }
+
+    const spriteBatch: WebGPUSpriteBatch = batch as WebGPUSpriteBatch;
+
+    if (spriteBatch.count === 0) {
+      return;
+    }
+
+    const shader: WebGPUShader = this.createShader(
+      WebGPUShaders.SpriteInstanced,
+    );
+
+    const pipeline: GPURenderPipeline = this.getInstancedPipeline(
+      shader,
+      spriteBatch.renderState,
+    );
+
+    const globalLayout: GPUBindGroupLayout =
+      this.bindingGroupCache.getOrCreateGPULayout(shader.globalDefinition);
+
+    const materialLayout: GPUBindGroupLayout =
+      this.bindingGroupCache.getOrCreateGPULayout(shader.materialDefinition);
+
+    const storageLayout: GPUBindGroupLayout =
+      this.getInstancedStorageLayout(shader);
+
+    const globalCompiled: WebGPUCompiledBindingGroup =
+      this.bindingGroupCache.get(this.globalBindings, globalLayout);
+
+    const materialCompiled: WebGPUCompiledBindingGroup =
+      this.bindingGroupCache.get(spriteBatch.materialBindings, materialLayout);
+
+    const data: ArrayBuffer = spriteBatch.pack();
+
+    const storageBindGroup: GPUBindGroup = this.instancePool.acquire(
+      data,
+      spriteBatch.byteSize,
+      spriteBatch.storageBinding,
+      storageLayout,
+    );
+
+    this.assertBindGroup(globalCompiled.bindGroup);
+    this.assertBindGroup(materialCompiled.bindGroup);
+
+    const pass: GPURenderPassEncoder = ctx.renderPass;
+    pass.setPipeline(pipeline);
+    pass.setBindGroup(BINDING_GROUP_GLOBAL, globalCompiled.bindGroup);
+    pass.setBindGroup(BINDING_GROUP_OBJECT, storageBindGroup);
+    pass.setBindGroup(BINDING_GROUP_MATERIAL, materialCompiled.bindGroup);
+    pass.draw(6, spriteBatch.count);
   }
 
   public endFrame(): void {

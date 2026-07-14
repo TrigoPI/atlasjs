@@ -2,6 +2,7 @@ import { ShaderDescriptor } from "@atlasjs/nebula";
 
 import TextureShader from "../shaders/texture.wgsl";
 import GlobalShader from "../shaders/global.wgsl";
+import SpriteInstancedShader from "../shaders/sprite_instanced.wgsl";
 
 export const WebGPUShaders = (<T extends Record<string, ShaderDescriptor>>(
   list: T,
@@ -17,5 +18,11 @@ export const WebGPUShaders = (<T extends Record<string, ShaderDescriptor>>(
     vertexEntryPoint: "vs_main",
     fragmentEntryPoint: "fs_main",
     source: TextureShader,
+  },
+  SpriteInstanced: {
+    id: "atlas.webgpu.sprite_instanced",
+    vertexEntryPoint: "vs_main",
+    fragmentEntryPoint: "fs_main",
+    source: SpriteInstancedShader,
   },
 });

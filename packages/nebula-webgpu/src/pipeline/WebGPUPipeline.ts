@@ -1,7 +1,7 @@
-import { BlendMode, Pipeline, VertexBufferLayout } from "@atlasjs/nebula";
+import { Pipeline, VertexBufferLayout } from "@atlasjs/nebula";
 import { WebGPUPipelineDescriptor } from "../webgpu-types";
 import { WebGPUGeometry } from "../geometry";
-import { WebGPUMapper } from "../utils";
+import { WebGPUBlend, WebGPUMapper } from "../utils";
 
 export class WebGPUPipeline implements Pipeline {
   public readonly __kind: string = "webgpu";
@@ -35,7 +35,7 @@ export class WebGPUPipeline implements Pipeline {
         targets: [
           {
             format: this.descriptor.format,
-            blend: this.getBlend(descriptor.renderState.blend),
+            blend: WebGPUBlend.toBlendState(descriptor.renderState.blend),
           },
         ],
       },
@@ -50,39 +50,6 @@ export class WebGPUPipeline implements Pipeline {
 
   public getBindGroupLayout(index: number): GPUBindGroupLayout {
     return this.bindGroupLayouts[index] ?? this.pipeline.getBindGroupLayout(index);
-  }
-
-  private getBlend(blend: BlendMode): GPUBlendState | undefined {
-    switch (blend) {
-      case "opaque":
-        return undefined;
-
-      case "alpha":
-        return {
-          color: {
-            srcFactor: "src-alpha",
-            dstFactor: "one-minus-src-alpha",
-            operation: "add",
-          },
-          alpha: {
-            srcFactor: "one",
-            dstFactor: "one-minus-src-alpha",
-            operation: "add",
-          },
-        };
-
-      case "additive":
-        return {
-          color: { srcFactor: "src-alpha", dstFactor: "one", operation: "add" },
-          alpha: { srcFactor: "one", dstFactor: "one", operation: "add" },
-        };
-
-      case "multiply":
-        return {
-          color: { srcFactor: "dst", dstFactor: "zero", operation: "add" },
-          alpha: { srcFactor: "dst-alpha", dstFactor: "zero", operation: "add" },
-        };
-    }
   }
 
   private createPipelineId(): string {

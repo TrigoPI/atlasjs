@@ -2,6 +2,7 @@ export * from "./webgpu-types";
 export * from "./web-gpu-const";
 
 export * from "./authoring";
+export * from "./batch";
 export * from "./bindings";
 export * from "./buffers";
 export * from "./caches";

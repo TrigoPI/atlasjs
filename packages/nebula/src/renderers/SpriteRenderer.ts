@@ -4,20 +4,17 @@ import { DrawCommand } from "./DrawCommand";
 
 import {
   Renderer,
-  Geometry,
-  Shader,
   Sampler,
   Texture2D,
-  Material,
-  Quad,
-  BindingGroup,
+  DEFAULT_RENDER_STATE,
 } from "../core";
 
 type SpriteRenderData = {
-  readonly bindings: BindingGroup;
   readonly model: Mat4;
-  readonly sourceRect: Vec4;
+  readonly uvRect: Vec4;
 };
+
+const WHITE: Vec4 = new Vec4(1, 1, 1, 1);
 
 const Z_OFFSET: number = 32768;
 const Z_MAX: number = 65535;
@@ -25,11 +22,7 @@ const BATCH_RANGE: number = 65536;
 const BATCH_MAX: number = 65535;
 
 export class SpriteRenderer {
-  private readonly renderer: Renderer;
-  private readonly geometry: Geometry;
-  private readonly shader: Shader;
   private readonly defaultSampler: Sampler;
-  private readonly materialCache: Map<string, Material>;
   private readonly renderDataCache: WeakMap<Sprite, SpriteRenderData>;
   private readonly batchIds: Map<string, number>;
   private readonly sourceRectScratch: Bound;
@@ -37,11 +30,6 @@ export class SpriteRenderer {
   private nextBatchId: number;
 
   public constructor(renderer: Renderer) {
-    this.renderer = renderer;
-    this.shader = this.initShader();
-    this.geometry = renderer.createGeometry(new Quad());
-
-    this.materialCache = new Map();
     this.renderDataCache = new WeakMap();
     this.batchIds = new Map();
     this.sourceRectScratch = new Bound();
@@ -58,47 +46,23 @@ export class SpriteRenderer {
   public buildCommand(sprite: Sprite): DrawCommand {
     const sampler: Sampler = sprite.sampler ?? this.defaultSampler;
     const materialKey: string = this.createMaterialKey(sprite.texture, sampler);
-    const material: Material = this.getOrCreateMaterial(
-      materialKey,
-      sprite.texture,
-      sampler,
-    );
 
     const data: SpriteRenderData = this.getOrCreateRenderData(sprite);
     const sourceRect: Bound = sprite.getSourceRect(this.sourceRectScratch);
 
-    this.updateSourceRect(sprite.texture, sourceRect, data.sourceRect);
+    this.updateUVRect(sprite.texture, sourceRect, data.uvRect);
     this.updateModelMatrix(sprite, sourceRect, data.model);
-
-    data.bindings.set("model", data.model).set("sourceRect", data.sourceRect);
 
     return {
       sortKey: this.computeSortKey(sprite, materialKey),
-      geometry: this.geometry,
-      material,
-      bindings: data.bindings,
+      batchKey: this.getBatchId(materialKey),
+      texture: sprite.texture,
+      sampler,
+      renderState: DEFAULT_RENDER_STATE,
+      model: data.model,
+      uvRect: data.uvRect,
+      tint: WHITE,
     };
-  }
-
-  private getOrCreateMaterial(
-    key: string,
-    texture: Texture2D,
-    sampler: Sampler,
-  ): Material {
-    const cached: Material | undefined = this.materialCache.get(key);
-
-    if (cached) {
-      return cached;
-    }
-
-    const material: Material = this.renderer
-      .createMaterial(this.shader)
-      .set("uTexture", texture)
-      .set("uSampler", sampler);
-
-    this.materialCache.set(key, material);
-
-    return material;
   }
 
   private getOrCreateRenderData(sprite: Sprite): SpriteRenderData {
@@ -110,9 +74,8 @@ export class SpriteRenderer {
     }
 
     const data: SpriteRenderData = {
-      bindings: this.renderer.createBindingGroup(this.shader.objectDefinition),
       model: Mat4.identity(),
-      sourceRect: new Vec4(0, 0, 1, 1),
+      uvRect: new Vec4(0, 0, 1, 1),
     };
 
     this.renderDataCache.set(sprite, data);
@@ -141,7 +104,7 @@ export class SpriteRenderer {
     return id;
   }
 
-  private updateSourceRect(texture: Texture2D, rect: Bound, out: Vec4): void {
+  private updateUVRect(texture: Texture2D, rect: Bound, out: Vec4): void {
     const u0: number = rect.x / texture.width;
     const v0: number = rect.y / texture.height;
     const du: number = rect.width / texture.width;
@@ -152,12 +115,6 @@ export class SpriteRenderer {
 
   private createMaterialKey(texture: Texture2D, sampler: Sampler): string {
     return `${texture.id}|${sampler.id}`;
-  }
-
-  private initShader(): Shader {
-    // The backend provides the sprite shader; its bindings are reflected from
-    // the source — SpriteRenderer stays free of any shading language.
-    return this.renderer.createSpriteShader();
   }
 
   private updateModelMatrix(sprite: Sprite, sourceRect: Bound, out: Mat4): void {

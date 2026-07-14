@@ -1,4 +1,4 @@
-import { Renderer } from "../core";
+import { Renderer, SpriteBatch } from "../core";
 import { DrawCommand } from "./DrawCommand";
 
 export class RenderQueue {
@@ -18,10 +18,24 @@ export class RenderQueue {
     );
   }
 
-  public flush(renderer: Renderer): void {
-    for (let i: number = 0; i < this.commands.length; i++) {
-      const command: DrawCommand = this.commands[i];
-      renderer.draw(command.geometry, command.material, command.bindings);
+  public flush(renderer: Renderer, batch: SpriteBatch): void {
+    let i: number = 0;
+
+    while (i < this.commands.length) {
+      const first: DrawCommand = this.commands[i];
+      batch.begin(first.texture, first.sampler, first.renderState);
+
+      let j: number = i;
+
+      // prettier-ignore
+      while (j < this.commands.length && this.commands[j].batchKey === first.batchKey) {
+        const command: DrawCommand = this.commands[j];
+        batch.add(command.model, command.uvRect, command.tint);
+        j++;
+      }
+
+      renderer.drawSpriteBatch(batch);
+      i = j;
     }
   }
 

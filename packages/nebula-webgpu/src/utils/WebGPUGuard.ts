@@ -3,6 +3,7 @@ import { WebGPUPipeline } from "../pipeline";
 import { WebGPUGeometry } from "../geometry";
 import { WebGPUTexture2D, WebGPUSampler } from "../resources";
 import { WebGPUShader, WebGPUMaterial } from "../material";
+import { WebGPUSpriteBatch } from "../batch";
 
 import {
   BindingGroup,
@@ -12,6 +13,7 @@ import {
   Pipeline,
   Sampler,
   Shader,
+  SpriteBatch,
   Texture2D,
 } from "@atlasjs/nebula";
 
@@ -61,6 +63,14 @@ export class WebGPUGuard {
   ): asserts pipeline is WebGPUPipeline {
     if (pipeline.__kind !== "webgpu") {
       throw new Error("Expected a WebGPUPipeline instance.");
+    }
+  }
+
+  public static assertWebGPUSpriteBatch(
+    batch: SpriteBatch,
+  ): asserts batch is WebGPUSpriteBatch {
+    if (batch.__kind !== "webgpu") {
+      throw new Error("Expected a WebGPUSpriteBatch instance.");
     }
   }
 

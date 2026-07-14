@@ -242,13 +242,21 @@ Ordre choisi = valeur décroissante, chaque phase livrable seule.
 > - **Ordre corrigé** : `updateWorldMatrices()` passe **avant** le culling (avant : culling en retard d'une frame sur des world matrices périmées).
 > - **Dirty-flag différé** : le faire correctement impose de câbler `ObservableTransform2D`/`ObservableVec2` (qui existent dans `@atlasjs/math` et notifient sur `.x =`) dans `Transformable`/`Node` — changement d'API publique (`transform` devient observable) + overhead getters + propagation dirty descendante. Mini-chantier à part, pas à bâcler dans Phase 2.
 
-### Phase 3 — SpriteBatch instancié (storage buffer)
-- [ ] `WebGPUReflection` gère `ResourceType.Storage`.
-- [ ] `BindingGroupLayoutHelper.packStorageArray`.
-- [ ] Sprite shader : `group(1)` → `var<storage, read> array<Instance>` + VS vertex-pulling.
-- [ ] `SpriteBatch` : accumulation, buffer storage grow, `draw(6, instanceCount)`.
-- [ ] `RenderQueue.flush` fusionne les runs `(pipeline, texture, blend)` en batches.
-- [ ] Bench : viser 10k+ sprites stables.
+### Phase 3 — SpriteBatch instancié (storage buffer) ✅
+- [x] `WebGPUReflection` gère `ResourceType.Storage` → expose `{ binding, stride, members }`.
+- [x] `BindingGroupLayoutHelper.packStorageArray` (offsets/stride réfléchis).
+- [x] Sprite shader `sprite_instanced.wgsl` : `group(1)` → `var<storage, read> array<Instance>` + VS vertex-pulling (`vertex_index`/`instance_index`).
+- [x] `SpriteBatch` (contrat `createSpriteBatch`/`drawSpriteBatch`) : accumulation CPU, pool de buffers storage par frame (grow), `draw(6, instanceCount)`.
+- [x] `RenderQueue.flush` fusionne les runs consécutifs de même `batchKey` en un `drawSpriteBatch`.
+- [x] Bench : 20k sprites (même texture) rendus en **1 draw call**, animés, sans erreur de validation (preuve visuelle ; FPS non mesurable de façon fiable dans le navigateur d'automation à cause du throttling rAF).
+
+> Notes Phase 3 :
+> - **Contrat** : ajout de `SpriteBatch` + `createSpriteBatch()` (ResourceFactory) + `drawSpriteBatch(batch)` (Renderer), à côté du `draw(geometry, material, bindings)` générique (chemin material custom, inchangé). Le chemin sprite est spécialisé instancié.
+> - **`SpriteRenderer` simplifié** : n'est plus qu'un producteur de `DrawCommand` (model + uvRect + sortKey/batchKey). Plus de per-object bind group, plus de material par sprite, plus de géométrie quad (générée dans le VS) — le batch bind texture/sampler (group 2) + storage (group 1).
+> - **Pool de buffers storage** (`WebGPUInstanceBufferPool`) : un buffer par run par frame, recyclé au `beginFrame`. Réutiliser un seul buffer pour plusieurs runs clobberait les runs précédents (tous les draws lisent le dernier upload).
+> - **Pipeline instancié à layout explicite** (pas `auto`) : réutilise les GPU layouts cachés (global/material) → bind groups compatibles et robustes (évite le footgun des auto-layouts non-compatibles entre pipelines).
+> - **`InstanceData`** = `{ model: mat4, uvRect: vec4, tint: vec4 }` (stride 96, offsets réfléchis). `tint` est un blanc partagé pour l'instant (les sprites n'ont pas encore d'API de teinte).
+> - **Limite connue** : tous les sprites partagent le blend `alpha` (un seul pipeline instancié). Des blends mixtes créeraient plusieurs pipelines instanciés — le partage du bind group global reste correct car les layouts sont explicites/partagés.
 
 ### Phase 4 — Seam Pass / RenderTarget
 - [ ] `RenderTarget` + `PassDescriptor` ; passe par défaut = comportement actuel.

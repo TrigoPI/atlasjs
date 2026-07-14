@@ -7,6 +7,7 @@ import { Material } from "../material";
 import { BindingGroup } from "../bindings";
 
 import { ResourceFactory } from "./ResourceFactory";
+import { SpriteBatch } from "./SpriteBatch";
 
 export interface Renderer extends Disposable, ResourceFactory {
   readonly __kind: string;
@@ -19,4 +20,5 @@ export interface Renderer extends Disposable, ResourceFactory {
   beginFrame(): void;
   endFrame(): void;
   draw(geometry: Geometry, material: Material, bindings: BindingGroup): void;
+  drawSpriteBatch(batch: SpriteBatch): void;
 }
