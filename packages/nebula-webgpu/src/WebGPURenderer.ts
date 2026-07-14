@@ -9,6 +9,7 @@ import { WebGPURenderContext } from "./states";
 
 import {
   WebGPUSpriteBatch,
+  WebGPUShapeBatch,
   WebGPUInstancedBatch,
   WebGPUInstanceBufferPool,
 } from "./batch";
@@ -356,6 +357,11 @@ export class WebGPURenderer implements Renderer {
   public createSpriteBatch(): WebGPUSpriteBatch {
     const shader: WebGPUShader = this.getBuiltinShader("sprite");
     return new WebGPUSpriteBatch(shader);
+  }
+
+  public createShapeBatch(): WebGPUShapeBatch {
+    const shader: WebGPUShader = this.getBuiltinShader("shape");
+    return new WebGPUShapeBatch(shader);
   }
 
   public createGeometry(primitive: Primitive): WebGPUGeometry {

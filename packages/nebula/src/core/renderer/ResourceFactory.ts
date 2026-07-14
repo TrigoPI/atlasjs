@@ -2,7 +2,7 @@ import { Geometry, Primitive } from "../geometry";
 import { Texture2D, Sampler } from "../resources";
 import { Shader, Material } from "../material";
 import { BindingGroup, BindingGroupDefinition } from "../bindings";
-import { SpriteBatch } from "./SpriteBatch";
+import { SpriteBatch, ShapeBatch } from "./SpriteBatch";
 import { RenderTarget, RenderTargetDescriptor } from "./RenderTarget";
 
 import {
@@ -22,5 +22,6 @@ export interface ResourceFactory {
   createMaterial(shader: Shader, renderState?: RenderState): Material;
   createBindingGroup(definition: BindingGroupDefinition): BindingGroup;
   createSpriteBatch(): SpriteBatch;
+  createShapeBatch(): ShapeBatch;
   createRenderTarget(descriptor: RenderTargetDescriptor): RenderTarget;
 }
