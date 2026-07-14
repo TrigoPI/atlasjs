@@ -27,9 +27,6 @@ function getCanvas(): HTMLCanvasElement {
     throw new Error("Canvas element not found.");
   }
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-
   return canvas;
 }
 

@@ -34,6 +34,10 @@ export class NebulaRenderer {
     return this.renderer.getViewport();
   }
 
+  public resize(width: number, height: number): void {
+    this.renderer.resize(width, height);
+  }
+
   public createMaterial(shader: Shader): Material {
     return this.renderer.createMaterial(shader);
   }

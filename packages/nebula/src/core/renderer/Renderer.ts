@@ -16,6 +16,7 @@ export interface Renderer extends Disposable, ResourceFactory {
 
   init(): Promise<void>;
 
+  resize(width: number, height: number): void;
   getCameraViewport(): Bound;
   getViewport(): Box2;
   beginFrame(pass?: PassDescriptor): void;

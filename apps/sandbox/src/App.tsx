@@ -23,9 +23,6 @@ export function App() {
       throw new Error("Mount element not found");
     }
 
-    mount.width = window.innerWidth;
-    mount.height = window.innerHeight;
-
     const renderer: WebGPURenderer = new WebGPURenderer(mount);
     const rendererPlugin: NebulaPlugin = new NebulaPlugin(renderer);
     const nexusPlugin: NexusPlugin = new NexusPlugin();
