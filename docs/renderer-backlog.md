@@ -90,12 +90,11 @@ Ordre conseillé en bas du doc (worklist priorisée, review fondue).
 - **Livré** : ordre inversé en `scale(zoom).translate(-pos)` dans `Camera2D.update` → view = `zoom·(p − pos)`, région `[pos, pos + size/zoom]` → `getCameraViewport` devient exact, avec sémantique intuitive (`position` = ancre monde top-left, zoom pivote dessus). Verrouillé par un test unitaire (nouveau harness vitest de `nebula`) : `packages/nebula/test/Camera2D.test.ts` (le `viewProjection` mappe la région cullée sur le cube NDC en zoom+pan). À `zoom = 1` la vue est identique à l'ancienne → aucune régression sur les apps (aucune n'utilise `setZoom`). Reste optionnel : confirmation visuelle en zoom+pan (aucune app n'exerce ce cas aujourd'hui).
 - **Fichiers** : `packages/nebula/src/core/camera/Camera2D.ts` (`update`), + harness `packages/nebula/{vitest.config.ts,package.json}` et test. Cohérent avec `getCameraViewport` (`packages/nebula-webgpu/src/WebGPURenderer.ts`) et la convention `packages/math/src/Mat4.ts`.
 
-### D2. `SpriteSheet.fromGrid` — frames hors-bornes — 🔴 P0
+### D2. `SpriteSheet.fromGrid` — frames hors-bornes — 🔴 P0 — ✅ fait
 
-- **Constat** : `for (y = margin; y < texture.height; y += frameHeight + spacing)` (idem `x`) teste le coin **haut-gauche**, pas le coin bas-droit. Sur dimensions non multiples, avec `spacing`/`margin`, une dernière frame déborde de la texture → `SpriteRenderer.updateUVRect` produit `u0 + du > 1` → bord étiré (sampler `clamp-to-edge`). `fromAutoGrid` OK (division exacte).
-- **Objectif** : ne définir que les frames entièrement contenues : `x + frameWidth <= texture.width` et `y + frameHeight <= texture.height`.
-- **Fichiers** : `packages/nebula/src/animations/SpriteSheet.ts` (`fromGrid`).
-- **Portée** : petite.
+- **Constat** : `for (y = margin; y < texture.height; y += frameHeight + spacing)` (idem `x`) testait le coin **haut-gauche**, pas le coin bas-droit. Sur dimensions non multiples, avec `spacing`/`margin`, une dernière frame débordait de la texture → `SpriteRenderer.updateUVRect` produit `u0 + du > 1` → bord étiré (sampler `clamp-to-edge`). `fromAutoGrid` OK (division exacte).
+- **Livré** : conditions de boucle corrigées en `x + frameWidth <= texture.width` / `y + frameHeight <= texture.height` → seules les frames entièrement contenues sont définies. Grilles exactes inchangées (la dernière colonne/ligne qui tombe pile est toujours incluse), seuls les cas non-divisibles/`spacing` changent. Verrouillé par `packages/nebula/test/SpriteSheet.test.ts` (texture 100×70, frame 32² → 6 frames au lieu de 12). Aucun consommateur `fromGrid` dans les apps.
+- **Fichiers** : `packages/nebula/src/animations/SpriteSheet.ts` (`fromGrid`), test `packages/nebula/test/SpriteSheet.test.ts`.
 
 ### D3. `draw()` vs `drawInstancedBatch()` — `renderState` désynchronisé — 🟠 P1
 
@@ -166,7 +165,7 @@ Ordre conseillé en bas du doc (worklist priorisée, review fondue).
 Worklist priorisée (review 2026-07 fondue). 🔴 P0 (bugs) d'abord, puis 🟠 P1 + refactors E par levier, puis suites/dette existantes.
 
 1. ~~**D1 — bug caméra zoom+pan**~~ ✅ fait (test `packages/nebula/test/Camera2D.test.ts`).
-2. **D2 — `fromGrid` hors-bornes** 🔴.
+2. ~~**D2 — `fromGrid` hors-bornes**~~ ✅ fait (test `packages/nebula/test/SpriteSheet.test.ts`).
 3. **C — quick wins** (`getWorldPosition`, `getViewport` mort, export `Pipeline`, `Color.set`).
 4. **D7 — `createMaterial` renderState** (trivial).
 5. **D3 — unifier l'instancié via `WebGPUBinder`** 🟠 (supprime optim morte + bug latent, prépare E).
