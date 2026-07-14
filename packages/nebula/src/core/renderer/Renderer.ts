@@ -7,7 +7,7 @@ import { Material } from "../material";
 import { BindingGroup } from "../bindings";
 
 import { ResourceFactory } from "./ResourceFactory";
-import { SpriteBatch } from "./SpriteBatch";
+import { InstancedBatch } from "./SpriteBatch";
 import { PassDescriptor } from "./RenderTarget";
 
 export interface Renderer extends Disposable, ResourceFactory {
@@ -22,5 +22,5 @@ export interface Renderer extends Disposable, ResourceFactory {
   beginFrame(pass?: PassDescriptor): void;
   endFrame(): void;
   draw(geometry: Geometry, material: Material, bindings: BindingGroup): void;
-  drawSpriteBatch(batch: SpriteBatch): void;
+  drawInstancedBatch(batch: InstancedBatch): void;
 }

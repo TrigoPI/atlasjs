@@ -3,12 +3,13 @@ import { WebGPUPipeline } from "../pipeline";
 import { WebGPUGeometry } from "../geometry";
 import { WebGPUTexture2D, WebGPUSampler } from "../resources";
 import { WebGPUShader, WebGPUMaterial } from "../material";
-import { WebGPUSpriteBatch } from "../batch";
+import { WebGPUSpriteBatch, WebGPUInstancedBatch } from "../batch";
 
 import {
   BindingGroup,
   BindingGroupDefinition,
   Geometry,
+  InstancedBatch,
   Material,
   Pipeline,
   Sampler,
@@ -71,6 +72,14 @@ export class WebGPUGuard {
   ): asserts batch is WebGPUSpriteBatch {
     if (batch.__kind !== "webgpu") {
       throw new Error("Expected a WebGPUSpriteBatch instance.");
+    }
+  }
+
+  public static assertWebGPUInstancedBatch(
+    batch: InstancedBatch,
+  ): asserts batch is WebGPUInstancedBatch {
+    if (batch.__kind !== "webgpu") {
+      throw new Error("Expected a WebGPUInstancedBatch instance.");
     }
   }
 

@@ -34,7 +34,7 @@ export class RenderQueue {
         j++;
       }
 
-      renderer.drawSpriteBatch(batch);
+      renderer.drawInstancedBatch(batch);
       i = j;
     }
   }
