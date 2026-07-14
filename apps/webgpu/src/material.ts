@@ -56,6 +56,8 @@ async function getImage(src: string): Promise<ImageBitmap> {
 
   const sprite: Sprite = new Sprite(dinoTexture, sampler);
 
+  sprite.setTint(1, 0.5, 1, 1).setScale(3, 3).setPosition(500, 100);
+
   nebula.scene.addChild(sprite);
   nebula.render();
 })();
