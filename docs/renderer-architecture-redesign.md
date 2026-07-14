@@ -230,11 +230,17 @@ Ordre choisi = valeur décroissante, chaque phase livrable seule.
 
 > Note Phase 1 : `depthTest` est porté par `RenderState` mais **inerte** tant que la passe n'a pas de depth attachment (Phase 4). `createPipeline` a quitté le `ResourceFactory` public (pipeline = artefact interne, résolu par `getOrCreatePipeline`). La clé du `WebGPUPipelineCache` inclut `shader.id | vertexLayout | format | topology | blend | cull | depth`.
 
-### Phase 2 — DrawCommand + RenderQueue
-- [ ] `DrawCommand` + clé de tri packée + `RenderQueue` (`submit`/`sort`/`flush`) dans `nebula`.
-- [ ] `SceneRenderer` remplit la queue au lieu de dessiner en immédiat.
-- [ ] Culling sans alloc : `getCameraViewport` réutilisé, `getWorldBound` écrit dans un `Bound` scratch.
-- [ ] Dirty-flag sur `Transformable` → `updateWorldMatrix` ne recalcule que les sous-arbres sales.
+### Phase 2 — DrawCommand + RenderQueue ✅ (dirty-flag différé)
+- [x] `DrawCommand` + clé de tri packée + `RenderQueue` (`submit`/`sort`/`flush`) dans `nebula`.
+- [x] `SceneRenderer` remplit la queue au lieu de dessiner en immédiat.
+- [x] Culling sans alloc : `getCameraViewport` récupéré 1×/frame, `getWorldBound(out)` écrit dans un `Bound` scratch (coins transformés inline, sans `Vec2`).
+- [ ] **Différé** — Dirty-flag sur `Transformable` → `updateWorldMatrix` ne recalcule que les sous-arbres sales.
+
+> Notes Phase 2 :
+> - **Clé de tri packée** (`SpriteRenderer.computeSortKey`) : `zNorm * 65536 + batchId`, `zNorm = clamp(round(zIndex) + 32768, 0, 65535)`, `batchId` = id incrémental par clé matériau (`texture.id|sampler.id`). Tri croissant = ordre peintre (z bas derrière), regroupé par matériau à z égal → prêt pour le batching Phase 3.
+> - **Fix d'aliasing** : le `model` matrix partagé (`this.modelMatrix`) est remplacé par une `SpriteRenderData` par sprite (`bindings` + `model` + `sourceRect`), mutée en place + `set()` (bump `version`). Requis dès qu'on diffère le draw (sinon toutes les commandes lisaient la dernière matrice).
+> - **Ordre corrigé** : `updateWorldMatrices()` passe **avant** le culling (avant : culling en retard d'une frame sur des world matrices périmées).
+> - **Dirty-flag différé** : le faire correctement impose de câbler `ObservableTransform2D`/`ObservableVec2` (qui existent dans `@atlasjs/math` et notifient sur `.x =`) dans `Transformable`/`Node` — changement d'API publique (`transform` devient observable) + overhead getters + propagation dirty descendante. Mini-chantier à part, pas à bâcler dans Phase 2.
 
 ### Phase 3 — SpriteBatch instancié (storage buffer)
 - [ ] `WebGPUReflection` gère `ResourceType.Storage`.

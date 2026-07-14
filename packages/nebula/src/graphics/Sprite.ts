@@ -33,8 +33,13 @@ export class Sprite extends Node {
     return this;
   }
 
-  public getSourceRect(): Bound {
-    return this.sourceRect.clone();
+  public getSourceRect(out: Bound = new Bound()): Bound {
+    return out.set(
+      this.sourceRect.x,
+      this.sourceRect.y,
+      this.sourceRect.width,
+      this.sourceRect.height,
+    );
   }
 
   public getLocalBound(): Bound {
@@ -47,32 +52,45 @@ export class Sprite extends Node {
     return new Bound(x, y, width, height);
   }
 
-  public getWorldBound(): Bound {
-    const local: Bound = this.getLocalBound();
+  public getWorldBound(out: Bound = new Bound()): Bound {
+    const width: number = this.sourceRect.width;
+    const height: number = this.sourceRect.height;
 
-    const local1X: number = local.x;
-    const local1Y: number = local.y;
+    const localX: number = -this.anchor.x * width;
+    const localY: number = -this.anchor.y * height;
 
-    const local2X: number = local.x + local.width;
-    const local2Y: number = local.y;
+    const m: Float32Array = this.worldMatrix.buffer;
+    const m0: number = m[0];
+    const m1: number = m[1];
+    const m4: number = m[4];
+    const m5: number = m[5];
+    const m12: number = m[12];
+    const m13: number = m[13];
 
-    const local3X: number = local.x;
-    const local3Y: number = local.y + local.height;
+    const x0: number = localX;
+    const y0: number = localY;
+    const x1: number = localX + width;
+    const y1: number = localY;
+    const x2: number = localX;
+    const y2: number = localY + height;
+    const x3: number = localX + width;
+    const y3: number = localY + height;
 
-    const local4X: number = local.x + local.width;
-    const local4Y: number = local.y + local.height;
+    const px0: number = m0 * x0 + m4 * y0 + m12;
+    const py0: number = m1 * x0 + m5 * y0 + m13;
+    const px1: number = m0 * x1 + m4 * y1 + m12;
+    const py1: number = m1 * x1 + m5 * y1 + m13;
+    const px2: number = m0 * x2 + m4 * y2 + m12;
+    const py2: number = m1 * x2 + m5 * y2 + m13;
+    const px3: number = m0 * x3 + m4 * y3 + m12;
+    const py3: number = m1 * x3 + m5 * y3 + m13;
 
-    const p1: Vec2 = this.worldMatrix.transformPoint2(local1X, local1Y);
-    const p2: Vec2 = this.worldMatrix.transformPoint2(local2X, local2Y);
-    const p3: Vec2 = this.worldMatrix.transformPoint2(local3X, local3Y);
-    const p4: Vec2 = this.worldMatrix.transformPoint2(local4X, local4Y);
+    const minX: number = Math.min(px0, px1, px2, px3);
+    const minY: number = Math.min(py0, py1, py2, py3);
+    const maxX: number = Math.max(px0, px1, px2, px3);
+    const maxY: number = Math.max(py0, py1, py2, py3);
 
-    const minX: number = Math.min(p1.x, p2.x, p3.x, p4.x);
-    const minY: number = Math.min(p1.y, p2.y, p3.y, p4.y);
-    const maxX: number = Math.max(p1.x, p2.x, p3.x, p4.x);
-    const maxY: number = Math.max(p1.y, p2.y, p3.y, p4.y);
-
-    return new Bound(minX, minY, maxX - minX, maxY - minY);
+    return out.set(minX, minY, maxX - minX, maxY - minY);
   }
 
   public getAnchor(): Vec2 {
