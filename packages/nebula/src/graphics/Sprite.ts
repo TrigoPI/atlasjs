@@ -1,12 +1,15 @@
-import { Bound, Vec2 } from "@atlasjs/math";
+import { Bound, Vec2, Vec4 } from "@atlasjs/math";
 
-import { Sampler, Texture2D } from "../core";
+import { BlendMode, Sampler, Texture2D } from "../core";
 import { Frame } from "../animations";
 import { Node } from "./Node";
 
 export class Sprite extends Node {
   public readonly texture: Texture2D;
   public readonly sampler?: Sampler;
+  public readonly tint: Vec4;
+
+  public blend: BlendMode;
 
   private readonly anchor: Vec2;
   private readonly sourceRect: Bound;
@@ -15,8 +18,20 @@ export class Sprite extends Node {
     super();
     this.texture = texture;
     this.sampler = sampler;
+    this.tint = new Vec4(1, 1, 1, 1);
+    this.blend = "alpha";
     this.anchor = new Vec2(0.5, 0.5);
     this.sourceRect = new Bound(0, 0, texture.width, texture.height);
+  }
+
+  public setTint(r: number, g: number, b: number, a: number = 1): Sprite {
+    this.tint.set(r, g, b, a);
+    return this;
+  }
+
+  public setBlend(blend: BlendMode): Sprite {
+    this.blend = blend;
+    return this;
   }
 
   public flipX(flip: boolean): Sprite {

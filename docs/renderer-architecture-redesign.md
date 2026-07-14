@@ -255,8 +255,9 @@ Ordre choisi = valeur décroissante, chaque phase livrable seule.
 > - **`SpriteRenderer` simplifié** : n'est plus qu'un producteur de `DrawCommand` (model + uvRect + sortKey/batchKey). Plus de per-object bind group, plus de material par sprite, plus de géométrie quad (générée dans le VS) — le batch bind texture/sampler (group 2) + storage (group 1).
 > - **Pool de buffers storage** (`WebGPUInstanceBufferPool`) : un buffer par run par frame, recyclé au `beginFrame`. Réutiliser un seul buffer pour plusieurs runs clobberait les runs précédents (tous les draws lisent le dernier upload).
 > - **Pipeline instancié à layout explicite** (pas `auto`) : réutilise les GPU layouts cachés (global/material) → bind groups compatibles et robustes (évite le footgun des auto-layouts non-compatibles entre pipelines).
-> - **`InstanceData`** = `{ model: mat4, uvRect: vec4, tint: vec4 }` (stride 96, offsets réfléchis). `tint` est un blanc partagé pour l'instant (les sprites n'ont pas encore d'API de teinte).
-> - **Limite connue** : tous les sprites partagent le blend `alpha` (un seul pipeline instancié). Des blends mixtes créeraient plusieurs pipelines instanciés — le partage du bind group global reste correct car les layouts sont explicites/partagés.
+> - **`InstanceData`** = `{ model: mat4, uvRect: vec4, tint: vec4 }` (stride 96, offsets réfléchis).
+> - **Tint par sprite (fait)** : `Sprite.tint: Vec4` (défaut blanc) + `setTint(r,g,b,a)`. La teinte est **par-instance** (dans le storage buffer) — des sprites de teintes différentes restent dans le **même** batch tant que texture/sampler/blend sont identiques. Vérifié visuellement.
+> - **Blend par sprite (fait)** : `Sprite.blend: BlendMode` (défaut `alpha`) + `setBlend(...)`. Le `batchKey` inclut le blend (`texture|sampler|blend`), donc des blends différents forment des batches/pipelines distincts (partage global correct car layouts explicites). Vérifié (paire additive → chevauchement plus clair).
 
 ### Phase 4 — Seam Pass / RenderTarget ✅
 - [x] `RenderTarget` (extends `Texture2D` + `format`) + `PassDescriptor` ; passe par défaut = comportement actuel (canvas + clear noir).

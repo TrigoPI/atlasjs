@@ -2,19 +2,19 @@ import { Bound, Mat4, Vec2, Vec4 } from "@atlasjs/math";
 import { Sprite } from "../graphics";
 import { DrawCommand } from "./DrawCommand";
 
-import {
-  Renderer,
-  Sampler,
-  Texture2D,
-  DEFAULT_RENDER_STATE,
-} from "../core";
+import { BlendMode, Renderer, RenderState, Sampler, Texture2D } from "../core";
 
 type SpriteRenderData = {
   readonly model: Mat4;
   readonly uvRect: Vec4;
 };
 
-const WHITE: Vec4 = new Vec4(1, 1, 1, 1);
+const RENDER_STATES: Record<BlendMode, RenderState> = {
+  opaque: { blend: "opaque", depthTest: false, cull: "none" },
+  alpha: { blend: "alpha", depthTest: false, cull: "none" },
+  additive: { blend: "additive", depthTest: false, cull: "none" },
+  multiply: { blend: "multiply", depthTest: false, cull: "none" },
+};
 
 const Z_OFFSET: number = 32768;
 const Z_MAX: number = 65535;
@@ -45,7 +45,11 @@ export class SpriteRenderer {
 
   public buildCommand(sprite: Sprite): DrawCommand {
     const sampler: Sampler = sprite.sampler ?? this.defaultSampler;
-    const materialKey: string = this.createMaterialKey(sprite.texture, sampler);
+    const materialKey: string = this.createMaterialKey(
+      sprite.texture,
+      sampler,
+      sprite.blend,
+    );
 
     const data: SpriteRenderData = this.getOrCreateRenderData(sprite);
     const sourceRect: Bound = sprite.getSourceRect(this.sourceRectScratch);
@@ -58,10 +62,10 @@ export class SpriteRenderer {
       batchKey: this.getBatchId(materialKey),
       texture: sprite.texture,
       sampler,
-      renderState: DEFAULT_RENDER_STATE,
+      renderState: RENDER_STATES[sprite.blend],
       model: data.model,
       uvRect: data.uvRect,
-      tint: WHITE,
+      tint: sprite.tint,
     };
   }
 
@@ -113,8 +117,12 @@ export class SpriteRenderer {
     out.set(u0, v0, du, dv);
   }
 
-  private createMaterialKey(texture: Texture2D, sampler: Sampler): string {
-    return `${texture.id}|${sampler.id}`;
+  private createMaterialKey(
+    texture: Texture2D,
+    sampler: Sampler,
+    blend: BlendMode,
+  ): string {
+    return `${texture.id}|${sampler.id}|${blend}`;
   }
 
   private updateModelMatrix(sprite: Sprite, sourceRect: Bound, out: Mat4): void {
