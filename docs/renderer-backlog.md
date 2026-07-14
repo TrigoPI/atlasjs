@@ -74,7 +74,6 @@ Ordre conseillé en bas du doc.
 ## C. Quick wins (< 30 min)
 
 - **`Transformable.getWorldPosition()`** renvoie un `worldPosition` **jamais mis à jour** → code mort ou bug latent (`packages/nebula/src/graphics/Transformable.ts`). Décider : le câbler (extraire la translation de `worldMatrix`) ou le supprimer.
-- **Erreurs de type pré-existantes** dans `apps/webgpu/src/ecs.ts` (API Nexus `Component`/`world`) — non liées au renderer, mais elles polluent le typecheck de l'app.
 
 ---
 
