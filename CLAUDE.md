@@ -104,6 +104,7 @@ Current documents:
 - `docs/gameplay-redesign.md` — implemented refactor of `gameplay` scripting/sync (phases 0→6 done): killed the shadow-ECS + diff/request/feedback pipeline (4 copies of one datum) in favor of a **single source of truth** per datum in Nexus, a **thin façade** (Unity-style proxy, not a copy) for the script API (`Transform2DComponent`/`RigidBody2DComponent` via `ScriptComponentRegistry`, lazy resolution + `onRemove`-invalidated cache), a physics bridge with **authority declared by body type** (dynamic → physics, kinematic/static → transform) via `PhysicsPushSystem`/`PhysicsPullSystem`, and runtime body handles (`PhysicsBodyRef`) as Nexus components. Collapsed ~7 sync systems into 2; removed `Vector2D` (use `Vec2`). See the checklist at the bottom of the doc.
 - `docs/renderer-architecture-redesign.md` — **implemented** refactor of the Nebula renderer submission path: introduces the missing **render layer** between RHI and scene. Killed the `pipeline` argument of `draw()` (pipeline is an internal cached artifact resolved from `(shader, vertexLayout, RenderState)`; `Material` carries a `RenderState` for blend/depth/cull), added a `DrawCommand` + packed sort key + `RenderQueue`, and a **storage-buffer + instancing** `SpriteBatch` (quad generated in the VS, instance array in `var<storage, read>`, `draw(6, instanceCount)`). Also a `RenderPass`/`RenderTarget` seam (render-to-texture) and 3D-future openings (`Camera` interface, shader library via `getBuiltinShader`). Removed the empty `WebGPUPipelineCache` stub and made `WebGPURenderState` do redundant-bind elimination. All 6 phases done + scene-graph dirty-flag (observable transform) + per-sprite tint/blend. See the checklist at the bottom of the doc.
 - `docs/renderer-backlog.md` — **backlog** (not scheduled): candidate follow-up work + debt spotted during the renderer refactor. Shapes/primitives rendering (SceneRenderer only draws `Sprite` today), text rendering, post-processing, custom materials on scene nodes; resource lifetime/eviction, editor↔nebula API drift (editor doesn't compile against current nebula), canvas resize, deferred depth test; plus quick wins (`getWorldPosition` dead code, `ecs.ts` type errors). Suggested order at the bottom.
+- `docs/canvas-resize-design.md` — **implemented** design of the canvas resize path (backlog B3). Adds `Renderer.resize(width, height)` in logical (CSS) pixels; `WebGPURenderer` tracks the logical size separately from the physical backing store (`× devicePixelRatio` for crisp HiDPI, camera projects in logical pixels, expand model — a larger canvas reveals more world); auto-observe by default via `ResizeObserver`/`devicePixelContentBoxSize` (opt-out `autoResize`), no context reconfigure (the WebGPU drawing buffer follows `canvas.width/height`), `NebulaRenderer.resize` passthrough. Full-screen render-target resize left out of scope (none exist yet).
 
 ---
 
@@ -147,6 +148,11 @@ Before modifying the project:
 
 Architecture consistency is generally more important than implementing the quickest possible solution.
 Use the skills `clean-code`, `clean-architecture`, `improve-codebase-architecture` and `codebase-design` for designing clean code
+
+When using the `superpowers` plugin skills (e.g. `brainstorming`, `writing-plans`):
+
+- Do **not** commit automatically. Leave changes staged/unstaged for the user to review and commit themselves, unless they explicitly ask for a commit.
+- Write design/spec documents directly into `docs/` (flat), not into a nested `docs/superpowers/specs/` folder.
 
 You can use the agent `architect-reviewer` and `code-reviewer` for code review
 
