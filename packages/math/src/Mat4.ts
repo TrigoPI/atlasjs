@@ -1,4 +1,4 @@
-import { Transform2D } from "./Transform2D";
+import { Transform2DLike } from "./Transform2DLike";
 import { Vec2 } from "./Vec2";
 
 //prettier-ignore
@@ -145,7 +145,7 @@ export class Mat4 {
     return this;
   }
 
-  public fromTransform2D(t: Transform2D): Mat4 {
+  public fromTransform2D(t: Transform2DLike): Mat4 {
     return this.identity()
       .translate(t.position.x, t.position.y, 0)
       .rotateZ(t.rotation)
@@ -193,7 +193,7 @@ export class Mat4 {
     return a.clone().multiply(b);
   }
 
-  public static fromTransform2D(t: Transform2D): Mat4 {
+  public static fromTransform2D(t: Transform2DLike): Mat4 {
     return Mat4.identity()
       .translate(t.position.x, t.position.y, 0)
       .rotateZ(t.rotation)

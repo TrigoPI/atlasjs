@@ -46,7 +46,7 @@ export class ObservalbeVec2 implements Vec2Like {
     return out;
   }
 
-  public copy(): ObservalbeVec2 {
+  public clone(): ObservalbeVec2 {
     return new ObservalbeVec2(this.observer, this.x, this.y);
   }
 
