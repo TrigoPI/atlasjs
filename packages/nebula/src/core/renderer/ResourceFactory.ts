@@ -3,6 +3,7 @@ import { Texture2D, Sampler } from "../resources";
 import { Shader, Material } from "../material";
 import { BindingGroup, BindingGroupDefinition } from "../bindings";
 import { SpriteBatch } from "./SpriteBatch";
+import { RenderTarget, RenderTargetDescriptor } from "./RenderTarget";
 
 import {
   Texture2DDescriptor,
@@ -20,7 +21,6 @@ export interface ResourceFactory {
   createSampler(descriptor: SamplerDescriptor): Sampler;
   createMaterial(shader: Shader, renderState?: RenderState): Material;
   createBindingGroup(definition: BindingGroupDefinition): BindingGroup;
-
-  /** The backend's built-in instanced sprite batch (storage-buffer instancing). */
   createSpriteBatch(): SpriteBatch;
+  createRenderTarget(descriptor: RenderTargetDescriptor): RenderTarget;
 }

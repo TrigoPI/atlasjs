@@ -5,6 +5,7 @@ export class WebGPURenderContext {
   public readonly commandEncoder: GPUCommandEncoder;
   public readonly renderPass: GPURenderPassEncoder;
   public readonly textureView: GPUTextureView;
+  public readonly format: GPUTextureFormat;
   public readonly renderState: WebGPURenderState;
 
   public constructor(options: WebGPURenderContextOptions) {
@@ -12,5 +13,6 @@ export class WebGPURenderContext {
     this.commandEncoder = options.commandEncoder;
     this.renderPass = options.renderPass;
     this.textureView = options.textureView;
+    this.format = options.format;
   }
 }

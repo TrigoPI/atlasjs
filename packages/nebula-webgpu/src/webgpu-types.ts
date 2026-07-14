@@ -25,6 +25,7 @@ export type WebGPURenderContextOptions = {
   commandEncoder: GPUCommandEncoder;
   renderPass: GPURenderPassEncoder;
   textureView: GPUTextureView;
+  format: GPUTextureFormat;
 };
 
 export type WebGPUPipelineCacheDescriptor = {

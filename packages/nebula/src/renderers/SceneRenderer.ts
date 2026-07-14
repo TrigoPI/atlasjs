@@ -1,6 +1,6 @@
 import { Bound } from "@atlasjs/math";
 
-import { Renderer, SpriteBatch } from "../core";
+import { PassDescriptor, Renderer, SpriteBatch } from "../core";
 import { SceneGraph } from "../scene";
 import { Node, Sprite } from "../graphics";
 import { RenderQueue } from "./RenderQueue";
@@ -24,7 +24,7 @@ export class SceneRenderer {
     this.cameraViewport = new Bound();
   }
 
-  public render(scene: SceneGraph): void {
+  public render(scene: SceneGraph, pass?: PassDescriptor): void {
     scene.updateWorldMatrices();
     this.cameraViewport = this.renderer.getCameraViewport();
 
@@ -32,7 +32,7 @@ export class SceneRenderer {
     this.collect(scene.root);
     this.queue.sort();
 
-    this.renderer.beginFrame();
+    this.renderer.beginFrame(pass);
     this.queue.flush(this.renderer, this.batch);
     this.renderer.endFrame();
   }

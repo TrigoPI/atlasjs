@@ -6,6 +6,7 @@ import {
   type Sampler,
   Sprite,
   NebulaRenderer,
+  Color,
 } from "@atlasjs/nebula";
 import { WebGPURenderer } from "@atlasjs/nebula-webgpu";
 

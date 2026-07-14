@@ -6,6 +6,7 @@ import { SceneRenderer } from "./renderers";
 import {
   Camera2D,
   Material,
+  PassDescriptor,
   Renderer,
   Sampler,
   SamplerDescriptor,
@@ -55,7 +56,7 @@ export class NebulaRenderer {
     this.sceneRenderer = new SceneRenderer(this.renderer);
   }
 
-  public render(): void {
-    this.sceneRenderer.render(this.scene);
+  public render(pass?: PassDescriptor): void {
+    this.sceneRenderer.render(this.scene, pass);
   }
 }

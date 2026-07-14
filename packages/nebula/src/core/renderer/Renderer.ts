@@ -8,6 +8,7 @@ import { BindingGroup } from "../bindings";
 
 import { ResourceFactory } from "./ResourceFactory";
 import { SpriteBatch } from "./SpriteBatch";
+import { PassDescriptor } from "./RenderTarget";
 
 export interface Renderer extends Disposable, ResourceFactory {
   readonly __kind: string;
@@ -17,7 +18,7 @@ export interface Renderer extends Disposable, ResourceFactory {
 
   getCameraViewport(): Bound;
   getViewport(): Box2;
-  beginFrame(): void;
+  beginFrame(pass?: PassDescriptor): void;
   endFrame(): void;
   draw(geometry: Geometry, material: Material, bindings: BindingGroup): void;
   drawSpriteBatch(batch: SpriteBatch): void;

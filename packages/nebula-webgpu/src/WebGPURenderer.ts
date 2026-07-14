@@ -48,6 +48,9 @@ import {
   RenderState,
   DEFAULT_RENDER_STATE,
   SpriteBatch,
+  PassDescriptor,
+  RenderTargetDescriptor,
+  Color,
 } from "@atlasjs/nebula";
 
 import {
@@ -55,6 +58,8 @@ import {
   WebGPUVertexBuffer,
   WebGPUIndexBuffer,
 } from "./buffers";
+
+const BLACK: Color = new Color(0, 0, 0, 1);
 
 export class WebGPURenderer implements Renderer {
   public readonly __kind: string = "webgpu";
@@ -135,13 +140,14 @@ export class WebGPURenderer implements Renderer {
     shader: WebGPUShader,
     geometry: WebGPUGeometry,
     renderState: RenderState,
+    format: GPUTextureFormat,
   ): WebGPUPipeline {
     const topology: GPUPrimitiveTopology = "triangle-list";
 
     const key: string = [
       shader.id,
       geometry.vertexBuffer.layout.getId(),
-      this.format,
+      format,
       topology,
       renderState.blend,
       renderState.cull,
@@ -149,7 +155,7 @@ export class WebGPURenderer implements Renderer {
     ].join("|");
 
     return this.pipelineCache.getOrCreate(key, () =>
-      this.buildPipeline(shader, geometry, renderState, topology),
+      this.buildPipeline(shader, geometry, renderState, topology, format),
     );
   }
 
@@ -158,6 +164,7 @@ export class WebGPURenderer implements Renderer {
     geometry: WebGPUGeometry,
     renderState: RenderState,
     topology: GPUPrimitiveTopology,
+    format: GPUTextureFormat,
   ): WebGPUPipeline {
     const globalGroup: GPUBindGroupLayout =
       this.bindingGroupCache.getOrCreateGPULayout(shader.globalDefinition);
@@ -183,7 +190,7 @@ export class WebGPURenderer implements Renderer {
       layout,
       bindGroupLayouts,
       renderState,
-      format: this.format,
+      format,
       geometry,
       shader,
     });
@@ -192,8 +199,9 @@ export class WebGPURenderer implements Renderer {
   private getInstancedPipeline(
     shader: WebGPUShader,
     renderState: RenderState,
+    format: GPUTextureFormat,
   ): GPURenderPipeline {
-    const key: string = `${renderState.blend}|${renderState.cull}`;
+    const key: string = `${format}|${renderState.blend}|${renderState.cull}`;
     const cached: GPURenderPipeline | undefined =
       this.instancedPipelines.get(key);
 
@@ -225,7 +233,7 @@ export class WebGPURenderer implements Renderer {
         entryPoint: shader.fragmentEntryPoint,
         targets: [
           {
-            format: this.format,
+            format,
             blend: WebGPUBlend.toBlendState(renderState.blend),
           },
         ],
@@ -339,6 +347,14 @@ export class WebGPURenderer implements Renderer {
     });
   }
 
+  public createRenderTarget({
+    width,
+    height,
+    format,
+  }: RenderTargetDescriptor): WebGPUTexture2D {
+    return new WebGPUTexture2D(this.device, { width, height, format });
+  }
+
   public async init(): Promise<void> {
     this.logger.log("Initializing WebGPURenderer...");
 
@@ -392,19 +408,26 @@ export class WebGPURenderer implements Renderer {
     this.logger.log("WebGPURenderer initialized successfully.");
   }
 
-  public beginFrame(): void {
+  public beginFrame(pass?: PassDescriptor): void {
     const commandEncoder: GPUCommandEncoder =
       this.device.createCommandEncoder();
 
-    const textureView: GPUTextureView = this.context
-      .getCurrentTexture()
-      .createView();
+    const target: WebGPUTexture2D | undefined = pass?.target as
+      | WebGPUTexture2D
+      | undefined;
 
-    const renderPass = commandEncoder.beginRenderPass({
+    const textureView: GPUTextureView = target
+      ? target.view
+      : this.context.getCurrentTexture().createView();
+
+    const format: GPUTextureFormat = target ? target.format : this.format;
+    const clear: Color = pass?.clear ?? BLACK;
+
+    const renderPass: GPURenderPassEncoder = commandEncoder.beginRenderPass({
       colorAttachments: [
         {
           view: textureView,
-          clearValue: { r: 0, g: 0, b: 0, a: 1 },
+          clearValue: { r: clear.r, g: clear.g, b: clear.b, a: clear.a },
           loadOp: "clear",
           storeOp: "store",
         },
@@ -415,6 +438,7 @@ export class WebGPURenderer implements Renderer {
       commandEncoder,
       renderPass,
       textureView,
+      format,
     });
 
     this.instancePool.reset();
@@ -443,6 +467,7 @@ export class WebGPURenderer implements Renderer {
       mat.shader,
       geo,
       mat.renderState,
+      ctx.format,
     );
 
     this.bindPipeline(ctx, pipe);
@@ -472,6 +497,7 @@ export class WebGPURenderer implements Renderer {
     const pipeline: GPURenderPipeline = this.getInstancedPipeline(
       shader,
       spriteBatch.renderState,
+      ctx.format,
     );
 
     const globalLayout: GPUBindGroupLayout =

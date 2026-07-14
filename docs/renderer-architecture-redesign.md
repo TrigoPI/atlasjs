@@ -258,10 +258,16 @@ Ordre choisi = valeur décroissante, chaque phase livrable seule.
 > - **`InstanceData`** = `{ model: mat4, uvRect: vec4, tint: vec4 }` (stride 96, offsets réfléchis). `tint` est un blanc partagé pour l'instant (les sprites n'ont pas encore d'API de teinte).
 > - **Limite connue** : tous les sprites partagent le blend `alpha` (un seul pipeline instancié). Des blends mixtes créeraient plusieurs pipelines instanciés — le partage du bind group global reste correct car les layouts sont explicites/partagés.
 
-### Phase 4 — Seam Pass / RenderTarget
-- [ ] `RenderTarget` + `PassDescriptor` ; passe par défaut = comportement actuel.
-- [ ] `beginFrame` paramétré (clear/format/depth), plus de noir hardcodé.
-- [ ] Support d'une texture offscreen (préparation post-process / material-graph).
+### Phase 4 — Seam Pass / RenderTarget ✅
+- [x] `RenderTarget` (extends `Texture2D` + `format`) + `PassDescriptor` ; passe par défaut = comportement actuel (canvas + clear noir).
+- [x] `beginFrame(pass?)` paramétré (target + clear color), plus de noir hardcodé ; format de passe threadé dans les deux pipelines (indexé + instancié).
+- [x] Support d'une texture offscreen : `createRenderTarget()` → cible rendable ET échantillonnable (réutilise `WebGPUTexture2D`, déjà `RENDER_ATTACHMENT`). Plumbing haut niveau : `NebulaRenderer.render(pass?)` → `SceneRenderer.render(scene, pass?)`.
+
+> Notes Phase 4 :
+> - **Format par passe** : `WebGPURenderContext` porte le `format` de la cible ; `getOrCreatePipeline`/`getInstancedPipeline` sont keyés par ce format (une cible offscreen d'un format différent du canvas crée ses propres pipelines). Vérifié : scène rendue dans un target `rgba8unorm` puis blittée sur canvas (formats distincts) sans mismatch.
+> - **Render-to-texture vérifié de bout en bout** : passe 1 scène → target offscreen (clear bleu), passe 2 target → canvas via un `Sprite` texturé par le target (le `RenderTarget` étant un `Texture2D`, aucun shader de blit dédié n'est nécessaire). C'est le point d'accroche du post-process / material-graph.
+> - **Multi-passe** = plusieurs cycles `beginFrame(pass)`/`endFrame` (un command buffer + un submit par passe) ; le pool d'instances est reset à chaque `beginFrame`.
+> - **`depthTest`** toujours inerte (pas de depth attachment) — la 3D branchera un depth sur `PassDescriptor.depth`.
 
 ### Phase 5 — Ouvertures 3D
 - [ ] Interface `Camera` ; `Renderer.camera: Camera`.
