@@ -42,11 +42,11 @@ fn vs_main(
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
+  let dist: f32 = length(in.localPos);
+  let edge: f32 = fwidth(dist);
   var alpha: f32 = in.color.a;
 
   if (in.params.x > 0.5) {
-    let dist: f32 = length(in.localPos);
-    let edge: f32 = fwidth(dist);
     let coverage: f32 = 1.0 - smoothstep(0.5 - edge, 0.5, dist);
     alpha = alpha * coverage;
   }

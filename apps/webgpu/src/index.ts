@@ -1,18 +1,21 @@
 import DinoBlueImage from "../assets/dino_blue.png";
 import SwordImage from "../assets/Iicon_32_01.png";
 import SeaLionImage from "../assets/sealion.png";
+import { WebGPURenderer } from "@atlasjs/nebula-webgpu";
 
 import {
   type Texture2D,
   type Renderer,
   type Sampler,
   Sprite,
+  Rect,
+  Circle,
+  Line,
   SpriteSheet,
   SpriteAnimation,
   AnimationPlayer,
   NebulaRenderer,
 } from "@atlasjs/nebula";
-import { WebGPURenderer } from "@atlasjs/nebula-webgpu";
 
 declare global {
   var animator: AnimationPlayer;
@@ -125,11 +128,20 @@ async function getImage(src: string): Promise<ImageBitmap> {
   // nebula.scene.addChild(dinoSprite);
   // dinoSprite.addChild(swordSprite);
 
-  setInterval(() => {
-    // dinoSprite.transform.position.x += 0.1;
-    // dinoSprite.transform.rotation += 0.01;
-    // animator.updateAndApply(dinoSprite);
+  const bgRect: Rect = new Rect(320, 240);
+  bgRect.setColor(0.15, 0.2, 0.55, 1).setPosition(200, 200).setZIndex(-1);
 
+  const circle: Circle = new Circle(70);
+  circle.setColor(0.9, 0.3, 0.3, 1).setPosition(330, 130).setZIndex(1);
+
+  const line: Line = new Line(80, 320, 360, 250, 8);
+  line.setColor(0.2, 0.9, 0.4, 1).setZIndex(2);
+
+  nebula.scene.addChild(bgRect);
+  nebula.scene.addChild(circle);
+  nebula.scene.addChild(line);
+
+  setInterval(() => {
     nebula.render();
   }, 1000 / 60);
 
