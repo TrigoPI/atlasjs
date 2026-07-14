@@ -1,4 +1,5 @@
 import DinoBlueImage from "../assets/dino_blue.png";
+import { WebGPURenderer } from "@atlasjs/nebula-webgpu";
 
 import {
   type Renderer,
@@ -6,9 +7,7 @@ import {
   type Sampler,
   Sprite,
   NebulaRenderer,
-  Color,
 } from "@atlasjs/nebula";
-import { WebGPURenderer } from "@atlasjs/nebula-webgpu";
 
 function getCanvas(): HTMLCanvasElement {
   const canvas: HTMLCanvasElement | null = document.getElementById(

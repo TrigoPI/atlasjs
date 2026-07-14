@@ -26,3 +26,8 @@ export const WebGPUShaders = (<T extends Record<string, ShaderDescriptor>>(
     source: SpriteInstancedShader,
   },
 });
+
+export const WebGPUBuiltinShaders: Record<string, ShaderDescriptor> = {
+  sprite: WebGPUShaders.SpriteInstanced,
+  texture: WebGPUShaders.Texture2D,
+};

@@ -1,6 +1,6 @@
 import { Bound, Box2 } from "@atlasjs/math";
 
-import { Camera2D } from "../camera";
+import { Camera } from "../camera";
 import { Geometry } from "../geometry";
 import { Disposable } from "../utils";
 import { Material } from "../material";
@@ -12,7 +12,7 @@ import { PassDescriptor } from "./RenderTarget";
 
 export interface Renderer extends Disposable, ResourceFactory {
   readonly __kind: string;
-  readonly camera: Camera2D;
+  readonly camera: Camera;
 
   init(): Promise<void>;
 

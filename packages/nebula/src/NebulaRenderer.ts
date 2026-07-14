@@ -27,7 +27,7 @@ export class NebulaRenderer {
   }
 
   public get camera(): Camera2D {
-    return this.renderer.camera;
+    return this.renderer.camera as Camera2D;
   }
 
   public getViewport(): Box2 {

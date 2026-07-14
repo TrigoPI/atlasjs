@@ -13,7 +13,7 @@ import {
 } from "./caches";
 import { WebGPUSampler, WebGPUTexture2D } from "./resources";
 import { WebGPUShader, WebGPUMaterial } from "./material";
-import { WebGPUShaders } from "./resources";
+import { WebGPUShaders, WebGPUBuiltinShaders } from "./resources";
 import { WebGPUReflection, WebGPUReflectedGroup } from "./reflect";
 
 import {
@@ -281,8 +281,14 @@ export class WebGPURenderer implements Renderer {
     return this.shaderCache.getOrCreate(definition);
   }
 
-  public createSpriteShader(): WebGPUShader {
-    return this.createShader(WebGPUShaders.Texture2D);
+  public getBuiltinShader(name: string): WebGPUShader {
+    const descriptor: ShaderDescriptor | undefined = WebGPUBuiltinShaders[name];
+
+    if (!descriptor) {
+      throw new Error(`Unknown built-in shader "${name}".`);
+    }
+
+    return this.createShader(descriptor);
   }
 
   public createVertexBuffer(
@@ -315,7 +321,7 @@ export class WebGPURenderer implements Renderer {
   }
 
   public createSpriteBatch(): WebGPUSpriteBatch {
-    const shader: WebGPUShader = this.createShader(WebGPUShaders.SpriteInstanced);
+    const shader: WebGPUShader = this.getBuiltinShader("sprite");
     return new WebGPUSpriteBatch(shader);
   }
 
@@ -490,9 +496,7 @@ export class WebGPURenderer implements Renderer {
       return;
     }
 
-    const shader: WebGPUShader = this.createShader(
-      WebGPUShaders.SpriteInstanced,
-    );
+    const shader: WebGPUShader = this.getBuiltinShader("sprite");
 
     const pipeline: GPURenderPipeline = this.getInstancedPipeline(
       shader,

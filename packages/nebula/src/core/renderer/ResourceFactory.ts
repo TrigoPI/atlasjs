@@ -15,7 +15,7 @@ import {
 export interface ResourceFactory {
   createQuad(): Geometry;
   createShader(definition: ShaderDescriptor): Shader;
-  createSpriteShader(): Shader;
+  getBuiltinShader(name: string): Shader;
   createGeometry(primitive: Primitive): Geometry;
   createTexture2D(descriptor: Texture2DDescriptor): Texture2D;
   createSampler(descriptor: SamplerDescriptor): Sampler;

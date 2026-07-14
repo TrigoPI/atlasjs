@@ -269,9 +269,14 @@ Ordre choisi = valeur décroissante, chaque phase livrable seule.
 > - **Multi-passe** = plusieurs cycles `beginFrame(pass)`/`endFrame` (un command buffer + un submit par passe) ; le pool d'instances est reset à chaque `beginFrame`.
 > - **`depthTest`** toujours inerte (pas de depth attachment) — la 3D branchera un depth sur `PassDescriptor.depth`.
 
-### Phase 5 — Ouvertures 3D
-- [ ] Interface `Camera` ; `Renderer.camera: Camera`.
-- [ ] Shader library backend (registry par nom) ; retirer `createSpriteShader` du contrat générique.
+### Phase 5 — Ouvertures 3D ✅
+- [x] Interface `Camera` (`viewProjection` + `update`) ; `Camera2D implements Camera` ; `Renderer.camera: Camera`.
+- [x] Shader library backend (`WebGPUBuiltinShaders`, registry nom → descripteur) ; `getBuiltinShader(name)` remplace `createSpriteShader` (retiré du contrat) ; `createSpriteBatch`/le chemin instancié résolvent le shader via `getBuiltinShader("sprite")`.
+
+> Notes Phase 5 :
+> - **Camera** : le contrat RHI ne dépend plus que de l'abstraction (`viewProjection`/`update`) — un `Camera3D` s'y branche sans toucher le renderer. `WebGPURenderer.camera` reste un `Camera2D` concret (le culling 2D `getCameraViewport` utilise `zoom`/`position`). `NebulaRenderer` (facade 2D) ré-expose `Camera2D` — ergonomie 2D préservée (`.zoom`, `.position`).
+> - **`getCameraViewport`** reste un helper de culling 2D sur le contrat ; une variante 3D le remplacerait/ignorerait (hors périmètre — on ouvre les ouvertures, on n'implémente pas la 3D).
+> - **Shader library** : extension point unique keyé par nom au lieu d'un `createXShader()` par shader. Built-ins actuels : `"sprite"` (instancié), `"texture"`.
 
 ---
 
