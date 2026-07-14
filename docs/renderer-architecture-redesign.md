@@ -234,13 +234,13 @@ Ordre choisi = valeur décroissante, chaque phase livrable seule.
 - [x] `DrawCommand` + clé de tri packée + `RenderQueue` (`submit`/`sort`/`flush`) dans `nebula`.
 - [x] `SceneRenderer` remplit la queue au lieu de dessiner en immédiat.
 - [x] Culling sans alloc : `getCameraViewport` récupéré 1×/frame, `getWorldBound(out)` écrit dans un `Bound` scratch (coins transformés inline, sans `Vec2`).
-- [ ] **Différé** — Dirty-flag sur `Transformable` → `updateWorldMatrix` ne recalcule que les sous-arbres sales.
+- [x] Dirty-flag sur `Transformable` → `updateWorldMatrix` ne recalcule que les sous-arbres sales (fait après coup, cf. note ci-dessous).
 
 > Notes Phase 2 :
 > - **Clé de tri packée** (`SpriteRenderer.computeSortKey`) : `zNorm * 65536 + batchId`, `zNorm = clamp(round(zIndex) + 32768, 0, 65535)`, `batchId` = id incrémental par clé matériau (`texture.id|sampler.id`). Tri croissant = ordre peintre (z bas derrière), regroupé par matériau à z égal → prêt pour le batching Phase 3.
 > - **Fix d'aliasing** : le `model` matrix partagé (`this.modelMatrix`) est remplacé par une `SpriteRenderData` par sprite (`bindings` + `model` + `sourceRect`), mutée en place + `set()` (bump `version`). Requis dès qu'on diffère le draw (sinon toutes les commandes lisaient la dernière matrice).
 > - **Ordre corrigé** : `updateWorldMatrices()` passe **avant** le culling (avant : culling en retard d'une frame sur des world matrices périmées).
-> - **Dirty-flag différé** : le faire correctement impose de câbler `ObservableTransform2D`/`ObservableVec2` (qui existent dans `@atlasjs/math` et notifient sur `.x =`) dans `Transformable`/`Node` — changement d'API publique (`transform` devient observable) + overhead getters + propagation dirty descendante. Mini-chantier à part, pas à bâcler dans Phase 2.
+> - **Dirty-flag (fait)** : `Transformable.transform` est passé de `Transform2D` à `ObservableTransform2D` — un `Observable` (`@atlasjs/utils`) lève un flag `localDirty` sur **toute** mutation, y compris les écritures directes (`transform.position.x += …`, `transform.rotation = …`, `Sprite.flipX`, `Rect.width =`). `Node.updateWorldMatrix(parentWorld?, parentChanged?)` ne reconstruit `transformMatrix` que si `localDirty` et `worldMatrix` que si `localDirty || parentChanged`, puis propage `changed` aux enfants ; `addChild` marque le nœud déplacé dirty. `Mat4.fromTransform2D` élargi à `Transform2DLike` (élargissement rétro-compatible). Vérifié : sprite animé par écriture directe → bouge/tourne (pas figé) ; scène statique OK.
 
 ### Phase 3 — SpriteBatch instancié (storage buffer) ✅
 - [x] `WebGPUReflection` gère `ResourceType.Storage` → expose `{ binding, stride, members }`.
