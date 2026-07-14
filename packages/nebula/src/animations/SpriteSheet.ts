@@ -91,8 +91,8 @@ export class SpriteSheet {
     const spriteSheet: SpriteSheet = new SpriteSheet(texture);
     let id: number = 0;
 
-    for (let y = margin; y < texture.height; y += frameHeight + spacing) {
-      for (let x = margin; x < texture.width; x += frameWidth + spacing) {
+    for (let y = margin; y + frameHeight <= texture.height; y += frameHeight + spacing) {
+      for (let x = margin; x + frameWidth <= texture.width; x += frameWidth + spacing) {
         spriteSheet.define(`${name}_${id++}`, x, y, frameWidth, frameHeight);
       }
     }
