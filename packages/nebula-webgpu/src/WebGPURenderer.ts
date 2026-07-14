@@ -61,6 +61,10 @@ import {
 
 const BLACK: Color = new Color(0, 0, 0, 1);
 
+export type WebGPURendererOptions = {
+  autoResize?: boolean;
+};
+
 export class WebGPURenderer implements Renderer {
   public readonly __kind: string = "webgpu";
   public readonly camera: Camera2D;
@@ -72,6 +76,11 @@ export class WebGPURenderer implements Renderer {
   private device!: GPUDevice;
   private context!: GPUCanvasContext;
   private format!: GPUTextureFormat;
+
+  private readonly autoResize: boolean;
+  private resizeObserver?: ResizeObserver;
+  private logicalWidth: number;
+  private logicalHeight: number;
 
   private bindingGroupCache!: WebGPUBindingGroupCache;
   private shaderCache!: WebGPUShaderCache;
@@ -86,9 +95,13 @@ export class WebGPURenderer implements Renderer {
 
   private currentRenderContext?: WebGPURenderContext;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, options?: WebGPURendererOptions) {
     this.logger = createLogger("WebGPURenderer");
     this.canvas = canvas;
+
+    this.autoResize = options?.autoResize ?? true;
+    this.logicalWidth = canvas.width;
+    this.logicalHeight = canvas.height;
 
     this.clock = new Clock();
     this.camera = new Camera2D();
@@ -97,6 +110,8 @@ export class WebGPURenderer implements Renderer {
   }
 
   public destroy(): void {
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = undefined;
     this.shaderCache.destroy();
     this.bindingGroupCache.destroy();
     this.pipelineCache.destroy();
@@ -105,12 +120,12 @@ export class WebGPURenderer implements Renderer {
   }
 
   public getViewport(): Box2 {
-    return Box2.create(this.canvas.width, this.canvas.height);
+    return Box2.create(this.logicalWidth, this.logicalHeight);
   }
 
   public getCameraViewport(): Bound {
-    const width = this.canvas.width / this.camera.zoom;
-    const height = this.canvas.height / this.camera.zoom;
+    const width = this.logicalWidth / this.camera.zoom;
+    const height = this.logicalHeight / this.camera.zoom;
     return Bound.create(
       this.camera.position.x,
       this.camera.position.y,
@@ -411,6 +426,10 @@ export class WebGPURenderer implements Renderer {
     this.pipelineCache = new WebGPUPipelineCache();
     this.instancePool = new WebGPUInstanceBufferPool(this.device);
 
+    if (this.autoResize) {
+      this.setupAutoResize();
+    }
+
     this.logger.log("WebGPURenderer initialized successfully.");
   }
 
@@ -546,9 +565,86 @@ export class WebGPURenderer implements Renderer {
     this.currentRenderContext = undefined;
   }
 
+  public resize(width: number, height: number): void {
+    const dpr: number = this.getDevicePixelRatio();
+    this.applyResize(
+      width,
+      height,
+      Math.round(width * dpr),
+      Math.round(height * dpr),
+    );
+  }
+
+  private applyResize(
+    logicalWidth: number,
+    logicalHeight: number,
+    physicalWidth: number,
+    physicalHeight: number,
+  ): void {
+    const width: number = Math.round(physicalWidth);
+    const height: number = Math.round(physicalHeight);
+
+    if (width <= 0 || height <= 0) {
+      return;
+    }
+
+    this.logicalWidth = logicalWidth;
+    this.logicalHeight = logicalHeight;
+    this.canvas.width = width;
+    this.canvas.height = height;
+  }
+
+  private setupAutoResize(): void {
+    this.resize(this.canvas.clientWidth, this.canvas.clientHeight);
+    this.resizeObserver = new ResizeObserver((entries: ResizeObserverEntry[]) =>
+      this.onResizeEntries(entries),
+    );
+    this.resizeObserver.observe(this.canvas);
+  }
+
+  private onResizeEntries(entries: ResizeObserverEntry[]): void {
+    const entry: ResizeObserverEntry | undefined = entries[0];
+
+    if (!entry) {
+      return;
+    }
+
+    const contentBox: ResizeObserverSize = Array.isArray(entry.contentBoxSize)
+      ? entry.contentBoxSize[0]
+      : (entry.contentBoxSize as unknown as ResizeObserverSize);
+
+    const logicalWidth: number = contentBox.inlineSize;
+    const logicalHeight: number = contentBox.blockSize;
+
+    const devicePixelBox: ReadonlyArray<ResizeObserverSize> | undefined =
+      entry.devicePixelContentBoxSize;
+
+    if (devicePixelBox && devicePixelBox[0]) {
+      this.applyResize(
+        logicalWidth,
+        logicalHeight,
+        devicePixelBox[0].inlineSize,
+        devicePixelBox[0].blockSize,
+      );
+      return;
+    }
+
+    const dpr: number = this.getDevicePixelRatio();
+    this.applyResize(
+      logicalWidth,
+      logicalHeight,
+      Math.round(logicalWidth * dpr),
+      Math.round(logicalHeight * dpr),
+    );
+  }
+
+  private getDevicePixelRatio(): number {
+    return typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+  }
+
   private updateCamera(): void {
-    const width: number = this.canvas.width;
-    const height: number = this.canvas.height;
+    const width: number = this.logicalWidth;
+    const height: number = this.logicalHeight;
     this.camera.update(width, height);
     this.globalBindings.set("viewProjection", this.camera.viewProjection);
   }

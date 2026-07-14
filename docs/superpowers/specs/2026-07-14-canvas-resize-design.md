@@ -93,8 +93,11 @@ public resize(width: number, height: number): void {
 
 ### 5. Apps
 
-- `apps/sandbox/src/App.tsx` : retirer `mount.width/height = window.innerWidth/Height` (auto-observe gère). CSS `100vw/100vh` déjà présent.
-- `apps/webgpu/src/index.ts` : retirer `canvas.width/height = window.innerWidth/Height` ; ajouter `canvas.style.width/height = "100vw"/"100vh"` pour que le content-box existe.
+Dans tous les cas on retire seulement le sizing manuel du canvas ; le content-box est déjà fourni par du CSS `100vw/100vh` (inline pour sandbox, feuille de style globale `css/index.css` pour webgpu), donc aucune règle de style à ajouter.
+
+- `apps/sandbox/src/App.tsx` : retirer `mount.width/height = window.innerWidth/Height` (auto-observe gère). CSS `100vw/100vh` déjà inline sur le `<canvas>`.
+- `apps/webgpu/src/material.ts` (**entry active**, référencée par `index.html`) : retirer `canvas.width/height = window.innerWidth/Height`.
+- `apps/webgpu/src/index.ts` (entry alternative) : idem, retirer le sizing manuel.
 
 ## Unités concernées
 
