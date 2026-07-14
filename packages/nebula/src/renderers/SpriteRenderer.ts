@@ -1,6 +1,6 @@
 import { Bound, Mat4, Vec2, Vec4 } from "@atlasjs/math";
 import { Sprite } from "../graphics";
-import { DrawCommand } from "./DrawCommand";
+import { SpriteDrawCommand } from "./DrawCommand";
 
 import { BlendMode, Renderer, RenderState, Sampler, Texture2D } from "../core";
 
@@ -43,7 +43,7 @@ export class SpriteRenderer {
     });
   }
 
-  public buildCommand(sprite: Sprite): DrawCommand {
+  public buildCommand(sprite: Sprite): SpriteDrawCommand {
     const sampler: Sampler = sprite.sampler ?? this.defaultSampler;
     const materialKey: string = this.createMaterialKey(
       sprite.texture,
@@ -58,6 +58,7 @@ export class SpriteRenderer {
     this.updateModelMatrix(sprite, sourceRect, data.model);
 
     return {
+      kind: "sprite",
       sortKey: this.computeSortKey(sprite, materialKey),
       batchKey: this.getBatchId(materialKey),
       texture: sprite.texture,

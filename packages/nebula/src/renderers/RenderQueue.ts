@@ -1,5 +1,6 @@
-import { Renderer, SpriteBatch } from "../core";
-import { DrawCommand } from "./DrawCommand";
+import { Renderer } from "../core";
+import { DrawCommand, SpriteDrawCommand, ShapeDrawCommand } from "./DrawCommand";
+import { SpriteBatcher, ShapeBatcher } from "./Batchers";
 
 export class RenderQueue {
   private readonly commands: DrawCommand[];
@@ -18,28 +19,52 @@ export class RenderQueue {
     );
   }
 
-  public flush(renderer: Renderer, batch: SpriteBatch): void {
+  public flush(
+    renderer: Renderer,
+    sprites: SpriteBatcher,
+    shapes: ShapeBatcher,
+  ): void {
     let i: number = 0;
 
     while (i < this.commands.length) {
       const first: DrawCommand = this.commands[i];
-      batch.begin(first.texture, first.sampler, first.renderState);
-
       let j: number = i;
 
-      // prettier-ignore
-      while (j < this.commands.length && this.commands[j].batchKey === first.batchKey) {
-        const command: DrawCommand = this.commands[j];
-        batch.add(command.model, command.uvRect, command.tint);
-        j++;
+      if (first.kind === "sprite") {
+        sprites.begin(first);
+
+        // prettier-ignore
+        while (j < this.commands.length && this.isSameRun(this.commands[j], "sprite", first.batchKey)) {
+          sprites.add(this.commands[j] as SpriteDrawCommand);
+          j++;
+        }
+
+        sprites.draw(renderer);
+      } else {
+        shapes.begin(first);
+
+        // prettier-ignore
+        while (j < this.commands.length && this.isSameRun(this.commands[j], "shape", first.batchKey)) {
+          shapes.add(this.commands[j] as ShapeDrawCommand);
+          j++;
+        }
+
+        shapes.draw(renderer);
       }
 
-      renderer.drawInstancedBatch(batch);
       i = j;
     }
   }
 
   public clear(): void {
     this.commands.length = 0;
+  }
+
+  private isSameRun(
+    command: DrawCommand,
+    kind: DrawCommand["kind"],
+    batchKey: number,
+  ): boolean {
+    return command.kind === kind && command.batchKey === batchKey;
   }
 }
