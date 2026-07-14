@@ -42,8 +42,8 @@ export class Camera2D implements Camera {
 
     this.view
       .identity()
-      .translate(-this.position.x, -this.position.y, 0)
-      .scale(this.zoom, this.zoom, 1);
+      .scale(this.zoom, this.zoom, 1)
+      .translate(-this.position.x, -this.position.y, 0);
 
     this.viewProjection
       .copy(this.projection)

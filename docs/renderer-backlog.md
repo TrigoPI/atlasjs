@@ -1,10 +1,10 @@
 # Nebula — Backlog / Pistes de travail
 
-> Statut : **backlog** (candidats non planifiés, pas de design validé)
+> Statut : **backlog** (sections A/B/C, candidats non planifiés) + **findings de review confirmés** (sections D/E, audit du 2026-07-14 sur `nebula` / `nebula-webgpu`)
 > Portée : `@atlasjs/nebula` (+ `@atlasjs/nebula-webgpu`, `@atlasjs/editor`)
-> Contexte : le refactor renderer est terminé (voir `docs/renderer-architecture-redesign.md`, 6 phases + dirty-flag + tint/blend par sprite tous faits). Ce doc liste les suites naturelles et la dette repérée pendant ce refactor, pour reprise directe.
+> Contexte : le refactor renderer est terminé (voir `docs/renderer-architecture-redesign.md`, 6 phases + dirty-flag + tint/blend par sprite tous faits). Ce doc liste les suites naturelles et la dette repérée pendant ce refactor, plus les findings d'une passe de review dédiée (D/E), pour reprise directe.
 
-Ordre conseillé en bas du doc.
+Ordre conseillé en bas du doc (worklist priorisée, review fondue).
 
 ---
 
@@ -44,7 +44,7 @@ Ordre conseillé en bas du doc.
 
 ### B1. Cycle de vie des ressources — _le plus « dette »_
 
-- **Constat** : plusieurs caches grossissent sans éviction : `materialCache` + `batchIds` (`SpriteRenderer`), `WebGPUBindingGroupCache`, `WebGPUShaderCache`, `WebGPUPipelineCache`, `instancedPipelines`. Les textures/samplers/geometry ont `destroy()` mais rien ne l'appelle au teardown d'une scène/objet.
+- **Constat** : plusieurs caches grossissent sans éviction : `batchIds` (`SpriteRenderer`), `WebGPUBindingGroupCache`, `WebGPUShaderCache`, `WebGPUPipelineCache`, `instancedPipelines`. Les textures/samplers/geometry ont `destroy()` mais rien ne l'appelle au teardown d'une scène/objet. Review 2026-07 confirme aussi des fuites au teardown du renderer : `defaultSampler` (`SpriteRenderer`), les `SpriteBatch`/`ShapeBatch` du `SceneRenderer` (leur `materialGroup` + buffers) et la géométrie de `createQuad` ne sont jamais `destroy()` (GC quand le device tombe, mais fuite si on recrée des renderers).
 - **Objectif** : passe disposal/éviction/refcount — libérer les ressources GPU quand un nœud/une scène est détruit, borner la croissance des caches (utile pour moteur long-running, scènes dynamiques, hot-reload).
 - **Fichiers** : caches sous `packages/nebula-webgpu/src/caches`, `SpriteRenderer`, cycle de vie des nœuds (`Node.removeChild`/`removeFromParent`).
 - **Portée** : moyenne, transverse.
@@ -64,7 +64,7 @@ Ordre conseillé en bas du doc.
 
 ### B4. Depth test (limite 3D restante, volontairement différée)
 
-- **Constat** : `RenderState.depthTest` et `PassDescriptor.depth` existent mais sont **inertes** (pas de depth attachment).
+- **Constat** : `RenderState.depthTest` et `PassDescriptor.depth` existent mais sont **inertes** (pas de depth attachment). Review 2026-07 : `depthTest` est même threadé dans les **clés de cache pipeline** (`WebGPURenderer.getOrCreatePipeline`, `WebGPUPipeline.createPipelineId`) alors qu'il n'a aucun effet — un caller qui met `depthTest: true` ne voit rien changer (piège silencieux).
 - **Objectif** : depth texture (+ resize), `depthStencil` sur les pipelines keyé par la présence de depth, et faire remonter le `zIndex` dans le z clip-space du VS (aujourd'hui `z=0` partout). Surtout de la prépa 3D ; en 2D le tri painter's fait déjà l'ordre, interactions alpha+depth délicates.
 - **Fichiers** : `WebGPURenderer` (pass + pipelines), shaders instanciés, `RenderState`/`PassDescriptor`.
 - **Portée** : grande. Faible priorité tant que 2D-first.
@@ -73,14 +73,108 @@ Ordre conseillé en bas du doc.
 
 ## C. Quick wins (< 30 min)
 
-- **`Transformable.getWorldPosition()`** renvoie un `worldPosition` **jamais mis à jour** → code mort ou bug latent (`packages/nebula/src/graphics/Transformable.ts`). Décider : le câbler (extraire la translation de `worldMatrix`) ou le supprimer.
+- **`Transformable.getWorldPosition()`** renvoie un `worldPosition` **jamais mis à jour** → code mort ou bug latent (`packages/nebula/src/graphics/Transformable.ts`). Décider : le câbler (extraire la translation de `worldMatrix`, `m[12]`/`m[13]`) ou le supprimer. (Confirmé zéro caller — review 2026-07.)
+- **`Renderer.getViewport()` mort** : déclaré sur `Renderer`, implémenté dans `WebGPURenderer`, re-exposé par `NebulaRenderer`, **jamais appelé** (confirmé zéro caller). Supprimer ou motiver.
+- **`Pipeline` exporté publiquement** (`packages/nebula/src/core/pipeline` via `core/index.ts`) alors que le redesign l'a rendu **artefact interne** (retiré de `draw()`). Seul `WebGPUPipeline` l'implémente, dans le backend. Sortir du core public (ou reloger dans `nebula-webgpu`).
+- **`Color.set(r, g, b, a)`** (`packages/nebula/src/utils/Color.ts`) n'a **pas** de défaut sur `a` alors que tous les `setColor`/`setTint` en ont un → incohérence d'API mineure.
+
+---
+
+## D. Review 2026-07-14 — bugs & pièges (`nebula` / `nebula-webgpu`)
+
+> Passe de review sur les deux packages. Localisations vérifiées. Les 🔴 **P0** produisent un résultat faux ; les 🟠 **P1** ne cassent rien aujourd'hui mais sont des landmines (dette latente, arêtes vives). Le cœur instancié (packing stride/offset, pool par-draw sans aliasing, dirty-flags `Node`, indexation d'anim) a été audité et jugé **sain**.
+
+### D1. Caméra — le culling ne correspond pas à la view matrix (zoom + pan) — 🔴 P0 — ✅ fait
+
+- **Constat** : `Camera2D.update` construisait la view en `translate(-pos).scale(zoom)` (convention `Mat4` **post-multiply**) → un point monde `p` projetait en `zoom·p − pos`, donc la région visible réelle était `p ∈ [pos/zoom, (pos+size)/zoom]`. Mais `getCameraViewport` (`WebGPURenderer`) renvoie `Bound(pos, size/zoom)` : l'extent est bon, l'**origine** était décalée de `pos·(1 − 1/zoom)`. Nul en `zoom = 1` (jamais repéré, la démo tourne en zoom 1) ; en `zoom = 2, pos = (2000,0)` → culling faux de ~1000 px monde (sprites visibles cullés, hors-champ soumis).
+- **Livré** : ordre inversé en `scale(zoom).translate(-pos)` dans `Camera2D.update` → view = `zoom·(p − pos)`, région `[pos, pos + size/zoom]` → `getCameraViewport` devient exact, avec sémantique intuitive (`position` = ancre monde top-left, zoom pivote dessus). Verrouillé par un test unitaire (nouveau harness vitest de `nebula`) : `packages/nebula/test/Camera2D.test.ts` (le `viewProjection` mappe la région cullée sur le cube NDC en zoom+pan). À `zoom = 1` la vue est identique à l'ancienne → aucune régression sur les apps (aucune n'utilise `setZoom`). Reste optionnel : confirmation visuelle en zoom+pan (aucune app n'exerce ce cas aujourd'hui).
+- **Fichiers** : `packages/nebula/src/core/camera/Camera2D.ts` (`update`), + harness `packages/nebula/{vitest.config.ts,package.json}` et test. Cohérent avec `getCameraViewport` (`packages/nebula-webgpu/src/WebGPURenderer.ts`) et la convention `packages/math/src/Mat4.ts`.
+
+### D2. `SpriteSheet.fromGrid` — frames hors-bornes — 🔴 P0
+
+- **Constat** : `for (y = margin; y < texture.height; y += frameHeight + spacing)` (idem `x`) teste le coin **haut-gauche**, pas le coin bas-droit. Sur dimensions non multiples, avec `spacing`/`margin`, une dernière frame déborde de la texture → `SpriteRenderer.updateUVRect` produit `u0 + du > 1` → bord étiré (sampler `clamp-to-edge`). `fromAutoGrid` OK (division exacte).
+- **Objectif** : ne définir que les frames entièrement contenues : `x + frameWidth <= texture.width` et `y + frameHeight <= texture.height`.
+- **Fichiers** : `packages/nebula/src/animations/SpriteSheet.ts` (`fromGrid`).
+- **Portée** : petite.
+
+### D3. `draw()` vs `drawInstancedBatch()` — `renderState` désynchronisé — 🟠 P1
+
+- **Constat** : le chemin de scène est 100 % instancié (`SceneRenderer` → `RenderQueue.flush` → `Batchers` → `drawInstancedBatch`) ; `draw()` générique n'est utilisé que par `apps/webgpu/src/easy-material.ts`. Or `draw()` passe par `WebGPUBinder` (dédup via `WebGPURenderState`) tandis que `drawInstancedBatch` écrit **directement** sur `pass.setPipeline`/`setBindGroup` sans toucher le binder ni `ctx.renderState`. Conséquences : (1) l'optim redundant-bind (Phase 0) ne tourne **jamais** sur un vrai jeu et re-set le bind group global à chaque batch ; (2) **bug latent** : si `draw()` et `drawInstancedBatch()` cohabitent dans une passe (arrivera avec **A4**, materials custom sur nœuds), le binder skippe un `setPipeline`/`setBindGroup` nécessaire car `renderState` reflète un état que l'instancié a déjà écrasé → sortie corrompue.
+- **Objectif** : router `drawInstancedBatch` par le même `WebGPUBinder` (ou au minimum écrire pipeline + bind groups dans `ctx.renderState`). L'optim s'applique alors aux scènes (global set 1×/frame). Lié à **E2**. Vérifier frame pixel-identique.
+- **Fichiers** : `packages/nebula-webgpu/src/WebGPURenderer.ts` (`drawInstancedBatch`/`draw`), `bindings/WebGPUBinder.ts`, `states/WebGPURenderState.ts`.
+- **Portée** : petite/moyenne (méthodes déjà présentes sur le binder).
+
+### D4. `getInstancedStorageLayout` — layout unique partagé — 🟠 P1
+
+- **Constat** : prend un `shader` en paramètre mais cache dans un **champ unique** au 1er appel (`binding = shader.objectDefinition.storage?.binding ?? 0`) et le renvoie ensuite pour tous les shaders instanciés, en ignorant `shader`. Marche car `sprite_instanced.wgsl` et `shape_instanced.wgsl` mettent le storage au même `@group(1) @binding(0)`. Un futur shader instancié avec un autre binding recevrait silencieusement un mauvais layout.
+- **Objectif** : keyer par `storage.binding` (petite `Map`), ou fold dans le `WebGPUPipelineFactory` (**E2**) qui a déjà le shader.
+- **Fichiers** : `packages/nebula-webgpu/src/WebGPURenderer.ts` (`getInstancedStorageLayout`).
+- **Portée** : petite. Pas de trigger avec les 2 built-ins actuels.
+
+### D5. Sort-key — collision `batchKey` sprite ↔ shape — 🟠 P1
+
+- **Constat** : `SpriteRenderer.computeSortKey` = `z·65536 + batchId` (`batchId` = compteur d'alloc de texture, ordre premier-vu) ; `ShapeRenderer.computeSortKey` = `z·65536 + BATCH_IDS[blend]` (0-3). Les deux partagent les 16 bits bas dans une file triée unique → à `zIndex` égal, l'ordre painter de deux objets superposés suit l'ordre d'**allocation de batch** (premier-vu), pas l'ordre de scène ni les changements ultérieurs de z. Déterministe mais surprenant / figé au premier-vu.
+- **Objectif** : au minimum documenter « même z = ordre indéfini pour matériaux/textures différents ». Sinon : sous-clé de stabilité (index de scène) pour départager à z égal, ou namespaces `batchKey` disjoints sprite/shape.
+- **Fichiers** : `packages/nebula/src/renderers/{SpriteRenderer,ShapeRenderer,RenderQueue}.ts`.
+- **Portée** : petite. Impact seulement sur objets superposés à `zIndex` identique.
+
+### D6. `MaterialShaderBuilder` — parsing regex fragile — 🟠 P1
+
+- **Constat** : split des membres du bloc `material { … }` sur `/[,\n;]/` → un type générique avec virgule (`array<f32, 4>`) est coupé au milieu. `MATERIAL_BLOCK = /material\s*\{([\s\S]*?)\}/` s'arrête au **1er `}`** (OK pour une liste plate, KO dès qu'un type imbrique une accolade). Chemin « easy » à surface volontairement réduite.
+- **Objectif** : border avant d'ouvrir les types composés — split respectant `<…>`, ou tokenizer léger ; à défaut, garde-fou + message d'erreur explicite sur types non supportés.
+- **Fichiers** : `packages/nebula-webgpu/src/authoring/MaterialShaderBuilder.ts`.
+- **Portée** : petite.
+
+### D7. `NebulaRenderer.createMaterial` drope le `renderState` — 🟠 P1
+
+- **Constat** : `Renderer.createMaterial(shader, renderState?)` accepte un état de rendu, mais la façade `NebulaRenderer.createMaterial(shader)` délègue **sans** le transmettre → impossible de créer un matériau non-`DEFAULT_RENDER_STATE` via la façade. (Les autres `create*` de `NebulaRenderer` sont des pass-through purs.)
+- **Objectif** : propager `renderState?` (et statuer : la façade doit-elle exister, ou les callers utilisent-ils `renderer` directement ?).
+- **Fichiers** : `packages/nebula/src/NebulaRenderer.ts`.
+- **Portée** : petite.
+
+---
+
+## E. Review 2026-07-14 — refactors structurels (P2)
+
+> Extractions / unifications à fort levier. Pas de bug live, mais coût de changement élevé (et à contre-courant de la philo plugin/extensible pour E3). Chacun prendra son propre plan au moment du fix — pas de rewrite en un coup.
+
+### E1. `WebGPURenderer` god-object (779 l.)
+
+- **Constat** : une classe porte ~8 responsabilités qui évoluent séparément : device/context lifecycle, **canvas + resize HiDPI** (~90 l. cohérentes), frame lifecycle, **build + cache pipelines** (2 chemins, cf. E2), frame globals (camera/clock/uniform), `ResourceFactory` (14 `create*`), draw générique + `bind*`, draw instancié + culling.
+- **Objectif** : extractions incrémentales, chacune shippable seule. En premier **`WebGPUSurface`** (canvas, format, `logicalWidth/Height`, `ResizeObserver`, DPR, `resize`/`applyResize`/`onResizeEntries`) — sortie propre sans couplage. Puis **`WebGPUPipelineFactory`** (E2). Puis, optionnel, **`WebGPUFrameGlobals`** (`globalBindings` + `clock` + `updateCamera`/`updateTime`).
+- **Fichiers** : `packages/nebula-webgpu/src/WebGPURenderer.ts` → nouveaux `WebGPUSurface`, `WebGPUPipelineFactory`, (`WebGPUFrameGlobals`).
+- **Portée** : moyenne, incrémentale.
+
+### E2. Deux systèmes de pipeline en parallèle + clé calculée 2×
+
+- **Constat** : chemin **indexé** (`getOrCreatePipeline`/`buildPipeline` → `WebGPUPipeline` + `WebGPUPipelineCache`) et chemin **instancié** (`getInstancedPipeline` → `GPURenderPipeline` brut dans une `Map` maison `instancedPipelines`, clé au format différent, bloc `fragment`/`blend`/`cull` dupliqué de `WebGPUPipeline`). De plus la clé de cache indexée est assemblée inline dans `WebGPURenderer` **et** recalculée dans `WebGPUPipeline.createPipelineId()` → deux sources pour la même clé, dérive silencieuse possible (collision ou miss permanent).
+- **Objectif** : un `WebGPUPipelineFactory` autorité unique pour les deux variantes (`variant` indexé / instancié = sans vertex buffer + storage layout) ; clé calculée **une seule fois** (`WebGPUPipeline.computeId(...)` statique, réutilisée comme `id` ET clé de cache). Absorbe **D4**. Débloque l'amincissement **E1**, lié à **D3**.
+- **Fichiers** : `packages/nebula-webgpu/src/WebGPURenderer.ts`, `pipeline/WebGPUPipeline.ts`, `caches/WebGPUPipelineCache.ts`.
+- **Portée** : moyenne. Plus fort levier structurel.
+
+### E3. Dispatch de node câblé à 6 endroits + duplication renderers
+
+- **Constat** : ajouter un kind (texte **A2**, particules) impose d'éditer 6 sites hardcodés à 2 kinds : l'union `DrawCommand`, le `instanceof` de `SceneRenderer.collect`, la construction des batchers, le `if/else` de `RenderQueue.flush`, les deux `Batcher` structurellement identiques, et `SpriteRenderer`/`ShapeRenderer` qui dupliquent `RENDER_STATES` (octet pour octet), les constantes de z-packing, `computeSortKey` et le pattern `getOrCreateRenderData` (WeakMap).
+- **Objectif** : seam `NodeRenderer { matches(node); buildCommand(node) }` + registre `Map<kind, Batcher>` dans `RenderQueue` + `NodeRendererBase` partagé (RENDER_STATES, z-packing, cache). **Garder `DrawCommand` concret** (les batchers ont besoin des champs typés) — le seam va au *dispatch*, pas à la donnée. À faire **avant A2**.
+- **Fichiers** : `packages/nebula/src/renderers/{SceneRenderer,RenderQueue,Batchers,SpriteRenderer,ShapeRenderer,DrawCommand}.ts`.
+- **Portée** : moyenne.
 
 ---
 
 ## Ordre conseillé
 
-1. ~~**A1 — formes/primitives**~~ ✅ fait (voir `docs/shapes-primitives-design.md`).
-2. **A2 — texte** (gros morceau, l'archi est prête ; se branche comme 3ᵉ batcher sur la couche render posée en A1).
-3. **B1 — cycle de vie des ressources** (à traiter dès que les scènes deviennent dynamiques / avant l'éditeur).
-4. **B2 — éditeur** (session dédiée, si l'éditeur est une cible).
-5. Le reste (A3/A4/C) au fil de l'eau ; **B4 (depth)** seulement si la 3D redevient prioritaire. (~~B3 resize~~ ✅ fait, ~~A1 formes~~ ✅ fait.)
+Worklist priorisée (review 2026-07 fondue). 🔴 P0 (bugs) d'abord, puis 🟠 P1 + refactors E par levier, puis suites/dette existantes.
+
+1. ~~**D1 — bug caméra zoom+pan**~~ ✅ fait (test `packages/nebula/test/Camera2D.test.ts`).
+2. **D2 — `fromGrid` hors-bornes** 🔴.
+3. **C — quick wins** (`getWorldPosition`, `getViewport` mort, export `Pipeline`, `Color.set`).
+4. **D7 — `createMaterial` renderState** (trivial).
+5. **D3 — unifier l'instancié via `WebGPUBinder`** 🟠 (supprime optim morte + bug latent, prépare E).
+6. **E2 — `WebGPUPipelineFactory` + clé unique** (absorbe D4 ; plus fort levier).
+7. **E1 — split `WebGPURenderer`** (`WebGPUSurface` d'abord, puis fold E2, puis `WebGPUFrameGlobals`).
+8. **E3 — seam `NodeRenderer` + dédup renderers** — **avant A2**.
+9. **D5 / D6** — sort-key (doc/fix), `MaterialShaderBuilder` — au fil de l'eau.
+10. **A2 — texte** (se branche comme batcher sur le seam E3).
+11. **B1 — cycle de vie des ressources** (dès scènes dynamiques / avant l'éditeur).
+12. **B2 — éditeur** (session dédiée, si cible).
+13. Le reste (A3/A4) au fil de l'eau ; **B4 (depth)** seulement si la 3D redevient prioritaire. (~~A1 formes~~, ~~B3 resize~~ ✅ faits.)
