@@ -1,4 +1,4 @@
-import { Bound, Box2 } from "@atlasjs/math";
+import { Bound } from "@atlasjs/math";
 
 import { Camera } from "../camera";
 import { Geometry } from "../geometry";
@@ -18,7 +18,6 @@ export interface Renderer extends Disposable, ResourceFactory {
 
   resize(width: number, height: number): void;
   getCameraViewport(): Bound;
-  getViewport(): Box2;
   beginFrame(pass?: PassDescriptor): void;
   endFrame(): void;
   draw(geometry: Geometry, material: Material, bindings: BindingGroup): void;

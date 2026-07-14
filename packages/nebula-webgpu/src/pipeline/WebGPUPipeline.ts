@@ -1,9 +1,9 @@
-import { Pipeline, VertexBufferLayout } from "@atlasjs/nebula";
+import { VertexBufferLayout } from "@atlasjs/nebula";
 import { WebGPUPipelineDescriptor } from "../webgpu-types";
 import { WebGPUGeometry } from "../geometry";
 import { WebGPUBlend, WebGPUMapper } from "../utils";
 
-export class WebGPUPipeline implements Pipeline {
+export class WebGPUPipeline {
   public readonly __kind: string = "webgpu";
   public readonly id: string;
   public readonly descriptor: WebGPUPipelineDescriptor;

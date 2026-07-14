@@ -71,12 +71,14 @@ Ordre conseillé en bas du doc (worklist priorisée, review fondue).
 
 ---
 
-## C. Quick wins (< 30 min)
+## C. Quick wins (< 30 min) — ✅ fait
 
-- **`Transformable.getWorldPosition()`** renvoie un `worldPosition` **jamais mis à jour** → code mort ou bug latent (`packages/nebula/src/graphics/Transformable.ts`). Décider : le câbler (extraire la translation de `worldMatrix`, `m[12]`/`m[13]`) ou le supprimer. (Confirmé zéro caller — review 2026-07.)
-- **`Renderer.getViewport()` mort** : déclaré sur `Renderer`, implémenté dans `WebGPURenderer`, re-exposé par `NebulaRenderer`, **jamais appelé** (confirmé zéro caller). Supprimer ou motiver.
-- **`Pipeline` exporté publiquement** (`packages/nebula/src/core/pipeline` via `core/index.ts`) alors que le redesign l'a rendu **artefact interne** (retiré de `draw()`). Seul `WebGPUPipeline` l'implémente, dans le backend. Sortir du core public (ou reloger dans `nebula-webgpu`).
-- **`Color.set(r, g, b, a)`** (`packages/nebula/src/utils/Color.ts`) n'a **pas** de défaut sur `a` alors que tous les `setColor`/`setTint` en ont un → incohérence d'API mineure.
+- **`Transformable.getWorldPosition()`** — **câblé** : renvoie la translation réelle du `worldMatrix` (`m[12]`/`m[13]`) dans le `worldPosition` réutilisé (au lieu d'un vecteur figé à `(0,0)`). Verrouillé par `packages/nebula/test/Transformable.test.ts` (position monde d'un enfant composée via le parent).
+- **`Renderer.getViewport()`** — **supprimé** de l'interface `Renderer`, de `WebGPURenderer` et de `NebulaRenderer` (mort, zéro caller ; imports `Box2` retirés au passage).
+- **`Pipeline`** (interface) — **supprimé** du core (`core/pipeline/` retiré, délisté de `core/index.ts`). `WebGPUPipeline` ne l'`implements` plus, et les guards morts `assertWebGPUPipeline`/`asWebGPUPipeline` sont supprimés. `PipelineDescriptor` (core-types) conservé — toujours utilisé par `WebGPUPipelineDescriptor`.
+- **`Color.set`** — défaut `a = 1` ajouté (aligné sur `setColor`/`setTint`). Verrouillé par `packages/nebula/test/Color.test.ts`.
+
+Vérif : `pnpm --filter @atlasjs/nebula test` (4 tests verts) + build des deux packages OK.
 
 ---
 
@@ -166,7 +168,7 @@ Worklist priorisée (review 2026-07 fondue). 🔴 P0 (bugs) d'abord, puis 🟠 P
 
 1. ~~**D1 — bug caméra zoom+pan**~~ ✅ fait (test `packages/nebula/test/Camera2D.test.ts`).
 2. ~~**D2 — `fromGrid` hors-bornes**~~ ✅ fait (test `packages/nebula/test/SpriteSheet.test.ts`).
-3. **C — quick wins** (`getWorldPosition`, `getViewport` mort, export `Pipeline`, `Color.set`).
+3. ~~**C — quick wins**~~ ✅ fait (`getWorldPosition` câblé, `getViewport`/`Pipeline` supprimés, `Color.set` défaut).
 4. **D7 — `createMaterial` renderState** (trivial).
 5. **D3 — unifier l'instancié via `WebGPUBinder`** 🟠 (supprime optim morte + bug latent, prépare E).
 6. **E2 — `WebGPUPipelineFactory` + clé unique** (absorbe D4 ; plus fort levier).

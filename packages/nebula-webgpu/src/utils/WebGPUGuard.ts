@@ -1,5 +1,4 @@
 import { WebGPUBindingGroup, WebGPUBindingGroupDefinition } from "../bindings";
-import { WebGPUPipeline } from "../pipeline";
 import { WebGPUGeometry } from "../geometry";
 import { WebGPUTexture2D, WebGPUSampler } from "../resources";
 import { WebGPUShader, WebGPUMaterial } from "../material";
@@ -11,7 +10,6 @@ import {
   Geometry,
   InstancedBatch,
   Material,
-  Pipeline,
   Sampler,
   Shader,
   SpriteBatch,
@@ -56,14 +54,6 @@ export class WebGPUGuard {
   ): asserts binding is WebGPUBindingGroup {
     if (binding.__kind !== "webgpu") {
       throw new Error("Expected a WebGPUBindingGroup instance.");
-    }
-  }
-
-  public static assertWebGPUPipeline(
-    pipeline: Pipeline,
-  ): asserts pipeline is WebGPUPipeline {
-    if (pipeline.__kind !== "webgpu") {
-      throw new Error("Expected a WebGPUPipeline instance.");
     }
   }
 
@@ -115,14 +105,6 @@ export class WebGPUGuard {
     }
 
     return <WebGPUMaterial>material;
-  }
-
-  public static asWebGPUPipeline(pipeline: Pipeline): WebGPUPipeline {
-    if (pipeline.__kind !== "webgpu") {
-      throw new Error("Expected a WebGPUPipeline instance.");
-    }
-
-    return <WebGPUPipeline>pipeline;
   }
 
   public static asWebGPUTexture2D(texture: Texture2D): WebGPUTexture2D {

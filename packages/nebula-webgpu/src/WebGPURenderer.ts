@@ -1,4 +1,4 @@
-import { Bound, Box2 } from "@atlasjs/math";
+import { Bound } from "@atlasjs/math";
 import { Clock, Logger, createLogger } from "@atlasjs/utils";
 
 import { WebGPUBlend, WebGPUGuard } from "./utils";
@@ -126,10 +126,6 @@ export class WebGPURenderer implements Renderer {
     this.pipelineCache.destroy();
     this.instancePool.destroy();
     this.instancedPipelines.clear();
-  }
-
-  public getViewport(): Box2 {
-    return Box2.create(this.logicalWidth, this.logicalHeight);
   }
 
   public getCameraViewport(): Bound {

@@ -1,5 +1,3 @@
-import { Box2 } from "@atlasjs/math";
-
 import { SceneGraph } from "./scene";
 import { SceneRenderer } from "./renderers";
 
@@ -28,10 +26,6 @@ export class NebulaRenderer {
 
   public get camera(): Camera2D {
     return this.renderer.camera as Camera2D;
-  }
-
-  public getViewport(): Box2 {
-    return this.renderer.getViewport();
   }
 
   public resize(width: number, height: number): void {

@@ -27,7 +27,8 @@ export class Transformable {
   }
 
   public getWorldPosition(): Vec2 {
-    return this.worldPosition;
+    const m: Float32Array = this.worldMatrix.buffer;
+    return this.worldPosition.set(m[12], m[13]);
   }
 
   public setPosition(x: number, y: number): this {
