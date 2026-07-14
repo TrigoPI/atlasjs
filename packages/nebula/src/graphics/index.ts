@@ -1,3 +1,5 @@
+export * from "./Circle";
+export * from "./Line";
 export * from "./Node";
 export * from "./Rect";
 export * from "./Shape";
