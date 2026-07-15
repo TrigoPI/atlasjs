@@ -1,3 +1,4 @@
+export * from "./actions";
 export * from "./Input";
 export * from "./InputPlugin";
 export * from "./Key";
