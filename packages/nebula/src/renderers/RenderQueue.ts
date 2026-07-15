@@ -1,12 +1,18 @@
 import { Renderer } from "../core";
-import { DrawCommand, SpriteDrawCommand, ShapeDrawCommand } from "./DrawCommand";
-import { SpriteBatcher, ShapeBatcher } from "./Batchers";
+import { DrawCommand } from "./DrawCommand";
+import { Batcher } from "./NodeRenderer";
 
 export class RenderQueue {
   private readonly commands: DrawCommand[];
+  private readonly batchers: Map<string, Batcher>;
 
   public constructor() {
     this.commands = [];
+    this.batchers = new Map();
+  }
+
+  public register(kind: DrawCommand["kind"], batcher: Batcher): void {
+    this.batchers.set(kind, batcher);
   }
 
   public submit(command: DrawCommand): void {
@@ -14,44 +20,33 @@ export class RenderQueue {
   }
 
   public sort(): void {
-    this.commands.sort(
-      (a: DrawCommand, b: DrawCommand) => a.sortKey - b.sortKey,
-    );
+    this.commands.sort((a: DrawCommand, b: DrawCommand) => a.sortKey - b.sortKey);
   }
 
-  public flush(
-    renderer: Renderer,
-    sprites: SpriteBatcher,
-    shapes: ShapeBatcher,
-  ): void {
+  public flush(renderer: Renderer): void {
     let i: number = 0;
 
     while (i < this.commands.length) {
       const first: DrawCommand = this.commands[i];
-      let j: number = i;
+      const batcher: Batcher | undefined = this.batchers.get(first.kind);
 
-      if (first.kind === "sprite") {
-        sprites.begin(first);
-
-        // prettier-ignore
-        while (j < this.commands.length && this.isSameRun(this.commands[j], "sprite", first.batchKey)) {
-          sprites.add(this.commands[j] as SpriteDrawCommand);
-          j++;
-        }
-
-        sprites.draw(renderer);
-      } else {
-        shapes.begin(first);
-
-        // prettier-ignore
-        while (j < this.commands.length && this.isSameRun(this.commands[j], "shape", first.batchKey)) {
-          shapes.add(this.commands[j] as ShapeDrawCommand);
-          j++;
-        }
-
-        shapes.draw(renderer);
+      if (!batcher) {
+        i++;
+        continue;
       }
 
+      batcher.begin(first);
+
+      let j: number = i;
+      while (
+        j < this.commands.length &&
+        this.isSameRun(this.commands[j], first.kind, first.batchKey)
+      ) {
+        batcher.add(this.commands[j]);
+        j++;
+      }
+
+      batcher.draw(renderer);
       i = j;
     }
   }
