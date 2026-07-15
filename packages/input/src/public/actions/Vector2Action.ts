@@ -25,8 +25,8 @@ export class Vector2Action extends InputAction {
       (input.isDown(this.composite.left) ? 1 : 0);
 
     const y: number =
-      (input.isDown(this.composite.up) ? 1 : 0) -
-      (input.isDown(this.composite.down) ? 1 : 0);
+      (input.isDown(this.composite.down) ? 1 : 0) -
+      (input.isDown(this.composite.up) ? 1 : 0);
 
     this.current.set(x, y);
   }

@@ -27,16 +27,16 @@ export class TestScript extends AtlasScript {
   private readonly speed: number = 250;
 
   public onCreate(): void {
+    const actions = this.addComponent(PlayerInput, controls);
+
     this.transform = this.addComponent(Transform2DComponent);
     this.rigidbody = this.addComponent(RigidBody2DComponent);
 
-    this.rigidbody.type = "kinematic";
-
-    this.transform.setScale(3, 3).setPosition(400, 300);
-
-    const actions = this.addComponent(PlayerInput, controls);
     this.move = actions.get("move");
     this.boost = actions.get("boost");
+
+    this.rigidbody.type = "kinematic";
+    this.transform.setScale(3, 3).setPosition(400, 300);
   }
 
   public onUpdate(dt: number): void {
