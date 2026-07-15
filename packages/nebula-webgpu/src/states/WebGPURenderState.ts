@@ -1,10 +1,9 @@
 import { WebGPUGeometry } from "../geometry";
 import { WebGPUShader } from "../material";
-import { WebGPUPipeline } from "../pipeline";
 import { WebGPUVertexBuffer, WebGPUIndexBuffer } from "../buffers";
 
 export class WebGPURenderState {
-  public pipeline?: WebGPUPipeline;
+  public pipeline?: GPURenderPipeline;
   public shader?: WebGPUShader;
   public geometry?: WebGPUGeometry;
   public vertexBuffer?: WebGPUVertexBuffer;
