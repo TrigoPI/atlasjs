@@ -1,3 +1,4 @@
+import { ServiceRegistry } from "@atlasjs/core";
 import { Entity, NexusWorld } from "@atlasjs/nexus";
 
 import { RuntimeScriptContext } from "./RuntimeScriptContext";
@@ -15,12 +16,14 @@ export class ScriptManager {
   private readonly recordsByEntity: Map<Entity, Set<ScriptID>>;
   private readonly idGenerator: IncrementalScriptIdGenerator;
   private readonly world: NexusWorld;
+  private readonly services: ServiceRegistry;
 
   private readonly pendingCreate: ScriptID[];
   private readonly pendingDestroy: ScriptID[];
 
-  public constructor(world: NexusWorld) {
+  public constructor(world: NexusWorld, services: ServiceRegistry) {
     this.world = world;
+    this.services = services;
 
     this.pendingCreate = [];
     this.pendingDestroy = [];
@@ -38,6 +41,7 @@ export class ScriptManager {
     const context: RuntimeScriptContext = new RuntimeScriptContext(
       entityId,
       this.world,
+      this.services,
     );
 
     instance.__bindContext(context);

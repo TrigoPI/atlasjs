@@ -153,6 +153,7 @@ When using the `superpowers` plugin skills (e.g. `brainstorming`, `writing-plans
 
 - Do **not** commit automatically. Leave changes staged/unstaged for the user to review and commit themselves, unless they explicitly ask for a commit.
 - Write design/spec documents directly into `docs/` (flat), not into a nested `docs/superpowers/specs/` folder.
+- If the `superpowers` plugin is used and the session started in French, always reply in French for the entire main conversation.
 
 You can use the agent `architect-reviewer` and `code-reviewer` for code review
 

@@ -1,10 +1,16 @@
 import SwordImage from "../../assets/game/swords/Iicon_32_01.png";
+import SeaLionImage from "../../assets/sealion.png";
 
 import { type SceneContext, Scene } from "@atlasjs/core";
 import { type Entity, type NexusWorld, NEXUS } from "@atlasjs/nexus";
-import { ScriptManager, SCRIPT_MANAGER, SpriteRender } from "@atlasjs/gameplay";
-
 import { TestScript } from "./scripts/TestScript";
+
+import {
+  ScriptManager,
+  SCRIPT_MANAGER,
+  SpriteRender,
+  Transform2D,
+} from "@atlasjs/gameplay";
 
 import {
   type NebulaRenderer,
@@ -29,14 +35,23 @@ export class EcsScene extends Scene {
       width: swordImage.width,
     });
 
+    const seaLionImage: ImageBitmap = await this.getImage(SeaLionImage);
+    const seaLionTexture: Texture2D = nebula.createTexture2D({
+      source: seaLionImage,
+      height: seaLionImage.height,
+      width: seaLionImage.width,
+    });
+
     const player1: Entity = nexus.createEntity();
     const player2: Entity = nexus.createEntity();
 
     nexus.addComponent(player1, SpriteRender, swordTexture);
-    nexus.addComponent(player2, SpriteRender, swordTexture);
+
+    nexus.addComponent(player2, SpriteRender, seaLionTexture);
+    nexus.addComponent(player2, Transform2D);
 
     scriptManager.attach(player1, TestScript);
-    scriptManager.attach(player2, TestScript);
+    // scriptManager.attach(player2, TestScript);
   }
 
   private async getImage(src: string): Promise<ImageBitmap> {

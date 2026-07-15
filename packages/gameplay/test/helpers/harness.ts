@@ -1,4 +1,4 @@
-import { Engine, Plugin, ServiceToken } from "@atlasjs/core";
+import { Engine, Plugin, ServiceRegistry, ServiceToken } from "@atlasjs/core";
 import { NEXUS, NexusPlugin, NexusWorld } from "@atlasjs/nexus";
 import { NEBULA_RENDERER } from "@atlasjs/nebula";
 import { InertialPlugin } from "@atlasjs/inertia";
@@ -34,6 +34,7 @@ export interface Harness {
   world: NexusWorld;
   physics: FakePhysicsWorld;
   scripts: ScriptManager;
+  services: ServiceRegistry;
   /** Runs one frame carrying `ticks` fixed sub-steps (+ half a step of slack). */
   frame(ticks?: number): void;
 }
@@ -66,6 +67,7 @@ export async function createHarness(): Promise<Harness> {
     world,
     physics,
     scripts,
+    services: engine.services,
     frame: (ticks: number = 1): void => onTick!(ticks * FIXED + FIXED * 0.5),
   };
 }

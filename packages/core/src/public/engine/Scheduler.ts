@@ -251,6 +251,7 @@ export class Scheduler {
       update: new LaneSchedulerImpl("update"),
       render: new LaneSchedulerImpl("render"),
     };
+
     this.fixed = this.lanes.fixed;
     this.update = this.lanes.update;
     this.render = this.lanes.render;

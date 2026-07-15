@@ -12,11 +12,13 @@ import { ScriptManager } from "./scripting";
 import {
   PhysicsPullSystem,
   PhysicsPushSystem,
+  PlayerInputSystem,
   SpriteRenderSystem,
 } from "./systems";
 
 import {
   PhysicsBodyRef,
+  PlayerInput,
   RigidBody2D,
   SpriteRender,
   Transform2D,
@@ -45,17 +47,19 @@ export class GameplayPlugin extends Plugin {
     const nebula: NebulaRenderer = await engine.services.wait(NEBULA_RENDERER);
     const inertia: PhysicsWorld = await engine.services.wait(INERTIAL_ENGINE);
 
-    this.scriptManager = new ScriptManager(world);
+    this.scriptManager = new ScriptManager(world, engine.services);
 
     const physicsPushSystem: PhysicsPushSystem = new PhysicsPushSystem(inertia);
     const physicsPullSystem: PhysicsPullSystem = new PhysicsPullSystem();
     const spriteRenderSystem: SpriteRenderSystem = new SpriteRenderSystem(nebula);
+    const playerInputSystem: PlayerInputSystem = new PlayerInputSystem(engine.services);
 
     world
       .defineComponent(RigidBody2D)
       .defineComponent(Transform2D)
       .defineComponent(SpriteRender)
-      .defineComponent(PhysicsBodyRef);
+      .defineComponent(PhysicsBodyRef)
+      .defineComponent(PlayerInput);
 
     this.unsubscribers.push(
       world.onRemove(PhysicsBodyRef, (_entity: Entity, ref: PhysicsBodyRef) => {
@@ -79,13 +83,9 @@ export class GameplayPlugin extends Plugin {
     );
 
     this.handles.push(
-      registerSystem(fixed, world, physicsPushSystem, {
-        name: "gameplay:physics-push",
-        stage: "PhysicsRequest",
-      }),
-      registerSystem(fixed, world, physicsPullSystem, {
-        name: "gameplay:physics-pull",
-        stage: "PhysicsWriteback",
+      registerSystem(update, world, playerInputSystem, {
+        name: "gameplay:player-input",
+        stage: "Early",
       }),
     );
 
@@ -93,6 +93,17 @@ export class GameplayPlugin extends Plugin {
       update.add((ctx: StepContext) => this.scriptManager.update(ctx.dt), {
         name: "gameplay:script-update",
         stage: "Logic",
+      }),
+    );
+
+    this.handles.push(
+      registerSystem(fixed, world, physicsPushSystem, {
+        name: "gameplay:physics-push",
+        stage: "PhysicsRequest",
+      }),
+      registerSystem(fixed, world, physicsPullSystem, {
+        name: "gameplay:physics-pull",
+        stage: "PhysicsWriteback",
       }),
     );
 
