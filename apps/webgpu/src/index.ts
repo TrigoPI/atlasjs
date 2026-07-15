@@ -134,7 +134,7 @@ async function getImage(src: string): Promise<ImageBitmap> {
   const circle: Circle = new Circle(70);
   circle.setColor(0.9, 0.3, 0.3, 1).setPosition(330, 130).setZIndex(1);
 
-  const line: Line = new Line(80, 320, 360, 250, 8);
+  const line: Line = new Line(80, 320, 360, 250, 1);
   line.setColor(0.2, 0.9, 0.4, 1).setZIndex(2);
 
   nebula.scene.addChild(bgRect);

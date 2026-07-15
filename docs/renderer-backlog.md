@@ -136,12 +136,11 @@ Vérif : `pnpm --filter @atlasjs/nebula test` (4 tests verts) + build des deux p
 
 > Extractions / unifications à fort levier. Pas de bug live, mais coût de changement élevé (et à contre-courant de la philo plugin/extensible pour E3). Chacun prendra son propre plan au moment du fix — pas de rewrite en un coup.
 
-### E1. `WebGPURenderer` god-object (779 l.)
+### E1. `WebGPURenderer` god-object (779 l.) — ✅ fait
 
-- **Constat** : une classe porte ~8 responsabilités qui évoluent séparément : device/context lifecycle, **canvas + resize HiDPI** (~90 l. cohérentes), frame lifecycle, **build + cache pipelines** (2 chemins, cf. E2), frame globals (camera/clock/uniform), `ResourceFactory` (14 `create*`), draw générique + `bind*`, draw instancié + culling.
-- **Objectif** : extractions incrémentales, chacune shippable seule. En premier **`WebGPUSurface`** (canvas, format, `logicalWidth/Height`, `ResizeObserver`, DPR, `resize`/`applyResize`/`onResizeEntries`) — sortie propre sans couplage. Puis **`WebGPUPipelineFactory`** (E2). Puis, optionnel, **`WebGPUFrameGlobals`** (`globalBindings` + `clock` + `updateCamera`/`updateTime`).
-- **Fichiers** : `packages/nebula-webgpu/src/WebGPURenderer.ts` → nouveaux `WebGPUSurface`, `WebGPUPipelineFactory`, (`WebGPUFrameGlobals`).
-- **Portée** : moyenne, incrémentale.
+- **Constat** : une classe portait ~8 responsabilités qui évoluent séparément : device/context lifecycle, **canvas + resize HiDPI** (~90 l. cohérentes), frame lifecycle, **build + cache pipelines** (2 chemins, cf. E2), frame globals (camera/clock/uniform), `ResourceFactory` (14 `create*`), draw générique + `bind*`, draw instancié + culling.
+- **Livré** : extractions incrémentales successives. **`WebGPUPipelineFactory`** (E2, fait) a sorti la construction/cache des pipelines. Puis **`WebGPUSurface`** (`surface/WebGPUSurface.ts` : canvas, `logicalWidth/Height`, `autoResize`, `ResizeObserver`, DPR, `resize`/`applyResize`/`onResizeEntries`/`getDevicePixelRatio` — le renderer délègue `resize` et lit `surface.logicalWidth/Height` dans `getCameraViewport`/frame update, `destroy` appelle `surface.dispose`). Puis **`WebGPUFrameGlobals`** (`frame/WebGPUFrameGlobals.ts` : `globalBindings` + `clock`, `update(camera, w, h)` qui pose `viewProjection`+`time`, getter `bindings` — le `globalBindingsDefinition` reste construit dans `init()` et passé au constructeur ; `beginFrame` délègue, draws lisent `frameGlobals.bindings`). Toutes les extractions behavior-preserving (build + preview identique). **Résiduel** : `WebGPURenderer` ≈ **540 l.** (device/context lifecycle + `ResourceFactory` + soumission de draw + culling), depuis 779. Suites possibles restantes (non planifiées) : sortir `ResourceFactory` (14 `create*`) et le chemin de draw/culling si on veut aller plus loin.
+- **Fichiers** : `packages/nebula-webgpu/src/WebGPURenderer.ts`, `surface/WebGPUSurface.ts` (+ barrel), `frame/WebGPUFrameGlobals.ts` (+ barrel), `pipeline/WebGPUPipelineFactory.ts` (E2).
 
 ### E2. Deux systèmes de pipeline en parallèle + clé calculée 2× — ✅ fait
 
@@ -168,7 +167,7 @@ Worklist priorisée (review 2026-07 fondue). 🔴 P0 (bugs) d'abord, puis 🟠 P
 4. ~~**D7 — `createMaterial` renderState**~~ ✅ fait (test `packages/nebula/test/NebulaRenderer.test.ts`).
 5. ~~**D3 — unifier l'instancié via `WebGPUBinder`**~~ ✅ fait (test `packages/nebula-webgpu/test/WebGPUBinder.test.ts`).
 6. ~~**E2 — `WebGPUPipelineFactory` + clé unique**~~ ✅ fait (absorbe D4 ; test `packages/nebula-webgpu/test/WebGPUPipeline.test.ts`).
-7. **E1 — split `WebGPURenderer`** (`WebGPUSurface` d'abord, puis fold E2, puis `WebGPUFrameGlobals`).
+7. ~~**E1 — split `WebGPURenderer`**~~ ✅ fait (`WebGPUSurface` + `WebGPUFrameGlobals` extraits ; renderer 779 → ~540 l.).
 8. **E3 — seam `NodeRenderer` + dédup renderers** — **avant A2**.
 9. **D5 / D6** — sort-key (doc/fix), `MaterialShaderBuilder` — au fil de l'eau.
 10. **A2 — texte** (se branche comme batcher sur le seam E3).
