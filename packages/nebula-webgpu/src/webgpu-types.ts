@@ -2,10 +2,10 @@ import { WebGPUShader } from "./material";
 import { WebGPUGeometry } from "./geometry";
 
 import {
-  PipelineDescriptor,
+  BlendMode,
+  CullMode,
   RenderState,
   TextureFormat,
-  VertexLayoutDescriptor,
   UniformType,
   UniformPropertyLayout,
 } from "@atlasjs/nebula";
@@ -28,21 +28,27 @@ export type WebGPURenderContextOptions = {
   format: GPUTextureFormat;
 };
 
-export type WebGPUPipelineCacheDescriptor = {
-  shader: WebGPUShader;
-  vertexLayout: VertexLayoutDescriptor;
-  format: GPUTextureFormat;
-  topology?: GPUPrimitiveTopology;
-  renderState?: RenderState;
+export type PipelineKeySpec = {
+  readonly variant: "indexed" | "instanced";
+  readonly shaderId: string;
+  readonly format: GPUTextureFormat;
+  readonly blend: BlendMode;
+  readonly cull: CullMode;
+  readonly depthTest: boolean;
+  readonly topology: GPUPrimitiveTopology;
+  readonly layoutId?: string;
+  readonly hasMaterial?: boolean;
 };
 
-export type WebGPUPipelineDescriptor = PipelineDescriptor & {
-  shader: WebGPUShader;
-  geometry: WebGPUGeometry;
-  format: GPUTextureFormat;
-  topology: GPUPrimitiveTopology;
-  layout?: GPUPipelineLayout;
-  bindGroupLayouts?: ReadonlyArray<GPUBindGroupLayout>;
+export type WebGPUPipelineDescriptor = {
+  readonly variant: "indexed" | "instanced";
+  readonly shader: WebGPUShader;
+  readonly renderState: RenderState;
+  readonly format: GPUTextureFormat;
+  readonly topology: GPUPrimitiveTopology;
+  readonly layout: GPUPipelineLayout;
+  readonly bindGroupLayouts: ReadonlyArray<GPUBindGroupLayout>;
+  readonly geometry?: WebGPUGeometry;
 };
 
 export type GlobalBindingDefinition = {

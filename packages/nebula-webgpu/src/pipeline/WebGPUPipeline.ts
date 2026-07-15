@@ -1,33 +1,31 @@
-import { VertexBufferLayout } from "@atlasjs/nebula";
-import { WebGPUPipelineDescriptor } from "../webgpu-types";
+import { PipelineKeySpec, WebGPUPipelineDescriptor } from "../webgpu-types";
 import { WebGPUGeometry } from "../geometry";
 import { WebGPUBlend, WebGPUMapper } from "../utils";
 
 export class WebGPUPipeline {
   public readonly __kind: string = "webgpu";
-  public readonly id: string;
   public readonly descriptor: WebGPUPipelineDescriptor;
   public readonly pipeline: GPURenderPipeline;
-  public readonly geometry: WebGPUGeometry;
+  public readonly geometry?: WebGPUGeometry;
 
   private readonly bindGroupLayouts: ReadonlyArray<GPUBindGroupLayout>;
 
   public constructor(device: GPUDevice, descriptor: WebGPUPipelineDescriptor) {
-    const layout: VertexBufferLayout = descriptor.geometry.vertexBuffer.layout;
-    const webgpuBufferLayout: GPUVertexBufferLayout =
-      WebGPUMapper.toGPUVertexBufferLayout(layout);
+    // prettier-ignore
+    const buffers: GPUVertexBufferLayout[] = descriptor.geometry
+      ? [WebGPUMapper.toGPUVertexBufferLayout(descriptor.geometry.vertexBuffer.layout)]
+      : [];
 
     this.geometry = descriptor.geometry;
     this.descriptor = descriptor;
-    this.bindGroupLayouts = descriptor.bindGroupLayouts ?? [];
-    this.id = this.createPipelineId();
+    this.bindGroupLayouts = descriptor.bindGroupLayouts;
 
     this.pipeline = device.createRenderPipeline({
-      layout: descriptor.layout ?? "auto",
+      layout: descriptor.layout,
       vertex: {
         entryPoint: this.descriptor.shader.vertexEntryPoint,
         module: this.descriptor.shader.module,
-        buffers: [webgpuBufferLayout],
+        buffers,
       },
       fragment: {
         entryPoint: this.descriptor.shader.fragmentEntryPoint,
@@ -49,21 +47,22 @@ export class WebGPUPipeline {
   public destroy(): void {}
 
   public getBindGroupLayout(index: number): GPUBindGroupLayout {
-    return this.bindGroupLayouts[index] ?? this.pipeline.getBindGroupLayout(index);
+    return (
+      this.bindGroupLayouts[index] ?? this.pipeline.getBindGroupLayout(index)
+    );
   }
 
-  private createPipelineId(): string {
-    const state: WebGPUPipelineDescriptor["renderState"] =
-      this.descriptor.renderState;
-
+  public static computeKey(spec: PipelineKeySpec): string {
     return [
-      this.descriptor.shader.id,
-      this.descriptor.geometry.vertexBuffer.layout.getId(),
-      this.descriptor.format,
-      this.descriptor.topology,
-      state.blend,
-      state.cull,
-      state.depthTest ? "d" : "n",
+      spec.variant,
+      spec.shaderId,
+      spec.layoutId ?? "-",
+      spec.format,
+      spec.blend,
+      spec.cull,
+      spec.depthTest ? "d" : "n",
+      spec.hasMaterial ? "m" : "n",
+      spec.topology,
     ].join("|");
   }
 }

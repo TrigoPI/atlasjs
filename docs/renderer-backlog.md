@@ -104,12 +104,11 @@ Vérif : `pnpm --filter @atlasjs/nebula test` (4 tests verts) + build des deux p
 - **Livré** : `WebGPURenderState.pipeline` tracke désormais le `GPURenderPipeline` brut ; `WebGPUBinder` expose `setPipeline(ctx, pipeline, shader?)` (`bindPipeline` y délègue) ; `drawInstancedBatch` route pipeline + bind groups via `this.binder` (plus de `pass.*` direct). Le global bind group est set une fois/frame. Test unitaire `packages/nebula-webgpu/test/WebGPUBinder.test.ts` (dédup + resync). Harness **vitest** ajouté au package (n'en avait pas). Vérif runtime : `apps/webgpu` rend normalement (sprites/rects/cercle/ligne), zéro erreur console.
 - **Fichiers** : `packages/nebula-webgpu/src/WebGPURenderer.ts` (`drawInstancedBatch`), `bindings/WebGPUBinder.ts`, `states/WebGPURenderState.ts`, `vitest.config.ts` (+ `package.json`), test.
 
-### D4. `getInstancedStorageLayout` — layout unique partagé — 🟠 P1
+### D4. `getInstancedStorageLayout` — layout unique partagé — 🟠 P1 — ✅ fait (absorbé par E2)
 
-- **Constat** : prend un `shader` en paramètre mais cache dans un **champ unique** au 1er appel (`binding = shader.objectDefinition.storage?.binding ?? 0`) et le renvoie ensuite pour tous les shaders instanciés, en ignorant `shader`. Marche car `sprite_instanced.wgsl` et `shape_instanced.wgsl` mettent le storage au même `@group(1) @binding(0)`. Un futur shader instancié avec un autre binding recevrait silencieusement un mauvais layout.
-- **Objectif** : keyer par `storage.binding` (petite `Map`), ou fold dans le `WebGPUPipelineFactory` (**E2**) qui a déjà le shader.
-- **Fichiers** : `packages/nebula-webgpu/src/WebGPURenderer.ts` (`getInstancedStorageLayout`).
-- **Portée** : petite. Pas de trigger avec les 2 built-ins actuels.
+- **Constat** : prenait un `shader` en paramètre mais cachait dans un **champ unique** au 1er appel (`binding = shader.objectDefinition.storage?.binding ?? 0`) et le renvoyait ensuite pour tous les shaders instanciés, en ignorant `shader`. Marchait car `sprite_instanced.wgsl` et `shape_instanced.wgsl` mettent le storage au même `@group(1) @binding(0)`. Un futur shader instancié avec un autre binding recevait silencieusement un mauvais layout.
+- **Livré** : `WebGPUPipelineFactory.getStorageLayout(shader)` keye par `shader.objectDefinition.storage?.binding ?? 0` dans une `Map<number, GPUBindGroupLayout>` → chaque binding a son propre layout (`visibility: VERTEX`, `type: "read-only-storage"`). Le champ unique partagé a disparu avec l'ancienne méthode.
+- **Fichiers** : `packages/nebula-webgpu/src/pipeline/WebGPUPipelineFactory.ts` (`getStorageLayout`).
 
 ### D5. Sort-key — collision `batchKey` sprite ↔ shape — 🟠 P1
 
@@ -144,12 +143,11 @@ Vérif : `pnpm --filter @atlasjs/nebula test` (4 tests verts) + build des deux p
 - **Fichiers** : `packages/nebula-webgpu/src/WebGPURenderer.ts` → nouveaux `WebGPUSurface`, `WebGPUPipelineFactory`, (`WebGPUFrameGlobals`).
 - **Portée** : moyenne, incrémentale.
 
-### E2. Deux systèmes de pipeline en parallèle + clé calculée 2×
+### E2. Deux systèmes de pipeline en parallèle + clé calculée 2× — ✅ fait
 
-- **Constat** : chemin **indexé** (`getOrCreatePipeline`/`buildPipeline` → `WebGPUPipeline` + `WebGPUPipelineCache`) et chemin **instancié** (`getInstancedPipeline` → `GPURenderPipeline` brut dans une `Map` maison `instancedPipelines`, clé au format différent, bloc `fragment`/`blend`/`cull` dupliqué de `WebGPUPipeline`). De plus la clé de cache indexée est assemblée inline dans `WebGPURenderer` **et** recalculée dans `WebGPUPipeline.createPipelineId()` → deux sources pour la même clé, dérive silencieuse possible (collision ou miss permanent).
-- **Objectif** : un `WebGPUPipelineFactory` autorité unique pour les deux variantes (`variant` indexé / instancié = sans vertex buffer + storage layout) ; clé calculée **une seule fois** (`WebGPUPipeline.computeId(...)` statique, réutilisée comme `id` ET clé de cache). Absorbe **D4**. Débloque l'amincissement **E1**, lié à **D3**.
-- **Fichiers** : `packages/nebula-webgpu/src/WebGPURenderer.ts`, `pipeline/WebGPUPipeline.ts`, `caches/WebGPUPipelineCache.ts`.
-- **Portée** : moyenne. Plus fort levier structurel.
+- **Constat** : chemin **indexé** (`getOrCreatePipeline`/`buildPipeline` → `WebGPUPipeline` + `WebGPUPipelineCache`) et chemin **instancié** (`getInstancedPipeline` → `GPURenderPipeline` brut dans une `Map` maison `instancedPipelines`, clé au format différent, bloc `fragment`/`blend`/`cull` dupliqué de `WebGPUPipeline`). De plus la clé de cache indexée était assemblée inline dans `WebGPURenderer` **et** recalculée dans `WebGPUPipeline.createPipelineId()` → deux sources pour la même clé, dérive silencieuse possible.
+- **Livré** : `WebGPUPipelineFactory` (nouveau) autorité unique des deux variantes via un `WebGPUPipeline` généralisé (`variant` `indexed`/`instanced`, `geometry` optionnelle → variant instancié sans vertex buffer). **Une seule clé** : `WebGPUPipeline.computeKey(spec: PipelineKeySpec)` statique/pure, source unique — `createPipelineId()` y délègue et un unique `Map<string, WebGPUPipeline>` (indexé + instancié fusionnés, `variant` en tête de clé → pas de collision) la consomme. `WebGPURenderer` délègue toute création de pipeline (`draw`/`drawInstancedBatch`/`destroy`) ; membres morts supprimés (`getOrCreatePipeline`, `buildPipeline`, `getInstancedPipeline`, `getInstancedStorageLayout`, champs `pipelineCache`/`instancedPipelines`/`instancedStorageLayout`, imports `WebGPUPipelineCache`/`WebGPUBlend`) → `WebGPURenderer` allégé (~170 l.). Absorbe **D4**. Verrouillé par `packages/nebula-webgpu/test/WebGPUPipeline.test.ts` (stabilité/variance de `computeKey`). Vérif runtime : `apps/webgpu` rend identique (sprite/rect/cercle/ligne), zéro erreur console/validation. Reste ouvert (latent, non bloquant) : `topology` n'a pas de canal dans `PipelineKeySpec` — inerte aujourd'hui (tout est `triangle-list`), à surveiller si un futur caller varie la topology.
+- **Fichiers** : `packages/nebula-webgpu/src/pipeline/{WebGPUPipelineFactory,WebGPUPipeline,index}.ts`, `webgpu-types.ts`, `WebGPURenderer.ts`, test `packages/nebula-webgpu/test/WebGPUPipeline.test.ts`.
 
 ### E3. Dispatch de node câblé à 6 endroits + duplication renderers
 
@@ -169,7 +167,7 @@ Worklist priorisée (review 2026-07 fondue). 🔴 P0 (bugs) d'abord, puis 🟠 P
 3. ~~**C — quick wins**~~ ✅ fait (`getWorldPosition` câblé, `getViewport`/`Pipeline` supprimés, `Color.set` défaut).
 4. ~~**D7 — `createMaterial` renderState**~~ ✅ fait (test `packages/nebula/test/NebulaRenderer.test.ts`).
 5. ~~**D3 — unifier l'instancié via `WebGPUBinder`**~~ ✅ fait (test `packages/nebula-webgpu/test/WebGPUBinder.test.ts`).
-6. **E2 — `WebGPUPipelineFactory` + clé unique** (absorbe D4 ; plus fort levier).
+6. ~~**E2 — `WebGPUPipelineFactory` + clé unique**~~ ✅ fait (absorbe D4 ; test `packages/nebula-webgpu/test/WebGPUPipeline.test.ts`).
 7. **E1 — split `WebGPURenderer`** (`WebGPUSurface` d'abord, puis fold E2, puis `WebGPUFrameGlobals`).
 8. **E3 — seam `NodeRenderer` + dédup renderers** — **avant A2**.
 9. **D5 / D6** — sort-key (doc/fix), `MaterialShaderBuilder` — au fil de l'eau.
