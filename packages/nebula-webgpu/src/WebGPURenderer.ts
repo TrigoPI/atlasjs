@@ -1,9 +1,11 @@
 import { Bound } from "@atlasjs/math";
-import { Clock, Logger, createLogger } from "@atlasjs/utils";
+import { Logger, createLogger } from "@atlasjs/utils";
 
 import { WebGPUGuard } from "./utils";
 import { WebGPUGeometry } from "./geometry";
 import { WebGPUPipeline, WebGPUPipelineFactory } from "./pipeline";
+import { WebGPUSurface } from "./surface";
+import { WebGPUFrameGlobals } from "./frame";
 
 import { WebGPURenderContext } from "./states";
 import { WebGPUSampler, WebGPUTexture2D } from "./resources";
@@ -18,10 +20,7 @@ import {
   WebGPUInstanceBufferPool,
 } from "./batch";
 
-import {
-  WebGPUBindingGroupCache,
-  WebGPUShaderCache,
-} from "./caches";
+import { WebGPUBindingGroupCache, WebGPUShaderCache } from "./caches";
 
 import {
   BINDING_GROUP_GLOBAL,
@@ -78,43 +77,30 @@ export class WebGPURenderer implements Renderer {
 
   private readonly logger: Logger;
   private readonly binder: WebGPUBinder;
+  private readonly surface: WebGPUSurface;
 
-  private canvas: HTMLCanvasElement;
   private device!: GPUDevice;
   private context!: GPUCanvasContext;
   private format!: GPUTextureFormat;
-
-  private readonly autoResize: boolean;
-  private resizeObserver?: ResizeObserver;
-  private logicalWidth: number;
-  private logicalHeight: number;
 
   private bindingGroupCache!: WebGPUBindingGroupCache;
   private shaderCache!: WebGPUShaderCache;
   private pipelineFactory!: WebGPUPipelineFactory;
   private instancePool!: WebGPUInstanceBufferPool;
-  private globalBindings!: WebGPUBindingGroup;
-
-  private clock: Clock;
+  private frameGlobals!: WebGPUFrameGlobals;
 
   private currentRenderContext?: WebGPURenderContext;
 
   constructor(canvas: HTMLCanvasElement, options?: WebGPURendererOptions) {
     this.logger = createLogger("WebGPURenderer");
-    this.canvas = canvas;
+    this.surface = new WebGPUSurface(canvas, options?.autoResize ?? true);
 
-    this.autoResize = options?.autoResize ?? true;
-    this.logicalWidth = canvas.width;
-    this.logicalHeight = canvas.height;
-
-    this.clock = new Clock();
     this.camera = new Camera2D();
     this.binder = new WebGPUBinder();
   }
 
   public destroy(): void {
-    this.resizeObserver?.disconnect();
-    this.resizeObserver = undefined;
+    this.surface.dispose();
     this.shaderCache.destroy();
     this.bindingGroupCache.destroy();
     this.pipelineFactory.destroy();
@@ -122,8 +108,8 @@ export class WebGPURenderer implements Renderer {
   }
 
   public getCameraViewport(): Bound {
-    const width = this.logicalWidth / this.camera.zoom;
-    const height = this.logicalHeight / this.camera.zoom;
+    const width = this.surface.logicalWidth / this.camera.zoom;
+    const height = this.surface.logicalHeight / this.camera.zoom;
     return Bound.create(
       this.camera.position.x,
       this.camera.position.y,
@@ -264,7 +250,8 @@ export class WebGPURenderer implements Renderer {
     const device: GPUDevice = await adapter.requestDevice();
 
     this.logger.log("Configuring canvas context...");
-    const context: GPUCanvasContext | null = this.canvas.getContext("webgpu");
+    const context: GPUCanvasContext | null =
+      this.surface.canvas.getContext("webgpu");
 
     if (!context) {
       throw new Error("Failed to get WebGPU context.");
@@ -290,18 +277,16 @@ export class WebGPURenderer implements Renderer {
     this.context = context;
     this.format = format;
 
-    this.globalBindings = new WebGPUBindingGroup(globalBindingsDefinition);
+    this.frameGlobals = new WebGPUFrameGlobals(globalBindingsDefinition);
     this.bindingGroupCache = new WebGPUBindingGroupCache(this.device);
     this.shaderCache = new WebGPUShaderCache(this.device);
+    this.instancePool = new WebGPUInstanceBufferPool(this.device);
     this.pipelineFactory = new WebGPUPipelineFactory(
       this.device,
       this.bindingGroupCache,
     );
-    this.instancePool = new WebGPUInstanceBufferPool(this.device);
 
-    if (this.autoResize) {
-      this.setupAutoResize();
-    }
+    this.surface.startObserving();
 
     this.logger.log("WebGPURenderer initialized successfully.");
   }
@@ -340,8 +325,11 @@ export class WebGPURenderer implements Renderer {
     });
 
     this.instancePool.reset();
-    this.updateCamera();
-    this.updateTime();
+    this.frameGlobals.update(
+      this.camera,
+      this.surface.logicalWidth,
+      this.surface.logicalHeight,
+    );
   }
 
   public draw(
@@ -406,7 +394,7 @@ export class WebGPURenderer implements Renderer {
       this.pipelineFactory.getStorageLayout(shader);
 
     const globalCompiled: WebGPUCompiledBindingGroup =
-      this.bindingGroupCache.get(this.globalBindings, globalLayout);
+      this.bindingGroupCache.get(this.frameGlobals.bindings, globalLayout);
 
     const data: ArrayBuffer = instanced.pack();
 
@@ -449,92 +437,7 @@ export class WebGPURenderer implements Renderer {
   }
 
   public resize(width: number, height: number): void {
-    const dpr: number = this.getDevicePixelRatio();
-    this.applyResize(
-      width,
-      height,
-      Math.round(width * dpr),
-      Math.round(height * dpr),
-    );
-  }
-
-  private applyResize(
-    logicalWidth: number,
-    logicalHeight: number,
-    physicalWidth: number,
-    physicalHeight: number,
-  ): void {
-    const width: number = Math.round(physicalWidth);
-    const height: number = Math.round(physicalHeight);
-
-    if (width <= 0 || height <= 0) {
-      return;
-    }
-
-    this.logicalWidth = logicalWidth;
-    this.logicalHeight = logicalHeight;
-    this.canvas.width = width;
-    this.canvas.height = height;
-  }
-
-  private setupAutoResize(): void {
-    this.resize(this.canvas.clientWidth, this.canvas.clientHeight);
-    this.resizeObserver = new ResizeObserver((entries: ResizeObserverEntry[]) =>
-      this.onResizeEntries(entries),
-    );
-    this.resizeObserver.observe(this.canvas);
-  }
-
-  private onResizeEntries(entries: ResizeObserverEntry[]): void {
-    const entry: ResizeObserverEntry | undefined = entries[0];
-
-    if (!entry) {
-      return;
-    }
-
-    const contentBox: ResizeObserverSize = Array.isArray(entry.contentBoxSize)
-      ? entry.contentBoxSize[0]
-      : (entry.contentBoxSize as unknown as ResizeObserverSize);
-
-    const logicalWidth: number = contentBox.inlineSize;
-    const logicalHeight: number = contentBox.blockSize;
-
-    const devicePixelBox: ReadonlyArray<ResizeObserverSize> | undefined =
-      entry.devicePixelContentBoxSize;
-
-    if (devicePixelBox && devicePixelBox[0]) {
-      this.applyResize(
-        logicalWidth,
-        logicalHeight,
-        devicePixelBox[0].inlineSize,
-        devicePixelBox[0].blockSize,
-      );
-      return;
-    }
-
-    const dpr: number = this.getDevicePixelRatio();
-    this.applyResize(
-      logicalWidth,
-      logicalHeight,
-      Math.round(logicalWidth * dpr),
-      Math.round(logicalHeight * dpr),
-    );
-  }
-
-  private getDevicePixelRatio(): number {
-    return typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-  }
-
-  private updateCamera(): void {
-    const width: number = this.logicalWidth;
-    const height: number = this.logicalHeight;
-    this.camera.update(width, height);
-    this.globalBindings.set("viewProjection", this.camera.viewProjection);
-  }
-
-  private updateTime(): void {
-    const time: number = this.clock.getTimeSecond();
-    this.globalBindings.set("time", time);
+    this.surface.resize(width, height);
   }
 
   private bindPipeline(
@@ -552,7 +455,10 @@ export class WebGPURenderer implements Renderer {
       pipeline.getBindGroupLayout(BINDING_GROUP_GLOBAL);
 
     const compiledGlobalBindings: WebGPUCompiledBindingGroup =
-      this.bindingGroupCache.get(this.globalBindings, globalBindGroupLayout);
+      this.bindingGroupCache.get(
+        this.frameGlobals.bindings,
+        globalBindGroupLayout,
+      );
 
     this.assertBindGroup(compiledGlobalBindings.bindGroup);
 
