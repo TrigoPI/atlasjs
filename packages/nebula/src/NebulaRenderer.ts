@@ -6,6 +6,7 @@ import {
   Material,
   PassDescriptor,
   Renderer,
+  RenderState,
   Sampler,
   SamplerDescriptor,
   Shader,
@@ -32,8 +33,8 @@ export class NebulaRenderer {
     this.renderer.resize(width, height);
   }
 
-  public createMaterial(shader: Shader): Material {
-    return this.renderer.createMaterial(shader);
+  public createMaterial(shader: Shader, renderState?: RenderState): Material {
+    return this.renderer.createMaterial(shader, renderState);
   }
 
   public createShader(definition: ShaderDescriptor): Shader {

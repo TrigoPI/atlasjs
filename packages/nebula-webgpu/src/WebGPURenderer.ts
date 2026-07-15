@@ -6,6 +6,10 @@ import { WebGPUGeometry } from "./geometry";
 import { WebGPUPipeline } from "./pipeline";
 
 import { WebGPURenderContext } from "./states";
+import { WebGPUSampler, WebGPUTexture2D } from "./resources";
+import { WebGPUShader, WebGPUMaterial } from "./material";
+import { WebGPUShaders, WebGPUBuiltinShaders } from "./resources";
+import { WebGPUReflection, WebGPUReflectedGroup } from "./reflect";
 
 import {
   WebGPUSpriteBatch,
@@ -13,11 +17,6 @@ import {
   WebGPUInstancedBatch,
   WebGPUInstanceBufferPool,
 } from "./batch";
-
-import { WebGPUSampler, WebGPUTexture2D } from "./resources";
-import { WebGPUShader, WebGPUMaterial } from "./material";
-import { WebGPUShaders, WebGPUBuiltinShaders } from "./resources";
-import { WebGPUReflection, WebGPUReflectedGroup } from "./reflect";
 
 import {
   WebGPUBindingGroupCache,

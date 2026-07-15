@@ -126,12 +126,11 @@ Vérif : `pnpm --filter @atlasjs/nebula test` (4 tests verts) + build des deux p
 - **Fichiers** : `packages/nebula-webgpu/src/authoring/MaterialShaderBuilder.ts`.
 - **Portée** : petite.
 
-### D7. `NebulaRenderer.createMaterial` drope le `renderState` — 🟠 P1
+### D7. `NebulaRenderer.createMaterial` drope le `renderState` — 🟠 P1 — ✅ fait
 
-- **Constat** : `Renderer.createMaterial(shader, renderState?)` accepte un état de rendu, mais la façade `NebulaRenderer.createMaterial(shader)` délègue **sans** le transmettre → impossible de créer un matériau non-`DEFAULT_RENDER_STATE` via la façade. (Les autres `create*` de `NebulaRenderer` sont des pass-through purs.)
-- **Objectif** : propager `renderState?` (et statuer : la façade doit-elle exister, ou les callers utilisent-ils `renderer` directement ?).
-- **Fichiers** : `packages/nebula/src/NebulaRenderer.ts`.
-- **Portée** : petite.
+- **Constat** : `Renderer.createMaterial(shader, renderState?)` accepte un état de rendu, mais la façade `NebulaRenderer.createMaterial(shader)` déléguait **sans** le transmettre → impossible de créer un matériau non-`DEFAULT_RENDER_STATE` via la façade.
+- **Livré** : signature `createMaterial(shader, renderState?)` qui propage l'état au renderer sous-jacent. Verrouillé par `packages/nebula/test/NebulaRenderer.test.ts` (forwarding vérifié via un `Renderer` stub). Reste ouvert (non bloquant) : statuer si la façade `NebulaRenderer` doit garder ses pass-through `create*` ou si les callers passent par `renderer` directement.
+- **Fichiers** : `packages/nebula/src/NebulaRenderer.ts`, test `packages/nebula/test/NebulaRenderer.test.ts`.
 
 ---
 
@@ -169,7 +168,7 @@ Worklist priorisée (review 2026-07 fondue). 🔴 P0 (bugs) d'abord, puis 🟠 P
 1. ~~**D1 — bug caméra zoom+pan**~~ ✅ fait (test `packages/nebula/test/Camera2D.test.ts`).
 2. ~~**D2 — `fromGrid` hors-bornes**~~ ✅ fait (test `packages/nebula/test/SpriteSheet.test.ts`).
 3. ~~**C — quick wins**~~ ✅ fait (`getWorldPosition` câblé, `getViewport`/`Pipeline` supprimés, `Color.set` défaut).
-4. **D7 — `createMaterial` renderState** (trivial).
+4. ~~**D7 — `createMaterial` renderState**~~ ✅ fait (test `packages/nebula/test/NebulaRenderer.test.ts`).
 5. **D3 — unifier l'instancié via `WebGPUBinder`** 🟠 (supprime optim morte + bug latent, prépare E).
 6. **E2 — `WebGPUPipelineFactory` + clé unique** (absorbe D4 ; plus fort levier).
 7. **E1 — split `WebGPURenderer`** (`WebGPUSurface` d'abord, puis fold E2, puis `WebGPUFrameGlobals`).
