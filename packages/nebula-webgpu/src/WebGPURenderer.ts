@@ -565,10 +565,9 @@ export class WebGPURenderer implements Renderer {
 
     this.assertBindGroup(globalCompiled.bindGroup);
 
-    const pass: GPURenderPassEncoder = ctx.renderPass;
-    pass.setPipeline(pipeline);
-    pass.setBindGroup(BINDING_GROUP_GLOBAL, globalCompiled.bindGroup);
-    pass.setBindGroup(BINDING_GROUP_OBJECT, storageBindGroup);
+    this.binder.setPipeline(ctx, pipeline, shader);
+    this.binder.bindGroup(ctx, BINDING_GROUP_GLOBAL, globalCompiled.bindGroup);
+    this.binder.bindGroup(ctx, BINDING_GROUP_OBJECT, storageBindGroup);
 
     if (material) {
       const materialLayout: GPUBindGroupLayout =
@@ -578,10 +577,14 @@ export class WebGPURenderer implements Renderer {
         this.bindingGroupCache.get(material, materialLayout);
 
       this.assertBindGroup(materialCompiled.bindGroup);
-      pass.setBindGroup(BINDING_GROUP_MATERIAL, materialCompiled.bindGroup);
+      this.binder.bindGroup(
+        ctx,
+        BINDING_GROUP_MATERIAL,
+        materialCompiled.bindGroup,
+      );
     }
 
-    pass.draw(6, instanced.count);
+    ctx.renderPass.draw(6, instanced.count);
   }
 
   public endFrame(): void {

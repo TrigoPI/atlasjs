@@ -98,12 +98,11 @@ Vérif : `pnpm --filter @atlasjs/nebula test` (4 tests verts) + build des deux p
 - **Livré** : conditions de boucle corrigées en `x + frameWidth <= texture.width` / `y + frameHeight <= texture.height` → seules les frames entièrement contenues sont définies. Grilles exactes inchangées (la dernière colonne/ligne qui tombe pile est toujours incluse), seuls les cas non-divisibles/`spacing` changent. Verrouillé par `packages/nebula/test/SpriteSheet.test.ts` (texture 100×70, frame 32² → 6 frames au lieu de 12). Aucun consommateur `fromGrid` dans les apps.
 - **Fichiers** : `packages/nebula/src/animations/SpriteSheet.ts` (`fromGrid`), test `packages/nebula/test/SpriteSheet.test.ts`.
 
-### D3. `draw()` vs `drawInstancedBatch()` — `renderState` désynchronisé — 🟠 P1
+### D3. `draw()` vs `drawInstancedBatch()` — `renderState` désynchronisé — 🟠 P1 — ✅ fait
 
-- **Constat** : le chemin de scène est 100 % instancié (`SceneRenderer` → `RenderQueue.flush` → `Batchers` → `drawInstancedBatch`) ; `draw()` générique n'est utilisé que par `apps/webgpu/src/easy-material.ts`. Or `draw()` passe par `WebGPUBinder` (dédup via `WebGPURenderState`) tandis que `drawInstancedBatch` écrit **directement** sur `pass.setPipeline`/`setBindGroup` sans toucher le binder ni `ctx.renderState`. Conséquences : (1) l'optim redundant-bind (Phase 0) ne tourne **jamais** sur un vrai jeu et re-set le bind group global à chaque batch ; (2) **bug latent** : si `draw()` et `drawInstancedBatch()` cohabitent dans une passe (arrivera avec **A4**, materials custom sur nœuds), le binder skippe un `setPipeline`/`setBindGroup` nécessaire car `renderState` reflète un état que l'instancié a déjà écrasé → sortie corrompue.
-- **Objectif** : router `drawInstancedBatch` par le même `WebGPUBinder` (ou au minimum écrire pipeline + bind groups dans `ctx.renderState`). L'optim s'applique alors aux scènes (global set 1×/frame). Lié à **E2**. Vérifier frame pixel-identique.
-- **Fichiers** : `packages/nebula-webgpu/src/WebGPURenderer.ts` (`drawInstancedBatch`/`draw`), `bindings/WebGPUBinder.ts`, `states/WebGPURenderState.ts`.
-- **Portée** : petite/moyenne (méthodes déjà présentes sur le binder).
+- **Constat** : le chemin de scène est 100 % instancié (`SceneRenderer` → `RenderQueue.flush` → `Batchers` → `drawInstancedBatch`) ; `draw()` générique n'est utilisé que par `apps/webgpu/src/easy-material.ts`. Or `draw()` passait par `WebGPUBinder` (dédup via `WebGPURenderState`) tandis que `drawInstancedBatch` écrivait **directement** sur `pass.setPipeline`/`setBindGroup` sans toucher le binder ni `ctx.renderState`. Conséquences : (1) l'optim redundant-bind ne tournait **jamais** sur un vrai jeu ; (2) **bug latent** : si `draw()` et `drawInstancedBatch()` cohabitaient dans une passe (arrivera avec **A4**), le binder skippait un `setPipeline`/`setBindGroup` nécessaire → sortie corrompue.
+- **Livré** : `WebGPURenderState.pipeline` tracke désormais le `GPURenderPipeline` brut ; `WebGPUBinder` expose `setPipeline(ctx, pipeline, shader?)` (`bindPipeline` y délègue) ; `drawInstancedBatch` route pipeline + bind groups via `this.binder` (plus de `pass.*` direct). Le global bind group est set une fois/frame. Test unitaire `packages/nebula-webgpu/test/WebGPUBinder.test.ts` (dédup + resync). Harness **vitest** ajouté au package (n'en avait pas). Vérif runtime : `apps/webgpu` rend normalement (sprites/rects/cercle/ligne), zéro erreur console.
+- **Fichiers** : `packages/nebula-webgpu/src/WebGPURenderer.ts` (`drawInstancedBatch`), `bindings/WebGPUBinder.ts`, `states/WebGPURenderState.ts`, `vitest.config.ts` (+ `package.json`), test.
 
 ### D4. `getInstancedStorageLayout` — layout unique partagé — 🟠 P1
 
@@ -169,7 +168,7 @@ Worklist priorisée (review 2026-07 fondue). 🔴 P0 (bugs) d'abord, puis 🟠 P
 2. ~~**D2 — `fromGrid` hors-bornes**~~ ✅ fait (test `packages/nebula/test/SpriteSheet.test.ts`).
 3. ~~**C — quick wins**~~ ✅ fait (`getWorldPosition` câblé, `getViewport`/`Pipeline` supprimés, `Color.set` défaut).
 4. ~~**D7 — `createMaterial` renderState**~~ ✅ fait (test `packages/nebula/test/NebulaRenderer.test.ts`).
-5. **D3 — unifier l'instancié via `WebGPUBinder`** 🟠 (supprime optim morte + bug latent, prépare E).
+5. ~~**D3 — unifier l'instancié via `WebGPUBinder`**~~ ✅ fait (test `packages/nebula-webgpu/test/WebGPUBinder.test.ts`).
 6. **E2 — `WebGPUPipelineFactory` + clé unique** (absorbe D4 ; plus fort levier).
 7. **E1 — split `WebGPURenderer`** (`WebGPUSurface` d'abord, puis fold E2, puis `WebGPUFrameGlobals`).
 8. **E3 — seam `NodeRenderer` + dédup renderers** — **avant A2**.

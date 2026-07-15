@@ -1,5 +1,6 @@
 import { WebGPUVertexBuffer, WebGPUIndexBuffer } from "../buffers";
 import { WebGPUGeometry } from "../geometry";
+import { WebGPUShader } from "../material";
 import { WebGPUPipeline } from "../pipeline";
 import { WebGPURenderContext } from "../states";
 
@@ -8,13 +9,21 @@ export class WebGPUBinder {
     context: WebGPURenderContext,
     pipeline: WebGPUPipeline,
   ): void {
+    this.setPipeline(context, pipeline.pipeline, pipeline.descriptor.shader);
+  }
+
+  public setPipeline(
+    context: WebGPURenderContext,
+    pipeline: GPURenderPipeline,
+    shader?: WebGPUShader,
+  ): void {
     if (context.renderState.pipeline === pipeline) {
       return;
     }
 
-    context.renderPass.setPipeline(pipeline.pipeline);
+    context.renderPass.setPipeline(pipeline);
     context.renderState.pipeline = pipeline;
-    context.renderState.shader = pipeline.descriptor.shader;
+    context.renderState.shader = shader;
   }
 
   public bindVertexBuffer(
