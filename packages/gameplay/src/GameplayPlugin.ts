@@ -12,11 +12,13 @@ import { ScriptManager } from "./scripting";
 import {
   PhysicsPullSystem,
   PhysicsPushSystem,
+  PlayerInputSystem,
   SpriteRenderSystem,
 } from "./systems";
 
 import {
   PhysicsBodyRef,
+  PlayerInput,
   RigidBody2D,
   SpriteRender,
   Transform2D,
@@ -50,12 +52,14 @@ export class GameplayPlugin extends Plugin {
     const physicsPushSystem: PhysicsPushSystem = new PhysicsPushSystem(inertia);
     const physicsPullSystem: PhysicsPullSystem = new PhysicsPullSystem();
     const spriteRenderSystem: SpriteRenderSystem = new SpriteRenderSystem(nebula);
+    const playerInputSystem: PlayerInputSystem = new PlayerInputSystem(engine.services);
 
     world
       .defineComponent(RigidBody2D)
       .defineComponent(Transform2D)
       .defineComponent(SpriteRender)
-      .defineComponent(PhysicsBodyRef);
+      .defineComponent(PhysicsBodyRef)
+      .defineComponent(PlayerInput);
 
     this.unsubscribers.push(
       world.onRemove(PhysicsBodyRef, (_entity: Entity, ref: PhysicsBodyRef) => {
@@ -75,6 +79,13 @@ export class GameplayPlugin extends Plugin {
       fixed.add(() => this.scriptManager.fixedUpdate(), {
         name: "gameplay:script-fixed",
         stage: "ScriptFixed",
+      }),
+    );
+
+    this.handles.push(
+      registerSystem(update, world, playerInputSystem, {
+        name: "gameplay:player-input",
+        stage: "Early",
       }),
     );
 
