@@ -110,19 +110,17 @@ Vérif : `pnpm --filter @atlasjs/nebula test` (4 tests verts) + build des deux p
 - **Livré** : `WebGPUPipelineFactory.getStorageLayout(shader)` keye par `shader.objectDefinition.storage?.binding ?? 0` dans une `Map<number, GPUBindGroupLayout>` → chaque binding a son propre layout (`visibility: VERTEX`, `type: "read-only-storage"`). Le champ unique partagé a disparu avec l'ancienne méthode.
 - **Fichiers** : `packages/nebula-webgpu/src/pipeline/WebGPUPipelineFactory.ts` (`getStorageLayout`).
 
-### D5. Sort-key — collision `batchKey` sprite ↔ shape — 🟠 P1
+### D5. Sort-key — collision `batchKey` sprite ↔ shape — 🟠 P1 — ✅ fait
 
-- **Constat** : `SpriteRenderer.computeSortKey` = `z·65536 + batchId` (`batchId` = compteur d'alloc de texture, ordre premier-vu) ; `ShapeRenderer.computeSortKey` = `z·65536 + BATCH_IDS[blend]` (0-3). Les deux partagent les 16 bits bas dans une file triée unique → à `zIndex` égal, l'ordre painter de deux objets superposés suit l'ordre d'**allocation de batch** (premier-vu), pas l'ordre de scène ni les changements ultérieurs de z. Déterministe mais surprenant / figé au premier-vu.
-- **Objectif** : au minimum documenter « même z = ordre indéfini pour matériaux/textures différents ». Sinon : sous-clé de stabilité (index de scène) pour départager à z égal, ou namespaces `batchKey` disjoints sprite/shape.
-- **Fichiers** : `packages/nebula/src/renderers/{SpriteRenderer,ShapeRenderer,RenderQueue}.ts`.
-- **Portée** : petite. Impact seulement sur objets superposés à `zIndex` identique.
+- **Constat** : `computeSortKey` packait `z·65536 + batchId` (bits 16-31 = z, bits 0-15 = batchId) **sans discriminant `kind`**. `batchId` sprite = compteur d'alloc premier-vu (0,1,2…) ; `batchId` shape = `BATCH_IDS[blend]` (0-3). À `zIndex` égal, le 1er matériau sprite (batchId 0) et une shape `opaque` (batchId 0) produisaient la **clé identique** → `RenderQueue.sort` (stable V8) les laissait en ordre d'arbre, **entrelaçant** les deux kinds et fragmentant les batches dans `flush` (qui regroupe les runs contigus `(kind, batchKey)`).
+- **Livré** : champ `kind` inséré entre z et batchId → layout `z | kindOrder | batchId` (`KIND_RANGE = 16`, clé = `(z·16 + kindOrder)·65536 + batchId`, max ≈ 6.9e10 < 2^53). Source unique de l'ordre : `KIND_ORDER = { sprite: 0, shape: 1 }` (`renderers/NodeRenderer.ts`). z reste dominant (ordre painter préservé) ; à z égal tous les sprites précèdent toutes les shapes (déterministe, plus de collision) ; le batching est préservé car chaque kind est désormais contigu après tri. `batchKey`/`DrawCommand`/`flush`/`isSameRun`/batchers inchangés (seul `sortKey` corrigé). **Sémantique** : à `zIndex` égal + matériau/texture différents, l'ordre suit (kind, puis ordre d'alloc de batch), **pas** l'ordre de scène — trade-off standard du batching 2D. Verrouillé par `packages/nebula/test/NodeRendererBase.test.ts` (z dominant, non-collision sprite↔shape à z égal, ordre batchId intra-kind).
+- **Fichiers** : `packages/nebula/src/renderers/{NodeRendererBase,NodeRenderer,SpriteRenderer,ShapeRenderer}.ts`, test `packages/nebula/test/NodeRendererBase.test.ts`.
 
-### D6. `MaterialShaderBuilder` — parsing regex fragile — 🟠 P1
+### D6. `MaterialShaderBuilder` — parsing regex fragile — 🟠 P1 — ✅ fait
 
-- **Constat** : split des membres du bloc `material { … }` sur `/[,\n;]/` → un type générique avec virgule (`array<f32, 4>`) est coupé au milieu. `MATERIAL_BLOCK = /material\s*\{([\s\S]*?)\}/` s'arrête au **1er `}`** (OK pour une liste plate, KO dès qu'un type imbrique une accolade). Chemin « easy » à surface volontairement réduite.
-- **Objectif** : border avant d'ouvrir les types composés — split respectant `<…>`, ou tokenizer léger ; à défaut, garde-fou + message d'erreur explicite sur types non supportés.
-- **Fichiers** : `packages/nebula-webgpu/src/authoring/MaterialShaderBuilder.ts`.
-- **Portée** : petite.
+- **Constat** : split des membres du bloc `material { … }` sur `/[,\n;]/` → un type générique avec virgule (`array<f32, 4>`) coupé au milieu (`array<f32` + `4>` → `parseMember` throw). `MATERIAL_BLOCK = /material\s*\{([\s\S]*?)\}/` s'arrêtait au **1er `}`** (KO dès qu'une accolade imbrique). Bloc = pur codegen texte, `wgsl_reflect` reste l'autorité de layout en aval.
+- **Livré** : les deux regexes remplacées par des scanners depth-aware (aucune dépendance ajoutée). `extractMaterialBlock` localise `material {` puis **brace-matche** en comptant `{`/`}` jusqu'à profondeur 0 (retourne `full` pour le strip + `inner`), throw si non terminé. `splitMembers` découpe sur `,`/`;`/`\n` **seulement à profondeur `<…>` nulle** → types composés préservés. Garde mono-bloc conservée (re-scan après retrait de `full`). `parseMember` inchangé. Verrouillé par `packages/nebula-webgpu/test/MaterialShaderBuilder.test.ts` (`array<f32, 4>` intact, `array<vec2<f32>, 8>` sans throw, uniforms-first sans trous, garde mono-bloc, passthrough sans bloc).
+- **Fichiers** : `packages/nebula-webgpu/src/authoring/MaterialShaderBuilder.ts`, test `packages/nebula-webgpu/test/MaterialShaderBuilder.test.ts`.
 
 ### D7. `NebulaRenderer.createMaterial` drope le `renderState` — 🟠 P1 — ✅ fait
 
@@ -168,7 +166,7 @@ Worklist priorisée (review 2026-07 fondue). 🔴 P0 (bugs) d'abord, puis 🟠 P
 6. ~~**E2 — `WebGPUPipelineFactory` + clé unique**~~ ✅ fait (absorbe D4 ; test `packages/nebula-webgpu/test/WebGPUPipeline.test.ts`).
 7. ~~**E1 — split `WebGPURenderer`**~~ ✅ fait (`WebGPUSurface` + `WebGPUFrameGlobals` extraits ; renderer 779 → ~540 l.).
 8. ~~**E3 — seam `NodeRenderer` + dédup renderers**~~ ✅ fait (avant A2 ; tests `worldBound`/`NodeRendererBase`/`RenderQueue`).
-9. **D5 / D6** — sort-key (doc/fix), `MaterialShaderBuilder` — au fil de l'eau.
+9. ~~**D5 / D6** — sort-key (kind namespace), `MaterialShaderBuilder` (parser depth-aware)~~ ✅ fait (tests `NodeRendererBase`/`MaterialShaderBuilder`).
 10. **A2 — texte** (se branche comme batcher sur le seam E3).
 11. **B1 — cycle de vie des ressources** (dès scènes dynamiques / avant l'éditeur).
 12. **B2 — éditeur** (session dédiée, si cible).

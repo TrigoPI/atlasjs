@@ -3,6 +3,7 @@ import { Node } from "../graphics";
 
 const Z_OFFSET: number = 32768;
 const Z_MAX: number = 65535;
+const KIND_RANGE: number = 16;
 const BATCH_RANGE: number = 65536;
 
 export abstract class NodeRendererBase<TNode extends Node, TData> {
@@ -21,13 +22,17 @@ export abstract class NodeRendererBase<TNode extends Node, TData> {
 
   protected abstract createRenderData(): TData;
 
-  protected computeSortKey(zIndex: number, batchId: number): number {
+  protected computeSortKey(
+    zIndex: number,
+    kindOrder: number,
+    batchId: number,
+  ): number {
     const z: number = Math.min(
       Math.max(Math.round(zIndex) + Z_OFFSET, 0),
       Z_MAX,
     );
 
-    return z * BATCH_RANGE + batchId;
+    return (z * KIND_RANGE + kindOrder) * BATCH_RANGE + batchId;
   }
 
   protected getOrCreateRenderData(node: TNode): TData {
