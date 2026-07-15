@@ -2,7 +2,7 @@ import { Bound, Mat4, Vec2, Vec4 } from "@atlasjs/math";
 import { Node, Sprite } from "../graphics";
 import { SpriteDrawCommand } from "./DrawCommand";
 import { NodeRendererBase } from "./NodeRendererBase";
-import { NodeRenderer, Batcher } from "./NodeRenderer";
+import { NodeRenderer, Batcher, KIND_ORDER } from "./NodeRenderer";
 import { SpriteBatcher } from "./Batchers";
 
 import { BlendMode, Renderer, Sampler, Texture2D } from "../core";
@@ -43,7 +43,11 @@ export class SpriteRenderer
     return node instanceof Sprite;
   }
 
-  public collect(node: Node, viewport: Bound, scratch: Bound): SpriteDrawCommand | null {
+  public collect(
+    node: Node,
+    viewport: Bound,
+    scratch: Bound,
+  ): SpriteDrawCommand | null {
     const sprite: Sprite = node as Sprite;
     const bound: Bound = sprite.getWorldBound(scratch);
 
@@ -64,6 +68,8 @@ export class SpriteRenderer
       sprite.blend,
     );
 
+    const batchId: number = this.getBatchId(materialKey);
+
     const data: SpriteRenderData = this.getOrCreateRenderData(sprite);
     const sourceRect: Bound = sprite.getSourceRect(this.sourceRectScratch);
 
@@ -72,8 +78,8 @@ export class SpriteRenderer
 
     return {
       kind: "sprite",
-      sortKey: this.computeSortKey(sprite.zIndex, this.getBatchId(materialKey)),
-      batchKey: this.getBatchId(materialKey),
+      sortKey: this.computeSortKey(sprite.zIndex, KIND_ORDER.sprite, batchId),
+      batchKey: batchId,
       texture: sprite.texture,
       sampler,
       renderState: NodeRendererBase.RENDER_STATES[sprite.blend],
@@ -121,7 +127,11 @@ export class SpriteRenderer
     return `${texture.id}|${sampler.id}|${blend}`;
   }
 
-  private updateModelMatrix(sprite: Sprite, sourceRect: Bound, out: Mat4): void {
+  private updateModelMatrix(
+    sprite: Sprite,
+    sourceRect: Bound,
+    out: Mat4,
+  ): void {
     const worldMatrix: Mat4 = sprite.worldMatrix;
 
     const anchor: Vec2 = sprite.getAnchor();

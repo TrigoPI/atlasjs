@@ -4,7 +4,7 @@ import { BlendMode, Renderer } from "../core";
 import { Node, Shape, Rect, Circle, Line } from "../graphics";
 import { ShapeDrawCommand } from "./DrawCommand";
 import { NodeRendererBase } from "./NodeRendererBase";
-import { NodeRenderer, Batcher } from "./NodeRenderer";
+import { NodeRenderer, Batcher, KIND_ORDER } from "./NodeRenderer";
 import { ShapeBatcher } from "./Batchers";
 import { computeModelWorldBound } from "./worldBound";
 
@@ -42,7 +42,11 @@ export class ShapeRenderer
     return node instanceof Shape;
   }
 
-  public collect(node: Node, viewport: Bound, scratch: Bound): ShapeDrawCommand | null {
+  public collect(
+    node: Node,
+    viewport: Bound,
+    scratch: Bound,
+  ): ShapeDrawCommand | null {
     const command: ShapeDrawCommand | null = this.buildCommand(node);
 
     if (!command) {
@@ -71,12 +75,16 @@ export class ShapeRenderer
 
     return {
       kind: "shape",
-      sortKey: this.computeSortKey(shape.zIndex, BATCH_IDS[shape.blend]),
       batchKey: BATCH_IDS[shape.blend],
       renderState: NodeRendererBase.RENDER_STATES[shape.blend],
       model: data.model,
       color: data.color,
       params: data.params,
+      sortKey: this.computeSortKey(
+        shape.zIndex,
+        KIND_ORDER.shape,
+        BATCH_IDS[shape.blend],
+      ),
     };
   }
 

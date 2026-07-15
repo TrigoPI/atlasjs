@@ -3,6 +3,11 @@ import { Node } from "../graphics";
 import { Renderer } from "../core";
 import { DrawCommand } from "./DrawCommand";
 
+export const KIND_ORDER: Record<DrawCommand["kind"], number> = {
+  sprite: 0,
+  shape: 1,
+};
+
 export interface Batcher {
   begin(command: DrawCommand): void;
   add(command: DrawCommand): void;
