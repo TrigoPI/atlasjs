@@ -1,0 +1,1 @@
+{"version":3,"file":"SpriteRender.d.ts","sourceRoot":"","sources":["SpriteRender.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,SAAS,EAAE,MAAM,iBAAiB,CAAC;AAE5C,qBAAa,YAAY;IAChB,OAAO,EAAE,SAAS,CAAC;IACnB,OAAO,EAAE,OAAO,CAAC;gBAEL,OAAO,EAAE,SAAS,EAAE,OAAO,GAAE,OAAc;CAI/D"}

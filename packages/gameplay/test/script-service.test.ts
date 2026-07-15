@@ -15,7 +15,7 @@ class FakeFacade extends ScriptService<FakeService> {
   public static readonly token: ServiceToken<FakeService> = FAKE;
 
   public read(): number {
-    return this.resolve().value;
+    return this.provided.value;
   }
 }
 

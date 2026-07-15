@@ -31,7 +31,7 @@ Objectif : permettre à un script de lire l'input, **sans statique global** (res
 
 5. **Façade nommée `InputApi`, exportée depuis `@atlasjs/gameplay`.** Nom distinct de l'interface `Input` backend (`@atlasjs/input`) pour éviter toute confusion. `Key` est **ré-exporté** depuis `@atlasjs/gameplay` → un auteur de script importe tout d'un seul point : `import { AtlasScript, InputApi, Key } from "@atlasjs/gameplay"`.
 
-6. **Façade qui cache le service résolu au constructeur.** À la différence de `ScriptComponent` (qui re-résout à chaque accès parce qu'un composant peut être retiré/re-ajouté → risque de cache périmé), un **service n'est jamais retiré** (`ServiceRegistry` n'a pas d'`unprovide`, la référence est stable pour la vie de l'engine). La façade résout donc **une fois dans le constructeur** (`this.provided = services.get(token)`) et `resolve()` renvoie ce champ — pas de `Map.get` par accès/frame. `getService` fabrique quand même un nouveau wrapper à chaque appel (pattern « appel unique dans `onCreate`, l'utilisateur détient l'instance »). Le constructeur reste le point d'échec bruyant (throw si token absent ou service non fourni), donc `getService` n'a pas besoin de re-valider.
+6. **Façade qui cache le service résolu au constructeur.** À la différence de `ScriptComponent` (qui re-résout à chaque accès parce qu'un composant peut être retiré/re-ajouté → risque de cache périmé), un **service n'est jamais retiré** (`ServiceRegistry` n'a pas d'`unprovide`, la référence est stable pour la vie de l'engine). La façade résout donc **une fois dans le constructeur** (`this.provided = services.get(token)`) et les méthodes lisent directement ce champ `protected readonly` — pas de `Map.get` par accès/frame, pas de méthode `resolve()`. `getService` fabrique quand même un nouveau wrapper à chaque appel (pattern « appel unique dans `onCreate`, l'utilisateur détient l'instance »). Le constructeur reste le point d'échec bruyant (throw si token absent ou service non fourni), donc `getService` n'a pas besoin de re-valider.
 
 7. **`gameplay` dépend de `input`.** Nouvelle dépendance `@atlasjs/gameplay` → `@atlasjs/input` (`workspace:*`). `input` ne dépend que de `@atlasjs/core`/`@atlasjs/math`/`@atlasjs/utils` → **pas de cycle**.
 
@@ -62,10 +62,6 @@ export abstract class ScriptService<TService> {
 
     this.provided = services.get(ctor.token); // throw si le service n'est pas fourni
   }
-
-  protected resolve(): TService {
-    return this.provided; // résolu une fois; un service ne se retire jamais
-  }
 }
 ```
 
@@ -82,13 +78,13 @@ import { ScriptService } from "../core";
 export class InputApi extends ScriptService<InputService> {
   public static readonly token = INPUT;
 
-  public isDown(key: Key): boolean     { return this.resolve().isDown(key); }
-  public isPressed(key: Key): boolean  { return this.resolve().isPressed(key); }
-  public isReleased(key: Key): boolean { return this.resolve().isReleased(key); }
+  public isDown(key: Key): boolean     { return this.provided.isDown(key); }
+  public isPressed(key: Key): boolean  { return this.provided.isPressed(key); }
+  public isReleased(key: Key): boolean { return this.provided.isReleased(key); }
 
-  public get mousePosition(): Vec2 { return this.resolve().pointer.position; }
-  public get mouseDelta(): Vec2    { return this.resolve().pointer.delta; }
-  public get scrollDelta(): number { return this.resolve().pointer.wheelDelta; }
+  public get mousePosition(): Vec2 { return this.provided.pointer.position; }
+  public get mouseDelta(): Vec2    { return this.provided.pointer.delta; }
+  public get scrollDelta(): number { return this.provided.pointer.wheelDelta; }
 }
 ```
 
