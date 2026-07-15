@@ -30,13 +30,13 @@ export class EcsScene extends Scene {
     });
 
     const player1: Entity = nexus.createEntity();
-    const player2: Entity = nexus.createEntity();
+    // const player2: Entity = nexus.createEntity();
 
     nexus.addComponent(player1, SpriteRender, swordTexture);
-    nexus.addComponent(player2, SpriteRender, swordTexture);
+    // nexus.addComponent(player2, SpriteRender, swordTexture);
 
     scriptManager.attach(player1, TestScript);
-    scriptManager.attach(player2, TestScript);
+    // scriptManager.attach(player2, TestScript);
   }
 
   private async getImage(src: string): Promise<ImageBitmap> {

@@ -191,6 +191,9 @@ importers:
       '@atlasjs/inertia':
         specifier: workspace:*
         version: link:../inertia
+      '@atlasjs/input':
+        specifier: workspace:*
+        version: link:../input
       '@atlasjs/math':
         specifier: workspace:*
         version: link:../math

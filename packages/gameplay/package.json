@@ -23,6 +23,7 @@
     "@atlasjs/utils": "workspace:*",
     "@atlasjs/nexus": "workspace:*",
     "@atlasjs/nebula": "workspace:*",
-    "@atlasjs/inertia": "workspace:*"
+    "@atlasjs/inertia": "workspace:*",
+    "@atlasjs/input": "workspace:*"
   }
 }
