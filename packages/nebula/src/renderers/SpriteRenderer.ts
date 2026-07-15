@@ -1,36 +1,32 @@
 import { Bound, Mat4, Vec2, Vec4 } from "@atlasjs/math";
-import { Sprite } from "../graphics";
+import { Node, Sprite } from "../graphics";
 import { SpriteDrawCommand } from "./DrawCommand";
+import { NodeRendererBase } from "./NodeRendererBase";
+import { NodeRenderer, Batcher } from "./NodeRenderer";
+import { SpriteBatcher } from "./Batchers";
 
-import { BlendMode, Renderer, RenderState, Sampler, Texture2D } from "../core";
+import { BlendMode, Renderer, Sampler, Texture2D } from "../core";
 
 type SpriteRenderData = {
   readonly model: Mat4;
   readonly uvRect: Vec4;
 };
 
-const RENDER_STATES: Record<BlendMode, RenderState> = {
-  opaque: { blend: "opaque", depthTest: false, cull: "none" },
-  alpha: { blend: "alpha", depthTest: false, cull: "none" },
-  additive: { blend: "additive", depthTest: false, cull: "none" },
-  multiply: { blend: "multiply", depthTest: false, cull: "none" },
-};
+export class SpriteRenderer
+  extends NodeRendererBase<Sprite, SpriteRenderData>
+  implements NodeRenderer
+{
+  public readonly kind = "sprite" as const;
 
-const Z_OFFSET: number = 32768;
-const Z_MAX: number = 65535;
-const BATCH_RANGE: number = 65536;
-const BATCH_MAX: number = 65535;
-
-export class SpriteRenderer {
   private readonly defaultSampler: Sampler;
-  private readonly renderDataCache: WeakMap<Sprite, SpriteRenderData>;
   private readonly batchIds: Map<string, number>;
   private readonly sourceRectScratch: Bound;
 
   private nextBatchId: number;
 
   public constructor(renderer: Renderer) {
-    this.renderDataCache = new WeakMap();
+    super();
+
     this.batchIds = new Map();
     this.sourceRectScratch = new Bound();
     this.nextBatchId = 0;
@@ -43,7 +39,24 @@ export class SpriteRenderer {
     });
   }
 
-  public buildCommand(sprite: Sprite): SpriteDrawCommand {
+  public matches(node: Node): boolean {
+    return node instanceof Sprite;
+  }
+
+  public collect(node: Node, viewport: Bound, scratch: Bound): SpriteDrawCommand | null {
+    const sprite: Sprite = node as Sprite;
+    const bound: Bound = sprite.getWorldBound(scratch);
+
+    if (!viewport.overlaps(bound)) {
+      return null;
+    }
+
+    return this.buildCommand(node);
+  }
+
+  private buildCommand(node: Node): SpriteDrawCommand {
+    const sprite: Sprite = node as Sprite;
+
     const sampler: Sampler = sprite.sampler ?? this.defaultSampler;
     const materialKey: string = this.createMaterialKey(
       sprite.texture,
@@ -59,45 +72,27 @@ export class SpriteRenderer {
 
     return {
       kind: "sprite",
-      sortKey: this.computeSortKey(sprite, materialKey),
+      sortKey: this.computeSortKey(sprite.zIndex, this.getBatchId(materialKey)),
       batchKey: this.getBatchId(materialKey),
       texture: sprite.texture,
       sampler,
-      renderState: RENDER_STATES[sprite.blend],
+      renderState: NodeRendererBase.RENDER_STATES[sprite.blend],
       model: data.model,
       uvRect: data.uvRect,
       tint: sprite.tint,
     };
   }
 
-  private getOrCreateRenderData(sprite: Sprite): SpriteRenderData {
-    const cached: SpriteRenderData | undefined =
-      this.renderDataCache.get(sprite);
-
-    if (cached) {
-      return cached;
-    }
-
-    const data: SpriteRenderData = {
-      model: Mat4.identity(),
-      uvRect: new Vec4(0, 0, 1, 1),
-    };
-
-    this.renderDataCache.set(sprite, data);
-
-    return data;
+  public createBatcher(renderer: Renderer): Batcher {
+    return new SpriteBatcher(renderer.createSpriteBatch());
   }
 
-  private computeSortKey(sprite: Sprite, materialKey: string): number {
-    const z: number = Math.min(
-      Math.max(Math.round(sprite.zIndex) + Z_OFFSET, 0),
-      Z_MAX,
-    );
-
-    return z * BATCH_RANGE + this.getBatchId(materialKey);
+  protected createRenderData(): SpriteRenderData {
+    return { model: Mat4.identity(), uvRect: new Vec4(0, 0, 1, 1) };
   }
 
   private getBatchId(key: string): number {
+    const BATCH_MAX: number = 65535;
     let id: number | undefined = this.batchIds.get(key);
 
     if (id === undefined) {
