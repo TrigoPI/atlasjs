@@ -1,9 +1,14 @@
 import { Component, Entity } from "@atlasjs/nexus";
 
 import { ScriptComponentCtor } from "./ScriptComponent";
+import { ScriptServiceCtor } from "./ScriptService";
 
 export interface ScriptContext {
   getEntityId(): Entity;
+
+  getService<TFacade, TService>(
+    type: ScriptServiceCtor<TFacade, TService>,
+  ): TFacade;
 
   hasComponent<TComponent extends object>(
     type: Component<TComponent, any[]>,

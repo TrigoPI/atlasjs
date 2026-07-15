@@ -1,19 +1,34 @@
+import { ServiceRegistry } from "@atlasjs/core";
 import { Component, Entity, NexusWorld } from "@atlasjs/nexus";
 
-import { ScriptComponent, ScriptComponentCtor, ScriptContext } from "../core";
+import {
+  ScriptComponent,
+  ScriptComponentCtor,
+  ScriptContext,
+  ScriptServiceCtor,
+} from "../core";
 
 // prettier-ignore
 export class RuntimeScriptContext implements ScriptContext {
   private readonly entity: Entity;
   private readonly world: NexusWorld;
+  private readonly services: ServiceRegistry;
 
-  public constructor(entity: Entity, world: NexusWorld) {
+  public constructor(entity: Entity, world: NexusWorld, services: ServiceRegistry) {
     this.entity = entity;
     this.world = world;
+    this.services = services;
   }
 
   public getEntityId(): Entity {
     return this.entity;
+  }
+
+  public getService<TFacade, TService>(
+    type: ScriptServiceCtor<TFacade, TService>,
+  ): TFacade {
+    this.services.get(type.token);
+    return new type(this.services);
   }
 
   public hasComponent<TComponent extends object>(

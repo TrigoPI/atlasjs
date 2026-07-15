@@ -45,7 +45,7 @@ export class GameplayPlugin extends Plugin {
     const nebula: NebulaRenderer = await engine.services.wait(NEBULA_RENDERER);
     const inertia: PhysicsWorld = await engine.services.wait(INERTIAL_ENGINE);
 
-    this.scriptManager = new ScriptManager(world);
+    this.scriptManager = new ScriptManager(world, engine.services);
 
     const physicsPushSystem: PhysicsPushSystem = new PhysicsPushSystem(inertia);
     const physicsPullSystem: PhysicsPullSystem = new PhysicsPullSystem();

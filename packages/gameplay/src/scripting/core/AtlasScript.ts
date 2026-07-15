@@ -1,6 +1,7 @@
 import { Component, Entity } from "@atlasjs/nexus";
 
 import { ScriptComponentCtor } from "./ScriptComponent";
+import { ScriptServiceCtor } from "./ScriptService";
 import { ScriptContext } from "./ScriptContext";
 import { ScriptLifecycle } from "./ScriptLifeCycle";
 
@@ -33,6 +34,12 @@ export abstract class AtlasScript implements ScriptLifecycle {
 
   public get entityId(): Entity {
     return this.context.getEntityId();
+  }
+
+  public getService<TFacade, TService>(
+    type: ScriptServiceCtor<TFacade, TService>,
+  ): TFacade {
+    return this.context.getService(type);
   }
 
   public hasComponent<TComponent extends object>(
