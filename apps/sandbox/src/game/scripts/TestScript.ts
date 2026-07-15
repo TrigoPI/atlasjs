@@ -1,39 +1,50 @@
+import { Vec2 } from "@atlasjs/math";
+
 import {
   AtlasScript,
-  InputApi,
+  ButtonAction,
   Key,
+  PlayerInput,
   RigidBody2DComponent,
   Transform2DComponent,
+  Vector2Action,
+  button,
+  defineActions,
+  vector2,
 } from "@atlasjs/gameplay";
 
+const controls = defineActions({
+  move: vector2().wasd(),
+  boost: button().keys(Key.Space),
+});
+
 export class TestScript extends AtlasScript {
-  private input!: InputApi;
   private transform!: Transform2DComponent;
   private rigidbody!: RigidBody2DComponent;
+  private move!: Vector2Action;
+  private boost!: ButtonAction;
 
   private readonly speed: number = 250;
 
   public onCreate(): void {
-    this.input = this.getService(InputApi);
     this.transform = this.addComponent(Transform2DComponent);
     this.rigidbody = this.addComponent(RigidBody2DComponent);
 
     this.rigidbody.type = "kinematic";
 
     this.transform.setScale(3, 3).setPosition(400, 300);
+
+    const actions = this.addComponent(PlayerInput, controls);
+    this.move = actions.get("move");
+    this.boost = actions.get("boost");
   }
 
   public onUpdate(dt: number): void {
-    let dx: number = 0;
-    let dy: number = 0;
+    const v: Vec2 = this.move.readValue();
+    const speed: number = this.boost.isDown() ? this.speed * 2 : this.speed;
 
-    if (this.input.isDown(Key.D) || this.input.isDown(Key.ArrowRight)) dx += 1;
-    if (this.input.isDown(Key.A) || this.input.isDown(Key.ArrowLeft)) dx -= 1;
-    if (this.input.isDown(Key.W) || this.input.isDown(Key.ArrowUp)) dy -= 1;
-    if (this.input.isDown(Key.S) || this.input.isDown(Key.ArrowDown)) dy += 1;
-
-    if (dx !== 0 || dy !== 0) {
-      this.transform.translate(dx * this.speed * dt, dy * this.speed * dt);
+    if (v.x !== 0 || v.y !== 0) {
+      this.transform.translate(v.x * speed * dt, v.y * speed * dt);
     }
   }
 
