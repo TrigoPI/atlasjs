@@ -31,7 +31,7 @@ Objectif : permettre à un script de lire l'input, **sans statique global** (res
 
 5. **Façade nommée `InputApi`, exportée depuis `@atlasjs/gameplay`.** Nom distinct de l'interface `Input` backend (`@atlasjs/input`) pour éviter toute confusion. `Key` est **ré-exporté** depuis `@atlasjs/gameplay` → un auteur de script importe tout d'un seul point : `import { AtlasScript, InputApi, Key } from "@atlasjs/gameplay"`.
 
-6. **Façade apatride, re-résolution à chaque accès.** `getService` fabrique un nouveau wrapper à chaque appel (pattern « appel unique dans `onCreate`, l'utilisateur détient l'instance ») ; chaque méthode re-résout le service via le registre. Même invariant que les façades composant : aucun état d'instance au-delà de `(services)`.
+6. **Façade qui cache le service résolu au constructeur.** À la différence de `ScriptComponent` (qui re-résout à chaque accès parce qu'un composant peut être retiré/re-ajouté → risque de cache périmé), un **service n'est jamais retiré** (`ServiceRegistry` n'a pas d'`unprovide`, la référence est stable pour la vie de l'engine). La façade résout donc **une fois dans le constructeur** (`this.provided = services.get(token)`) et `resolve()` renvoie ce champ — pas de `Map.get` par accès/frame. `getService` fabrique quand même un nouveau wrapper à chaque appel (pattern « appel unique dans `onCreate`, l'utilisateur détient l'instance »). Le constructeur reste le point d'échec bruyant (throw si token absent ou service non fourni), donc `getService` n'a pas besoin de re-valider.
 
 7. **`gameplay` dépend de `input`.** Nouvelle dépendance `@atlasjs/gameplay` → `@atlasjs/input` (`workspace:*`). `input` ne dépend que de `@atlasjs/core`/`@atlasjs/math`/`@atlasjs/utils` → **pas de cycle**.
 
@@ -50,12 +50,21 @@ export interface ScriptServiceCtor<TFacade, TService> {
 }
 
 export abstract class ScriptService<TService> {
-  protected constructor(protected readonly services: ServiceRegistry) {}
+  protected readonly provided: TService;
+
+  public constructor(services: ServiceRegistry) {
+    const ctor: ScriptServiceCtor<this, TService> = this
+      .constructor as unknown as ScriptServiceCtor<this, TService>;
+
+    if (ctor.token === undefined) {
+      throw new Error(/* doit déclarer un `static token` */);
+    }
+
+    this.provided = services.get(ctor.token); // throw si le service n'est pas fourni
+  }
 
   protected resolve(): TService {
-    const ctor: ScriptServiceCtor<this, TService> = this
-      .constructor as ScriptServiceCtor<this, TService>;
-    return this.services.get(ctor.token); // throw si le service n'est pas fourni
+    return this.provided; // résolu une fois; un service ne se retire jamais
   }
 }
 ```
@@ -93,8 +102,7 @@ Nouvelle méthode `getService`, à côté du trio composant existant :
 public getService<TFacade, TService>(
   type: ScriptServiceCtor<TFacade, TService>,
 ): TFacade {
-  this.services.get(type.token); // valide tôt : throw si absent
-  return new type(this.services); // wrapper apatride, à la demande
+  return new type(this.services); // le constructeur résout + throw si absent
 }
 ```
 
@@ -184,7 +192,7 @@ src/
 
 ## Invariants d'implémentation (à ne pas régresser)
 
-- **Façade de service apatride.** Aucun état d'instance au-delà de `(services)`. `getService` fabrique un wrapper neuf à chaque appel ; chaque méthode re-résout via le registre. Ne pas cacher le service résolu dans un champ d'instance.
+- **Service caché au constructeur, pas re-résolu par accès.** Contrairement aux façades composant (re-résolution obligatoire car membership mutable), la façade de service cache `this.provided` au constructeur : un service ne se retire jamais, donc pas de péremption possible et pas de `Map.get` par frame. Ne **pas** transformer ça en re-résolution « pour s'aligner sur `ScriptComponent` » — la divergence est intentionnelle et reflète une vraie différence (service immuable vs composant mutable). Le champ reste en lecture seule (pas d'autre état d'instance).
 - **Le service backend ne fuit jamais au script.** `getService` retourne **toujours** la façade (`InputApi`), jamais le service `Input` brut. La façade n'expose pas la surface mutation/lifecycle du backend.
 - **`ScriptService` ≠ `ScriptComponent`.** Deux familles distinctes : `static token` (service, résolu via `ServiceRegistry`, sans entité) vs `static engine` (composant, résolu via `world`, par-entité). Ne pas les fusionner ni router `getService` par `getComponent`.
 - **Échec bruyant sur service absent.** `getService` throw si le token n'est pas fourni. Pas de dégradation silencieuse en `undefined`.

@@ -27,7 +27,6 @@ export class RuntimeScriptContext implements ScriptContext {
   public getService<TFacade, TService>(
     type: ScriptServiceCtor<TFacade, TService>,
   ): TFacade {
-    this.services.get(type.token);
     return new type(this.services);
   }
 

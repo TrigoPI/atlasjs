@@ -37,10 +37,9 @@ describe("Gameplay — ScriptService contract", () => {
     expect(() => new BrokenFacade(services)).toThrow(/static "token"/);
   });
 
-  it("throws when the backing service is not provided", () => {
+  it("throws at construction when the backing service is not provided", () => {
     const services: ServiceRegistry = new ServiceRegistry();
-    const facade: FakeFacade = new FakeFacade(services);
 
-    expect(() => facade.read()).toThrow(/Service not found/);
+    expect(() => new FakeFacade(services)).toThrow(/Service not found/);
   });
 });
