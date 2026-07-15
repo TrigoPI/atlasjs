@@ -342,13 +342,6 @@ export class WebGPURenderer implements Renderer {
     const geo: WebGPUGeometry = geometry as WebGPUGeometry;
     const mat: WebGPUMaterial = material as WebGPUMaterial;
     const binds: WebGPUBindingGroup = bindings as WebGPUBindingGroup;
-
-    if (__DEV__) {
-      WebGPUGuard.assertWebGPUGeometry(geometry);
-      WebGPUGuard.assertWebGPUMaterial(material);
-      WebGPUGuard.assertWebGPUBindingGroup(bindings);
-    }
-
     const pipe: WebGPUPipeline = this.pipelineFactory.getIndexed(
       mat.shader,
       geo,
@@ -365,11 +358,6 @@ export class WebGPURenderer implements Renderer {
 
   public drawInstancedBatch(batch: InstancedBatch): void {
     const ctx: WebGPURenderContext = this.assertContext();
-
-    if (__DEV__) {
-      WebGPUGuard.assertWebGPUInstancedBatch(batch);
-    }
-
     const instanced: WebGPUInstancedBatch = batch as WebGPUInstancedBatch;
 
     if (instanced.count === 0) {

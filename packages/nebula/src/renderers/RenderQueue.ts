@@ -20,7 +20,9 @@ export class RenderQueue {
   }
 
   public sort(): void {
-    this.commands.sort((a: DrawCommand, b: DrawCommand) => a.sortKey - b.sortKey);
+    this.commands.sort(
+      (a: DrawCommand, b: DrawCommand) => a.sortKey - b.sortKey,
+    );
   }
 
   public flush(renderer: Renderer): void {
@@ -38,10 +40,8 @@ export class RenderQueue {
       batcher.begin(first);
 
       let j: number = i;
-      while (
-        j < this.commands.length &&
-        this.isSameRun(this.commands[j], first.kind, first.batchKey)
-      ) {
+      // prettier-ignore
+      while (j < this.commands.length && this.isSameRun(this.commands[j], first.kind, first.batchKey)) {
         batcher.add(this.commands[j]);
         j++;
       }
