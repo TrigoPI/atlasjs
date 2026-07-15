@@ -79,6 +79,13 @@ export class GameplayPlugin extends Plugin {
     );
 
     this.handles.push(
+      update.add((ctx: StepContext) => this.scriptManager.update(ctx.dt), {
+        name: "gameplay:script-update",
+        stage: "Logic",
+      }),
+    );
+
+    this.handles.push(
       registerSystem(fixed, world, physicsPushSystem, {
         name: "gameplay:physics-push",
         stage: "PhysicsRequest",
@@ -86,13 +93,6 @@ export class GameplayPlugin extends Plugin {
       registerSystem(fixed, world, physicsPullSystem, {
         name: "gameplay:physics-pull",
         stage: "PhysicsWriteback",
-      }),
-    );
-
-    this.handles.push(
-      update.add((ctx: StepContext) => this.scriptManager.update(ctx.dt), {
-        name: "gameplay:script-update",
-        stage: "Logic",
       }),
     );
 

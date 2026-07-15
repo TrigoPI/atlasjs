@@ -194,7 +194,7 @@ src/
 - **Échec bruyant sur service absent.** `getService` throw si le token n'est pas fourni. Pas de dégradation silencieuse en `undefined`.
 - **Lire l'input dans `onUpdate`.** Les fronts (`isPressed`/`isReleased`) sont fiables au stage `Logic` (avant `endFrame` au stage `Late`). `onFixedUpdate` = zone ambiguë.
 
-## Direction Phase 2 (esquisse — spec séparée à venir)
+## Direction Phase 2 (esquisse — spec détaillée : `gameplay-input-actions.md`)
 
 Système d'actions nommées façon `UnityEngine.InputSystem` : abstraction haut-niveau au-dessus des inputs en dur.
 
