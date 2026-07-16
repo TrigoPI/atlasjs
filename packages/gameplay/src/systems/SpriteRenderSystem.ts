@@ -48,9 +48,8 @@ export class SpriteRenderSystem implements NexusSystem {
         .setRotation(transform.rotation)
         .setScale(scaleX, scaleY)
         .setTint(color.r, color.g, color.b, color.a)
-        .setVisible(spriteRender.visible);
-
-      node.zIndex = spriteRender.sortingOrder;
+        .setVisible(spriteRender.visible)
+        .setZIndex(spriteRender.sortingOrder);
     });
   }
 

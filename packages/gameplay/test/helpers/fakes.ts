@@ -10,6 +10,6 @@ export function fakeTexture(
     __kind: "texture2D",
     width,
     height,
-    dispose: (): void => {},
-  } as unknown as Texture2D;
+    destroy: (): void => {},
+  } as Texture2D;
 }
