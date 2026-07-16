@@ -2,7 +2,7 @@
 
 Renderer module of AtlasJS (2D-first). **This package is the backend-agnostic layer**: rendering interfaces + engine logic that runs against those interfaces. The concrete WebGPU implementation lives in a separate package, `@atlasjs/nebula-webgpu`.
 
-> Read `docs/shaders-materials-redesign.md` (implemented) and `docs/material-graph-serialization.md` (planned) at the repo root before touching the shader/material system.
+> Read `docs/rendering/shaders-materials.md` (implemented) and `docs/rendering/material-graph.md` (planned) at the repo root before touching the shader/material system.
 
 ## Responsibility
 
@@ -22,7 +22,7 @@ Renderer module of AtlasJS (2D-first). **This package is the backend-agnostic la
 
 Shaders are authored in **WGSL as the single source of truth**; the backend reflects them to derive all binding layouts. This package holds only the interfaces. Uniform value types supported: `float`, `int`, `bool`, `vec2/3/4`, `mat3/mat4`, `color`, `buffer` (raw bytes), plus `texture2D`/`sampler` resources. `vec3/vec4/mat3` live in `@atlasjs/math`.
 
-Planned (not implemented): material **instance serialization** (`MaterialData` POJO + `materialize`/`dematerialize` with injected resolvers) is intended to live here in the core — see `docs/material-graph-serialization.md` §3.
+Planned (not implemented): material **instance serialization** (`MaterialData` POJO + `materialize`/`dematerialize` with injected resolvers) is intended to live here in the core — see `docs/rendering/material-graph.md` §3.
 
 ## Build
 

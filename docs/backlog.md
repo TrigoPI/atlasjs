@@ -33,7 +33,7 @@ Source : [`rendering/shapes.md`](rendering/shapes.md) (hors périmètre v1).
 Source : [`rendering/sprites.md`](rendering/sprites.md) (non-objectifs v1).
 
 - 📋 **`AssetManager`** : chargement async, cache/dedup, lifetime, hot-reload. Le contrat `Asset` (`id` + `dispose`) est la fondation prévue ; conformité formelle de `Texture2D` au contrat à finaliser à ce moment-là.
-- 📋 **Intégration animation** : `AnimationPlayer` / `SpriteSheet` → `SpriteRender` (swap de `spriteRenderer.sprite`).
+- 📋 **Intégration animation** : spec écrite → [`gameplay/sprite-animation.md`](gameplay/sprite-animation.md) (`Animator` + `AnimatorSystem` dt-driven, swap de `SpriteRender.sprite`). **Prochaine feature à implémenter.**
 - 📋 **Blend mode configurable** sur le sprite.
 - 📋 **Sampler / filtrage configurable**.
 - 📋 **`sprite` nullable** sur le renderer.
@@ -81,25 +81,16 @@ Source : [`core/scheduling.md`](core/scheduling.md).
 
 ## Gameplay — Input scripting
 
-Feature en deux phases, **aucune implémentée**.
+> **Cœur implémenté** : Phase 1 (`ScriptService`/`InputApi`, sources [`gameplay/input-scripting.md`](gameplay/input-scripting.md)) et Phase 2 (actions nommées `defineActions`/`button()`/`vector2()`/`PlayerInput`/`PlayerInputSystem`, source [`gameplay/input-actions.md`](gameplay/input-actions.md)). Utilisé dans `apps/sandbox`. Ne restent que les **extensions V2** ci-dessous.
 
-### Phase 1 — Service `InputApi`
-
-Source : [`gameplay/input-scripting.md`](gameplay/input-scripting.md) — 📋.
-
-- Introduit le mécanisme générique `ScriptService<TService>` (déclare un `static token`), symétrique de `ScriptComponent`.
-- Livre la façade `InputApi` (polling clavier/souris global dans les scripts).
-- 5 checkpoints : dépendance + base, `getService` dans le contexte, façade `InputApi`, exports publics + re-export `Key`, intégration sandbox.
-- Risques notés : `mousePosition`/`mouseDelta` renvoient le `Vec2` backend vivant (mutable) ; `getService` mint un wrapper frais à chaque appel ; caveat edge-read en `onFixedUpdate` ; double point d'export `Key` (gameplay + input).
-
-### Phase 2 — Actions nommées
-
-Source : [`gameplay/input-actions.md`](gameplay/input-actions.md) — 📋.
-
-- Abstraction haut-niveau façon Unity Input System (`jump.isPressed()`, `move.readValue()`) au-dessus de la Phase 1.
-- Moteur d'actions device-agnostique (`defineActions`, builders, `InputActionMap`, actions Button/Value/Vector2) pur dans `@atlasjs/input` ; intégration ECS (`PlayerInput` + `PlayerInputSystem`, sampling au stage `Early`) dans `@atlasjs/gameplay`.
-- 4 checkpoints : modèle de données/authoring, runtime map + actions, `PlayerInput` + système, exports + sandbox.
-- Backlog V1 explicite (Phase 2+) : pas d'events/callbacks, pas d'interactions (hold/tap), pas de processors (donc diagonales non normalisées, pas de deadzone/invert/scale), pas de gamepad/axes analogiques, pas de mouse-as-Vector2, pas de control schemes / device assignment, pas de rebinding runtime, pas d'asset (dé)sérialisation/éditeur, sampling en lane `update` seulement (pas de `fixed` déterministe pour le netcode).
+- 📋 Events / callbacks (aujourd'hui polling seulement).
+- 📋 Interactions (hold / tap / multi-tap).
+- 📋 Processors : deadzone, invert, scale, **normalisation des diagonales** (aujourd'hui non normalisées).
+- 📋 Gamepad / axes analogiques ; mouse-as-Vector2 comme source.
+- 📋 Control schemes / device assignment ; rebinding runtime.
+- 📋 (Dé)sérialisation d'asset d'actions + éditeur.
+- 📋 Sampling en lane `fixed` déterministe (aujourd'hui `update` seulement — bloquant pour le netcode).
+- Risques notés à surveiller : `mousePosition`/`mouseDelta` et `Vector2Action.readValue()` renvoient un `Vec2` backend vivant (mutable) ; `getService`/`getComponent` mintent un wrapper frais à chaque appel.
 
 ---
 

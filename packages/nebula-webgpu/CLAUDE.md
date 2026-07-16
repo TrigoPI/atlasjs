@@ -2,7 +2,7 @@
 
 The **WebGPU implementation** of the `@atlasjs/nebula` rendering interfaces. All WGSL, `@webgpu/types`, and GPU resource handling live here — never in `nebula` core.
 
-> Read `docs/shaders-materials-redesign.md` (implemented) and `docs/material-graph-serialization.md` (planned) at the repo root before touching the shader/material system.
+> Read `docs/rendering/shaders-materials.md` (implemented) and `docs/rendering/material-graph.md` (planned) at the repo root before touching the shader/material system.
 
 ## Responsibility
 

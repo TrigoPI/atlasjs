@@ -3,10 +3,11 @@
 The gameplay layer of AtlasJS: a Unity-style **scripting** framework (`AtlasScript` lifecycle + component/service access) and the **engine components + systems** that bridge scripts to the ECS (Nexus), physics (Inertia), rendering (Nebula), and input. This is the package where the other engine packages are **composed** into something a game author writes against.
 
 > Design docs at the repo root — read the relevant one before changing a subsystem:
-> - `docs/gameplay-redesign.md` — the sync/physics-bridge refactor (single source of truth in Nexus, authority by body type).
-> - `docs/gameplay-scripting-components.md` — the Unity-`GetComponent` model for scripts (façades, dispatch). **The taxonomy below comes from here.**
-> - `docs/gameplay-input-scripting.md` — Phase 1: scripts reach services via `getService` + the `InputApi` façade.
-> - `docs/gameplay-input-actions.md` — Phase 2: the named-action system (`PlayerInput` + `PlayerInputSystem`).
+> - `docs/gameplay/gameplay-redesign.md` — the sync/physics-bridge refactor (single source of truth in Nexus, authority by body type).
+> - `docs/gameplay/scripting-components.md` — the Unity-`GetComponent` model for scripts (façades, dispatch). **The taxonomy below comes from here.**
+> - `docs/gameplay/input-scripting.md` — Phase 1: scripts reach services via `getService` + the `InputApi` façade.
+> - `docs/gameplay/input-actions.md` — Phase 2: the named-action system (`PlayerInput` + `PlayerInputSystem`).
+> - `docs/gameplay/sprite-animation.md` — **planned (not implemented)**: `Animator` (LEVEL-1 component, named clips + `play(name)`) + `AnimatorSystem` (dt-driven, pushes the current frame into `SpriteRender.sprite`), reusing nebula `SpriteSheet`/`SpriteAnimation`.
 
 ## The two component levels (do not conflate)
 

@@ -1,6 +1,6 @@
 # Accès input dans le scripting (`@atlasjs/gameplay`) — façade de service `InputApi`
 
-> **Statut : validé (non implémenté).** Suite de `docs/gameplay/scripting-components.md`. Ce document ajoute au framework de script un **accès aux services** de l'engine, exposé aux scripts via des **façades haut-niveau** (jamais le service backend brut), et livre la première façade concrète : `InputApi`, au-dessus du service `Input` de `@atlasjs/input`.
+> **Statut : implémenté** (`ScriptService`, `InputApi`, `getService` — voir `packages/gameplay/src/scripting/services/` + tests `script-service*.test.ts`, `input-api.test.ts`). Suite de `docs/gameplay/scripting-components.md`. Ce document ajoute au framework de script un **accès aux services** de l'engine, exposé aux scripts via des **façades haut-niveau** (jamais le service backend brut), et livre la première façade concrète : `InputApi`, au-dessus du service `Input` de `@atlasjs/input`.
 >
 > Découpé en deux temps :
 > - **Phase 1 (ce doc)** — polling clavier/souris global dans les scripts (`this.input = this.getService(InputApi)` → `this.input.isDown(Key.D)`).
