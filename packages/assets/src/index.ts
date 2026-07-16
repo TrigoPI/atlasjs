@@ -1,2 +1,1 @@
-export * from "./public/types";
-export * from "./public";
+export * from "./Asset";
