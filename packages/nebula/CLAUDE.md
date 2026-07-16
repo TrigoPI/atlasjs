@@ -26,4 +26,4 @@ Planned (not implemented): material **instance serialization** (`MaterialData` P
 
 ## Build
 
-`pnpm build` (tsdown, ESM + d.ts). Depends on `@atlasjs/{assets,core,math,utils}`.
+`pnpm build` (tsdown, ESM + d.ts). Depends on `@atlasjs/{core,math,utils}`.

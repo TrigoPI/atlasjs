@@ -1,15 +1,32 @@
-import { NebulaRenderer, Sampler, Sprite } from "@atlasjs/nebula";
+import { Sprite } from "../assets";
 import { SpriteRender, Transform2D } from "../components";
 
-import { NexusSystem, NexusSystemContext, SparseSet } from "@atlasjs/nexus";
+import {
+  Color,
+  NebulaRenderer,
+  Sampler,
+  Sprite as SpriteNode,
+} from "@atlasjs/nebula";
+
+import {
+  Entity,
+  NexusSystem,
+  NexusSystemContext,
+  SparseSet,
+} from "@atlasjs/nexus";
+
+interface MountedSprite {
+  node: SpriteNode;
+  sprite: Sprite;
+}
 
 export class SpriteRenderSystem implements NexusSystem {
-  private readonly mountedEntities: SparseSet<Sprite>;
+  private readonly mounted: SparseSet<MountedSprite>;
   private readonly nebula: NebulaRenderer;
   private readonly sampler: Sampler;
 
   public constructor(nebula: NebulaRenderer) {
-    this.mountedEntities = new SparseSet<Sprite>();
+    this.mounted = new SparseSet<MountedSprite>();
     this.nebula = nebula;
     this.sampler = nebula.createSampler({
       magFilter: "nearest",
@@ -17,21 +34,80 @@ export class SpriteRenderSystem implements NexusSystem {
     });
   }
 
+  // prettier-ignore
   public update({ world }: NexusSystemContext): void {
     world.query(Transform2D, SpriteRender).each((entity, transform, spriteRender) => {
-      let sprite: Sprite | undefined = this.mountedEntities.get(entity);
+      const node: SpriteNode = this.resolveNode(entity, spriteRender.sprite);
 
-      if (!sprite) {
-        sprite = new Sprite(spriteRender.texture, this.sampler);
-        this.nebula.scene.addChild(sprite);
-        this.mountedEntities.set(entity, sprite);
-      }
+      const scaleX: number = transform.scale.x * (spriteRender.flipX ? -1 : 1);
+      const scaleY: number = transform.scale.y * (spriteRender.flipY ? -1 : 1);
+      const color: Color = spriteRender.color;
 
-      sprite
+      node
         .setPosition(transform.position.x, transform.position.y)
         .setRotation(transform.rotation)
-        .setScale(transform.scale.x, transform.scale.y)
-        .setVisible(spriteRender.visible);
+        .setScale(scaleX, scaleY)
+        .setTint(color.r, color.g, color.b, color.a)
+        .setVisible(spriteRender.visible)
+        .setZIndex(spriteRender.sortingOrder);
     });
+  }
+
+  public unmount(entity: Entity): void {
+    const mounted: MountedSprite | undefined = this.mounted.get(entity);
+
+    if (mounted === undefined) {
+      return;
+    }
+
+    mounted.node.removeFromParent();
+    this.mounted.delete(entity);
+  }
+
+  private resolveNode(entity: Entity, sprite: Sprite): SpriteNode {
+    const mounted: MountedSprite | undefined = this.mounted.get(entity);
+
+    if (mounted === undefined) {
+      return this.mount(entity, sprite).node;
+    }
+
+    if (mounted.sprite === sprite) {
+      return mounted.node;
+    }
+
+    if (mounted.node.texture !== sprite.texture) {
+      this.unmount(entity);
+      return this.mount(entity, sprite).node;
+    }
+
+    mounted.node.setAnchor(sprite.pivot.x, sprite.pivot.y);
+    mounted.node.setSourceRect(
+      sprite.rect.x,
+      sprite.rect.y,
+      sprite.rect.width,
+      sprite.rect.height,
+    );
+
+    mounted.sprite = sprite;
+
+    return mounted.node;
+  }
+
+  private mount(entity: Entity, sprite: Sprite): MountedSprite {
+    const node: SpriteNode = new SpriteNode(sprite.texture, this.sampler);
+    node.setAnchor(sprite.pivot.x, sprite.pivot.y);
+    node.setSourceRect(
+      sprite.rect.x,
+      sprite.rect.y,
+      sprite.rect.width,
+      sprite.rect.height,
+    );
+
+    this.nebula.scene.addChild(node);
+
+    const mounted: MountedSprite = { node, sprite };
+    this.mounted.set(entity, mounted);
+
+    return mounted;
   }
 }

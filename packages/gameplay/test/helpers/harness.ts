@@ -1,6 +1,6 @@
 import { Engine, Plugin, ServiceRegistry, ServiceToken } from "@atlasjs/core";
 import { NEXUS, NexusPlugin, NexusWorld } from "@atlasjs/nexus";
-import { NEBULA_RENDERER } from "@atlasjs/nebula";
+import { NEBULA_RENDERER, SceneGraph } from "@atlasjs/nebula";
 import { InertialPlugin } from "@atlasjs/inertia";
 
 import { GameplayPlugin } from "../../src/GameplayPlugin";
@@ -26,10 +26,6 @@ class Provide extends Plugin {
   public uninstall(): void {}
 }
 
-// The fixed lane never touches the renderer (SpriteRenderSystem runs in the
-// render lane), so a minimal stub is enough to construct the systems.
-const fakeNebula = { createSampler: () => ({}), scene: { addChild: () => {} } };
-
 export interface Harness {
   world: NexusWorld;
   physics: FakePhysicsWorld;
@@ -43,6 +39,9 @@ export async function createHarness(): Promise<Harness> {
   let onTick: ((dt: number) => void) | null = null;
 
   const physics: FakePhysicsWorld = new FakePhysicsWorld();
+
+  // A per-harness stub renderer with a real scene so tests observe mounts.
+  const fakeNebula = { createSampler: () => ({}), scene: new SceneGraph() };
 
   const engine = new Engine({
     fixedDelta: FIXED,

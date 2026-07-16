@@ -71,6 +71,10 @@ export class GameplayPlugin extends Plugin {
           world.removeComponent(entity, PhysicsBodyRef);
         }
       }),
+
+      world.onRemove(SpriteRender, (entity: Entity) => {
+        spriteRenderSystem.unmount(entity);
+      }),
     );
 
     const { fixed, update, render } = engine.scheduler;

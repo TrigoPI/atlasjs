@@ -19,6 +19,8 @@ export type {
 
 export * from "./tokens";
 export * from "./components";
+export * from "./assets";
+export { Color } from "@atlasjs/nebula";
 export * from "./scripting";
 export * from "./registerSystem";
 export * from "./GameplayPlugin";
