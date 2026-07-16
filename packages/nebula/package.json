@@ -18,7 +18,6 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "@atlasjs/assets": "workspace:*",
     "@atlasjs/core": "workspace:*",
     "@atlasjs/math": "workspace:*",
     "@atlasjs/utils": "workspace:*"
