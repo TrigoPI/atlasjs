@@ -2,7 +2,7 @@
 
 > Statut : **validé**, prêt pour plan d'implémentation
 > Portée : `@atlasjs/nebula` (interface `Renderer`), `@atlasjs/nebula-webgpu` (`WebGPURenderer`), apps `sandbox` + `webgpu`
-> Référence backlog : `docs/renderer-backlog.md` §B3
+> Référence backlog : `docs/backlog.md` §B3
 
 ## Problème
 

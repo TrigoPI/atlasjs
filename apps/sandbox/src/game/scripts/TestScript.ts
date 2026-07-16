@@ -24,7 +24,7 @@ export class TestScript extends AtlasScript {
   private move!: Vector2Action;
   private boost!: ButtonAction;
 
-  private readonly speed: number = 250;
+  private readonly speed: number = 25000;
 
   public onCreate(): void {
     const actions = this.addComponent(PlayerInput, controls);
@@ -37,6 +37,7 @@ export class TestScript extends AtlasScript {
 
     this.rigidbody.type = "kinematic";
     this.transform.setScale(3, 3).setPosition(400, 300);
+    this.rigidbody.setMass(1);
   }
 
   public onUpdate(dt: number): void {
@@ -44,8 +45,10 @@ export class TestScript extends AtlasScript {
     const speed: number = this.boost.isDown() ? this.speed * 2 : this.speed;
 
     if (v.x !== 0 || v.y !== 0) {
-      this.transform.translate(v.x * speed * dt, v.y * speed * dt);
+      this.rigidbody.setVelocity(v.x * speed * dt, v.y * speed * dt);
     }
+
+    console.log(this.rigidbody.velocity);
   }
 
   public onDestroy(): void {}

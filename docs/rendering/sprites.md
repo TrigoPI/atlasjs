@@ -1,6 +1,6 @@
 # SpriteRenderer redesign — Sprite asset + façade Unity-style
 
-> Statut : **validé, non implémenté**. Refonte du système de rendu de sprite du package `@atlasjs/gameplay`, avec introduction d'une couche d'asset minimale dans `@atlasjs/assets`.
+> Statut : **implémenté**. Refonte du système de rendu de sprite du package `@atlasjs/gameplay`, avec introduction d'une couche d'asset minimale dans `@atlasjs/assets`. Le plan d'exécution détaillé (anciennement `sprite-renderer-implementation-plan.md`) a été fusionné ici une fois livré. Extensions différées (AssetManager, animation, blend/sampler configurables) → `docs/backlog.md`.
 
 ## Contexte
 
@@ -53,7 +53,7 @@ SpriteRendererComponent (L2)                  ← proxy stateless, API scripting
 SpriteRenderSystem  →  nebula Sprite (node)   ← miroir en aval, jamais une source
 ```
 
-Cohérent avec la taxonomie L1/L2 (`gameplay-scripting-components.md`) et le principe « source unique dans Nexus, backend en aval » (`gameplay-redesign.md`).
+Cohérent avec la taxonomie L1/L2 (`docs/gameplay/scripting-components.md`) et le principe « source unique dans Nexus, backend en aval » (`docs/gameplay/gameplay-redesign.md`).
 
 ### 1. Contrat `Asset` (`@atlasjs/assets`)
 
@@ -237,16 +237,15 @@ Le façade et le système lisent/écrivent le **même** `SpriteRender` ; le node
   - tint / visible / zIndex propagés.
 - Cycle de vie : `onRemove(SpriteRender)` retire bien le node du scene-graph.
 
-## Checklist d'implémentation
+## Checklist d'implémentation — ✅ livrée
 
-- [ ] `@atlasjs/assets` : vider le mort, ajouter le contrat `Asset`.
-- [ ] `@atlasjs/gameplay` : `Sprite` asset (+ index, + dépendance assets).
-- [ ] `SpriteRender` L1 : nouveaux champs.
-- [ ] `SpriteRendererComponent` L2 : façade complète.
-- [ ] `SpriteRenderSystem` : réécriture + swap + `onRemove`.
-- [ ] `@atlasjs/nebula` : retirer la dépendance fantôme `@atlasjs/assets`.
-- [ ] Sandbox `EcsScene` : migration vers le `Sprite` asset.
-- [ ] Re-exports gameplay.
-- [ ] Tests.
-- [ ] `tsc --noEmit` sur gameplay + build des dépendances modifiées (`assets`).
-```
+- [x] `@atlasjs/assets` : vider le mort, ajouter le contrat `Asset`.
+- [x] `@atlasjs/gameplay` : `Sprite` asset (+ index, + dépendance assets).
+- [x] `SpriteRender` L1 : nouveaux champs.
+- [x] `SpriteRendererComponent` L2 : façade complète.
+- [x] `SpriteRenderSystem` : réécriture + swap + `onRemove`.
+- [x] `@atlasjs/nebula` : retirer la dépendance fantôme `@atlasjs/assets`.
+- [x] Sandbox `EcsScene` : migration vers le `Sprite` asset.
+- [x] Re-exports gameplay.
+- [x] Tests (`test/sprite-render*.test.ts`, `test/sprite-renderer-facade.test.ts`).
+- [x] `tsc --noEmit` sur gameplay + build des dépendances modifiées (`assets`).

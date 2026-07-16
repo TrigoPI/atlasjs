@@ -84,7 +84,7 @@ class PhysicsBodyRef { constructor(public body: RigidBody) {} }
 ```
 
 - Le handle inertia devient un composant Nexus normal → les queries le joignent (`query(RigidBody2D, Transform2D, PhysicsBodyRef)`), et `world.onRemove(PhysicsBodyRef, …)` (ou `onRemove(RigidBody2D, …)`) détruit le body — **plus de `SparseSet` ni de hook manuel** dans le plugin.
-- Non sérialisable : c'est un composant de runtime, jamais persisté (à marquer comme tel si une sérialisation arrive plus tard, cf. `material-graph-serialization.md` pour le pattern).
+- Non sérialisable : c'est un composant de runtime, jamais persisté (à marquer comme tel si une sérialisation arrive plus tard, cf. `docs/rendering/material-graph.md` pour le pattern).
 
 ### 2. Façade script = handle fin (le cœur)
 
@@ -145,7 +145,7 @@ class ScriptComponentRegistry {
 - **Point de vigilance :** `world.setComponent` remplace l'instance *en place* sans émettre `onRemove` (il n'émet `onAdd` que si le composant était absent). C'est la seule opération qui rendrait le cache périmé silencieusement. Contrat retenu : **les composants à façade sont mutés en place, jamais remplacés via `setComponent`** (c'est tout l'intérêt d'une source unique). Durcissement Nexus possible (hors scope) : émettre `onRemove`+`onAdd` sur remplacement.
 - **Cycle de vie du cache** : `ScriptManager` connaît déjà les scripts par entité (`recordsByEntity`). Quand le dernier script d'une entité est détruit, appeler `handleRegistry.release(entity)`. À la destruction d'entité, `destroyEntity` émet `onRemove` par composant → les handles s'invalident de toute façon.
 
-> Note perf assumée : à l'échelle cible (1k–3k entités, cf. `nexus-ecs-redesign.md`), re-résoudre `world.getComponent` à chaque accès serait déjà négligeable. Le cache est l'optimisation demandée ; le fallback « re-résoudre à chaque fois » reste la baseline correcte la plus simple si l'invalidation devient un fardeau.
+> Note perf assumée : à l'échelle cible (1k–3k entités, cf. `docs/core/nexus-ecs.md`), re-résoudre `world.getComponent` à chaque accès serait déjà négligeable. Le cache est l'optimisation demandée ; le fallback « re-résoudre à chaque fois » reste la baseline correcte la plus simple si l'invalidation devient un fardeau.
 
 ### 4. Pont physique & autorité déclarée
 
@@ -174,7 +174,7 @@ La décision est prise **au moment de l'écriture**, dans le setter de la façad
 
 ### 5. API de script
 
-> **Raffiné depuis :** l'accès aux façades décrit ici (getters magiques `this.transform`/`this.rigidbody`) est remplacé par un accès unifié façon Unity `GetComponent` — voir `gameplay-scripting-components.md`.
+> **Raffiné depuis :** l'accès aux façades décrit ici (getters magiques `this.transform`/`this.rigidbody`) est remplacé par un accès unifié façon Unity `GetComponent` — voir `docs/gameplay/scripting-components.md`.
 
 `ScriptContext` enveloppe le vrai world. `AtlasScript` expose des accès façon Unity :
 

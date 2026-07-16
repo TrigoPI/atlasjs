@@ -9,7 +9,7 @@
 
 - **Code-first d'abord.** Tout (instancier un material, construire un graphe, sérialiser, désérialiser) se fait en code, sans éditeur. L'éditeur ne fait que manipuler les mêmes modèles de données et appeler les mêmes fonctions.
 - **L'éditeur se branche, il n'est pas privilégié.** Il lit le registre de nœuds (palette), lit/écrit le graphe (JSON), appelle `compile`. Aucune logique spécifique éditeur ne vit dans la lib.
-- **Réutilise le pipeline existant.** Un graphe compile vers du **WGSL** (source `material { }` + fragment), qui repart par le `createShader` + réflexion déjà en place (voir `shaders-materials-redesign.md`). Le graphe est une couche d'authoring AU-DESSUS ; rien en dessous ne change.
+- **Réutilise le pipeline existant.** Un graphe compile vers du **WGSL** (source `material { }` + fragment), qui repart par le `createShader` + réflexion déjà en place (voir `docs/rendering/shaders-materials.md`). Le graphe est une couche d'authoring AU-DESSUS ; rien en dessous ne change.
 - **Modularité.** Le core reste agnostique ; le graphe (qui émet du WGSL) vit dans son propre package optionnel.
 
 ---

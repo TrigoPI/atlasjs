@@ -1,6 +1,6 @@
 # Nebula — Refonte Shader / Material
 
-> Statut : **design validé, implémentation à venir**
+> Statut : **implémenté** (4 phases livrées + correctif versioning). Reste des pistes futures (plugin Vite, `Sprite.material`) → voir `docs/backlog.md`.
 > Portée : package `@atlasjs/nebula` (interfaces) + implémentation WebGPU
 > Objectif : rendre l'authoring de shaders/materials simple, sûr, et sans double déclaration.
 

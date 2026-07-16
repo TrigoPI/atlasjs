@@ -1,6 +1,6 @@
 # Système d'actions nommées (Phase 2) — `@atlasjs/input` + `@atlasjs/gameplay`
 
-> **Statut : validé (non implémenté).** Phase 2 de l'input dans le scripting, suite de `gameplay-input-scripting.md` (Phase 1 = polling bas-niveau via façade `InputApi`, livrée). Objectif : une abstraction haut-niveau façon [Unity Input System](https://docs.unity3d.com/Packages/com.unity.inputsystem@1.19/manual/QuickStartGuide.html) — des **actions nommées** (`jump.isPressed()`, `move.readValue()`) plutôt que des touches en dur dans la logique de jeu.
+> **Statut : validé (non implémenté).** Phase 2 de l'input dans le scripting, suite de `docs/gameplay/input-scripting.md` (Phase 1 = polling bas-niveau via façade `InputApi`, livrée). Objectif : une abstraction haut-niveau façon [Unity Input System](https://docs.unity3d.com/Packages/com.unity.inputsystem@1.19/manual/QuickStartGuide.html) — des **actions nommées** (`jump.isPressed()`, `move.readValue()`) plutôt que des touches en dur dans la logique de jeu.
 >
 > **Cadrage : MVP en lecture (polling), mais architecturé extensible** — les événements, interactions (hold/tap), processors, control schemes, gamepad et l'éditeur ne sont **pas** dans ce premier jet, mais le modèle laisse des coutures propres pour les ajouter sans refonte (voir §7 et §8).
 
@@ -16,7 +16,7 @@ La Phase 1 expose le device brut aux scripts : `this.input = this.getService(Inp
 
 2. **System d'échantillonnage par-frame.** Un `PlayerInputSystem` échantillonne chaque frame au stage **`Early`** de la lane `update` (anchor 200) — après que le backend DOM a rempli l'état de la frame, **avant** les scripts (`Logic`, 300), et le `endFrame()` du backend nettoie les fronts en `Late` (900). Chaque action stocke `current` + `previous` → fronts corrects **au niveau action** (pas seulement touche). C'est la couture où événements/interactions se brancheront.
 
-3. **Authoring = descripteur data + `get(name)` typé.** Les maps sont définies comme **donnée sérialisable** via `defineActions({...})` et des builders de binding. Le script récupère des handles typés par `map.get("jump")` (nom faux → **erreur compile**). Aligné avec la direction sérialisation/éditeur du moteur (cf. `material-graph-serialization.md`).
+3. **Authoring = descripteur data + `get(name)` typé.** Les maps sont définies comme **donnée sérialisable** via `defineActions({...})` et des builders de binding. Le script récupère des handles typés par `map.get("jump")` (nom faux → **erreur compile**). Aligné avec la direction sérialisation/éditeur du moteur (cf. `docs/rendering/material-graph.md`).
 
 4. **Layering device-agnostic.** Le moteur d'actions (modèle + runtime + sampling) vit dans **`@atlasjs/input`**, **pur** (aucun ECS, aucun scheduler) → testable seul et réutilisable hors gameplay. L'intégration ECS (composant `PlayerInput` + `PlayerInputSystem`) vit dans **`@atlasjs/gameplay`**.
 

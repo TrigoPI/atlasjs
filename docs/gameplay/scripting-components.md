@@ -1,10 +1,10 @@
 # API composants de script (`@atlasjs/gameplay`) — modèle Unity `GetComponent`
 
-> **Statut : implémenté (phases 1→4 terminées).** Suite directe de `gameplay-redesign.md` (phases 0→6 terminées). Ce document raffine **uniquement la couche d'accès aux composants côté script** (§5 « API de script » de l'ancien doc). Le pont physique, l'autorité déclarée et la source unique restent inchangés.
+> **Statut : implémenté (phases 1→4 terminées).** Suite directe de `docs/gameplay/gameplay-redesign.md` (phases 0→6 terminées). Ce document raffine **uniquement la couche d'accès aux composants côté script** (§5 « API de script » de l'ancien doc). Le pont physique, l'autorité déclarée et la source unique restent inchangés.
 
 ## Contexte
 
-`gameplay-redesign.md` a supprimé l'ECS fantôme et introduit des **façades fines** (`Transform2DComponent`, `RigidBody2DComponent`) : des proxys `(world, entity)` sur une source unique dans Nexus, avec routage d'autorité dans les setters. Mais l'accès à ces façades a deux défauts :
+`docs/gameplay/gameplay-redesign.md` a supprimé l'ECS fantôme et introduit des **façades fines** (`Transform2DComponent`, `RigidBody2DComponent`) : des proxys `(world, entity)` sur une source unique dans Nexus, avec routage d'autorité dans les setters. Mais l'accès à ces façades a deux défauts :
 
 1. **Getters magiques imposés.** `AtlasScript` expose `get transform()` / `get rigidbody()`, et `ScriptComponentRegistry` **construit d'office** les deux façades pour *toute* entité scriptée (`EntityScriptComponents` news `transform` **et** `rigidbody`), même une entité sans rigidbody.
 2. **Crash différé, incohérence.** `this.transform` a toujours l'air présent mais `resolve()` fait `requireComponent` → **throw à l'accès** si `addComponent(Transform2D)` n'a pas été fait avant. Et l'accès aux façades (`this.transform`) suit un chemin différent de l'accès aux autres composants (`this.getComponent(X)`).

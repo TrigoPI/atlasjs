@@ -1,6 +1,6 @@
 # Accès input dans le scripting (`@atlasjs/gameplay`) — façade de service `InputApi`
 
-> **Statut : validé (non implémenté).** Suite de `gameplay-scripting-components.md`. Ce document ajoute au framework de script un **accès aux services** de l'engine, exposé aux scripts via des **façades haut-niveau** (jamais le service backend brut), et livre la première façade concrète : `InputApi`, au-dessus du service `Input` de `@atlasjs/input`.
+> **Statut : validé (non implémenté).** Suite de `docs/gameplay/scripting-components.md`. Ce document ajoute au framework de script un **accès aux services** de l'engine, exposé aux scripts via des **façades haut-niveau** (jamais le service backend brut), et livre la première façade concrète : `InputApi`, au-dessus du service `Input` de `@atlasjs/input`.
 >
 > Découpé en deux temps :
 > - **Phase 1 (ce doc)** — polling clavier/souris global dans les scripts (`this.input = this.getService(InputApi)` → `this.input.isDown(Key.D)`).
@@ -194,7 +194,7 @@ src/
 - **Échec bruyant sur service absent.** `getService` throw si le token n'est pas fourni. Pas de dégradation silencieuse en `undefined`.
 - **Lire l'input dans `onUpdate`.** Les fronts (`isPressed`/`isReleased`) sont fiables au stage `Logic` (avant `endFrame` au stage `Late`). `onFixedUpdate` = zone ambiguë.
 
-## Direction Phase 2 (esquisse — spec détaillée : `gameplay-input-actions.md`)
+## Direction Phase 2 (esquisse — spec détaillée : `docs/gameplay/input-actions.md`)
 
 Système d'actions nommées façon `UnityEngine.InputSystem` : abstraction haut-niveau au-dessus des inputs en dur.
 

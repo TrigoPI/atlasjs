@@ -22,7 +22,7 @@
 
 - **Cible perf : 1k–3k entités actives @ 60 fps** au minimum. Au-delà : sujet à réflexion ultérieure.
 - **Stockage : sparse-set + composants-classes** conservés. À cette échelle le pointer-chasing et le GC des instances sont négligeables ; SoA/archetype seraient de l'ingénierie payée en DX sans gain visible. **La migration future (archetype/SoA) doit rester indolore** — garantie par l'abstraction, pas par la représentation (cf. « Backend swappable »).
-- **Command buffer** pour la mutation structurelle pendant une frame, avec **flush hybride** : auto aux sync points (fin de stage/lane, aligné sur `scheduling-redesign.md`) + `world.flush()` manuel disponible.
+- **Command buffer** pour la mutation structurelle pendant une frame, avec **flush hybride** : auto aux sync points (fin de stage/lane, aligné sur `docs/core/scheduling.md`) + `world.flush()` manuel disponible.
 - **Mutation directe par défaut, buffer si besoin** (modèle EnTT/flecs). Le direct s'applique immédiatement (setup, spawn, éditeur, tests) ; `world.commands` défère quand on mute pendant une query. Un **garde-fou fail-fast** (compteur de version par store, vérifié par l'itérateur) transforme le bug silencieux actuel en erreur claire immédiate.
 - **Query typée** yield-ant `(entity, ...composants)` : chemin d'accès **unique** pour les systèmes, zéro re-lookup.
 - **Multi-world** : plusieurs `NexusWorld` isolés doivent coexister.
@@ -133,7 +133,7 @@ class NexusWorld {
 - **`spawn()` est immédiat** : créer une entité nue ne touche aucun store de composant, donc c'est sûr en pleine itération. Le handle est utilisable tout de suite (par les `add` différés qui suivent). Seules les mutations de composants/structure sont différées.
 - **Direct** (`world.addComponent`, …) : appliqué tout de suite. Pour setup, spawn au chargement, éditeur, tests.
 - **Différé** (`world.commands.add/set/remove/destroy`, …) : accumulé dans une file de thunks, rejoué au `flush()`. Pour la mutation pendant une query.
-- **Flush hybride** : le flush auto est câblé au niveau **core** — chaque lane se termine par une étape `Sync` (anchor 1000, cf. `scheduling-redesign.md`), et `NexusPlugin` y enregistre un step `nexus:flush` dans les 3 lanes. Tout plugin utilisant le world en bénéficie **sans le câbler**. `world.flush()` reste disponible pour forcer manuellement dans un système précis.
+- **Flush hybride** : le flush auto est câblé au niveau **core** — chaque lane se termine par une étape `Sync` (anchor 1000, cf. `docs/core/scheduling.md`), et `NexusPlugin` y enregistre un step `nexus:flush` dans les 3 lanes. Tout plugin utilisant le world en bénéficie **sans le câbler**. `world.flush()` reste disponible pour forcer manuellement dans un système précis.
 - Ordre d'application déterministe = ordre d'enregistrement. `destroy` est idempotent (double-destroy dans un même flush toléré).
 - **Pas de dépendance circulaire** : `NexusCommandBuffer` ne dépend pas de `NexusWorld` mais d'une interface minimale `CommandTarget` (les 6 opérations qu'il diffère). `NexusWorld` la satisfait structurellement et se passe lui-même (`new NexusCommandBuffer(this)`) — inversion de dépendance, le buffer ne connaît que ce qu'il touche.
 

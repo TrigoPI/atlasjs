@@ -1,6 +1,6 @@
 # Refonte du scheduling d'AtlasJS
 
-> **Statut : implémenté (phases 0→8 terminées).** Document de design + suivi. Voir la checklist en bas.
+> **Statut : implémenté** — phases 0, 1, 2, 4, 5, 6, 7, 8 + vitest terminées. **Phase 3 (Physics dt) reste à faire** → voir `docs/backlog.md`. Document de design + suivi. Voir la checklist en bas.
 
 ## Context
 
