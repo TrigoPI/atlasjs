@@ -1,6 +1,6 @@
 # Animation de sprite — `Animator` + `AnimatorSystem` (`@atlasjs/gameplay`)
 
-> **Statut : validé, non implémenté.** Câble l'animation de sprite dans la voie gameplay : un composant `Animator` (clips nommés, `play(name)`) piloté par un `AnimatorSystem` qui pousse la frame courante dans `SpriteRender`. Réutilise `SpriteSheet`/`Frame`/`SpriteAnimation` de `@atlasjs/nebula` ; la seule modif nebula est de rendre `SpriteAnimation` piloté par `dt`.
+> **Statut : implémenté.** Câble l'animation de sprite dans la voie gameplay : un composant `Animator` (clips nommés, `play(name)`) piloté par un `AnimatorSystem` qui pousse la frame courante dans `SpriteRender`. Réutilise `SpriteSheet`/`Frame`/`SpriteAnimation` de `@atlasjs/nebula` ; la seule modif nebula est de rendre `SpriteAnimation` piloté par `dt`.
 > Prérequis de lecture : `docs/rendering/sprites.md` (le `Sprite` asset + `SpriteRenderSystem` sur lesquels on se branche), `docs/gameplay/scripting-components.md` (les deux niveaux de composants), `docs/core/scheduling.md` (lanes/stages).
 
 ---
