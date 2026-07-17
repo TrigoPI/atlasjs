@@ -33,10 +33,22 @@ Source : [`rendering/shapes.md`](rendering/shapes.md) (hors périmètre v1).
 Source : [`rendering/sprites.md`](rendering/sprites.md) (non-objectifs v1).
 
 - 📋 **`AssetManager`** : chargement async, cache/dedup, lifetime, hot-reload. Le contrat `Asset` (`id` + `dispose`) est la fondation prévue ; conformité formelle de `Texture2D` au contrat à finaliser à ce moment-là.
-- 📋 **Intégration animation** : spec écrite → [`gameplay/sprite-animation.md`](gameplay/sprite-animation.md) (`Animator` + `AnimatorSystem` dt-driven, swap de `SpriteRender.sprite`). **Prochaine feature à implémenter.**
+- ✅ **Intégration animation** : *implémenté* → [`gameplay/sprite-animation.md`](gameplay/sprite-animation.md) (`Animator` + `AnimatorSystem` dt-driven, swap de `SpriteRender.sprite`). Suites V2 → section [Animation — suites V2](#animation--suites-v2) ci-dessous.
 - 📋 **Blend mode configurable** sur le sprite.
 - 📋 **Sampler / filtrage configurable**.
 - 📋 **`sprite` nullable** sur le renderer.
+
+### Animation — suites V2
+
+Source : [`gameplay/sprite-animation.md`](gameplay/sprite-animation.md) (§10 non-objectifs) + review de branche `claude/feat/animator`.
+
+- 📋 **State machine / transitions** ; **blend trees**.
+- 📋 **Events de frame** (le stub existait dans `SpriteAnimation`, retiré au passage dt — point d'accroche à réintroduire) + **events de fin d'anim** (`onComplete`).
+- 📋 **Root motion** ; **vitesse / timescale d'anim par clip**.
+- 📋 **Sérialisation d'un asset d'animation**.
+- 📋 **Pivot par frame** : `AnimatorSystem` crée les `Sprite` de frame sans pivot → défaut centre `(0.5, 0.5)`. Un sprite seedé avec un pivot non-centré « saute » au démarrage de l'anim (`resolveNode` ré-`setAnchor`). `Frame` ne porte pas de pivot : le threader via `Frame`/`Animator`, ou hériter du `SpriteRender.sprite.pivot` courant dans `spriteFor`.
+- 📋 **Re-trigger d'un clip one-shot déjà actif** : `Animator.play(name)` est no-op si le clip est actif (hérité de `AnimationPlayer.play`) → impossible de rejouer un one-shot terminé sans switcher de clip. Ajouter un paramètre `restart` / une méthode `replay()`.
+- 💭 **Eviction du cache `Map<Frame, Sprite>`** de l'`AnimatorSystem` : borné aujourd'hui (une entrée par `Frame` distincte), mais pas d'eviction si des sheets sont déchargées en cours de session — à lier à l'`AssetManager`.
 
 ---
 

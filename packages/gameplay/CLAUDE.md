@@ -7,7 +7,7 @@ The gameplay layer of AtlasJS: a Unity-style **scripting** framework (`AtlasScri
 > - `docs/gameplay/scripting-components.md` — the Unity-`GetComponent` model for scripts (façades, dispatch). **The taxonomy below comes from here.**
 > - `docs/gameplay/input-scripting.md` — Phase 1: scripts reach services via `getService` + the `InputApi` façade.
 > - `docs/gameplay/input-actions.md` — Phase 2: the named-action system (`PlayerInput` + `PlayerInputSystem`).
-> - `docs/gameplay/sprite-animation.md` — **planned (not implemented)**: `Animator` (LEVEL-1 component, named clips + `play(name)`) + `AnimatorSystem` (dt-driven, pushes the current frame into `SpriteRender.sprite`), reusing nebula `SpriteSheet`/`SpriteAnimation`.
+> - `docs/gameplay/sprite-animation.md` — **implemented**: `Animator` (LEVEL-1 component, named clips + `play(name)`) + `AnimatorSystem` (dt-driven, pushes the current frame into `SpriteRender.sprite`), reusing nebula `SpriteSheet`/`SpriteAnimation`. See `components/Animator.ts`, `systems/AnimatorSystem.ts`.
 
 ## The two component levels (do not conflate)
 

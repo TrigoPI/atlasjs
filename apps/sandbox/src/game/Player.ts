@@ -72,7 +72,7 @@ export class Player {
     this.updatePosition();
     this.updateAnimation();
 
-    this.animator.updateAndApply(this.player);
+    this.animator.updateAndApply(this.player, dt * 1000);
     this.sword.update(dt);
   }
 

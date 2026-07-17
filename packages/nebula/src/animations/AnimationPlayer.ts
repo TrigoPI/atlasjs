@@ -1,5 +1,6 @@
 import { Sprite } from "../graphics";
 import { SpriteAnimation } from "./SpriteAnimation";
+import { Frame } from "./Frame";
 
 export class AnimationPlayer {
   private readonly animations: Map<string, SpriteAnimation>;
@@ -71,8 +72,16 @@ export class AnimationPlayer {
     this.currentAnimation.play();
   }
 
-  public updateAndApply(sprite: Sprite): void {
-    this.currentAnimation?.updateAndApply(sprite);
+  public tick(deltaMs: number): void {
+    this.currentAnimation?.tick(deltaMs);
+  }
+
+  public getCurrentFrame(): Frame | undefined {
+    return this.currentAnimation?.getCurrentFrame();
+  }
+
+  public updateAndApply(sprite: Sprite, deltaMs: number): void {
+    this.currentAnimation?.updateAndApply(sprite, deltaMs);
   }
 
   public pause(): void {
