@@ -21,6 +21,17 @@ export * from "./tokens";
 export * from "./components";
 export * from "./assets";
 export { Color } from "@atlasjs/nebula";
+export {
+  SpriteSheet,
+  SpriteAnimation,
+  AnimationPlayer,
+  Frame,
+} from "@atlasjs/nebula";
+export type {
+  SpriteAnimationOptions,
+  FromGridOptions,
+  FromAutoGridOptions,
+} from "@atlasjs/nebula";
 export * from "./scripting";
 export * from "./registerSystem";
 export * from "./GameplayPlugin";

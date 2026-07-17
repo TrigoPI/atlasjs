@@ -10,6 +10,7 @@ import { registerSystem } from "./registerSystem";
 import { ScriptManager } from "./scripting";
 
 import {
+  AnimatorSystem,
   PhysicsPullSystem,
   PhysicsPushSystem,
   PlayerInputSystem,
@@ -17,6 +18,7 @@ import {
 } from "./systems";
 
 import {
+  Animator,
   PhysicsBodyRef,
   PlayerInput,
   RigidBody2D,
@@ -53,13 +55,15 @@ export class GameplayPlugin extends Plugin {
     const physicsPullSystem: PhysicsPullSystem = new PhysicsPullSystem();
     const spriteRenderSystem: SpriteRenderSystem = new SpriteRenderSystem(nebula);
     const playerInputSystem: PlayerInputSystem = new PlayerInputSystem(engine.services);
+    const animatorSystem: AnimatorSystem = new AnimatorSystem();
 
     world
       .defineComponent(RigidBody2D)
       .defineComponent(Transform2D)
       .defineComponent(SpriteRender)
       .defineComponent(PhysicsBodyRef)
-      .defineComponent(PlayerInput);
+      .defineComponent(PlayerInput)
+      .defineComponent(Animator);
 
     this.unsubscribers.push(
       world.onRemove(PhysicsBodyRef, (_entity: Entity, ref: PhysicsBodyRef) => {
@@ -97,6 +101,14 @@ export class GameplayPlugin extends Plugin {
       update.add((ctx: StepContext) => this.scriptManager.update(ctx.dt), {
         name: "gameplay:script-update",
         stage: "Logic",
+      }),
+    );
+
+    this.handles.push(
+      registerSystem(update, world, animatorSystem, {
+        name: "gameplay:animator",
+        stage: "Logic",
+        after: "gameplay:script-update",
       }),
     );
 
