@@ -6,14 +6,14 @@
 
 **Architecture:** Décorateur de champ **stage-3** `@Expose()` qui écrit dans `context.metadata` (attaché au constructeur via `Symbol.metadata`, polyfillé). `AtlasScript<TProps>` devient générique ; `attach` gagne un 3ᵉ argument `props` typé (requis si le script déclare des props, absent sinon) et injecte les champs exposés **avant** `onCreate`. Les assets restent fabriqués par la composition root (la scène).
 
-**Tech Stack:** TypeScript 5.9 (décorateurs **stage-3**, sans `experimentalDecorators`), Babel via `@rolldown/plugin-babel` + `@babel/plugin-proposal-decorators` (`2023-11`) pour la transformation (esbuild/oxc ne transforment pas stage-3), vitest 4, tsdown, vite 8 (rolldown), pnpm/Turborepo.
+**Tech Stack:** TypeScript 5.9 (décorateurs **stage-3**, sans `experimentalDecorators`), Babel via `@rolldown/plugin-babel` + `@babel/plugin-proposal-decorators` (`2023-11`) pour la transformation (esbuild/oxc ne transforment pas stage-3), vitest 4, tsdown, vite 7 (rollup ; `@rolldown/plugin-babel` s'applique quand même via le container de plugins vite, prouvé par le vitest de gameplay), pnpm/Turborepo.
 
 **Spec de référence :** [docs/gameplay/exposed-script-variables.md](exposed-script-variables.md)
 
 ## Global Constraints
 
 - **Décorateurs stage-3 uniquement** (jamais `experimentalDecorators`). La transformation vient de **Babel** — esbuild ET tsdown/oxc laissent les décorateurs stage-3 tels quels (vérifié). Vitest est **déjà configuré** (babel dans `packages/gameplay/vitest.config.ts`, devdeps `@babel/plugin-proposal-decorators` + `@rolldown/plugin-babel` déjà présentes). Le sandbox doit l'être aussi (Task 3).
-- **Polyfill `Symbol.metadata`** requis en tête de `Expose.ts` : `(Symbol as { metadata?: symbol }).metadata ??= Symbol.for("Symbol.metadata")`. Sans lui, babel n'attache pas les métadonnées au constructeur (vérifié).
+- **Polyfill `Symbol.metadata`** requis au **top-level** de `SymbolMetadata.ts` (importé par `Expose.ts`) : `(Symbol as { metadata?: symbol }).metadata ??= Symbol.for("Symbol.metadata")`. Doit s'exécuter à l'évaluation du module, avant toute classe décorée ; dans une fonction il tournerait trop tard. Sans lui, babel n'attache pas les métadonnées au constructeur (vérifié).
 - **`lib` doit inclure `ESNext.Decorators`** pour que `tsc` type-checke `Symbol.metadata`/`ClassFieldDecoratorContext.metadata`. Ajouté au `tsconfig.base.json` (gameplay en hérite) et au `lib` override du sandbox.
 - **`erasableSyntaxOnly` (sandbox) reste** : compatible stage-3 (vérifié) — ne pas le retirer.
 - **Aucun commentaire dans le code** (règle projet CLAUDE.md).
@@ -32,7 +32,7 @@
 - `packages/gameplay/src/scripting/core/index.ts` **(déjà modifié)** — exporte déjà `./Expose`.
 - `packages/gameplay/src/scripting/runtime/ScriptManager.ts` **(modifier)** — `attach` typé + `injectProps`.
 - `tsconfig.base.json` **(modifier)** — ajouter `"ESNext.Decorators"` à `lib`.
-- `packages/gameplay/tsconfig.typecheck.json` **(créer)** — typecheck incluant `test/`.
+- `packages/gameplay/tsconfig.test.json` **(créer)** — typecheck incluant `test/`.
 - `packages/gameplay/package.json` **(modifier)** — script `typecheck`.
 - `packages/gameplay/test/expose.test.ts` **(remplacer le stub)** — tests du décorateur.
 - `packages/gameplay/test/exposed-injection.test.ts` **(créer)** — tests runtime + gardes de type.
@@ -228,7 +228,7 @@ git commit -m "feat(gameplay): add @Expose stage-3 decorator + exposed-field met
 **Files:**
 - Modify: `packages/gameplay/src/scripting/core/AtlasScript.ts`
 - Modify: `packages/gameplay/src/scripting/runtime/ScriptManager.ts`
-- Create: `packages/gameplay/tsconfig.typecheck.json`
+- Create: `packages/gameplay/tsconfig.test.json`
 - Modify: `packages/gameplay/package.json`
 - Test: `packages/gameplay/test/exposed-injection.test.ts`
 
@@ -238,7 +238,7 @@ git commit -m "feat(gameplay): add @Expose stage-3 decorator + exposed-field met
   - `abstract class AtlasScript<TProps extends object = {}>` (phantom `readonly __props?: TProps`).
   - `ScriptManager.attach<TScript extends AtlasScript>(entityId, ScriptType, ...rest)` où `rest` vaut `[props: PropsOf<TScript>]` si le script déclare des props non vides, sinon `[props?: PropsOf<TScript>]`.
 
-- [ ] **Step 1: Rendre `AtlasScript` générique**
+- [x] **Step 1: Rendre `AtlasScript` générique**
 
 Dans `packages/gameplay/src/scripting/core/AtlasScript.ts`, remplacer :
 
@@ -258,7 +258,7 @@ export abstract class AtlasScript<TProps extends object = {}> implements ScriptL
 
 (Le reste de la classe est inchangé. `__props` est un champ fantôme `declare` — aucune émission runtime — qui porte `TProps` pour l'inférence.)
 
-- [ ] **Step 2: Écrire les tests qui échouent (runtime + gardes de type)**
+- [x] **Step 2: Écrire les tests qui échouent (runtime + gardes de type)**
 
 Créer `packages/gameplay/test/exposed-injection.test.ts` :
 
@@ -339,12 +339,12 @@ describe("attach — exposed prop injection", () => {
 });
 ```
 
-- [ ] **Step 3: Lancer les tests runtime — vérifier l'échec**
+- [x] **Step 3: Lancer les tests runtime — vérifier l'échec**
 
 Run: `pnpm --filter @atlasjs/gameplay exec vitest run test/exposed-injection.test.ts`
 Expected: FAIL — le 1er test échoue (`s.label` vaut `undefined` ; `attach` refuse peut-être le 3ᵉ argument).
 
-- [ ] **Step 4: Implémenter le typage + l'injection dans `ScriptManager`**
+- [x] **Step 4: Implémenter le typage + l'injection dans `ScriptManager`**
 
 Dans `packages/gameplay/src/scripting/runtime/ScriptManager.ts` :
 
@@ -439,19 +439,19 @@ par :
   }
 ```
 
-- [ ] **Step 5: Lancer les tests runtime — vérifier le succès**
+- [x] **Step 5: Lancer les tests runtime — vérifier le succès**
 
 Run: `pnpm --filter @atlasjs/gameplay exec vitest run test/exposed-injection.test.ts`
 Expected: PASS (4 tests). (Les lignes `@ts-expect-error` sont inertes au runtime, validées à l'étape 7.)
 
-- [ ] **Step 6: Non-régression de toute la suite gameplay**
+- [x] **Step 6: Non-régression de toute la suite gameplay**
 
 Run: `pnpm --filter @atlasjs/gameplay test`
 Expected: PASS — toutes les suites existantes restent vertes (rétrocompat de `attach` à 2 arguments).
 
-- [ ] **Step 7: Ajouter le typecheck et valider les gardes de type**
+- [x] **Step 7: Ajouter le typecheck et valider les gardes de type**
 
-Créer `packages/gameplay/tsconfig.typecheck.json` :
+Créer `packages/gameplay/tsconfig.test.json` :
 
 ```json
 {
@@ -466,21 +466,21 @@ Créer `packages/gameplay/tsconfig.typecheck.json` :
 Dans `packages/gameplay/package.json`, ajouter au bloc `"scripts"` :
 
 ```json
-    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json",
 ```
 
 Run: `pnpm --filter @atlasjs/gameplay typecheck`
 Expected: PASS avec **0 erreur**. Les deux `@ts-expect-error` de `exposed-injection.test.ts` doivent être *satisfaits* (une vraie erreur de type existe à ces lignes). Si tsc signale « Unused '@ts-expect-error' », le typage de `attach` est faux : le corriger.
 
-- [ ] **Step 8: Build du package**
+- [x] **Step 8: Build du package**
 
 Run: `pnpm --filter @atlasjs/gameplay build`
 Expected: build tsdown OK (gameplay n'applique aucun décorateur → rien de spécial à transpiler).
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
-git add packages/gameplay/src/scripting/core/AtlasScript.ts packages/gameplay/src/scripting/runtime/ScriptManager.ts packages/gameplay/tsconfig.typecheck.json packages/gameplay/package.json packages/gameplay/test/exposed-injection.test.ts packages/gameplay/dist
+git add packages/gameplay/src/scripting/core/AtlasScript.ts packages/gameplay/src/scripting/runtime/ScriptManager.ts packages/gameplay/tsconfig.test.json packages/gameplay/package.json packages/gameplay/test/exposed-injection.test.ts
 git commit -m "feat(gameplay): typed prop injection via attach(entity, Script, props)"
 ```
 
@@ -498,7 +498,7 @@ git commit -m "feat(gameplay): typed prop injection via attach(entity, Script, p
 **Interfaces:**
 - Consumes: `attach(entity, Script, props)` (Task 2), `@Expose` (Task 1), `Sprite`/`SpriteAnimation`/`Animator`/`SpriteRendererComponent` (existants).
 
-- [ ] **Step 1: Ajouter les devdeps babel au sandbox**
+- [x] **Step 1: Ajouter les devdeps babel au sandbox**
 
 Run:
 
@@ -508,13 +508,13 @@ pnpm --filter sandbox add -D @rolldown/plugin-babel @babel/plugin-proposal-decor
 
 Expected: les deux devdeps apparaissent dans `apps/sandbox/package.json`.
 
-- [ ] **Step 2: Brancher babel dans la config vite du sandbox**
+- [x] **Step 2: Brancher babel dans la config vite du sandbox**
 
-Remplacer `apps/sandbox/vite.config.ts` par :
+Remplacer `apps/sandbox/vite.config.ts` par (le cast `as unknown as PluginOption` est requis : sous vite **7**, le type de retour de `@rolldown/plugin-babel` — pensé pour rolldown/vite 8 — est structurellement incompatible avec `PluginOption` ; ça n'apparaît que parce que `tsc -b` du sandbox typecheck `vite.config.ts`, le runtime est inchangé) :
 
 ```ts
 import babel from "@rolldown/plugin-babel";
-import { defineConfig } from "vite";
+import { type PluginOption, defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
@@ -522,7 +522,7 @@ export default defineConfig({
     react(),
     babel({
       plugins: [["@babel/plugin-proposal-decorators", { version: "2023-11" }]],
-    }),
+    }) as unknown as PluginOption,
   ],
   resolve: {
     alias: {
@@ -538,7 +538,7 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 3: Ajouter `ESNext.Decorators` au lib du sandbox**
+- [x] **Step 3: Ajouter `ESNext.Decorators` au lib du sandbox**
 
 Dans `apps/sandbox/tsconfig.app.json`, remplacer la ligne `lib` :
 
@@ -548,7 +548,7 @@ Dans `apps/sandbox/tsconfig.app.json`, remplacer la ligne `lib` :
 
 (Laisser `erasableSyntaxOnly` et `useDefineForClassFields` tels quels — compatibles stage-3.)
 
-- [ ] **Step 4: Réécrire `TestScript` (générique + `@Expose` + composants visuels)**
+- [x] **Step 4: Réécrire `TestScript` (générique + `@Expose` + composants visuels)**
 
 Remplacer `apps/sandbox/src/game/scripts/TestScript.ts` par :
 
@@ -629,7 +629,7 @@ export class TestScript extends AtlasScript<{
 }
 ```
 
-- [ ] **Step 5: Réécrire `EcsScene` (fabrique les clips, injecte)**
+- [x] **Step 5: Réécrire `EcsScene` (fabrique les clips, injecte)**
 
 Remplacer `apps/sandbox/src/game/EcsScene.ts` par :
 
@@ -719,12 +719,13 @@ export class EcsScene extends Scene {
 }
 ```
 
-- [ ] **Step 6: Type-check du build sandbox**
+- [x] **Step 6: Type-check du build sandbox**
 
-Run: `pnpm --filter sandbox build`
-Expected: `tsc -b` + `vite build` OK, 0 erreur (valide le typage de `attach(...)`, le décorateur stage-3 et le lib `ESNext.Decorators`).
+Run: `pnpm --filter sandbox build` (ou `pnpm --filter sandbox exec vite build` pour isoler la partie bundling).
+Expected : `vite build` OK — transforme le décorateur stage-3 et bundle sans erreur (valide le décorateur + `ESNext.Decorators`). Le typage de `attach(...)` est validé côté gameplay (`pnpm --filter @atlasjs/gameplay typecheck`).
+**Note :** `tsc -b` du sandbox est actuellement rouge à cause de **4 erreurs pré-existantes** `noUnusedLocals`/`noUnusedParameters` dans `apps/sandbox/src/game/Player.ts` et `Sword.ts` (code legacy hors ECS, antérieures à cette branche, sans lien avec cette feature) — cleanup séparé.
 
-- [ ] **Step 7: Vérification visuelle (dev server)**
+- [x] **Step 7: Vérification visuelle (dev server)**
 
 Lancer le dev server du sandbox (outil de preview, config `sandbox` dans `.claude/launch.json`), ouvrir la page, puis :
 - Console : **aucune** erreur (surtout pas de `SyntaxError` de décorateur, pas de « required component missing »).
@@ -735,7 +736,7 @@ Lancer le dev server du sandbox (outil de preview, config `sandbox` dans `.claud
 - [ ] **Step 8: Commit**
 
 ```bash
-git add apps/sandbox/package.json apps/sandbox/vite.config.ts apps/sandbox/tsconfig.app.json apps/sandbox/src/game/scripts/TestScript.ts apps/sandbox/src/game/EcsScene.ts pnpm-lock.yaml
+git add apps/sandbox/package.json apps/sandbox/vite.config.ts apps/sandbox/tsconfig.app.json apps/sandbox/src/game/scripts/TestScript.ts apps/sandbox/src/game/EcsScene.ts pnpm-lock.yaml pnpm-workspace.yaml
 git commit -m "feat(sandbox): script authors visual components from injected assets"
 ```
 

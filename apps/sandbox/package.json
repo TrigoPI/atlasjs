@@ -10,21 +10,23 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
     "@atlasjs/core": "workspace:*",
+    "@atlasjs/gameplay": "workspace:*",
+    "@atlasjs/inertia": "workspace:*",
+    "@atlasjs/input": "workspace:*",
     "@atlasjs/math": "workspace:*",
     "@atlasjs/nebula": "workspace:*",
     "@atlasjs/nebula-webgpu": "workspace:*",
-    "@atlasjs/inertia": "workspace:*",
-    "@atlasjs/rapier": "workspace:*",
-    "@atlasjs/input": "workspace:*",
-    "@atlasjs/utils": "workspace:*",
     "@atlasjs/nexus": "workspace:*",
-    "@atlasjs/gameplay": "workspace:*"
+    "@atlasjs/rapier": "workspace:*",
+    "@atlasjs/utils": "workspace:*",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@babel/plugin-proposal-decorators": "catalog:",
     "@eslint/js": "^9.39.1",
+    "@rolldown/plugin-babel": "catalog:",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",

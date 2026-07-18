@@ -189,7 +189,7 @@ Pas de `experimentalDecorators` (on reste en stage-3). Deux axes : **transformat
 **Transformation babel** (là où `@Expose()` est _appliqué_) :
 
 - `packages/gameplay/vitest.config.ts` → **déjà fait** : `@rolldown/plugin-babel` + `@babel/plugin-proposal-decorators` (`version: "2023-11"`). Devdeps `@babel/plugin-proposal-decorators`, `@rolldown/plugin-babel` **déjà ajoutées**.
-- `apps/sandbox/vite.config.ts` → **à ajouter** : le même `@rolldown/plugin-babel` + `@babel/plugin-proposal-decorators` (`version: "2023-11"`), sinon `@Expose()` dans `TestScript` → `SyntaxError` en dev/build. (Vite 8 = rolldown, donc `@rolldown/plugin-babel` s'applique.) Ajouter les devdeps correspondantes à `apps/sandbox`.
+- `apps/sandbox/vite.config.ts` → **à ajouter** : le même `@rolldown/plugin-babel` + `@babel/plugin-proposal-decorators` (`version: "2023-11"`), sinon `@Expose()` dans `TestScript` → `SyntaxError` en dev/build. Vite est ici en **7** (rollup) ; le plugin s'applique quand même via le container de plugins vite (prouvé par le vitest de gameplay). Un cast `babel(...) as unknown as PluginOption` est requis car le type de retour du plugin (pensé rolldown/vite 8) est incompatible avec `PluginOption` de vite 7 — visible seulement parce que `tsc -b` du sandbox typecheck `vite.config.ts`, runtime inchangé. Ajouter les devdeps correspondantes à `apps/sandbox`.
 - `dist` gameplay (tsdown) : **aucun changement** — gameplay n'applique pas de décorateur (cf. §2.3).
 
 **Type-check `lib`** (pour `Symbol.metadata` + `ClassFieldDecoratorContext.metadata`) :

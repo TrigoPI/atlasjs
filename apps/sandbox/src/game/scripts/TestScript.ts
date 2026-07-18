@@ -1,27 +1,44 @@
 import { Vec2 } from "@atlasjs/math";
 
 import {
+  type ActionMapDescriptor,
+  type ButtonActionSpec,
+  type Vector2ActionSpec,
   Animator,
   AtlasScript,
   ButtonAction,
-  Key,
+  Expose,
   PlayerInput,
   RigidBody2DComponent,
+  Sprite,
+  SpriteAnimation,
   SpriteRendererComponent,
   Transform2DComponent,
   Vector2Action,
-  button,
-  defineActions,
-  vector2,
 } from "@atlasjs/gameplay";
 
-const controls = defineActions({
-  move: vector2().wasd(),
-  boost: button().keys(Key.Space),
-});
+type PlayerControlsDescriptor = ActionMapDescriptor<{
+  move: Vector2ActionSpec;
+  boost: ButtonActionSpec;
+}>;
 
-export class TestScript extends AtlasScript {
-  private readonly speed: number = 220;
+export class TestScript extends AtlasScript<{
+  sprite: Sprite;
+  speed: number;
+  controls: PlayerControlsDescriptor;
+  clips: Record<string, SpriteAnimation>;
+}> {
+  @Expose()
+  private readonly sprite!: Sprite;
+
+  @Expose()
+  private readonly clips!: Record<string, SpriteAnimation>;
+
+  @Expose()
+  private readonly speed: number;
+
+  @Expose()
+  private readonly controls!: PlayerControlsDescriptor;
 
   private transform!: Transform2DComponent;
   private rigidbody!: RigidBody2DComponent;
@@ -31,14 +48,15 @@ export class TestScript extends AtlasScript {
   private move!: Vector2Action;
   private boost!: ButtonAction;
 
+  // prettier-ignore
   public onCreate(): void {
-    const actions = this.addComponent(PlayerInput, controls);
+    const actions = this.addComponent(PlayerInput, this.controls);
 
     this.transform = this.addComponent(Transform2DComponent);
     this.rigidbody = this.addComponent(RigidBody2DComponent);
 
-    this.spriteRenderer = this.requireComponent(SpriteRendererComponent);
-    this.animator = this.requireComponent(Animator);
+    this.spriteRenderer = this.addComponent(SpriteRendererComponent, this.sprite);
+    this.animator = this.addComponent(Animator, this.clips, "idle");
 
     this.move = actions.get("move");
     this.boost = actions.get("boost");

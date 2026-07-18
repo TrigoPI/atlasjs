@@ -7,10 +7,12 @@ import { TestScript } from "./scripts/TestScript";
 
 import {
   type ScriptManager,
+  button,
+  defineActions,
+  Key,
   SCRIPT_MANAGER,
   Sprite,
-  SpriteRender,
-  Animator,
+  vector2,
 } from "@atlasjs/gameplay";
 
 import {
@@ -34,8 +36,6 @@ export class EcsScene extends Scene {
     const blueDinoTexture: Texture2D = await this.loadTexture(nebula, BlueDino);
     const blueDinoSprite: Sprite = new Sprite(blueDinoTexture);
 
-    const player1: Entity = nexus.createEntity();
-
     const sheet: SpriteSheet = SpriteSheet.fromAutoGrid({
       name: "blue_dino",
       texture: blueDinoTexture,
@@ -43,28 +43,34 @@ export class EcsScene extends Scene {
       columns: 24,
     });
 
-    nexus.addComponent(player1, SpriteRender, blueDinoSprite);
-    nexus.addComponent(
-      player1,
-      Animator,
-      {
-        idle: new SpriteAnimation({
-          frames: sheet.getManyInRange("blue_dino_", 0, 3),
-          fps: 5,
-          loop: true,
-          autoPlay: true,
-        }),
-        run: new SpriteAnimation({
-          frames: sheet.getManyInRange("blue_dino_", 4, 9),
-          fps: 12,
-          loop: true,
-          autoPlay: true,
-        }),
-      },
-      "idle",
-    );
+    const controls = defineActions({
+      move: vector2().wasd(),
+      boost: button().keys(Key.Space),
+    });
 
-    scriptManager.attach(player1, TestScript);
+    const clips: Record<string, SpriteAnimation> = {
+      idle: new SpriteAnimation({
+        frames: sheet.getManyInRange("blue_dino_", 0, 3),
+        fps: 5,
+        loop: true,
+        autoPlay: true,
+      }),
+      run: new SpriteAnimation({
+        frames: sheet.getManyInRange("blue_dino_", 4, 9),
+        fps: 12,
+        loop: true,
+        autoPlay: true,
+      }),
+    };
+
+    const player1: Entity = nexus.createEntity();
+
+    scriptManager.attach(player1, TestScript, {
+      clips,
+      controls,
+      sprite: blueDinoSprite,
+      speed: 250,
+    });
   }
 
   private async loadTexture(
