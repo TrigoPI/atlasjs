@@ -32,7 +32,7 @@ Source : [`rendering/shapes.md`](rendering/shapes.md) (hors périmètre v1).
 
 Source : [`rendering/sprites.md`](rendering/sprites.md) (non-objectifs v1).
 
-- 📋 **`AssetManager`** : chargement async, cache/dedup, lifetime, hot-reload. Le contrat `Asset` (`id` + `dispose`) est la fondation prévue ; conformité formelle de `Texture2D` au contrat à finaliser à ce moment-là.
+- ✅ **Système d'assets** : _implémenté_ → [`assets/asset-system.md`](assets/asset-system.md) (`Asset`/`Resource` + `AssetManager` + loaders par type ; `TextureAsset`/`SpriteAsset`). Reste V2 : refcount/eviction (B1), `AssetRef` par id + sérialisation, audio, éditeur, sources non-path. Durcissement noté à la review finale : guard `destroy()` pendant un `load` in-flight (un load qui résout après teardown ré-ajoute une resource jamais libérée) ; clé de cache `id`-only (le `type` n'est pas vérifié — sûr aujourd'hui car ids préfixés `texture:`/`sprite:`).
 - ✅ **Intégration animation** : _implémenté_ → [`gameplay/sprite-animation.md`](gameplay/sprite-animation.md) (`Animator` + `AnimatorSystem` dt-driven, swap de `SpriteRender.sprite`). Suites V2 → section [Animation — suites V2](#animation--suites-v2) ci-dessous.
 - 📋 **Blend mode configurable** sur le sprite.
 - 📋 **Sampler / filtrage configurable**.

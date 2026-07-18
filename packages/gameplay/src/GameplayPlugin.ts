@@ -3,9 +3,11 @@ import { Engine, Plugin, StepContext, StepHandle } from "@atlasjs/core";
 import { NEBULA_RENDERER, NebulaRenderer } from "@atlasjs/nebula";
 import { INERTIAL_ENGINE, PhysicsWorld } from "@atlasjs/inertia";
 import { Entity, NEXUS, NexusWorld, Unsubscribe } from "@atlasjs/nexus";
+import { ASSET_MANAGER, AssetManager } from "@atlasjs/assets";
 
 import { SCRIPT_MANAGER } from "./tokens";
 import { registerSystem } from "./registerSystem";
+import { SpriteLoader } from "./assets";
 
 import { ScriptManager } from "./scripting";
 
@@ -35,7 +37,7 @@ export class GameplayPlugin extends Plugin {
 
   public constructor() {
     super("gameplay-plugin", {
-      requires: [NEXUS, NEBULA_RENDERER, INERTIAL_ENGINE],
+      requires: [NEXUS, NEBULA_RENDERER, INERTIAL_ENGINE, ASSET_MANAGER],
       provides: [SCRIPT_MANAGER],
     });
     this.logger = createLogger(GameplayPlugin.name);
@@ -48,6 +50,8 @@ export class GameplayPlugin extends Plugin {
     const world: NexusWorld = await engine.services.wait(NEXUS);
     const nebula: NebulaRenderer = await engine.services.wait(NEBULA_RENDERER);
     const inertia: PhysicsWorld = await engine.services.wait(INERTIAL_ENGINE);
+    const assets: AssetManager = await engine.services.wait(ASSET_MANAGER);
+    assets.register(new SpriteLoader());
 
     this.scriptManager = new ScriptManager(world, engine.services);
 

@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@atlasjs/assets": "workspace:*",
     "@atlasjs/core": "workspace:*",
     "@atlasjs/gameplay": "workspace:*",
     "@atlasjs/inertia": "workspace:*",

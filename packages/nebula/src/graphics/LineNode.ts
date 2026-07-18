@@ -1,7 +1,7 @@
 import { Vec2 } from "@atlasjs/math";
-import { Shape } from "./Shape";
+import { ShapeNode } from "./ShapeNode";
 
-export class Line extends Shape {
+export class LineNode extends ShapeNode {
   public readonly start: Vec2;
   public readonly end: Vec2;
   public thickness: number;

@@ -1,6 +1,7 @@
 import { type RefObject, useEffect, useRef } from "react";
 
 import { Engine } from "@atlasjs/core";
+import { AssetPlugin } from "@atlasjs/assets";
 import { InputPlugin } from "@atlasjs/input";
 import { NexusPlugin } from "@atlasjs/nexus";
 import { InertialPlugin } from "@atlasjs/inertia";
@@ -24,6 +25,7 @@ export function App() {
     }
 
     const renderer: WebGPURenderer = new WebGPURenderer(mount);
+    const assetPlugin: AssetPlugin = new AssetPlugin();
     const rendererPlugin: NebulaPlugin = new NebulaPlugin(renderer);
     const nexusPlugin: NexusPlugin = new NexusPlugin();
     const gameplayPlugin: GameplayPlugin = new GameplayPlugin();
@@ -38,6 +40,7 @@ export function App() {
 
     // prettier-ignore
     engine
+      .use(assetPlugin)
       .use(inputPlugin)
       .use(inertiaPlugin)
       .use(rendererPlugin)

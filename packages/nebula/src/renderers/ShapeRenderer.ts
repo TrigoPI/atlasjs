@@ -1,7 +1,7 @@
 import { Bound, Mat4, Vec2, Vec4 } from "@atlasjs/math";
 
 import { BlendMode, Renderer } from "../core";
-import { Node, Shape, Rect, Circle, Line } from "../graphics";
+import { Node, ShapeNode, RectNode, CircleNode, LineNode } from "../graphics";
 import { ShapeDrawCommand } from "./DrawCommand";
 import { NodeRendererBase } from "./NodeRendererBase";
 import { NodeRenderer, Batcher, KIND_ORDER } from "./NodeRenderer";
@@ -25,7 +25,7 @@ const BATCH_IDS: Record<BlendMode, number> = {
 };
 
 export class ShapeRenderer
-  extends NodeRendererBase<Shape, ShapeRenderData>
+  extends NodeRendererBase<ShapeNode, ShapeRenderData>
   implements NodeRenderer
 {
   public readonly kind = "shape" as const;
@@ -39,7 +39,7 @@ export class ShapeRenderer
   }
 
   public matches(node: Node): boolean {
-    return node instanceof Shape;
+    return node instanceof ShapeNode;
   }
 
   public collect(
@@ -59,7 +59,7 @@ export class ShapeRenderer
   }
 
   private buildCommand(node: Node): ShapeDrawCommand | null {
-    const shape: Shape = node as Shape;
+    const shape: ShapeNode = node as ShapeNode;
 
     const kind: number = this.shapeKindOf(shape);
 
@@ -100,19 +100,19 @@ export class ShapeRenderer
     };
   }
 
-  private shapeKindOf(shape: Shape): number {
-    if (shape instanceof Circle) return SHAPE_KIND_CIRCLE;
-    if (shape instanceof Rect) return SHAPE_KIND_FILL;
-    if (shape instanceof Line) return SHAPE_KIND_FILL;
+  private shapeKindOf(shape: ShapeNode): number {
+    if (shape instanceof CircleNode) return SHAPE_KIND_CIRCLE;
+    if (shape instanceof RectNode) return SHAPE_KIND_FILL;
+    if (shape instanceof LineNode) return SHAPE_KIND_FILL;
     return -1;
   }
 
-  private updateColor(shape: Shape, out: Vec4): void {
+  private updateColor(shape: ShapeNode, out: Vec4): void {
     out.set(shape.color.r, shape.color.g, shape.color.b, shape.color.a);
   }
 
-  private updateModelMatrix(shape: Shape, out: Mat4): void {
-    if (shape instanceof Line) {
+  private updateModelMatrix(shape: ShapeNode, out: Mat4): void {
+    if (shape instanceof LineNode) {
       this.updateLineMatrix(shape, out);
       return;
     }
@@ -120,7 +120,7 @@ export class ShapeRenderer
     out.copy(shape.worldMatrix);
   }
 
-  private updateLineMatrix(line: Line, out: Mat4): void {
+  private updateLineMatrix(line: LineNode, out: Mat4): void {
     const start: Vec2 = line.start;
     const end: Vec2 = line.end;
 

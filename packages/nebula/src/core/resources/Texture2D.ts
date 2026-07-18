@@ -1,8 +1,7 @@
-import { Disposable } from "../utils";
+import { Resource } from "@atlasjs/assets";
 
-export interface Texture2D extends Disposable {
+export interface Texture2D extends Resource {
   readonly __kind: string;
   readonly width: number;
   readonly height: number;
-  readonly id: string;
 }

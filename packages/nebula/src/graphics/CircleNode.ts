@@ -1,6 +1,6 @@
-import { Shape } from "./Shape";
+import { ShapeNode } from "./ShapeNode";
 
-export class Circle extends Shape {
+export class CircleNode extends ShapeNode {
   public constructor(radius: number = 50) {
     super();
     this.setRadius(radius);

@@ -5,7 +5,7 @@ import {
   type Renderer,
   type Texture2D,
   type Sampler,
-  Sprite,
+  SpriteNode,
   NebulaRenderer,
 } from "@atlasjs/nebula";
 
@@ -51,7 +51,7 @@ async function getImage(src: string): Promise<ImageBitmap> {
     minFilter: "nearest",
   });
 
-  const sprite: Sprite = new Sprite(dinoTexture, sampler);
+  const sprite: SpriteNode = new SpriteNode(dinoTexture, sampler);
 
   sprite.setTint(1, 0.5, 1, 1).setScale(3, 3).setPosition(500, 100);
 

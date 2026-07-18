@@ -2,6 +2,7 @@ import { Engine, Plugin, ServiceRegistry, ServiceToken } from "@atlasjs/core";
 import { NEXUS, NexusPlugin, NexusWorld } from "@atlasjs/nexus";
 import { NEBULA_RENDERER, SceneGraph } from "@atlasjs/nebula";
 import { InertialPlugin } from "@atlasjs/inertia";
+import { AssetPlugin } from "@atlasjs/assets";
 
 import { GameplayPlugin } from "../../src/GameplayPlugin";
 import { SCRIPT_MANAGER } from "../../src/tokens";
@@ -55,6 +56,7 @@ export async function createHarness(): Promise<Harness> {
   engine.use(new NexusPlugin());
   engine.use(new Provide("stub-nebula", NEBULA_RENDERER, fakeNebula));
   engine.use(new InertialPlugin(physics));
+  engine.use(new AssetPlugin());
   engine.use(new GameplayPlugin());
 
   await engine.start();

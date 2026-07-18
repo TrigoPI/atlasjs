@@ -118,6 +118,11 @@ Consult it before undertaking a significant change: a design may already be vali
 - `docs/gameplay/input-actions.md` — **implemented** (Phase 2 of input scripting). Unity-style named actions (`jump.isPressed()`, `move.readValue()`) over Phase 1: device-agnostic action engine (`defineActions`/`button()`/`vector2()`/`InputActionMap`) in `@atlasjs/input`, ECS integration (`PlayerInput` + `PlayerInputSystem`) in `@atlasjs/gameplay`; used in `apps/sandbox`. V2 extensions (events, processors, gamepad, rebinding, fixed-lane sampling) → backlog.
 - `docs/gameplay/sprite-animation.md` — **implemented**. Sprite animation wired into the gameplay path: `Animator` (LEVEL-1 component, named clips + `play(name)`) + `AnimatorSystem` (dt-driven, pushes the current frame into `SpriteRender.sprite` via the existing swap path, `Map<Frame, Sprite>` cache), reusing nebula `SpriteSheet`/`SpriteAnimation` (the latter made dt-driven). V2 extensions (state machine, frame/complete events, per-frame pivot, one-shot replay) → backlog.
 
+### `docs/assets/`
+
+- `docs/assets/asset-system.md` — **implemented**. Asset system: `Asset` (serializable descriptor) ↔ `Resource` (runtime handle); `AssetManager` (register/load/get/destroy + dedup); plugin-based loaders by type; `TextureAsset`/`TextureLoader` in `@atlasjs/nebula`; `SpriteAsset`/`SpriteLoader` in `@atlasjs/gameplay`. Scene-graph primitives renamed to `*Node` convention. V2 extensions (refcount/eviction, `AssetRef` by id + serialization, audio, editor, non-path sources) → backlog.
+- `docs/assets/asset-system-plan.md` — implementation plan for the asset system (completed with Tasks 1–6).
+
 ---
 
 ## Architectural Direction

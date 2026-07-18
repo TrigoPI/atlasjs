@@ -4,7 +4,7 @@ import { BlendMode, Sampler, Texture2D } from "../core";
 import { Frame } from "../animations";
 import { Node } from "./Node";
 
-export class Sprite extends Node {
+export class SpriteNode extends Node {
   public readonly texture: Texture2D;
   public readonly sampler?: Sampler;
   public readonly tint: Vec4;
@@ -24,24 +24,24 @@ export class Sprite extends Node {
     this.sourceRect = new Bound(0, 0, texture.width, texture.height);
   }
 
-  public setTint(r: number, g: number, b: number, a: number = 1): Sprite {
+  public setTint(r: number, g: number, b: number, a: number = 1): SpriteNode {
     this.tint.set(r, g, b, a);
     return this;
   }
 
-  public setBlend(blend: BlendMode): Sprite {
+  public setBlend(blend: BlendMode): SpriteNode {
     this.blend = blend;
     return this;
   }
 
-  public flipX(flip: boolean): Sprite {
+  public flipX(flip: boolean): SpriteNode {
     this.transform.scale.x = flip
       ? -Math.abs(this.transform.scale.x)
       : Math.abs(this.transform.scale.x);
     return this;
   }
 
-  public flipY(flip: boolean): Sprite {
+  public flipY(flip: boolean): SpriteNode {
     this.transform.scale.y = flip
       ? -Math.abs(this.transform.scale.y)
       : Math.abs(this.transform.scale.y);
@@ -117,12 +117,12 @@ export class Sprite extends Node {
     y: number,
     width: number,
     height: number,
-  ): Sprite {
+  ): SpriteNode {
     this.sourceRect.set(x, y, width, height);
     return this;
   }
 
-  public setFrame(frame: Frame): Sprite {
+  public setFrame(frame: Frame): SpriteNode {
     const sourceRect: Bound = frame.rect.clone();
     this.sourceRect.set(
       sourceRect.x,
@@ -134,7 +134,7 @@ export class Sprite extends Node {
     return this;
   }
 
-  public setAnchor(x: number, y: number): Sprite {
+  public setAnchor(x: number, y: number): SpriteNode {
     if (x < 0 || x > 1 || y < 0 || y > 1) {
       throw new Error("Anchor coordinates must be between 0 and 1.");
     }
