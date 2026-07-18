@@ -21,6 +21,8 @@
 
 ### Task 1: Rename scene-graph nodes to `*Node` (nebula + consumers)
 
+> ✅ Done — committed `59ac306`, review clean.
+
 Mechanical rename, no behavior change. Resolves the `Sprite` (node) ↔ `Sprite` (asset) collision at the source. Land it first, in isolation.
 
 **Files:**
@@ -35,7 +37,7 @@ Mechanical rename, no behavior change. Resolves the `Sprite` (node) ↔ `Sprite`
 - Consumes: nothing new.
 - Produces: nebula exports `SpriteNode`, `ShapeNode`, `RectNode`, `CircleNode`, `LineNode` (replacing `Sprite`, `Shape`, `Rect`, `Circle`, `Line`). `Node` and `Transformable` keep their names.
 
-- [ ] **Step 1: Rename the graphics files**
+- [x] **Step 1: Rename the graphics files**
 
 ```bash
 cd packages/nebula/src/graphics
@@ -46,7 +48,7 @@ git mv Circle.ts CircleNode.ts
 git mv Line.ts LineNode.ts
 ```
 
-- [ ] **Step 2: Rename the classes and their internal references**
+- [x] **Step 2: Rename the classes and their internal references**
 
 In each renamed file, replace the old class identifier with the new one everywhere it appears — the `class` declaration, `extends`, and every self-referential return type. Concretely:
 
@@ -56,7 +58,7 @@ In each renamed file, replace the old class identifier with the new one everywhe
 - `CircleNode.ts`: `import { ShapeNode } from "./ShapeNode";` · `export class CircleNode extends ShapeNode`.
 - `LineNode.ts`: `import { ShapeNode } from "./ShapeNode";` · `export class LineNode extends ShapeNode`.
 
-- [ ] **Step 3: Update the graphics barrel**
+- [x] **Step 3: Update the graphics barrel**
 
 `packages/nebula/src/graphics/index.ts`:
 
@@ -71,19 +73,19 @@ export * from "./Transformable";
 export * from "./graphics-types";
 ```
 
-- [ ] **Step 4: Update the nebula renderers**
+- [x] **Step 4: Update the nebula renderers**
 
 `packages/nebula/src/renderers/SpriteRenderer.ts`: change the import to `import { Node, SpriteNode } from "../graphics";`, the base to `NodeRendererBase<SpriteNode, SpriteRenderData>`, `node instanceof SpriteNode`, and every `Sprite` type annotation/cast (`node as SpriteNode`, `sprite: SpriteNode`) accordingly.
 
 `packages/nebula/src/renderers/ShapeRenderer.ts`: change the import to `import { Node, ShapeNode, RectNode, CircleNode, LineNode } from "../graphics";`, the base to `NodeRendererBase<ShapeNode, ShapeRenderData>`, `node instanceof ShapeNode`, `shape instanceof CircleNode`, `shape instanceof RectNode`, `shape instanceof LineNode`, and every `Shape`/`Line` type annotation (`shape: ShapeNode`, `line: LineNode`) accordingly.
 
-- [ ] **Step 5: Update the nebula animations**
+- [x] **Step 5: Update the nebula animations**
 
 `packages/nebula/src/animations/AnimationPlayer.ts`: `import { SpriteNode } from "../graphics";` and `public updateAndApply(sprite: SpriteNode, deltaMs: number): void`.
 
 `packages/nebula/src/animations/SpriteAnimation.ts`: `import { SpriteNode } from "../graphics";` and `public updateAndApply(sprite: SpriteNode, deltaMs: number): void`.
 
-- [ ] **Step 6: Typecheck, test and build nebula**
+- [x] **Step 6: Typecheck, test and build nebula**
 
 Run: `pnpm --filter @atlasjs/nebula exec tsc --noEmit`
 Expected: no output (exit 0).
@@ -94,7 +96,7 @@ Expected: all test files pass.
 Run: `pnpm --filter @atlasjs/nebula build`
 Expected: tsdown writes `dist` with no errors (regenerates the renamed exports for downstream packages).
 
-- [ ] **Step 7: Update the gameplay consumer**
+- [x] **Step 7: Update the gameplay consumer**
 
 `packages/gameplay/src/systems/SpriteRenderSystem.ts`: replace the aliased import with a direct one. The nebula import block becomes:
 
@@ -109,7 +111,7 @@ import {
 
 The `import { Sprite } from "../assets";` line (the gameplay asset handle) stays unchanged — only the nebula alias goes away. `MountedSprite.node` is already typed `SpriteNode`, so no other edits are needed here.
 
-- [ ] **Step 8: Update the webgpu demo**
+- [x] **Step 8: Update the webgpu demo**
 
 `apps/webgpu/src/index.ts`: in the `@atlasjs/nebula` import, replace `Sprite, Rect, Circle, Line` with `SpriteNode, RectNode, CircleNode, LineNode`. Update the four construction sites and their type annotations:
 
@@ -125,7 +127,7 @@ const circle: CircleNode = new CircleNode(70);
 const line: LineNode = new LineNode(80, 320, 360, 250, 1);
 ```
 
-- [ ] **Step 9: Verify downstream and hand off**
+- [x] **Step 9: Verify downstream and hand off**
 
 Run: `pnpm --filter @atlasjs/gameplay exec tsc --noEmit -p tsconfig.test.json`
 Expected: no output (exit 0).
@@ -138,6 +140,8 @@ Do not commit — hand the diff to the user for review.
 ---
 
 ### Task 2: `@atlasjs/assets` — contracts + `AssetManager`
+
+> ✅ Done — committed `245f5f9`, review clean.
 
 **Files:**
 - Modify: `packages/assets/package.json` (add `test` script)
@@ -156,7 +160,7 @@ Do not commit — hand the diff to the user for review.
   - `interface AssetLoader<A extends Asset, R extends Resource> { readonly type: string; load(asset: A, ctx: LoadContext): Promise<R> }`
   - `class AssetManager implements LoadContext` with `register<A,R>(loader): void`, `load<R>(asset): Promise<R>`, `get<R>(id): R | undefined`, `destroy(): void`.
 
-- [ ] **Step 1: Add the test runner to the package**
+- [x] **Step 1: Add the test runner to the package**
 
 `packages/assets/package.json` — add a `test` script alongside the existing ones:
 
@@ -186,7 +190,7 @@ export default defineConfig({
 });
 ```
 
-- [ ] **Step 2: Write the contract files**
+- [x] **Step 2: Write the contract files**
 
 `packages/assets/src/Asset.ts` (replace the whole file):
 
@@ -230,7 +234,7 @@ export interface AssetLoader<A extends Asset, R extends Resource> {
 }
 ```
 
-- [ ] **Step 3: Write the failing `AssetManager` test**
+- [x] **Step 3: Write the failing `AssetManager` test**
 
 `packages/assets/test/asset-manager.test.ts`:
 
@@ -370,12 +374,12 @@ describe("AssetManager", () => {
 });
 ```
 
-- [ ] **Step 4: Run the test to verify it fails**
+- [x] **Step 4: Run the test to verify it fails**
 
 Run: `pnpm --filter @atlasjs/assets test`
 Expected: FAIL — `Failed to resolve import "../src/AssetManager"` (file does not exist yet).
 
-- [ ] **Step 5: Implement `AssetManager`**
+- [x] **Step 5: Implement `AssetManager`**
 
 `packages/assets/src/AssetManager.ts`:
 
@@ -459,7 +463,7 @@ export class AssetManager implements LoadContext {
 }
 ```
 
-- [ ] **Step 6: Update the barrel**
+- [x] **Step 6: Update the barrel**
 
 `packages/assets/src/index.ts`:
 
@@ -471,7 +475,7 @@ export * from "./AssetLoader";
 export * from "./AssetManager";
 ```
 
-- [ ] **Step 7: Run tests, typecheck, build**
+- [x] **Step 7: Run tests, typecheck, build**
 
 Run: `pnpm --filter @atlasjs/assets test`
 Expected: PASS — 9 tests in `asset-manager.test.ts`.
@@ -482,7 +486,7 @@ Expected: no output (exit 0).
 Run: `pnpm --filter @atlasjs/assets build`
 Expected: tsdown writes `dist` with no errors.
 
-- [ ] **Step 8: Hand off** — do not commit; hand the diff to the user for review.
+- [x] **Step 8: Hand off** — do not commit; hand the diff to the user for review.
 
 ---
 
@@ -497,7 +501,7 @@ Expected: tsdown writes `dist` with no errors.
 - Consumes: `AssetManager` (Task 2); `Engine`, `Plugin`, `ServiceRegistry`, `ServiceToken` from `@atlasjs/core`.
 - Produces: `ASSET_MANAGER: ServiceToken<AssetManager>` and `class AssetPlugin extends Plugin` (`provides: [ASSET_MANAGER]`).
 
-- [ ] **Step 1: Write the token and plugin**
+- [x] **Step 1: Write the token and plugin**
 
 `packages/assets/src/tokens.ts`:
 
@@ -537,7 +541,7 @@ export class AssetPlugin extends Plugin {
 }
 ```
 
-- [ ] **Step 2: Write the failing plugin test**
+- [x] **Step 2: Write the failing plugin test**
 
 `packages/assets/test/asset-plugin.test.ts`:
 
@@ -561,12 +565,12 @@ describe("AssetPlugin", () => {
 });
 ```
 
-- [ ] **Step 3: Run the test to verify it fails**
+- [x] **Step 3: Run the test to verify it fails**
 
 Run: `pnpm --filter @atlasjs/assets test asset-plugin`
 Expected: FAIL — `Failed to resolve import "../src/AssetPlugin"`.
 
-- [ ] **Step 4: Export from the barrel to make it resolve**
+- [x] **Step 4: Export from the barrel to make it resolve**
 
 `packages/assets/src/index.ts` — append:
 
@@ -575,12 +579,12 @@ export * from "./tokens";
 export * from "./AssetPlugin";
 ```
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [x] **Step 5: Run the test to verify it passes**
 
 Run: `pnpm --filter @atlasjs/assets test`
 Expected: PASS — both `asset-manager.test.ts` and `asset-plugin.test.ts`.
 
-- [ ] **Step 6: Typecheck and build**
+- [x] **Step 6: Typecheck and build**
 
 Run: `pnpm --filter @atlasjs/assets exec tsc --noEmit`
 Expected: no output (exit 0).

@@ -298,10 +298,10 @@ Auteur / futur compilateur :
 
 ## Checklist d'implémentation
 
-- [ ] **Renommage `*Node`** (§7, mécanique, peut atterrir en premier) : nebula `graphics` + `AnimationPlayer` + `SpriteRenderSystem` + `apps/webgpu` ; `tsc --noEmit` vert partout.
-- [ ] `@atlasjs/assets` : contrats `Asset` / `Resource` / `AssetLoader` / `LoadContext`.
-- [ ] `@atlasjs/assets` : `AssetManager` (register/load/get/destroy + dédup + erreurs).
-- [ ] `@atlasjs/assets` : `AssetPlugin` + token `ASSET_MANAGER` + re-exports.
+- [x] **Renommage `*Node`** (§7, mécanique, peut atterrir en premier) : nebula `graphics` + `AnimationPlayer` + `SpriteRenderSystem` + `apps/webgpu` ; `tsc --noEmit` vert partout.
+- [x] `@atlasjs/assets` : contrats `Asset` / `Resource` / `AssetLoader` / `LoadContext`.
+- [x] `@atlasjs/assets` : `AssetManager` (register/load/get/destroy + dédup + erreurs).
+- [x] `@atlasjs/assets` : `AssetPlugin` + token `ASSET_MANAGER` + re-exports.
 - [ ] `@atlasjs/nebula` : `TextureAsset` + `TextureLoader` ; `Texture2D extends Resource` ; `NebulaPlugin` requires + register ; dépendance `@atlasjs/assets`.
 - [ ] `@atlasjs/gameplay` : `SpriteAsset` + `SpriteLoader` ; `Sprite implements Resource` (`destroy`) ; `GameplayPlugin` requires + register ; re-exports.
 - [ ] `apps/sandbox` : migration `EcsScene` (mort au `loadTexture` manuel).
