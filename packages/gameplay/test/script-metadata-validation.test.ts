@@ -15,10 +15,10 @@ class Required extends AtlasScript<{ needed: string }> {
 }
 registerScriptMetadata(Required, { exposed: { needed: { required: true } } });
 
-class Optional extends AtlasScript<{ a: string }> {
+class SingleField extends AtlasScript<{ a: string }> {
   public a!: string;
 }
-registerScriptMetadata(Optional, { exposed: { a: { required: true } } });
+registerScriptMetadata(SingleField, { exposed: { a: { required: true } } });
 
 class Bare extends AtlasScript {}
 
@@ -50,7 +50,7 @@ describe("attach — prop/metadata validation", () => {
   it("warns when a provided key is not exposed", () => {
     const e: Entity = h.world.createEntity();
     const props: { a: string; b: string } = { a: "x", b: "y" };
-    sm.attach(e, Optional, props);
+    sm.attach(e, SingleField, props);
 
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0][0]).toContain("b");

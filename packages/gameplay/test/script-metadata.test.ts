@@ -71,4 +71,12 @@ describe("registerScriptMetadata / getScriptMetadata", () => {
     fields.get("a")!.required = false;
     expect(getExposedFields(Simple).get("a")?.required).toBe(true);
   });
+
+  it("last registration wins when called twice on the same constructor", () => {
+    class Rebound {}
+    registerScriptMetadata(Rebound, { exposed: { a: { required: true } } });
+    registerScriptMetadata(Rebound, { exposed: { b: {} } });
+
+    expect([...getExposedFields(Rebound).keys()]).toEqual(["b"]);
+  });
 });
