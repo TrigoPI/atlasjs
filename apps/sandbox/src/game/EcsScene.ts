@@ -46,6 +46,7 @@ export class EcsScene extends Scene {
     const controls = defineActions({
       move: vector2().wasd(),
       boost: button().keys(Key.Space),
+      hello: button().keys(Key.MouseLeft),
     });
 
     const clips: Record<string, SpriteAnimation> = {

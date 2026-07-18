@@ -20,6 +20,7 @@ import {
 type PlayerControlsDescriptor = ActionMapDescriptor<{
   move: Vector2ActionSpec;
   boost: ButtonActionSpec;
+  hello: ButtonActionSpec;
 }>;
 
 export class TestScript extends AtlasScript<{
@@ -43,6 +44,7 @@ export class TestScript extends AtlasScript<{
 
   private move!: Vector2Action;
   private boost!: ButtonAction;
+  private hello!: ButtonAction;
 
   // prettier-ignore
   public onCreate(): void {
@@ -56,6 +58,7 @@ export class TestScript extends AtlasScript<{
 
     this.move = actions.get("move");
     this.boost = actions.get("boost");
+    this.hello = actions.get("hello");
 
     this.rigidbody.type = "kinematic";
     this.transform.setScale(3, 3).setPosition(400, 300);
@@ -72,6 +75,10 @@ export class TestScript extends AtlasScript<{
       this.spriteRenderer.flipX = v.x < 0;
     } else {
       this.animator.play("idle");
+    }
+
+    if (this.hello.isPressed()) {
+      console.log("Hello action triggered");
     }
   }
 
