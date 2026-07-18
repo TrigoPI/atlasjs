@@ -9,16 +9,16 @@
 
 Source : [`rendering/renderer-architecture.md`](rendering/renderer-architecture.md) (§ backlog du refactor renderer).
 
-| # | Item | Statut | Notes |
-|---|------|--------|-------|
-| A2 | **Text rendering** | 📋 | Police bitmap/MSDF comme shader built-in `"text"` + glyph batch. Se branche comme `Batcher` sur le seam `NodeRenderer` (E3). Gros périmètre. |
-| A3 | **Post-processing** | 📋 | Stack de passes chaînées (bloom, vignette) sur `RenderTarget` offscreen. Point d'accroche déjà posé (render-to-texture vérifié). |
-| A4 | **Custom materials sur scene nodes** | 📋 | Attacher un material custom à un nœud de scène ; unifier le chemin instancié et le chemin générique. |
-| B1 | **Resource lifecycle / eviction** | 📋 | Les caches grandissent sans eviction (`batchIds`, bind-group/shader/pipeline caches, `instancedPipelines`) ; `destroy()` jamais appelé au teardown → fuites (`defaultSampler`, batches, géométrie `createQuad`). Passe disposal/eviction/refcount. |
-| B2 | **Réconciliation editor ↔ nebula** | 📋 | `packages/editor` écrit contre une API nebula divergente qui ne compile plus (`RectNode`, `Node.position/scale`, `Node.parent` privé, méthodes `Camera2D` manquantes). Session dédiée. |
-| B4 | **Depth test 3D** | 📋 | `RenderState.depthTest` / `PassDescriptor.depth` inertes mais déjà dans les clés de cache pipeline (piège silencieux) ; besoin d'une depth texture, `depthStencil` sur les pipelines, zIndex → z clip-space. Gros, basse priorité tant qu'on est 2D-first. |
-| — | Extractions `WebGPURenderer` | 🔶 | Encore ~540 lignes ; `ResourceFactory` (14 `create*`) et le chemin draw/culling sont des candidats d'extraction. Voir appendice refactor. |
-| — | Canal `topology` dans `PipelineKeySpec` | 🔶 | Inerte aujourd'hui (tout est `triangle-list`) ; à câbler si un appelant fait varier la topologie. |
+| #   | Item                                    | Statut | Notes                                                                                                                                                                                                                                                      |
+| --- | --------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A2  | **Text rendering**                      | 📋     | Police bitmap/MSDF comme shader built-in `"text"` + glyph batch. Se branche comme `Batcher` sur le seam `NodeRenderer` (E3). Gros périmètre.                                                                                                               |
+| A3  | **Post-processing**                     | 📋     | Stack de passes chaînées (bloom, vignette) sur `RenderTarget` offscreen. Point d'accroche déjà posé (render-to-texture vérifié).                                                                                                                           |
+| A4  | **Custom materials sur scene nodes**    | 📋     | Attacher un material custom à un nœud de scène ; unifier le chemin instancié et le chemin générique.                                                                                                                                                       |
+| B1  | **Resource lifecycle / eviction**       | 📋     | Les caches grandissent sans eviction (`batchIds`, bind-group/shader/pipeline caches, `instancedPipelines`) ; `destroy()` jamais appelé au teardown → fuites (`defaultSampler`, batches, géométrie `createQuad`). Passe disposal/eviction/refcount.         |
+| B2  | **Réconciliation editor ↔ nebula**      | 📋     | `packages/editor` écrit contre une API nebula divergente qui ne compile plus (`RectNode`, `Node.position/scale`, `Node.parent` privé, méthodes `Camera2D` manquantes). Session dédiée.                                                                     |
+| B4  | **Depth test 3D**                       | 📋     | `RenderState.depthTest` / `PassDescriptor.depth` inertes mais déjà dans les clés de cache pipeline (piège silencieux) ; besoin d'une depth texture, `depthStencil` sur les pipelines, zIndex → z clip-space. Gros, basse priorité tant qu'on est 2D-first. |
+| —   | Extractions `WebGPURenderer`            | 🔶     | Encore ~540 lignes ; `ResourceFactory` (14 `create*`) et le chemin draw/culling sont des candidats d'extraction. Voir appendice refactor.                                                                                                                  |
+| —   | Canal `topology` dans `PipelineKeySpec` | 🔶     | Inerte aujourd'hui (tout est `triangle-list`) ; à câbler si un appelant fait varier la topologie.                                                                                                                                                          |
 
 ### Shapes — suites naturelles
 
@@ -33,7 +33,7 @@ Source : [`rendering/shapes.md`](rendering/shapes.md) (hors périmètre v1).
 Source : [`rendering/sprites.md`](rendering/sprites.md) (non-objectifs v1).
 
 - 📋 **`AssetManager`** : chargement async, cache/dedup, lifetime, hot-reload. Le contrat `Asset` (`id` + `dispose`) est la fondation prévue ; conformité formelle de `Texture2D` au contrat à finaliser à ce moment-là.
-- ✅ **Intégration animation** : *implémenté* → [`gameplay/sprite-animation.md`](gameplay/sprite-animation.md) (`Animator` + `AnimatorSystem` dt-driven, swap de `SpriteRender.sprite`). Suites V2 → section [Animation — suites V2](#animation--suites-v2) ci-dessous.
+- ✅ **Intégration animation** : _implémenté_ → [`gameplay/sprite-animation.md`](gameplay/sprite-animation.md) (`Animator` + `AnimatorSystem` dt-driven, swap de `SpriteRender.sprite`). Suites V2 → section [Animation — suites V2](#animation--suites-v2) ci-dessous.
 - 📋 **Blend mode configurable** sur le sprite.
 - 📋 **Sampler / filtrage configurable**.
 - 📋 **`sprite` nullable** sur le renderer.
@@ -120,12 +120,12 @@ Source : [`core/scheduling.md`](core/scheduling.md).
 
 > Relevé lors de la review du système de scripting avant de le faire grossir, par sévérité. Orthogonal au pivot ci-dessus.
 
-| Sévérité | Smell | Notes |
-|---|---|---|
-| 🟠 Moyen | **Surface publique `__`-préfixée sur `AtlasScript`** | `__props`, `__context`, `__bindContext()`, `__unbindContext()` sont `public` (le runtime les appelle) mais polluent l'autocomplétion de l'auteur de script (pseudo-privé par convention). À nettoyer **avant que l'API se fige** : clés `Symbol`, ou un `ScriptRuntimeHandle` séparé manipulé par le `ScriptManager`, en ne laissant sur `AtlasScript` que le cycle de vie + `getComponent`/`addComponent`/`getService`/… |
-| 🟠 Moyen | **Triple duplication des overloads `addComponent`** | Le triplet d'overloads (façade / raw / impl) est recopié verbatim dans `AtlasScript`, `ScriptContext` et `RuntimeScriptContext` → 3 endroits à maintenir en phase. Extraire un type partagé (`AddComponentSignature`). |
-| 🟡 Bas | **`getService` ne cache pas la façade** | `RuntimeScriptContext.getService` fait `new type(this.services)` à chaque appel → façade fraîche à chaque `getService`. Le CLAUDE.md affirme un cache « in the façade ctor » qui n'existe pas côté façade (le cache réel est le service backend, pas le wrapper). Écart doc↔code : cacher la façade par (script, token), ou corriger la doc. |
-| 🟡 Bas | **`ScriptComponent` reconstruit le cast ctor à chaque `resolve()`** | `this.constructor as unknown as ScriptComponentCtor` est recalculé dans le ctor **et** dans `resolve()` à chaque accès. Micro, mais façades censées être hot-path. |
+| Sévérité | Smell                                                               | Notes                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| -------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🟠 Moyen | **Surface publique `__`-préfixée sur `AtlasScript`**                | `__props`, `__context`, `__bindContext()`, `__unbindContext()` sont `public` (le runtime les appelle) mais polluent l'autocomplétion de l'auteur de script (pseudo-privé par convention). À nettoyer **avant que l'API se fige** : clés `Symbol`, ou un `ScriptRuntimeHandle` séparé manipulé par le `ScriptManager`, en ne laissant sur `AtlasScript` que le cycle de vie + `getComponent`/`addComponent`/`getService`/… |
+| 🟠 Moyen | **Triple duplication des overloads `addComponent`**                 | Le triplet d'overloads (façade / raw / impl) est recopié verbatim dans `AtlasScript`, `ScriptContext` et `RuntimeScriptContext` → 3 endroits à maintenir en phase. Extraire un type partagé (`AddComponentSignature`).                                                                                                                                                                                                    |
+| 🟡 Bas   | **`getService` ne cache pas la façade**                             | `RuntimeScriptContext.getService` fait `new type(this.services)` à chaque appel → façade fraîche à chaque `getService`. Le CLAUDE.md affirme un cache « in the façade ctor » qui n'existe pas côté façade (le cache réel est le service backend, pas le wrapper). Écart doc↔code : cacher la façade par (script, token), ou corriger la doc.                                                                              |
+| 🟡 Bas   | **`ScriptComponent` reconstruit le cast ctor à chaque `resolve()`** | `this.constructor as unknown as ScriptComponentCtor` est recalculé dans le ctor **et** dans `resolve()` à chaque accès. Micro, mais façades censées être hot-path.                                                                                                                                                                                                                                                        |
 
 - Risque déjà listé (voir [Notes transverses](#notes-transverses-risques-acceptés-à-surveiller)) : `getComponent(façade)` mint un wrapper frais à chaque appel ; `addComponent(Façade, ...args)` ignore les args si le composant engine existe déjà (get-or-create).
 

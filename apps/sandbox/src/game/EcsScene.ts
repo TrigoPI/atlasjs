@@ -1,9 +1,11 @@
 import BlueDino from "../../assets/game/dinos/dino_blue.png";
+import Sealion from "../../assets/sealion.png";
 
 import { type SceneContext, Scene } from "@atlasjs/core";
 import { type Entity, type NexusWorld, NEXUS } from "@atlasjs/nexus";
 
 import { TestScript } from "./scripts/TestScript";
+import { WallScript } from "./scripts/WallScript";
 
 import {
   type ScriptManager,
@@ -34,7 +36,10 @@ export class EcsScene extends Scene {
     const scriptManager: ScriptManager = ctx.services.get(SCRIPT_MANAGER);
 
     const blueDinoTexture: Texture2D = await this.loadTexture(nebula, BlueDino);
+    const sealion: Texture2D = await this.loadTexture(nebula, Sealion);
+
     const blueDinoSprite: Sprite = new Sprite(blueDinoTexture);
+    const sealionSprite: Sprite = new Sprite(sealion);
 
     const sheet: SpriteSheet = SpriteSheet.fromAutoGrid({
       name: "blue_dino",
@@ -64,9 +69,14 @@ export class EcsScene extends Scene {
       }),
     };
 
-    const player1: Entity = nexus.createEntity();
+    const player: Entity = nexus.createEntity();
+    const wall: Entity = nexus.createEntity();
 
-    scriptManager.attach(player1, TestScript, {
+    scriptManager.attach(wall, WallScript, {
+      sprite: sealionSprite,
+    });
+
+    scriptManager.attach(player, TestScript, {
       clips,
       controls,
       sprite: blueDinoSprite,

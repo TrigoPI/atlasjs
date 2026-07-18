@@ -29,22 +29,19 @@ export class TestScript extends AtlasScript<{
   controls: PlayerControlsDescriptor;
   clips: Record<string, SpriteAnimation>;
 }> {
-  private readonly sprite!: Sprite;
+  private readonly sprite: Sprite;
+  private readonly clips: Record<string, SpriteAnimation>;
+  private readonly speed: number;
+  private readonly controls: PlayerControlsDescriptor;
 
-  private readonly clips!: Record<string, SpriteAnimation>;
+  private transform: Transform2DComponent;
+  private rigidbody: RigidBody2DComponent;
+  private spriteRenderer: SpriteRendererComponent;
+  private animator: Animator;
 
-  private readonly speed!: number;
-
-  private readonly controls!: PlayerControlsDescriptor;
-
-  private transform!: Transform2DComponent;
-  private rigidbody!: RigidBody2DComponent;
-  private spriteRenderer!: SpriteRendererComponent;
-  private animator!: Animator;
-
-  private move!: Vector2Action;
-  private boost!: ButtonAction;
-  private hello!: ButtonAction;
+  private move: Vector2Action;
+  private boost: ButtonAction;
+  private hello: ButtonAction;
 
   // prettier-ignore
   public onCreate(): void {
