@@ -7,7 +7,6 @@ import {
   Animator,
   AtlasScript,
   ButtonAction,
-  Expose,
   PlayerInput,
   RigidBody2DComponent,
   Sprite,
@@ -15,6 +14,7 @@ import {
   SpriteRendererComponent,
   Transform2DComponent,
   Vector2Action,
+  registerScriptMetadata,
 } from "@atlasjs/gameplay";
 
 type PlayerControlsDescriptor = ActionMapDescriptor<{
@@ -28,16 +28,12 @@ export class TestScript extends AtlasScript<{
   controls: PlayerControlsDescriptor;
   clips: Record<string, SpriteAnimation>;
 }> {
-  @Expose()
   private readonly sprite!: Sprite;
 
-  @Expose()
   private readonly clips!: Record<string, SpriteAnimation>;
 
-  @Expose()
-  private readonly speed: number;
+  private readonly speed!: number;
 
-  @Expose()
   private readonly controls!: PlayerControlsDescriptor;
 
   private transform!: Transform2DComponent;
@@ -81,3 +77,12 @@ export class TestScript extends AtlasScript<{
 
   public onDestroy(): void {}
 }
+
+registerScriptMetadata(TestScript, {
+  exposed: {
+    sprite: { required: true },
+    clips: { required: true },
+    speed: { required: true },
+    controls: { required: true },
+  },
+});

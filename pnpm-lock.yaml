@@ -4,15 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-catalogs:
-  default:
-    '@babel/plugin-proposal-decorators':
-      specifier: 8.0.2
-      version: 8.0.2
-    '@rolldown/plugin-babel':
-      specifier: 0.2.3
-      version: 0.2.3
-
 importers:
 
   .:
@@ -81,15 +72,9 @@ importers:
         specifier: ^19.2.0
         version: 19.2.4(react@19.2.4)
     devDependencies:
-      '@babel/plugin-proposal-decorators':
-        specifier: 'catalog:'
-        version: 8.0.2(@babel/core@7.29.0)
       '@eslint/js':
         specifier: ^9.39.1
         version: 9.39.2
-      '@rolldown/plugin-babel':
-        specifier: 'catalog:'
-        version: 0.2.3(@babel/core@7.29.0)(rolldown@1.0.0-rc.9)(vite@7.3.1(@types/node@24.10.13)(lightningcss@1.32.0))
       '@types/node':
         specifier: ^24.10.1
         version: 24.10.13
@@ -230,13 +215,6 @@ importers:
       '@atlasjs/utils':
         specifier: workspace:*
         version: link:../utils
-    devDependencies:
-      '@babel/plugin-proposal-decorators':
-        specifier: 'catalog:'
-        version: 8.0.2(@babel/core@7.29.0)
-      '@rolldown/plugin-babel':
-        specifier: 'catalog:'
-        version: 0.2.3(@babel/core@7.29.0)(rolldown@1.0.0-rc.9)(vite@8.0.0(@types/node@24.10.13)(esbuild@0.27.3))
 
   packages/inertia:
     dependencies:
@@ -2697,14 +2675,6 @@ snapshots:
 
   '@rolldown/binding-win32-x64-msvc@1.0.0-rc.9':
     optional: true
-
-  '@rolldown/plugin-babel@0.2.3(@babel/core@7.29.0)(rolldown@1.0.0-rc.9)(vite@7.3.1(@types/node@24.10.13)(lightningcss@1.32.0))':
-    dependencies:
-      '@babel/core': 7.29.0
-      picomatch: 4.0.5
-      rolldown: 1.0.0-rc.9
-    optionalDependencies:
-      vite: 7.3.1(@types/node@24.10.13)(lightningcss@1.32.0)
 
   '@rolldown/plugin-babel@0.2.3(@babel/core@7.29.0)(rolldown@1.0.0-rc.9)(vite@8.0.0(@types/node@24.10.13)(esbuild@0.27.3))':
     dependencies:
