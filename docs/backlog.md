@@ -106,14 +106,28 @@ Source : [`core/scheduling.md`](core/scheduling.md).
 
 ---
 
-## Gameplay — Variables exposées de script (`@Expose`)
+## Gameplay — Variables exposées de script (`@Expose` → `registerScriptMetadata`)
 
-> **Cœur implémenté** : décorateur stage-3 `@Expose()` + `getExposedFields`, `AtlasScript<TProps>` générique, injection typée via `scriptManager.attach(entity, Script, props)` avant `onCreate`. Source [`gameplay/exposed-script-variables.md`](gameplay/exposed-script-variables.md). Utilisé dans `apps/sandbox`. Ne restent que les **extensions V2** ci-dessous.
+> **Pivot en cours** : le décorateur stage-3 `@Expose()` (+ `Symbol.metadata` + Babel) est remplacé par un **registre plain-JS** alimenté par `registerScriptMetadata(Ctor, metadata)`, unique source de vérité runtime, aligné sur la vision compilateur custom. Spec : [`gameplay/script-metadata-registry.md`](gameplay/script-metadata-registry.md). Source d'origine (implémentation `@Expose` remplacée) : [`gameplay/exposed-script-variables.md`](gameplay/exposed-script-variables.md).
+> Le pivot **résout** : le risque `Symbol()` module-local (plus de symbole partagé writer↔reader) et **câble le warn minimal** de cohérence (`required` sans valeur / clé non exposée). Restent les **extensions V2** ci-dessous.
 
-- 📋 Validation stricte de cohérence `TProps` ↔ `@Expose` : les champs injectables sont déclarés deux fois (générique `AtlasScript<{...}>` pour le type, `@Expose()` pour le runtime) sans lien ; un champ exposé absent de `TProps` (ou renommé d'un côté) reste `undefined` silencieusement. À terme : warn/erreur (champ exposé sans valeur fournie, clé fournie non exposée). Report acté (spec §5).
-- 📋 Métadonnées d'éditeur riches dans `ExposeOptions` (tooltip, range, step, category) + inspecteur.
+- 📋 Validation stricte de cohérence `TProps` ↔ metadata **avec throw** + lien automatique (aujourd'hui : double déclaration générique `AtlasScript<{...}>` / `registerScriptMetadata` sans lien, un champ renommé d'un côté reste `undefined` silencieusement). Le warn minimal est fait ; le lien automatique viendra avec le **compilateur custom**.
+- 📋 Métadonnées d'éditeur riches dans `ExposeFieldMetadata` (`kind`, `assetKind`, `runtimeType`, tooltip, range, step, category) — **générées par le compilateur** ; le type est déjà ouvert à l'extension.
+- 📋 Compilateur TypeScript custom : réécriture `addComponent<T>(a,b)` → `addComponent(T,a,b)`, génération de `registerScriptMetadata`, réintroduction de `@Expose()` comme marqueur compile-time (seul point qui retouchera la syntaxe décorateur).
 - 📋 (Dé)sérialisation des valeurs exposées (scène/prefab sur disque).
-- Risque noté à surveiller : `EXPOSED` est un `Symbol()` module-local — writer (`@Expose`) et reader (`getExposedFields`) doivent venir de la **même** instance de module gameplay (OK aujourd'hui ; casserait si un graphe mélange `src` et `dist`).
+
+### Scripting — santé du code (review pré-croissance)
+
+> Relevé lors de la review du système de scripting avant de le faire grossir, par sévérité. Orthogonal au pivot ci-dessus.
+
+| Sévérité | Smell | Notes |
+|---|---|---|
+| 🟠 Moyen | **Surface publique `__`-préfixée sur `AtlasScript`** | `__props`, `__context`, `__bindContext()`, `__unbindContext()` sont `public` (le runtime les appelle) mais polluent l'autocomplétion de l'auteur de script (pseudo-privé par convention). À nettoyer **avant que l'API se fige** : clés `Symbol`, ou un `ScriptRuntimeHandle` séparé manipulé par le `ScriptManager`, en ne laissant sur `AtlasScript` que le cycle de vie + `getComponent`/`addComponent`/`getService`/… |
+| 🟠 Moyen | **Triple duplication des overloads `addComponent`** | Le triplet d'overloads (façade / raw / impl) est recopié verbatim dans `AtlasScript`, `ScriptContext` et `RuntimeScriptContext` → 3 endroits à maintenir en phase. Extraire un type partagé (`AddComponentSignature`). |
+| 🟡 Bas | **`getService` ne cache pas la façade** | `RuntimeScriptContext.getService` fait `new type(this.services)` à chaque appel → façade fraîche à chaque `getService`. Le CLAUDE.md affirme un cache « in the façade ctor » qui n'existe pas côté façade (le cache réel est le service backend, pas le wrapper). Écart doc↔code : cacher la façade par (script, token), ou corriger la doc. |
+| 🟡 Bas | **`ScriptComponent` reconstruit le cast ctor à chaque `resolve()`** | `this.constructor as unknown as ScriptComponentCtor` est recalculé dans le ctor **et** dans `resolve()` à chaque accès. Micro, mais façades censées être hot-path. |
+
+- Risque déjà listé (voir [Notes transverses](#notes-transverses-risques-acceptés-à-surveiller)) : `getComponent(façade)` mint un wrapper frais à chaque appel ; `addComponent(Façade, ...args)` ignore les args si le composant engine existe déjà (get-or-create).
 
 ---
 
