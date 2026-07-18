@@ -1067,12 +1067,12 @@ Expected: `dist` regenerated (exports `SpriteAsset`/`SpriteLoader`).
 - Consumes: `AssetPlugin`, `ASSET_MANAGER`, `AssetManager` from `@atlasjs/assets`; `TextureAsset` from `@atlasjs/nebula`; `SpriteAsset`, `Sprite` from `@atlasjs/gameplay`.
 - Produces: nothing (app leaf).
 
-- [ ] **Step 1: Add the assets dependency**
+- [x] **Step 1: Add the assets dependency**
 
 `apps/sandbox/package.json` — add `"@atlasjs/assets": "workspace:*"` to `dependencies`, then run `pnpm install`.
 Expected: workspace link created, no errors.
 
-- [ ] **Step 2: Register `AssetPlugin` in the engine boot**
+- [x] **Step 2: Register `AssetPlugin` in the engine boot**
 
 `apps/sandbox/src/App.tsx`:
 - Add import: `import { AssetPlugin } from "@atlasjs/assets";`
@@ -1092,7 +1092,7 @@ Expected: workspace link created, no errors.
       .use(gameplayPlugin);
 ```
 
-- [ ] **Step 3: Migrate `EcsScene` onto the manager**
+- [x] **Step 3: Migrate `EcsScene` onto the manager**
 
 `apps/sandbox/src/game/EcsScene.ts`:
 - Add import: `import { type AssetManager, ASSET_MANAGER } from "@atlasjs/assets";`
@@ -1150,7 +1150,7 @@ import {
 
 The remainder of `onCreate` (the `controls`, `clips`, entity creation, and `scriptManager.attach(...)` calls) is unchanged. Remove the entire `private async loadTexture(...)` method at the bottom of the file.
 
-- [ ] **Step 4: Rebuild dependency dist and typecheck the app**
+- [x] **Step 4: Rebuild dependency dist and typecheck the app**
 
 Run: `pnpm --filter @atlasjs/assets build && pnpm --filter @atlasjs/nebula build && pnpm --filter @atlasjs/gameplay build`
 Expected: all three `dist` up to date.
@@ -1158,13 +1158,13 @@ Expected: all three `dist` up to date.
 Run: `pnpm --filter sandbox exec tsc --noEmit` (typecheck only — do not use the app's own `tsc -b` build step here, which emits artifacts).
 Expected: no output (exit 0).
 
-- [ ] **Step 5: Verify in the browser preview**
+- [x] **Step 5: Verify in the browser preview**
 
 Start the sandbox dev server via the preview tool (do NOT use a raw shell server). Once up:
 - Read console messages — expect **no** plugin-boot errors (no `MissingDependencyError` for `ASSET_MANAGER`, no `DuplicateProviderError`).
 - Confirm the scene renders the dino + sealion sprites as before (screenshot). If the in-app browser lacks WebGPU, at minimum confirm the engine boots and the `AssetManager` resolves both loads without throwing (console clean).
 
-- [ ] **Step 6: Hand off** — do not commit; hand the diff to the user for review.
+- [x] **Step 6: Hand off** — do not commit; hand the diff to the user for review.
 
 ---
 

@@ -3,6 +3,7 @@ import Sealion from "../../assets/sealion.png";
 
 import { type SceneContext, Scene } from "@atlasjs/core";
 import { type Entity, type NexusWorld, NEXUS } from "@atlasjs/nexus";
+import { type AssetManager, ASSET_MANAGER } from "@atlasjs/assets";
 
 import { TestScript } from "./scripts/TestScript";
 import { WallScript } from "./scripts/WallScript";
@@ -14,15 +15,15 @@ import {
   Key,
   SCRIPT_MANAGER,
   Sprite,
+  SpriteAsset,
   vector2,
 } from "@atlasjs/gameplay";
 
 import {
-  type NebulaRenderer,
   type Texture2D,
-  NEBULA_RENDERER,
   SpriteAnimation,
   SpriteSheet,
+  TextureAsset,
 } from "@atlasjs/nebula";
 
 export class EcsScene extends Scene {
@@ -32,14 +33,18 @@ export class EcsScene extends Scene {
 
   public override async onCreate(ctx: SceneContext): Promise<void> {
     const nexus: NexusWorld = ctx.services.get(NEXUS);
-    const nebula: NebulaRenderer = ctx.services.get(NEBULA_RENDERER);
+    const assets: AssetManager = ctx.services.get(ASSET_MANAGER);
     const scriptManager: ScriptManager = ctx.services.get(SCRIPT_MANAGER);
 
-    const blueDinoTexture: Texture2D = await this.loadTexture(nebula, BlueDino);
-    const sealion: Texture2D = await this.loadTexture(nebula, Sealion);
-
-    const blueDinoSprite: Sprite = new Sprite(blueDinoTexture);
-    const sealionSprite: Sprite = new Sprite(sealion);
+    const blueDinoTexture: Texture2D = await assets.load<Texture2D>(
+      new TextureAsset(BlueDino),
+    );
+    const blueDinoSprite: Sprite = await assets.load<Sprite>(
+      new SpriteAsset(new TextureAsset(BlueDino)),
+    );
+    const sealionSprite: Sprite = await assets.load<Sprite>(
+      new SpriteAsset(new TextureAsset(Sealion)),
+    );
 
     const sheet: SpriteSheet = SpriteSheet.fromAutoGrid({
       name: "blue_dino",
@@ -81,25 +86,6 @@ export class EcsScene extends Scene {
       controls,
       sprite: blueDinoSprite,
       speed: 250,
-    });
-  }
-
-  private async loadTexture(
-    nebula: NebulaRenderer,
-    src: string,
-  ): Promise<Texture2D> {
-    const image: HTMLImageElement = new Image();
-    image.src = src;
-    await image.decode();
-
-    const source: ImageBitmap = await createImageBitmap(image, {
-      imageOrientation: "flipY",
-    });
-
-    return nebula.createTexture2D({
-      source,
-      width: source.width,
-      height: source.height,
     });
   }
 }

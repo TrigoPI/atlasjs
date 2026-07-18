@@ -304,7 +304,7 @@ Auteur / futur compilateur :
 - [x] `@atlasjs/assets` : `AssetPlugin` + token `ASSET_MANAGER` + re-exports.
 - [x] `@atlasjs/nebula` : `TextureAsset` + `TextureLoader` ; `Texture2D extends Resource` ; `NebulaPlugin` requires + register ; dépendance `@atlasjs/assets`.
 - [x] `@atlasjs/gameplay` : `SpriteAsset` + `SpriteLoader` ; `Sprite implements Resource` (`destroy`) ; `GameplayPlugin` requires + register ; re-exports.
-- [ ] `apps/sandbox` : migration `EcsScene` (mort au `loadTexture` manuel).
+- [x] `apps/sandbox` : migration `EcsScene` (mort au `loadTexture` manuel).
 - [x] Tests (`@atlasjs/assets` + intégration gameplay).
-- [ ] `tsc --noEmit` sur les packages touchés + rebuild des `dist` dépendants (`assets`, `nebula`).
+- [x] `tsc --noEmit` sur les packages touchés + rebuild des `dist` dépendants (`assets`, `nebula`).
 - [ ] `docs/backlog.md` + index `CLAUDE.md` : référencer ce doc.
