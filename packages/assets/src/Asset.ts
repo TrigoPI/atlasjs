@@ -1,5 +1,4 @@
 export interface Asset {
+  readonly type: string;
   readonly id: string;
-  readonly kind: string;
-  dispose(): void;
 }
