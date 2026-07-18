@@ -6,7 +6,9 @@ import { ScriptContext } from "./ScriptContext";
 import { ScriptLifecycle } from "./ScriptLifeCycle";
 
 // prettier-ignore
-export abstract class AtlasScript implements ScriptLifecycle {
+export abstract class AtlasScript<TProps extends object = {}> implements ScriptLifecycle {
+  declare public readonly __props?: TProps;
+
   private __context?: ScriptContext;
 
   public onCreate?(): void;

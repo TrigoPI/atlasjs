@@ -15,7 +15,8 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "test": "vitest run",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json"
   },
   "dependencies": {
     "@atlasjs/assets": "workspace:*",

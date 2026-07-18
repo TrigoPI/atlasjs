@@ -73,10 +73,20 @@ export abstract class AtlasScript<
 
 ### 3.2 Décorateur `@Expose()` (`packages/gameplay/src/scripting/core/Expose.ts`)
 
-Décorateur de champ **stage-3** (signature `(value, context)`), métadonnées via `context.metadata` → `Symbol.metadata`.
+Décorateur de champ **stage-3** (signature `(value, context)`), métadonnées via `context.metadata` → `Symbol.metadata`. Le polyfill `Symbol.metadata` et la lecture des métadonnées d'un constructeur sont isolés dans un module dédié `SymbolMetadata.ts`, `Expose.ts` en dépend.
 
 ```ts
+// SymbolMetadata.ts
 (Symbol as { metadata?: symbol }).metadata ??= Symbol.for("Symbol.metadata");
+
+export function getCtorMetadata<T>(ctor: Function): T | undefined {
+  return (ctor as { [Symbol.metadata]?: T })[Symbol.metadata];
+}
+```
+
+```ts
+// Expose.ts
+import { getCtorMetadata } from "./SymbolMetadata";
 
 export interface ExposeOptions {
   // vide pour l'instant — point d'accroche futur éditeur : tooltip?, range?, step?, category?
@@ -84,13 +94,15 @@ export interface ExposeOptions {
 
 export type ExposedMetadata = Map<string, ExposeOptions>;
 
+export type FieldDecorator<This = unknown> = (
+  value: undefined,
+  context: ClassFieldDecoratorContext<This>,
+) => void;
+
 const EXPOSED: unique symbol = Symbol("atlas.exposed");
 
-export function Expose(options: ExposeOptions = {}) {
-  return function <T>(
-    _value: undefined,
-    context: ClassFieldDecoratorContext<unknown, T>,
-  ): void {
+export function Expose(options: ExposeOptions = {}): FieldDecorator {
+  return (_: undefined, context: ClassFieldDecoratorContext): void => {
     if (context.private) {
       throw new Error(
         "[@Expose] private (#) fields cannot be exposed; use a soft-private field.",
@@ -112,15 +124,14 @@ export function Expose(options: ExposeOptions = {}) {
 }
 
 export function getExposedFields(ctor: Function): ExposedMetadata {
-  const metadata: Record<symbol, ExposedMetadata | undefined> | undefined = (
-    ctor as { [Symbol.metadata]?: Record<symbol, ExposedMetadata | undefined> }
-  )[Symbol.metadata];
+  const metadata: Record<symbol, ExposedMetadata | undefined> | undefined =
+    getCtorMetadata<Record<symbol, ExposedMetadata | undefined>>(ctor);
 
   return new Map<string, ExposeOptions>(metadata?.[EXPOSED] ?? []);
 }
 ```
 
-- **Polyfill en tête de module** : `Symbol.metadata` n'existe pas au runtime Node ; sans lui, babel n'attache pas l'objet metadata au constructeur. `Expose.ts` étant importé (transitivement) avant toute classe décorée, le polyfill s'exécute d'abord (ordre d'évaluation ESM). Vérifié end-to-end.
+- **Polyfill en tête de `SymbolMetadata.ts` (top-level, jamais dans une fonction)** : `Symbol.metadata` n'existe pas au runtime Node ; sans lui, babel n'attache pas l'objet metadata au constructeur. Le module `SymbolMetadata.ts` étant importé (transitivement, via `Expose.ts`) avant toute classe décorée, le polyfill s'exécute d'abord (ordre d'évaluation ESM). **Le placer dans le corps de `getCtorMetadata` le ferait tourner trop tard** (à l'appel de `getExposedFields`, après la définition des classes décorées) → metadata jamais attachée. Vérifié end-to-end.
 - **Sans instancier** : le décorateur s'exécute à la définition de classe et `Symbol.metadata` est posé sur le constructeur → un éditeur peut lire les champs exposés sans `new`.
 - **Piège d'héritage (géré)** : `context.metadata` d'une sous-classe a l'objet metadata du parent comme **prototype**. Un `metadata[EXPOSED] ??= …` naïf trouverait le `Map` du parent par héritage et le **polluerait**. On fait donc du **clone-on-own-write** : si `EXPOSED` n'est pas une propriété **propre**, on clone la `Map` héritée (`new Map(store)`) et on la pose en propre. Résultat vérifié : `Child` = `{base, a, b}`, `Base` reste `{base}`.
 - `getExposedFields` lit directement `Ctor[Symbol.metadata][EXPOSED]` (propriété propre **ou** héritée via la chaîne statique des constructeurs — une sous-classe sans `@Expose` propre hérite du metadata du parent). Retourne une **copie** (isolation de l'appelant).
@@ -169,7 +180,7 @@ private injectProps(instance: AtlasScript, ScriptType: ScriptConstructor, props?
 
 ### 3.4 Exports
 
-`packages/gameplay/src/scripting/core/index.ts` : exporter `Expose`, `getExposedFields`, `ExposeOptions`, `ExposedMetadata`. Remontent via `scripting/index.ts` → `index.ts`, donc `import { Expose } from "@atlasjs/gameplay"`.
+`packages/gameplay/src/scripting/core/index.ts` : exporter `./Expose` (`Expose`, `getExposedFields`, `ExposeOptions`, `ExposedMetadata`, `FieldDecorator`) et `./SymbolMetadata` (`getCtorMetadata`). Remontent via `scripting/index.ts` → `index.ts`, donc `import { Expose } from "@atlasjs/gameplay"`.
 
 ### 3.5 Config toolchain
 
@@ -273,7 +284,7 @@ Les trois frictions du §1 sont résolues par **le même** mécanisme.
 ## 7. Ordre d'implémentation suggéré
 
 1. `tsconfig.base.json` : ajouter `"ESNext.Decorators"` à `lib`. (Le babel vitest est **déjà** en place.)
-2. `Expose` décorateur stage-3 + polyfill + `getExposedFields` (`Symbol.metadata`, clone-on-own-write) + tests unitaires.
+2. `SymbolMetadata.ts` (polyfill top-level + `getCtorMetadata`) puis `Expose` décorateur stage-3 + `getExposedFields` (`Symbol.metadata`, clone-on-own-write) + tests unitaires.
 3. `AtlasScript<TProps>` générique (+ phantom `__props`) + tests de rétrocompat (scripts existants compilent).
 4. `attach` typé (`PropsOf`, tuple conditionnel) + `injectProps` + tests runtime & type.
 5. Exports gameplay ; `tsc --noEmit` ; `pnpm --filter @atlasjs/gameplay build`.

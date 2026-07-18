@@ -26,7 +26,8 @@
 
 ## File Structure
 
-- `packages/gameplay/src/scripting/core/Expose.ts` **(créer / remplacer le stub)** — décorateur `@Expose` stage-3, polyfill, `getExposedFields`. Responsabilité unique : métadonnées de champs exposés.
+- `packages/gameplay/src/scripting/core/Expose.ts` **(créer / remplacer le stub)** — décorateur `@Expose` stage-3, `getExposedFields`. Responsabilité unique : métadonnées de champs exposés.
+- `packages/gameplay/src/scripting/core/SymbolMetadata.ts` **(créer)** — polyfill `Symbol.metadata` (top-level) + accesseur typé `getCtorMetadata`. Isole la préoccupation « lire les métadonnées d'un constructeur » de la définition du décorateur.
 - `packages/gameplay/src/scripting/core/AtlasScript.ts` **(modifier)** — rendre la classe générique `AtlasScript<TProps>`.
 - `packages/gameplay/src/scripting/core/index.ts` **(déjà modifié)** — exporte déjà `./Expose`.
 - `packages/gameplay/src/scripting/runtime/ScriptManager.ts` **(modifier)** — `attach` typé + `injectProps`.
@@ -48,6 +49,7 @@
 **Files:**
 - Modify: `tsconfig.base.json`
 - Create/replace: `packages/gameplay/src/scripting/core/Expose.ts`
+- Create: `packages/gameplay/src/scripting/core/SymbolMetadata.ts`
 - Test: `packages/gameplay/test/expose.test.ts`
 
 **Interfaces:**
@@ -56,7 +58,7 @@
   - `getExposedFields(ctor: Function): ExposedMetadata` où `ExposedMetadata = Map<string, ExposeOptions>`
   - `interface ExposeOptions {}` (vide, extensible)
 
-- [ ] **Step 1: Ajouter le lib `ESNext.Decorators`**
+- [x] **Step 1: Ajouter le lib `ESNext.Decorators`**
 
 Dans `tsconfig.base.json`, remplacer la ligne `lib` :
 
@@ -64,7 +66,7 @@ Dans `tsconfig.base.json`, remplacer la ligne `lib` :
     "lib": ["ES2022", "DOM", "ESNext.Decorators"],
 ```
 
-- [ ] **Step 2: Écrire le test qui échoue**
+- [x] **Step 2: Écrire le test qui échoue**
 
 Remplacer `packages/gameplay/test/expose.test.ts` par :
 
@@ -137,29 +139,42 @@ describe("@Expose / getExposedFields", () => {
 });
 ```
 
-- [ ] **Step 3: Lancer le test — vérifier l'échec**
+- [x] **Step 3: Lancer le test — vérifier l'échec**
 
 Run: `pnpm --filter @atlasjs/gameplay exec vitest run test/expose.test.ts`
 Expected: FAIL — `Expose`/`getExposedFields` non implémentés (le stub actuel ne stocke rien).
 
-- [ ] **Step 4: Implémenter le décorateur**
+- [x] **Step 4: Implémenter le décorateur (polyfill extrait dans `SymbolMetadata.ts`)**
 
-Remplacer `packages/gameplay/src/scripting/core/Expose.ts` par :
+Le polyfill `Symbol.metadata` et la lecture des métadonnées d'un constructeur sont isolés dans un module dédié — le polyfill **doit rester au top-level du module** (il tourne à l'évaluation ESM, avant toute classe décorée ; placé dans une fonction il s'exécuterait trop tard et babel n'attacherait jamais les métadonnées).
+
+`packages/gameplay/src/scripting/core/SymbolMetadata.ts` :
 
 ```ts
 (Symbol as { metadata?: symbol }).metadata ??= Symbol.for("Symbol.metadata");
 
-export interface ExposeOptions {}
+export function getCtorMetadata<T>(ctor: Function): T | undefined {
+  return (ctor as { [Symbol.metadata]?: T })[Symbol.metadata];
+}
+```
 
+`packages/gameplay/src/scripting/core/Expose.ts` :
+
+```ts
+import { getCtorMetadata } from "./SymbolMetadata";
+
+export interface ExposeOptions {}
 export type ExposedMetadata = Map<string, ExposeOptions>;
+
+export type FieldDecorator<This = unknown> = (
+  value: undefined,
+  context: ClassFieldDecoratorContext<This>,
+) => void;
 
 const EXPOSED: unique symbol = Symbol("atlas.exposed");
 
-export function Expose(options: ExposeOptions = {}) {
-  return function <T>(
-    _value: undefined,
-    context: ClassFieldDecoratorContext<unknown, T>,
-  ): void {
+export function Expose(options: ExposeOptions = {}): FieldDecorator {
+  return (_: undefined, context: ClassFieldDecoratorContext): void => {
     if (context.private) {
       throw new Error(
         "[@Expose] private (#) fields cannot be exposed; use a soft-private field.",
@@ -181,25 +196,28 @@ export function Expose(options: ExposeOptions = {}) {
 }
 
 export function getExposedFields(ctor: Function): ExposedMetadata {
-  const metadata: Record<symbol, ExposedMetadata | undefined> | undefined = (
-    ctor as { [Symbol.metadata]?: Record<symbol, ExposedMetadata | undefined> }
-  )[Symbol.metadata];
+  const metadata: Record<symbol, ExposedMetadata | undefined> | undefined =
+    getCtorMetadata<Record<symbol, ExposedMetadata | undefined>>(ctor);
 
   return new Map<string, ExposeOptions>(metadata?.[EXPOSED] ?? []);
 }
 ```
 
-(Le barrel `packages/gameplay/src/scripting/core/index.ts` exporte **déjà** `./Expose`.)
+(Le barrel `packages/gameplay/src/scripting/core/index.ts` exporte `./Expose` **et** `./SymbolMetadata`.)
 
-- [ ] **Step 5: Lancer le test — vérifier le succès**
+- [x] **Step 5: Lancer le test — vérifier le succès**
 
 Run: `pnpm --filter @atlasjs/gameplay exec vitest run test/expose.test.ts`
 Expected: PASS (8 tests).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
-git add tsconfig.base.json packages/gameplay/src/scripting/core/Expose.ts packages/gameplay/test/expose.test.ts
+git add tsconfig.base.json \
+  packages/gameplay/src/scripting/core/Expose.ts \
+  packages/gameplay/src/scripting/core/SymbolMetadata.ts \
+  packages/gameplay/src/scripting/core/index.ts \
+  packages/gameplay/test/expose.test.ts
 git commit -m "feat(gameplay): add @Expose stage-3 decorator + exposed-field metadata"
 ```
 
