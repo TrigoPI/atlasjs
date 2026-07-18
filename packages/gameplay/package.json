@@ -27,9 +27,5 @@
     "@atlasjs/nebula": "workspace:*",
     "@atlasjs/nexus": "workspace:*",
     "@atlasjs/utils": "workspace:*"
-  },
-  "devDependencies": {
-    "@babel/plugin-proposal-decorators": "catalog:",
-    "@rolldown/plugin-babel": "catalog:"
   }
 }

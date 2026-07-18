@@ -230,13 +230,6 @@ importers:
       '@atlasjs/utils':
         specifier: workspace:*
         version: link:../utils
-    devDependencies:
-      '@babel/plugin-proposal-decorators':
-        specifier: 'catalog:'
-        version: 8.0.2(@babel/core@7.29.0)
-      '@rolldown/plugin-babel':
-        specifier: 'catalog:'
-        version: 0.2.3(@babel/core@7.29.0)(rolldown@1.0.0-rc.9)(vite@8.0.0(@types/node@24.10.13)(esbuild@0.27.3))
 
   packages/inertia:
     dependencies:
