@@ -196,6 +196,8 @@ git commit -m "feat(gameplay): add registerScriptMetadata registry (WeakMap + in
 Bascule le runtime sur le nouveau registre, ajoute la validation warn (logger injectable), supprime `Expose.ts`/`SymbolMetadata.ts`, met à jour le barrel, et réécrit/ajoute les tests. Changement **atomique** : entre le swap d'import et la suppression des fichiers legacy, le build serait cassé — donc tout dans une tâche.
 
 **Files:**
+- Modify: `packages/gameplay/src/scripting/core/ScriptMetadata.ts` (Minor 1 review Task 1 — clone par champ)
+- Modify: `packages/gameplay/test/script-metadata.test.ts` (Minor 1 — test d'isolation ; fichier commité en Task 1)
 - Modify: `packages/gameplay/src/scripting/runtime/ScriptManager.ts`
 - Modify: `packages/gameplay/src/scripting/core/index.ts`
 - Delete: `packages/gameplay/src/scripting/core/Expose.ts`
@@ -208,7 +210,47 @@ Bascule le runtime sur le nouveau registre, ajoute la validation warn (logger in
 - Consumes (Task 1): `ScriptMetadata`, `ExposeFieldMetadata`, `getScriptMetadata`, `registerScriptMetadata`.
 - Produces: `new ScriptManager(world, services, logger?)` — 3ᵉ param `logger?: Logger` optionnel (défaut `createLogger("ScriptManager")`).
 
-- [ ] **Step 1: Réécrire `exposed-injection.test.ts` (test qui échoue après le passage au registre)**
+> **Inclus dans cette tâche — Minor 1 de la review Task 1** : durcir l'isolation de copie du registre (`ScriptMetadata.ts`) en Steps 1–2, **avant** le cutover `ScriptManager` (Steps 3+).
+
+- [ ] **Step 1: Test d'isolation (RED) dans `script-metadata.test.ts`**
+
+Ajouter ce test à la fin du `describe(...)` de `packages/gameplay/test/script-metadata.test.ts` (le fichier existe depuis la Task 1) :
+
+```ts
+  it("isolates returned field objects from the registry", () => {
+    const fields: Map<string, ExposeFieldMetadata> = getExposedFields(Simple);
+    fields.get("a")!.required = false;
+    expect(getExposedFields(Simple).get("a")?.required).toBe(true);
+  });
+```
+
+Run: `pnpm --filter @atlasjs/gameplay exec vitest run script-metadata`
+Expected: FAIL — le champ retourné partage sa référence avec le registre (copie superficielle actuelle) ; la mutation corrompt la donnée stockée → l'assertion `toBe(true)` échoue.
+
+- [ ] **Step 2: Durcir `getScriptMetadata` (clone par champ) — GREEN**
+
+Dans `packages/gameplay/src/scripting/core/ScriptMetadata.ts`, remplacer la boucle de fusion de `getScriptMetadata` (aujourd'hui `merged = { ...(merged ?? {}), ...own.exposed };`) par une version qui clone chaque objet de champ :
+
+```ts
+  for (let i: number = chain.length - 1; i >= 0; i--) {
+    const own: ScriptMetadata | undefined = REGISTRY.get(chain[i]);
+
+    if (own === undefined) {
+      continue;
+    }
+
+    merged = merged ?? {};
+
+    for (const field of Object.keys(own.exposed)) {
+      merged[field] = { ...own.exposed[field] };
+    }
+  }
+```
+
+Run: `pnpm --filter @atlasjs/gameplay exec vitest run script-metadata`
+Expected: PASS (8 tests — les 7 de la Task 1 + l'isolation).
+
+- [ ] **Step 3: Réécrire `exposed-injection.test.ts` (test qui échoue après le passage au registre)**
 
 Replace le contenu de `packages/gameplay/test/exposed-injection.test.ts` par :
 
@@ -295,12 +337,12 @@ describe("attach — exposed prop injection", () => {
 });
 ```
 
-- [ ] **Step 2: Lancer, vérifier l'échec**
+- [ ] **Step 4: Lancer, vérifier l'échec**
 
 Run: `pnpm --filter @atlasjs/gameplay exec vitest run exposed-injection`
 Expected: FAIL — `expect(s.label).toBe("hi")` échoue (`ScriptManager` lit encore `Symbol.metadata`, pas le nouveau registre → aucune injection).
 
-- [ ] **Step 3: Basculer `ScriptManager` sur le registre + logger + validation**
+- [ ] **Step 5: Basculer `ScriptManager` sur le registre + logger + validation**
 
 Dans `packages/gameplay/src/scripting/runtime/ScriptManager.ts` :
 
@@ -390,7 +432,7 @@ Remplacer entièrement `injectProps` :
   }
 ```
 
-- [ ] **Step 4: Supprimer les fichiers legacy et mettre à jour le barrel**
+- [ ] **Step 6: Supprimer les fichiers legacy et mettre à jour le barrel**
 
 ```bash
 git rm packages/gameplay/src/scripting/core/Expose.ts packages/gameplay/src/scripting/core/SymbolMetadata.ts packages/gameplay/test/expose.test.ts
@@ -408,7 +450,7 @@ export * from "./core-types";
 export * from "./ScriptMetadata";
 ```
 
-- [ ] **Step 5: Écrire le test de validation (nouveau)**
+- [ ] **Step 7: Écrire le test de validation (nouveau)**
 
 Create `packages/gameplay/test/script-metadata-validation.test.ts` :
 
@@ -480,12 +522,12 @@ describe("attach — prop/metadata validation", () => {
 });
 ```
 
-- [ ] **Step 6: Lancer les tests scripting, vérifier le succès**
+- [ ] **Step 8: Lancer les tests scripting, vérifier le succès**
 
 Run: `pnpm --filter @atlasjs/gameplay exec vitest run exposed-injection script-metadata`
 Expected: PASS — injection (4 tests) + registre (7 tests) + validation (3 tests).
 
-- [ ] **Step 7: Typecheck + suite complète**
+- [ ] **Step 9: Typecheck + suite complète**
 
 Run: `pnpm --filter @atlasjs/gameplay exec tsc --noEmit -p tsconfig.test.json`
 Expected: aucune erreur (plus aucune référence à `Expose`/`getExposedFields` legacy/`Symbol.metadata`).
@@ -493,7 +535,7 @@ Expected: aucune erreur (plus aucune référence à `Expose`/`getExposedFields` 
 Run: `pnpm --filter @atlasjs/gameplay test`
 Expected: PASS (toute la suite).
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 10: Commit** *(exécuté par l'utilisateur — l'implémenteur ne commite pas)*
 
 ```bash
 git add packages/gameplay/src/scripting packages/gameplay/test

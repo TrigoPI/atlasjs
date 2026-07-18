@@ -1,16 +1,18 @@
 import { ServiceRegistry } from "@atlasjs/core";
 import { Entity, NexusWorld } from "@atlasjs/nexus";
+import { Logger, createLogger } from "@atlasjs/utils";
 
 import { RuntimeScriptContext } from "./RuntimeScriptContext";
 import { IncrementalScriptIdGenerator } from "./IncrementalScriptIdGenerator";
 
 import {
   AtlasScript,
-  ExposedMetadata,
+  ExposeFieldMetadata,
   ScriptConstructor,
   ScriptID,
   ScriptInstanceRecord,
-  getExposedFields,
+  ScriptMetadata,
+  getScriptMetadata,
 } from "../core";
 
 type PropsOf<T> = T extends AtlasScript<infer P> ? P : {};
@@ -23,13 +25,19 @@ export class ScriptManager {
   private readonly idGenerator: IncrementalScriptIdGenerator;
   private readonly world: NexusWorld;
   private readonly services: ServiceRegistry;
+  private readonly logger: Logger;
 
   private readonly pendingCreate: ScriptID[];
   private readonly pendingDestroy: ScriptID[];
 
-  public constructor(world: NexusWorld, services: ServiceRegistry) {
+  public constructor(
+    world: NexusWorld,
+    services: ServiceRegistry,
+    logger?: Logger,
+  ) {
     this.world = world;
     this.services = services;
+    this.logger = logger ?? createLogger("ScriptManager");
 
     this.pendingCreate = [];
     this.pendingDestroy = [];
@@ -171,25 +179,33 @@ export class ScriptManager {
     ScriptType: ScriptConstructor,
     props?: object,
   ): void {
-    if (!props) {
-      return;
-    }
-
-    const exposed: ExposedMetadata = getExposedFields(ScriptType);
-
-    if (exposed.size === 0) {
-      return;
-    }
-
-    const source: Record<string, unknown> = props as Record<string, unknown>;
+    const metadata: ScriptMetadata | undefined = getScriptMetadata(ScriptType);
+    const exposed: Record<string, ExposeFieldMetadata> =
+      metadata?.exposed ?? {};
+    const source: Record<string, unknown> = (props ?? {}) as Record<
+      string,
+      unknown
+    >;
     const target: Record<string, unknown> = instance as unknown as Record<
       string,
       unknown
     >;
 
-    for (const field of exposed.keys()) {
+    for (const field of Object.keys(exposed)) {
       if (field in source) {
         target[field] = source[field];
+      } else if (exposed[field].required === true) {
+        this.logger.warn(
+          `"${ScriptType.name}" exposes required field "${field}" but no value was provided.`,
+        );
+      }
+    }
+
+    for (const key of Object.keys(source)) {
+      if (!(key in exposed)) {
+        this.logger.warn(
+          `Prop "${key}" provided to "${ScriptType.name}" is not exposed and was ignored.`,
+        );
       }
     }
   }

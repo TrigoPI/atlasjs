@@ -33,7 +33,11 @@ export function getScriptMetadata(ctor: Function): ScriptMetadata | undefined {
       continue;
     }
 
-    merged = { ...(merged ?? {}), ...own.exposed };
+    merged = merged ?? {};
+
+    for (const field of Object.keys(own.exposed)) {
+      merged[field] = { ...own.exposed[field] };
+    }
   }
 
   return merged === undefined ? undefined : { exposed: merged };

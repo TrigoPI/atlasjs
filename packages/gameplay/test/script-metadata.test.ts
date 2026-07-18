@@ -65,4 +65,10 @@ describe("registerScriptMetadata / getScriptMetadata", () => {
     map.set("hacked", {});
     expect(getExposedFields(Simple).has("hacked")).toBe(false);
   });
+
+  it("isolates returned field objects from the registry", () => {
+    const fields: Map<string, ExposeFieldMetadata> = getExposedFields(Simple);
+    fields.get("a")!.required = false;
+    expect(getExposedFields(Simple).get("a")?.required).toBe(true);
+  });
 });
