@@ -5,7 +5,7 @@ import {
   Color,
   NebulaRenderer,
   Sampler,
-  Sprite as SpriteNode,
+  SpriteNode,
 } from "@atlasjs/nebula";
 
 import {

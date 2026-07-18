@@ -1,5 +1,5 @@
 import { Bound, Mat4, Vec2, Vec4 } from "@atlasjs/math";
-import { Node, Sprite } from "../graphics";
+import { Node, SpriteNode } from "../graphics";
 import { SpriteDrawCommand } from "./DrawCommand";
 import { NodeRendererBase } from "./NodeRendererBase";
 import { NodeRenderer, Batcher, KIND_ORDER } from "./NodeRenderer";
@@ -13,7 +13,7 @@ type SpriteRenderData = {
 };
 
 export class SpriteRenderer
-  extends NodeRendererBase<Sprite, SpriteRenderData>
+  extends NodeRendererBase<SpriteNode, SpriteRenderData>
   implements NodeRenderer
 {
   public readonly kind = "sprite" as const;
@@ -40,7 +40,7 @@ export class SpriteRenderer
   }
 
   public matches(node: Node): boolean {
-    return node instanceof Sprite;
+    return node instanceof SpriteNode;
   }
 
   public collect(
@@ -48,7 +48,7 @@ export class SpriteRenderer
     viewport: Bound,
     scratch: Bound,
   ): SpriteDrawCommand | null {
-    const sprite: Sprite = node as Sprite;
+    const sprite: SpriteNode = node as SpriteNode;
     const bound: Bound = sprite.getWorldBound(scratch);
 
     if (!viewport.overlaps(bound)) {
@@ -59,7 +59,7 @@ export class SpriteRenderer
   }
 
   private buildCommand(node: Node): SpriteDrawCommand {
-    const sprite: Sprite = node as Sprite;
+    const sprite: SpriteNode = node as SpriteNode;
 
     const sampler: Sampler = sprite.sampler ?? this.defaultSampler;
     const materialKey: string = this.createMaterialKey(
@@ -128,7 +128,7 @@ export class SpriteRenderer
   }
 
   private updateModelMatrix(
-    sprite: Sprite,
+    sprite: SpriteNode,
     sourceRect: Bound,
     out: Mat4,
   ): void {

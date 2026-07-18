@@ -1,4 +1,4 @@
-import { Sprite } from "../graphics";
+import { SpriteNode } from "../graphics";
 import { SpriteAnimation } from "./SpriteAnimation";
 import { Frame } from "./Frame";
 
@@ -80,7 +80,7 @@ export class AnimationPlayer {
     return this.currentAnimation?.getCurrentFrame();
   }
 
-  public updateAndApply(sprite: Sprite, deltaMs: number): void {
+  public updateAndApply(sprite: SpriteNode, deltaMs: number): void {
     this.currentAnimation?.updateAndApply(sprite, deltaMs);
   }
 

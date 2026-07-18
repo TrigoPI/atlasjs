@@ -7,10 +7,10 @@ import {
   type Texture2D,
   type Renderer,
   type Sampler,
-  Sprite,
-  Rect,
-  Circle,
-  Line,
+  SpriteNode,
+  RectNode,
+  CircleNode,
+  LineNode,
   SpriteSheet,
   SpriteAnimation,
   AnimationPlayer,
@@ -79,9 +79,9 @@ async function getImage(src: string): Promise<ImageBitmap> {
     format: "rgba8unorm",
   });
 
-  const dinoSprite: Sprite = new Sprite(dinoTexture, sampler);
-  const swordSprite: Sprite = new Sprite(swordTexture, sampler);
-  const sealionSprite: Sprite = new Sprite(sealionTexture);
+  const dinoSprite: SpriteNode = new SpriteNode(dinoTexture, sampler);
+  const swordSprite: SpriteNode = new SpriteNode(swordTexture, sampler);
+  const sealionSprite: SpriteNode = new SpriteNode(sealionTexture);
 
   const spriteSheet: SpriteSheet = SpriteSheet.fromAutoGrid({
     name: "dino_blue",
@@ -128,13 +128,13 @@ async function getImage(src: string): Promise<ImageBitmap> {
   // nebula.scene.addChild(dinoSprite);
   // dinoSprite.addChild(swordSprite);
 
-  const bgRect: Rect = new Rect(320, 240);
+  const bgRect: RectNode = new RectNode(320, 240);
   bgRect.setColor(0.15, 0.2, 0.55, 1).setPosition(200, 200).setZIndex(-1);
 
-  const circle: Circle = new Circle(70);
+  const circle: CircleNode = new CircleNode(70);
   circle.setColor(0.9, 0.3, 0.3, 1).setPosition(330, 130).setZIndex(1);
 
-  const line: Line = new Line(80, 320, 360, 250, 1);
+  const line: LineNode = new LineNode(80, 320, 360, 250, 1);
   line.setColor(0.2, 0.9, 0.4, 1).setZIndex(2);
 
   nebula.scene.addChild(bgRect);

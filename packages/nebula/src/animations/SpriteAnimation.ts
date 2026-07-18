@@ -1,5 +1,5 @@
 import { SpriteAnimationOptions } from "./animation-types";
-import { Sprite } from "../graphics";
+import { SpriteNode } from "../graphics";
 
 import { Frame } from "./Frame";
 
@@ -76,7 +76,7 @@ export class SpriteAnimation {
     }
   }
 
-  public updateAndApply(sprite: Sprite, deltaMs: number): void {
+  public updateAndApply(sprite: SpriteNode, deltaMs: number): void {
     this.tick(deltaMs);
     sprite.setFrame(this.frames[this.currentFrameIndex]);
   }

@@ -2,7 +2,7 @@ import { BlendMode } from "../core";
 import { Color } from "../utils";
 import { Node } from "./Node";
 
-export class Shape extends Node {
+export class ShapeNode extends Node {
   public color: Color;
   public blend: BlendMode;
 

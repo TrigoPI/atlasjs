@@ -1,6 +1,6 @@
-import { Shape } from "./Shape";
+import { ShapeNode } from "./ShapeNode";
 
-export class Rect extends Shape {
+export class RectNode extends ShapeNode {
   public constructor(w: number = 100, h: number = 100) {
     super();
     this.setSize(w, h);
@@ -22,7 +22,7 @@ export class Rect extends Shape {
     this.transform.scale.y = h;
   }
 
-  public setSize(w: number, h: number): Rect {
+  public setSize(w: number, h: number): RectNode {
     this.transform.setScale(w, h);
     return this;
   }

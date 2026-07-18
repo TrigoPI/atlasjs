@@ -5,7 +5,7 @@ import {
   NebulaRenderer,
   Sampler,
   SceneGraph,
-  Sprite as SpriteNode,
+  SpriteNode,
 } from "@atlasjs/nebula";
 import { Entity, NexusWorld } from "@atlasjs/nexus";
 import { Sprite } from "../src/assets";

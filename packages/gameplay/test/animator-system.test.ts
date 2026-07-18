@@ -10,7 +10,7 @@ import { fakeTexture } from "./helpers/fakes";
 import {
   NEBULA_RENDERER,
   NebulaRenderer,
-  Sprite as NebulaSprite,
+  SpriteNode as NebulaSprite,
   SpriteAnimation,
   Frame,
 } from "@atlasjs/nebula";
