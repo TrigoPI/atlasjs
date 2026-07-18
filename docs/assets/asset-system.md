@@ -302,7 +302,7 @@ Auteur / futur compilateur :
 - [x] `@atlasjs/assets` : contrats `Asset` / `Resource` / `AssetLoader` / `LoadContext`.
 - [x] `@atlasjs/assets` : `AssetManager` (register/load/get/destroy + dédup + erreurs).
 - [x] `@atlasjs/assets` : `AssetPlugin` + token `ASSET_MANAGER` + re-exports.
-- [ ] `@atlasjs/nebula` : `TextureAsset` + `TextureLoader` ; `Texture2D extends Resource` ; `NebulaPlugin` requires + register ; dépendance `@atlasjs/assets`.
+- [x] `@atlasjs/nebula` : `TextureAsset` + `TextureLoader` ; `Texture2D extends Resource` ; `NebulaPlugin` requires + register ; dépendance `@atlasjs/assets`.
 - [ ] `@atlasjs/gameplay` : `SpriteAsset` + `SpriteLoader` ; `Sprite implements Resource` (`destroy`) ; `GameplayPlugin` requires + register ; re-exports.
 - [ ] `apps/sandbox` : migration `EcsScene` (mort au `loadTexture` manuel).
 - [ ] Tests (`@atlasjs/assets` + intégration gameplay).

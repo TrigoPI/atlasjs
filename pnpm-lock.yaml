@@ -248,6 +248,9 @@ importers:
 
   packages/nebula:
     dependencies:
+      '@atlasjs/assets':
+        specifier: workspace:*
+        version: link:../assets
       '@atlasjs/core':
         specifier: workspace:*
         version: link:../core

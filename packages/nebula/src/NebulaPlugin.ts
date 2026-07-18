@@ -1,9 +1,11 @@
 import { Engine, Plugin, StepHandle } from "@atlasjs/core";
 import { Logger, createLogger } from "@atlasjs/utils";
+import { ASSET_MANAGER, AssetManager } from "@atlasjs/assets";
 
 import { Renderer } from "./core";
 import { NebulaRenderer } from "./NebulaRenderer";
 import { NEBULA_RENDERER } from "./tokens";
+import { TextureLoader } from "./assets";
 
 export class NebulaPlugin extends Plugin {
   private readonly renderer: Renderer;
@@ -12,15 +14,19 @@ export class NebulaPlugin extends Plugin {
   private renderStep: StepHandle | null;
 
   public constructor(renderer: Renderer) {
-    super("nebula-plugin", { provides: [NEBULA_RENDERER] });
+    super("nebula-plugin", { provides: [NEBULA_RENDERER], requires: [ASSET_MANAGER] });
     this.logger = createLogger(NebulaPlugin.name);
     this.renderer = renderer;
     this.renderStep = null;
   }
 
   public async install(engine: Engine): Promise<void> {
+    const assets: AssetManager = await engine.services.wait(ASSET_MANAGER);
+
     const renderer: NebulaRenderer = new NebulaRenderer(this.renderer);
     await renderer.init();
+
+    assets.register(new TextureLoader(renderer));
 
     this.renderStep = engine.scheduler.render.add(() => renderer.render(), {
       name: "nebula:render",

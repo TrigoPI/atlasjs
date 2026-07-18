@@ -592,7 +592,7 @@ Expected: no output (exit 0).
 Run: `pnpm --filter @atlasjs/assets build`
 Expected: `dist` regenerated (now exports `AssetPlugin` + `ASSET_MANAGER` for downstream packages).
 
-- [ ] **Step 7: Hand off** — do not commit; hand the diff to the user for review.
+- [x] **Step 7: Hand off** — do not commit; hand the diff to the user for review.
 
 ---
 
@@ -612,7 +612,7 @@ Expected: `dist` regenerated (now exports `AssetPlugin` + `ASSET_MANAGER` for do
   - `class TextureLoader implements AssetLoader<TextureAsset, Texture2D>` (`type = "texture"`).
   - `Texture2D extends Resource` (already carries `id` + `destroy()`).
 
-- [ ] **Step 1: Add the assets dependency**
+- [x] **Step 1: Add the assets dependency**
 
 `packages/nebula/package.json` — add to `dependencies` (alphabetical, before `@atlasjs/core`):
 
@@ -623,7 +623,7 @@ Expected: `dist` regenerated (now exports `AssetPlugin` + `ASSET_MANAGER` for do
 Then run: `pnpm install`
 Expected: workspace link created, no errors.
 
-- [ ] **Step 2: Make `Texture2D` a `Resource`**
+- [x] **Step 2: Make `Texture2D` a `Resource`**
 
 `packages/nebula/src/core/resources/Texture2D.ts` (replace the whole file):
 
@@ -639,7 +639,7 @@ export interface Texture2D extends Resource {
 
 (`id` and `destroy()` now come from `Resource`; `Resource.destroy()` is signature-compatible with the previous `Disposable`.)
 
-- [ ] **Step 3: Write the failing `TextureAsset` test**
+- [x] **Step 3: Write the failing `TextureAsset` test**
 
 `packages/nebula/test/TextureAsset.test.ts`:
 
@@ -668,12 +668,12 @@ describe("TextureAsset", () => {
 });
 ```
 
-- [ ] **Step 4: Run the test to verify it fails**
+- [x] **Step 4: Run the test to verify it fails**
 
 Run: `pnpm --filter @atlasjs/assets build` (ensure the `Resource` export used by `Texture2D` is in `dist`), then `pnpm --filter @atlasjs/nebula test TextureAsset`
 Expected: FAIL — `Failed to resolve import "../src/assets/TextureAsset"`.
 
-- [ ] **Step 5: Implement `TextureAsset` and `TextureLoader`**
+- [x] **Step 5: Implement `TextureAsset` and `TextureLoader`**
 
 `packages/nebula/src/assets/TextureAsset.ts`:
 
@@ -742,7 +742,7 @@ export * from "./TextureAsset";
 export * from "./TextureLoader";
 ```
 
-- [ ] **Step 6: Export the assets folder and run the test**
+- [x] **Step 6: Export the assets folder and run the test**
 
 `packages/nebula/src/index.ts` — add after `export * from "./graphics";`:
 
@@ -753,7 +753,7 @@ export * from "./assets";
 Run: `pnpm --filter @atlasjs/nebula test TextureAsset`
 Expected: PASS — 2 tests.
 
-- [ ] **Step 7: Wire the loader into `NebulaPlugin`**
+- [x] **Step 7: Wire the loader into `NebulaPlugin`**
 
 `packages/nebula/src/NebulaPlugin.ts`:
 - Add imports:
@@ -792,7 +792,7 @@ import { TextureLoader } from "./assets";
   }
 ```
 
-- [ ] **Step 8: Typecheck, test, build nebula**
+- [x] **Step 8: Typecheck, test, build nebula**
 
 Run: `pnpm --filter @atlasjs/nebula exec tsc --noEmit`
 Expected: no output (exit 0).
@@ -803,7 +803,7 @@ Expected: all tests pass (existing suites + `TextureAsset.test.ts`).
 Run: `pnpm --filter @atlasjs/nebula build`
 Expected: `dist` regenerated (exports `TextureAsset`/`TextureLoader`, `Texture2D` now a `Resource`).
 
-- [ ] **Step 9: Hand off** — do not commit; hand the diff to the user for review.
+- [x] **Step 9: Hand off** — do not commit; hand the diff to the user for review.
 
 ---
 
