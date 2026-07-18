@@ -1177,11 +1177,11 @@ Start the sandbox dev server via the preview tool (do NOT use a raw shell server
 
 **Interfaces:** none (documentation).
 
-- [ ] **Step 1: Tick the spec checklist**
+- [x] **Step 1: Tick the spec checklist**
 
 In `docs/assets/asset-system.md`, change the `## Checklist d'implémentation` boxes from `- [ ]` to `- [x]` for every item delivered by Tasks 1–6.
 
-- [ ] **Step 2: Update the backlog**
+- [x] **Step 2: Update the backlog**
 
 In `docs/backlog.md`, under `## Sprites & Assets`, replace the `📋 **`AssetManager`**` bullet with an implemented entry pointing at the new doc, e.g.:
 
@@ -1189,11 +1189,11 @@ In `docs/backlog.md`, under `## Sprites & Assets`, replace the `📋 **`AssetMan
 - ✅ **Système d'assets** : _implémenté_ → [`assets/asset-system.md`](assets/asset-system.md) (`Asset`/`Resource` + `AssetManager` + loaders par type ; `TextureAsset`/`SpriteAsset`). Reste V2 : refcount/eviction (B1), `AssetRef` par id + sérialisation, audio, éditeur, sources non-path.
 ```
 
-- [ ] **Step 3: Reference the new domain in the docs index**
+- [x] **Step 3: Reference the new domain in the docs index**
 
 In `CLAUDE.md`, add a `### docs/assets/` subsection (mirroring `### docs/gameplay/`) with a one-line entry for `docs/assets/asset-system.md` and its `-plan.md`.
 
-- [ ] **Step 4: Hand off** — do not commit; hand the docs diff to the user for review.
+- [x] **Step 4: Hand off** — do not commit; hand the docs diff to the user for review.
 
 ---
 

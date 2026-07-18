@@ -1,6 +1,6 @@
 # Système d'assets — descripteur sérialisable ↔ handle runtime
 
-> Statut : **design validé (brainstorming), non implémenté**. Définit ce qu'est un « asset » dans AtlasJS et le chemin de chargement (`AssetManager` + loaders enregistrés par type). Premier package concerné : `@atlasjs/assets` (contrats + manager, feuille générique). Extensions différées (refcount/eviction/hot-reload, `AssetRef` par id + sérialisation de scènes, audio, éditeur) → `docs/backlog.md`.
+> Statut : **implémenté** (Tasks 1–7, branche `claude/feat/asset-manager`). Définit ce qu'est un « asset » dans AtlasJS et le chemin de chargement (`AssetManager` + loaders enregistrés par type). Premier package concerné : `@atlasjs/assets` (contrats + manager, feuille générique). Extensions différées (refcount/eviction/hot-reload, `AssetRef` par id + sérialisation de scènes, audio, éditeur) → `docs/backlog.md`.
 
 ## Contexte
 
@@ -307,4 +307,4 @@ Auteur / futur compilateur :
 - [x] `apps/sandbox` : migration `EcsScene` (mort au `loadTexture` manuel).
 - [x] Tests (`@atlasjs/assets` + intégration gameplay).
 - [x] `tsc --noEmit` sur les packages touchés + rebuild des `dist` dépendants (`assets`, `nebula`).
-- [ ] `docs/backlog.md` + index `CLAUDE.md` : référencer ce doc.
+- [x] `docs/backlog.md` + index `CLAUDE.md` : référencer ce doc.
