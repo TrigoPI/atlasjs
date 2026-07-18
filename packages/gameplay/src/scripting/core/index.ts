@@ -4,3 +4,5 @@ export * from "./ScriptComponent";
 export * from "./ScriptService";
 export * from "./ScriptLifeCycle";
 export * from "./core-types";
+export * from "./Expose";
+export * from "./SymbolMetadata";

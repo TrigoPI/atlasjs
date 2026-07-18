@@ -1,17 +1,19 @@
 import { describe, it, expect } from "vitest";
 import { Bound } from "@atlasjs/math";
-import {
-  NEBULA_RENDERER,
-  NebulaRenderer,
-  SpriteAnimation,
-  Frame,
-} from "@atlasjs/nebula";
 import { Entity } from "@atlasjs/nexus";
 
 import { Animator, Sprite, SpriteRender, Transform2D } from "../src";
 import { AnimatorSystem } from "../src/systems";
 import { createHarness, Harness } from "./helpers/harness";
 import { fakeTexture } from "./helpers/fakes";
+
+import {
+  NEBULA_RENDERER,
+  NebulaRenderer,
+  Sprite as NebulaSprite,
+  SpriteAnimation,
+  Frame,
+} from "@atlasjs/nebula";
 
 function walkClip(): SpriteAnimation {
   const texture = fakeTexture("sheet", 64, 32);
@@ -45,7 +47,7 @@ describe("AnimatorSystem", () => {
     expect(spriteRender.sprite.rect).toEqual(frame.rect);
 
     const nebula: NebulaRenderer = harness.services.get(NEBULA_RENDERER);
-    const node = nebula.scene.root.getChildren()[0];
+    const node: NebulaSprite = nebula.scene.root.getChildren()[0] as NebulaSprite;
     expect(node.getSourceRect()).toEqual(frame.rect);
   });
 

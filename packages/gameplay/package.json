@@ -15,16 +15,21 @@
     "build": "tsdown",
     "dev": "tsdown --watch",
     "test": "vitest run",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "typecheck": "tsc --noEmit -p tsconfig.test.json"
   },
   "dependencies": {
     "@atlasjs/assets": "workspace:*",
     "@atlasjs/core": "workspace:*",
-    "@atlasjs/math": "workspace:*",
-    "@atlasjs/utils": "workspace:*",
-    "@atlasjs/nexus": "workspace:*",
-    "@atlasjs/nebula": "workspace:*",
     "@atlasjs/inertia": "workspace:*",
-    "@atlasjs/input": "workspace:*"
+    "@atlasjs/input": "workspace:*",
+    "@atlasjs/math": "workspace:*",
+    "@atlasjs/nebula": "workspace:*",
+    "@atlasjs/nexus": "workspace:*",
+    "@atlasjs/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-decorators": "catalog:",
+    "@rolldown/plugin-babel": "catalog:"
   }
 }

@@ -1,9 +1,14 @@
-import { defineConfig } from "vite";
+import babel from "@rolldown/plugin-babel";
+import { type PluginOption, defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    babel({
+      plugins: [["@babel/plugin-proposal-decorators", { version: "2023-11" }]],
+    }) as unknown as PluginOption,
+  ],
   resolve: {
     alias: {
       "@css": "/css",

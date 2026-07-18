@@ -106,6 +106,17 @@ Source : [`core/scheduling.md`](core/scheduling.md).
 
 ---
 
+## Gameplay — Variables exposées de script (`@Expose`)
+
+> **Cœur implémenté** : décorateur stage-3 `@Expose()` + `getExposedFields`, `AtlasScript<TProps>` générique, injection typée via `scriptManager.attach(entity, Script, props)` avant `onCreate`. Source [`gameplay/exposed-script-variables.md`](gameplay/exposed-script-variables.md). Utilisé dans `apps/sandbox`. Ne restent que les **extensions V2** ci-dessous.
+
+- 📋 Validation stricte de cohérence `TProps` ↔ `@Expose` : les champs injectables sont déclarés deux fois (générique `AtlasScript<{...}>` pour le type, `@Expose()` pour le runtime) sans lien ; un champ exposé absent de `TProps` (ou renommé d'un côté) reste `undefined` silencieusement. À terme : warn/erreur (champ exposé sans valeur fournie, clé fournie non exposée). Report acté (spec §5).
+- 📋 Métadonnées d'éditeur riches dans `ExposeOptions` (tooltip, range, step, category) + inspecteur.
+- 📋 (Dé)sérialisation des valeurs exposées (scène/prefab sur disque).
+- Risque noté à surveiller : `EXPOSED` est un `Symbol()` module-local — writer (`@Expose`) et reader (`getExposedFields`) doivent venir de la **même** instance de module gameplay (OK aujourd'hui ; casserait si un graphe mélange `src` et `dist`).
+
+---
+
 ## Notes transverses (risques acceptés, à surveiller)
 
 - **Gameplay** ([`gameplay/gameplay-redesign.md`](gameplay/gameplay-redesign.md)) : contrat `setComponent` « muter en place, jamais remplacer » (sinon durcir Nexus pour émettre `onRemove`+`onAdd`) ; téléport d'un `dynamic` avant existence de son body (1ère frame) ; scripts en lane `update` variable mutant un `dynamic` → préférer vélocité/force.

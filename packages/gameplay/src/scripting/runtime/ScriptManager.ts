@@ -6,10 +6,16 @@ import { IncrementalScriptIdGenerator } from "./IncrementalScriptIdGenerator";
 
 import {
   AtlasScript,
+  ExposedMetadata,
   ScriptConstructor,
   ScriptID,
   ScriptInstanceRecord,
+  getExposedFields,
 } from "../core";
+
+type PropsOf<T> = T extends AtlasScript<infer P> ? P : {};
+type PropsOfArgs<T> =
+  {} extends PropsOf<T> ? [props?: PropsOf<T>] : [props: PropsOf<T>];
 
 export class ScriptManager {
   private readonly records: Map<ScriptID, ScriptInstanceRecord>;
@@ -36,6 +42,7 @@ export class ScriptManager {
   public attach<TScript extends AtlasScript>(
     entityId: Entity,
     ScriptType: ScriptConstructor<TScript>,
+    ...rest: PropsOfArgs<TScript>
   ): TScript {
     const instance: TScript = new ScriptType();
     const context: RuntimeScriptContext = new RuntimeScriptContext(
@@ -45,6 +52,7 @@ export class ScriptManager {
     );
 
     instance.__bindContext(context);
+    this.injectProps(instance, ScriptType, rest[0]);
 
     const record: ScriptInstanceRecord<TScript> = {
       scriptType: ScriptType,
@@ -156,6 +164,34 @@ export class ScriptManager {
     }
 
     return scripts;
+  }
+
+  private injectProps(
+    instance: AtlasScript,
+    ScriptType: ScriptConstructor,
+    props?: object,
+  ): void {
+    if (!props) {
+      return;
+    }
+
+    const exposed: ExposedMetadata = getExposedFields(ScriptType);
+
+    if (exposed.size === 0) {
+      return;
+    }
+
+    const source: Record<string, unknown> = props as Record<string, unknown>;
+    const target: Record<string, unknown> = instance as unknown as Record<
+      string,
+      unknown
+    >;
+
+    for (const field of exposed.keys()) {
+      if (field in source) {
+        target[field] = source[field];
+      }
+    }
   }
 
   private flushCreates(): void {
