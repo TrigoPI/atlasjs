@@ -1,11 +1,13 @@
 import { Vec2 } from "@atlasjs/math";
 
 import {
+  Animator,
   AtlasScript,
   ButtonAction,
   Key,
   PlayerInput,
   RigidBody2DComponent,
+  SpriteRendererComponent,
   Transform2DComponent,
   Vector2Action,
   button,
@@ -19,18 +21,24 @@ const controls = defineActions({
 });
 
 export class TestScript extends AtlasScript {
+  private readonly speed: number = 220;
+
   private transform!: Transform2DComponent;
   private rigidbody!: RigidBody2DComponent;
+  private spriteRenderer!: SpriteRendererComponent;
+  private animator!: Animator;
+
   private move!: Vector2Action;
   private boost!: ButtonAction;
-
-  private readonly speed: number = 25000;
 
   public onCreate(): void {
     const actions = this.addComponent(PlayerInput, controls);
 
     this.transform = this.addComponent(Transform2DComponent);
     this.rigidbody = this.addComponent(RigidBody2DComponent);
+
+    this.spriteRenderer = this.requireComponent(SpriteRendererComponent);
+    this.animator = this.requireComponent(Animator);
 
     this.move = actions.get("move");
     this.boost = actions.get("boost");
@@ -45,10 +53,12 @@ export class TestScript extends AtlasScript {
     const speed: number = this.boost.isDown() ? this.speed * 2 : this.speed;
 
     if (v.x !== 0 || v.y !== 0) {
-      this.rigidbody.setVelocity(v.x * speed * dt, v.y * speed * dt);
+      this.animator.play("run");
+      this.transform.translate(v.x * speed * dt, v.y * speed * dt);
+      this.spriteRenderer.flipX = v.x < 0;
+    } else {
+      this.animator.play("idle");
     }
-
-    console.log(this.rigidbody.velocity);
   }
 
   public onDestroy(): void {}

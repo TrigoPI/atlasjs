@@ -20,11 +20,15 @@
   "dependencies": {
     "@atlasjs/assets": "workspace:*",
     "@atlasjs/core": "workspace:*",
-    "@atlasjs/math": "workspace:*",
-    "@atlasjs/utils": "workspace:*",
-    "@atlasjs/nexus": "workspace:*",
-    "@atlasjs/nebula": "workspace:*",
     "@atlasjs/inertia": "workspace:*",
-    "@atlasjs/input": "workspace:*"
+    "@atlasjs/input": "workspace:*",
+    "@atlasjs/math": "workspace:*",
+    "@atlasjs/nebula": "workspace:*",
+    "@atlasjs/nexus": "workspace:*",
+    "@atlasjs/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-decorators": "catalog:",
+    "@rolldown/plugin-babel": "catalog:"
   }
 }
