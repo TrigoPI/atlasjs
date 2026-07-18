@@ -8,6 +8,14 @@ export interface SpriteAssetOptions {
   readonly id?: string;
 }
 
+function getPivotKey(pivot?: Vec2): string {
+  return pivot ? `${pivot.x}:${pivot.y}` : "center";
+}
+
+function getRectKey(rect?: Bound): string {
+  return rect ? `${rect.x}:${rect.y}:${rect.width}:${rect.height}` : "full";
+}
+
 export class SpriteAsset implements Asset {
   public readonly type: string = "sprite";
   public readonly id: string;
@@ -21,10 +29,8 @@ export class SpriteAsset implements Asset {
     this.rect = options?.rect?.clone();
     this.pivot = options?.pivot?.clone();
 
-    const rectKey: string = this.rect
-      ? `${this.rect.x}:${this.rect.y}:${this.rect.width}:${this.rect.height}`
-      : "full";
-    const pivotKey: string = this.pivot ? `${this.pivot.x}:${this.pivot.y}` : "center";
+    const pivotKey: string = getPivotKey(this.pivot);
+    const rectKey: string = getRectKey(this.rect);
 
     this.id = options?.id ?? `sprite:${texture.id}:${rectKey}:${pivotKey}`;
   }

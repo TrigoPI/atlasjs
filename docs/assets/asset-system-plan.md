@@ -824,7 +824,7 @@ Expected: `dist` regenerated (exports `TextureAsset`/`TextureLoader`, `Texture2D
   - `class SpriteAsset implements Asset` with `type = "sprite"`, `id`, `texture: TextureAsset`, `rect?: Bound`, `pivot?: Vec2`.
   - `class SpriteLoader implements AssetLoader<SpriteAsset, Sprite>` (`type = "sprite"`).
 
-- [ ] **Step 1: Turn the `Sprite` handle into a `Resource`**
+- [x] **Step 1: Turn the `Sprite` handle into a `Resource`**
 
 `packages/gameplay/src/assets/Sprite.ts` (replace the whole file):
 
@@ -860,7 +860,7 @@ export class Sprite implements Resource {
 }
 ```
 
-- [ ] **Step 2: Fix the existing `Sprite` handle test**
+- [x] **Step 2: Fix the existing `Sprite` handle test**
 
 `packages/gameplay/test/sprite-asset.test.ts`:
 - Remove the `kind` assertion (line `expect(sprite.kind).toBe("sprite");`).
@@ -875,7 +875,7 @@ export class Sprite implements Resource {
   });
 ```
 
-- [ ] **Step 3: Write the failing descriptor + loader test**
+- [x] **Step 3: Write the failing descriptor + loader test**
 
 `packages/gameplay/test/sprite-asset-loader.test.ts`:
 
@@ -928,12 +928,12 @@ describe("SpriteLoader", () => {
 });
 ```
 
-- [ ] **Step 4: Run the test to verify it fails**
+- [x] **Step 4: Run the test to verify it fails**
 
 Run: `pnpm --filter @atlasjs/assets build && pnpm --filter @atlasjs/nebula build` (so gameplay resolves the new `@atlasjs/assets` and `@atlasjs/nebula` APIs from `dist`), then `pnpm --filter @atlasjs/gameplay test sprite-asset-loader`
 Expected: FAIL — `Failed to resolve import "../src/assets/SpriteAsset"`.
 
-- [ ] **Step 5: Implement `SpriteAsset` and `SpriteLoader`**
+- [x] **Step 5: Implement `SpriteAsset` and `SpriteLoader`**
 
 `packages/gameplay/src/assets/SpriteAsset.ts`:
 
@@ -994,7 +994,7 @@ export class SpriteLoader implements AssetLoader<SpriteAsset, Sprite> {
 }
 ```
 
-- [ ] **Step 6: Update the gameplay assets barrel**
+- [x] **Step 6: Update the gameplay assets barrel**
 
 `packages/gameplay/src/assets/index.ts`:
 
@@ -1004,7 +1004,7 @@ export * from "./SpriteAsset";
 export * from "./SpriteLoader";
 ```
 
-- [ ] **Step 7: Register the loader in `GameplayPlugin` and update the harness**
+- [x] **Step 7: Register the loader in `GameplayPlugin` and update the harness**
 
 `packages/gameplay/src/GameplayPlugin.ts`:
 - Add imports:
@@ -1042,7 +1042,7 @@ import { SpriteLoader } from "./assets";
   engine.use(new GameplayPlugin());
 ```
 
-- [ ] **Step 8: Run the full gameplay suite, typecheck, build**
+- [x] **Step 8: Run the full gameplay suite, typecheck, build**
 
 Run: `pnpm --filter @atlasjs/gameplay test`
 Expected: PASS — all suites, including `sprite-asset.test.ts` (now `destroy`) and `sprite-asset-loader.test.ts`.
@@ -1053,7 +1053,7 @@ Expected: no output (exit 0).
 Run: `pnpm --filter @atlasjs/gameplay build`
 Expected: `dist` regenerated (exports `SpriteAsset`/`SpriteLoader`).
 
-- [ ] **Step 9: Hand off** — do not commit; hand the diff to the user for review.
+- [x] **Step 9: Hand off** — do not commit; hand the diff to the user for review.
 
 ---
 
