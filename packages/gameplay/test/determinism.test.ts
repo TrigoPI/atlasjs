@@ -4,6 +4,7 @@ import { Engine, Plugin, ServiceToken } from "@atlasjs/core";
 import { NEXUS, NexusPlugin, NexusWorld } from "@atlasjs/nexus";
 import { NEBULA_RENDERER } from "@atlasjs/nebula";
 import { INERTIAL_ENGINE } from "@atlasjs/inertia";
+import { AssetPlugin } from "@atlasjs/assets";
 
 import { GameplayPlugin } from "../src/GameplayPlugin";
 import { SCRIPT_MANAGER } from "../src/tokens";
@@ -64,6 +65,7 @@ async function runFixed(ticks: number): Promise<number> {
   engine.use(new NexusPlugin());
   engine.use(new Provide("stub-nebula", NEBULA_RENDERER, fakeNebula));
   engine.use(new Provide("stub-inertia", INERTIAL_ENGINE, fakeInertia));
+  engine.use(new AssetPlugin());
   engine.use(new GameplayPlugin());
 
   await engine.start();
@@ -101,6 +103,7 @@ async function runFixedMany(ticks: number, count: number): Promise<number[]> {
   engine.use(new NexusPlugin());
   engine.use(new Provide("stub-nebula", NEBULA_RENDERER, fakeNebula));
   engine.use(new Provide("stub-inertia", INERTIAL_ENGINE, fakeInertia));
+  engine.use(new AssetPlugin());
   engine.use(new GameplayPlugin());
 
   await engine.start();

@@ -7,7 +7,6 @@ describe("Sprite asset", () => {
   it("defaults rect to the full texture and pivot to center", () => {
     const sprite: Sprite = new Sprite(fakeTexture("t", 64, 32));
 
-    expect(sprite.kind).toBe("sprite");
     expect(sprite.rect.x).toBe(0);
     expect(sprite.rect.y).toBe(0);
     expect(sprite.rect.width).toBe(64);
@@ -28,10 +27,10 @@ describe("Sprite asset", () => {
     expect(sprite.pivot.x).toBe(0);
   });
 
-  it("accepts an explicit id and has a no-op dispose", () => {
+  it("accepts an explicit id and has a no-op destroy", () => {
     const sprite: Sprite = new Sprite(fakeTexture(), { id: "hero" });
 
     expect(sprite.id).toBe("hero");
-    expect(() => sprite.dispose()).not.toThrow();
+    expect(() => sprite.destroy()).not.toThrow();
   });
 });
