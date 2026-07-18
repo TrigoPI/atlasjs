@@ -36,15 +36,15 @@ export class EcsScene extends Scene {
     const assets: AssetManager = ctx.services.get(ASSET_MANAGER);
     const scriptManager: ScriptManager = ctx.services.get(SCRIPT_MANAGER);
 
-    const blueDinoTexture: Texture2D = await assets.load<Texture2D>(
-      new TextureAsset(BlueDino),
-    );
-    const blueDinoSprite: Sprite = await assets.load<Sprite>(
-      new SpriteAsset(new TextureAsset(BlueDino)),
-    );
-    const sealionSprite: Sprite = await assets.load<Sprite>(
-      new SpriteAsset(new TextureAsset(Sealion)),
-    );
+    const dinoAsset: TextureAsset = new TextureAsset(BlueDino);
+    const blueDinoTexture: Texture2D = await assets.load<Texture2D>(dinoAsset);
+
+    const dinoSpriteAsset: SpriteAsset = new SpriteAsset(dinoAsset);
+    const blueDinoSprite: Sprite = await assets.load<Sprite>(dinoSpriteAsset);
+
+    const sealionAsset: TextureAsset = new TextureAsset(Sealion);
+    const sealionSpriteAsset: SpriteAsset = new SpriteAsset(sealionAsset);
+    const sealionSprite: Sprite = await assets.load<Sprite>(sealionSpriteAsset);
 
     const sheet: SpriteSheet = SpriteSheet.fromAutoGrid({
       name: "blue_dino",
