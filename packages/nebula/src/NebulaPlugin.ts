@@ -14,7 +14,10 @@ export class NebulaPlugin extends Plugin {
   private renderStep: StepHandle | null;
 
   public constructor(renderer: Renderer) {
-    super("nebula-plugin", { provides: [NEBULA_RENDERER], requires: [ASSET_MANAGER] });
+    super("nebula-plugin", {
+      provides: [NEBULA_RENDERER],
+      requires: [ASSET_MANAGER],
+    });
     this.logger = createLogger(NebulaPlugin.name);
     this.renderer = renderer;
     this.renderStep = null;
