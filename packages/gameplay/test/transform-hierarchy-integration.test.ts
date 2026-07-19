@@ -45,4 +45,17 @@ describe("Gameplay — transform hierarchy integration", () => {
     const local: Transform2D = h.world.requireComponent(child, Transform2D);
     expect(local.position.x).toBeCloseTo(20, 4);
   });
+
+  it("removes WorldTransform2D when Transform2D is removed", () => {
+    const entity: Entity = h.world.createEntity();
+    h.world.addComponent(entity, Transform2D);
+
+    h.frame();
+
+    expect(h.world.hasComponent(entity, WorldTransform2D)).toBe(true);
+
+    h.world.removeComponent(entity, Transform2D);
+
+    expect(h.world.hasComponent(entity, WorldTransform2D)).toBe(false);
+  });
 });

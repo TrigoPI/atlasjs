@@ -182,7 +182,7 @@ this.transform.parent: Transform2DComponent | null      // getter
 this.transform.getChildren(): Transform2DComponent[]
 ```
 
-- `setParent` route vers `world.setParent(entity, parentEntity)` — via `world.commands` si appelé pendant `onUpdate`/`onFixedUpdate`.
+- `setParent` route vers `world.setParent(entity, parentEntity)` et applique le changement **immédiatement** : c'est sûr car les callbacks de cycle de vie d'un script (`onUpdate`/`onFixedUpdate`) ne s'exécutent jamais à l'intérieur d'un `world.query(...).each(...)`. Si un appelant reparente depuis **sa propre** itération `query().each()`, il doit différer via `world.commands.setParent(...)` (même dualité que §3.3).
 - `worldPositionStays` (défaut **`true`**, comme Unity) : après reparent, on recalcule le `Transform2D` **local** pour que le monde ne bouge pas : `localMatrix = parentWorld.invert() * currentWorld`, puis on ré-injecte translation/rotation/échelle (d'où `Mat3.invert`). Avec `false`, le local est conservé tel quel et réinterprété dans le repère du parent (l'enfant « snap »).
 - `parent` / `getChildren` résolvent les composants `Parent`/`Children` de Nexus et renvoient des façades `Transform2DComponent` fraîches.
 - **Références inter-entités** : un script parente vers un transform qu'il tient déjà (passé en prop de script, ou renvoyé par un service). La *découverte* d'entités arbitraires (« trouve le player ») reste hors scope — c'est la scène qui câble.

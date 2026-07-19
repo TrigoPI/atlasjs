@@ -87,6 +87,12 @@ export class GameplayPlugin extends Plugin {
       world.onRemove(SpriteRender, (entity: Entity) => {
         spriteRenderSystem.unmount(entity);
       }),
+
+      world.onRemove(Transform2D, (entity: Entity) => {
+        if (world.hasComponent(entity, WorldTransform2D)) {
+          world.removeComponent(entity, WorldTransform2D);
+        }
+      }),
     );
 
     const { fixed, update, render } = engine.scheduler;
