@@ -8,7 +8,7 @@
 > - [x] §4bis `NebulaRenderer.getCameraViewport()` passthrough (nebula)
 > - [x] §5 composant `Camera` (LEVEL 1)
 > - [x] §6 `CameraManager` + token `CAMERA_MANAGER`
-> - [ ] §7 `CameraSyncSystem`
+> - [x] §7 `CameraSyncSystem`
 > - [ ] §8 `CameraApi`
 > - [ ] §10 câblage `GameplayPlugin`
 > - [ ] §12 démo sandbox (optionnel)

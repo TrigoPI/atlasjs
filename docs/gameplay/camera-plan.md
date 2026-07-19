@@ -29,7 +29,7 @@
 | 2. `NebulaRenderer.getCameraViewport` passthrough | ✅ implémenté + review clean (attente commit user) |
 | 3. Composant `Camera` (LEVEL 1) | ✅ implémenté + review clean (attente commit user) |
 | 4. `CameraManager` + token | ✅ implémenté + review clean (attente commit user) |
-| 5. `CameraSyncSystem` | ⏳ à faire |
+| 5. `CameraSyncSystem` | ✅ implémenté + review clean (attente commit user) |
 | 6. `CameraApi` | ⏳ à faire |
 | 7. Câblage `GameplayPlugin` | ⏳ à faire |
 | 8. Démo sandbox (opt.) | ⏳ à faire |
@@ -431,7 +431,7 @@ git commit -m "feat(gameplay): CameraManager service + CAMERA_MANAGER token"
 
 ---
 
-### Task 5: `CameraSyncSystem` (gameplay)
+### Task 5: `CameraSyncSystem` (gameplay) — ✅ DONE
 
 **Files:**
 - Create: `packages/gameplay/src/systems/CameraSyncSystem.ts`
