@@ -1,6 +1,6 @@
 # Hiérarchie d'entités — parent/enfant + composition de transform (`@atlasjs/nexus` + `@atlasjs/gameplay`)
 
-> **Statut : design (à implémenter).** Attacher des sous-entités à une entité parent façon Unity : au niveau scène (`EcsScene`) d'abord, depuis les scripts ensuite, et de façon exploitable par un futur éditeur. La **structure** (parent/enfant) est une primitive générique de Nexus ; la **composition de transform** est une couche gameplay par-dessus.
+> **Statut : implémenté.** Attacher des sous-entités à une entité parent façon Unity : au niveau scène (`EcsScene`) d'abord, depuis les scripts ensuite, et de façon exploitable par un futur éditeur. La **structure** (parent/enfant) est une primitive générique de Nexus ; la **composition de transform** est une couche gameplay par-dessus.
 >
 > Prérequis de lecture :
 > - `docs/core/nexus-ecs.md` — l'ECS (entités générationnelles, stores, `query`, command buffer, `onAdd`/`onRemove`).
@@ -251,4 +251,4 @@ La composition de transform s'active dès que les deux entités ont un `Transfor
 - [x] **Phase 3 — Propagation gameplay.** `WorldTransform2D` + `TransformPropagationSystem` (règle unique + dynamic + pass-through), enregistrement dans la lane `update`. Tests : racine, chaîne parent→enfant, dynamic ignore le parent, ordre parent-avant-enfant.
 - [x] **Phase 4 — Consommateurs.** `SpriteRenderSystem` lit `WorldTransform2D` (+ décompose bord rendu), `PhysicsPushSystem` (kinematic/static) lit `WorldTransform2D`, `PhysicsPullSystem` restreint au dynamic. Tests : sprite enfant suit le parent, kinematic enfant suit (1 frame), dynamic non corrompu.
 - [x] **Phase 5 — Façade scripts.** `Transform2DComponent.setParent`/`parent`/`getChildren` + `worldPositionStays`. Tests : reparent garde/ne garde pas la position monde, façade reste stateless.
-- [ ] **Phase 6 — Sandbox + docs.** Démo `EcsScene` (attachement natif) + script d'attachement ; mettre à jour `docs/backlog.md` (items reportés) et marquer ce doc « implémenté ».
+- [x] **Phase 6 — Sandbox + docs.** Démo `EcsScene` (attachement natif) + script d'attachement ; mettre à jour `docs/backlog.md` (items reportés) et marquer ce doc « implémenté ».

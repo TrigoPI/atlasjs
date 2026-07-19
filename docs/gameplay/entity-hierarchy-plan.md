@@ -1617,6 +1617,8 @@ git commit -m "feat(gameplay): Transform2DComponent.setParent/parent/getChildren
 
 ## Task 6: Sandbox demo + docs
 
+> **Status: ✅ implemented + reviewed clean (awaiting user commit).** EcsScene native attach demo (a bodiless `badge` child parented to the kinematic player), backlog V2 rows added, design doc marked implemented (§10 all ticked). Sandbox `tsc --noEmit` clean; monorepo sweep green except one PRE-EXISTING, unrelated `@atlasjs/input` WASD y-axis test failure (branch never touches `packages/input`).
+
 **Files:**
 - Modify: `apps/sandbox/src/game/EcsScene.ts`
 - Modify: `docs/backlog.md`, `docs/gameplay/entity-hierarchy.md`

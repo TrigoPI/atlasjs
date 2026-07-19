@@ -13,6 +13,13 @@ import { ScriptComponent } from "../core";
 export class Transform2DComponent extends ScriptComponent<Transform2D> {
   public static readonly engine = Transform2D;
 
+  public get parent(): Transform2DComponent | null {
+    const parentEntity: Entity | undefined = this.world.getParent(this.entity);
+    return parentEntity !== undefined
+      ? new Transform2DComponent(this.world, parentEntity)
+      : null;
+  }
+
   public get position(): Vec2 {
     return this.resolve().position;
   }
@@ -97,18 +104,12 @@ export class Transform2DComponent extends ScriptComponent<Transform2D> {
     const transform: Transform2D = this.resolve();
     const position: Vec2 = localMatrix.getTranslation();
     const scale: Vec2 = localMatrix.getScale();
+
     transform.position.set(position.x, position.y);
     transform.rotation = localMatrix.getRotation();
     transform.scale.set(scale.x, scale.y);
 
     return this;
-  }
-
-  public get parent(): Transform2DComponent | null {
-    const parentEntity: Entity | undefined = this.world.getParent(this.entity);
-    return parentEntity !== undefined
-      ? new Transform2DComponent(this.world, parentEntity)
-      : null;
   }
 
   public getChildren(): Transform2DComponent[] {
