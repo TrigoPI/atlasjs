@@ -27,7 +27,7 @@
 | --- | --- |
 | 1. `Camera2D.screenToWorld`/`worldToScreen` | ✅ implémenté + review clean (attente commit user) |
 | 2. `NebulaRenderer.getCameraViewport` passthrough | ✅ implémenté + review clean (attente commit user) |
-| 3. Composant `Camera` (LEVEL 1) | ⏳ à faire |
+| 3. Composant `Camera` (LEVEL 1) | ✅ implémenté + review clean (attente commit user) |
 | 4. `CameraManager` + token | ⏳ à faire |
 | 5. `CameraSyncSystem` | ⏳ à faire |
 | 6. `CameraApi` | ⏳ à faire |
@@ -210,7 +210,7 @@ git commit -m "feat(nebula): expose NebulaRenderer.getCameraViewport passthrough
 
 ---
 
-### Task 3: Composant `Camera` (LEVEL 1, gameplay)
+### Task 3: Composant `Camera` (LEVEL 1, gameplay) — ✅ DONE
 
 **Files:**
 - Create: `packages/gameplay/src/components/Camera.ts`
