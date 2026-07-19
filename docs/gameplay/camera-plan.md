@@ -26,7 +26,7 @@
 | Task | Statut |
 | --- | --- |
 | 1. `Camera2D.screenToWorld`/`worldToScreen` | ✅ implémenté + review clean (attente commit user) |
-| 2. `NebulaRenderer.getCameraViewport` passthrough | ⏳ à faire |
+| 2. `NebulaRenderer.getCameraViewport` passthrough | ✅ implémenté + review clean (attente commit user) |
 | 3. Composant `Camera` (LEVEL 1) | ⏳ à faire |
 | 4. `CameraManager` + token | ⏳ à faire |
 | 5. `CameraSyncSystem` | ⏳ à faire |
@@ -137,7 +137,7 @@ git commit -m "feat(nebula): Camera2D.screenToWorld / worldToScreen"
 
 ---
 
-### Task 2: `NebulaRenderer.getCameraViewport()` passthrough + rebuild dist (nebula)
+### Task 2: `NebulaRenderer.getCameraViewport()` passthrough + rebuild dist (nebula) — ✅ DONE
 
 **Files:**
 - Modify: `packages/nebula/src/NebulaRenderer.ts`

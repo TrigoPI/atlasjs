@@ -1,6 +1,8 @@
 import { SceneGraph } from "./scene";
 import { SceneRenderer } from "./renderers";
 
+import { Bound } from "@atlasjs/math";
+
 import {
   Camera2D,
   Material,
@@ -27,6 +29,10 @@ export class NebulaRenderer {
 
   public get camera(): Camera2D {
     return this.renderer.camera as Camera2D;
+  }
+
+  public getCameraViewport(): Bound {
+    return this.renderer.getCameraViewport();
   }
 
   public resize(width: number, height: number): void {

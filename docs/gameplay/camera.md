@@ -5,7 +5,7 @@
 
 > **État d'implémentation** (plan : `docs/gameplay/camera-plan.md`) :
 > - [x] §4 `Camera2D.screenToWorld`/`worldToScreen` (nebula)
-> - [ ] §4bis `NebulaRenderer.getCameraViewport()` passthrough (nebula)
+> - [x] §4bis `NebulaRenderer.getCameraViewport()` passthrough (nebula)
 > - [ ] §5 composant `Camera` (LEVEL 1)
 > - [ ] §6 `CameraManager` + token `CAMERA_MANAGER`
 > - [ ] §7 `CameraSyncSystem`
