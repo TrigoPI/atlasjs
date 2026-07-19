@@ -31,7 +31,7 @@
 | 4. `CameraManager` + token | ✅ implémenté + review clean (attente commit user) |
 | 5. `CameraSyncSystem` | ✅ implémenté + review clean (attente commit user) |
 | 6. `CameraApi` | ✅ implémenté + review clean (attente commit user) |
-| 7. Câblage `GameplayPlugin` | ⏳ à faire |
+| 7. Câblage `GameplayPlugin` | ✅ implémenté + review clean (attente commit user) — inclut un fix d'ordre dans CameraSyncSystem |
 | 8. Démo sandbox (opt.) | ⏳ à faire |
 
 ---
@@ -737,7 +737,7 @@ git commit -m "feat(gameplay): CameraApi script service facade"
 
 ---
 
-### Task 7: Câblage `GameplayPlugin`
+### Task 7: Câblage `GameplayPlugin` — ✅ DONE
 
 **Files:**
 - Modify: `packages/gameplay/src/GameplayPlugin.ts`

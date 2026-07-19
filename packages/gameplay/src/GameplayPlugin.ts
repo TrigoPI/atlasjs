@@ -6,6 +6,7 @@ import { Entity, NEXUS, NexusWorld, Unsubscribe } from "@atlasjs/nexus";
 import { ASSET_MANAGER, AssetManager } from "@atlasjs/assets";
 
 import { SCRIPT_MANAGER } from "./tokens";
+import { CameraManager, CAMERA_MANAGER } from "./camera";
 import { registerSystem } from "./registerSystem";
 import { SpriteLoader } from "./assets";
 
@@ -13,6 +14,7 @@ import { ScriptManager } from "./scripting";
 
 import {
   AnimatorSystem,
+  CameraSyncSystem,
   PhysicsPullSystem,
   PhysicsPushSystem,
   PlayerInputSystem,
@@ -22,6 +24,7 @@ import {
 
 import {
   Animator,
+  Camera,
   PhysicsBodyRef,
   PlayerInput,
   RigidBody2D,
@@ -40,7 +43,7 @@ export class GameplayPlugin extends Plugin {
   public constructor() {
     super("gameplay-plugin", {
       requires: [NEXUS, NEBULA_RENDERER, INERTIAL_ENGINE, ASSET_MANAGER],
-      provides: [SCRIPT_MANAGER],
+      provides: [SCRIPT_MANAGER, CAMERA_MANAGER],
     });
     this.logger = createLogger(GameplayPlugin.name);
     this.handles = [];
@@ -63,6 +66,8 @@ export class GameplayPlugin extends Plugin {
     const playerInputSystem: PlayerInputSystem = new PlayerInputSystem(engine.services);
     const animatorSystem: AnimatorSystem = new AnimatorSystem();
     const transformPropagationSystem: TransformPropagationSystem = new TransformPropagationSystem();
+    const cameraManager: CameraManager = new CameraManager(nebula);
+    const cameraSyncSystem: CameraSyncSystem = new CameraSyncSystem(cameraManager, nebula);
 
     world
       .defineComponent(RigidBody2D)
@@ -71,7 +76,8 @@ export class GameplayPlugin extends Plugin {
       .defineComponent(SpriteRender)
       .defineComponent(PhysicsBodyRef)
       .defineComponent(PlayerInput)
-      .defineComponent(Animator);
+      .defineComponent(Animator)
+      .defineComponent(Camera);
 
     this.unsubscribers.push(
       world.onRemove(PhysicsBodyRef, (_entity: Entity, ref: PhysicsBodyRef) => {
@@ -91,6 +97,12 @@ export class GameplayPlugin extends Plugin {
       world.onRemove(Transform2D, (entity: Entity) => {
         if (world.hasComponent(entity, WorldTransform2D)) {
           world.removeComponent(entity, WorldTransform2D);
+        }
+      }),
+
+      world.onRemove(Camera, (entity: Entity) => {
+        if (cameraManager.getActive() === entity) {
+          cameraManager.setActive(undefined);
         }
       }),
     );
@@ -145,6 +157,14 @@ export class GameplayPlugin extends Plugin {
     );
 
     this.handles.push(
+      registerSystem(render, world, cameraSyncSystem, {
+        name: "gameplay:camera-sync",
+        stage: "PreRender",
+        before: "gameplay:sprite-render",
+      }),
+    );
+
+    this.handles.push(
       registerSystem(render, world, spriteRenderSystem, {
         name: "gameplay:sprite-render",
         stage: "PreRender",
@@ -153,6 +173,7 @@ export class GameplayPlugin extends Plugin {
 
     this.logger.log("GameplayPlugin installed.");
     engine.services.provide(SCRIPT_MANAGER, this.scriptManager);
+    engine.services.provide(CAMERA_MANAGER, cameraManager);
 
     this.deferred.resolve();
   }

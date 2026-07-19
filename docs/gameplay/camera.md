@@ -10,7 +10,7 @@
 > - [x] §6 `CameraManager` + token `CAMERA_MANAGER`
 > - [x] §7 `CameraSyncSystem`
 > - [x] §8 `CameraApi`
-> - [ ] §10 câblage `GameplayPlugin`
+> - [x] §10 câblage `GameplayPlugin`
 > - [ ] §12 démo sandbox (optionnel)
 
 ---

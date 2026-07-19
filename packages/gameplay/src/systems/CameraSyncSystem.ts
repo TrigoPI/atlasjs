@@ -28,10 +28,10 @@ export class CameraSyncSystem implements NexusSystem {
 
     const center: Vec2 = wt.getPosition(this.centerScratch);
     const camera: Camera2D = this.renderer.camera;
-    const viewport: Bound = this.renderer.getCameraViewport();
 
     camera.zoom = cam.zoom;
-    
+    const viewport: Bound = this.renderer.getCameraViewport();
+
     camera.position.set(
       center.x - viewport.width / 2,
       center.y - viewport.height / 2,
