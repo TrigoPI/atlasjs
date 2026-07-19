@@ -980,6 +980,8 @@ git commit -m "feat(gameplay): WorldTransform2D + TransformPropagationSystem"
 
 ## Task 4: Wire consumers to the world transform
 
+> **Status: ✅ implemented + reviewed clean (awaiting user commit).** 9/9 focused (2 integration + 7 sprite-render-system) + full gameplay suite green (physics-bridge + harness sprite suites confirmed). Reviewer verified root-vs-parented split, dynamic-only pull, no-regression mechanism, and test meaningfulness against real source. Post-review fix: added the missing `place` type annotation (project "always type" constraint) at both call sites; `tsc` + 8/8 physics/integration re-run green. Minor deferred: root-case body creation allocates a `Vec2` (one-shot, negligible).
+
 **Files:**
 - Modify: `packages/gameplay/src/systems/SpriteRenderSystem.ts`, `packages/gameplay/src/systems/PhysicsPushSystem.ts`, `packages/gameplay/src/systems/PhysicsPullSystem.ts`
 - Modify (existing test): `packages/gameplay/test/sprite-render-system.test.ts`
@@ -1131,7 +1133,7 @@ public update({ world }: NexusSystemContext): void {
   for (const entity of this.pending) {
     const rigidBody: RigidBody2D = world.requireComponent(entity, RigidBody2D);
     const transform: Transform2D = world.requireComponent(entity, Transform2D);
-    const place = this.resolvePlacement(world, entity, transform);
+    const place: { x: number; y: number; rotation: number } = this.resolvePlacement(world, entity, transform);
     const body: RigidBody = this.inertia.createRigidBody({
       type: rigidBody.type,
       translation: new Vec2(place.x, place.y),
@@ -1153,7 +1155,7 @@ public update({ world }: NexusSystemContext): void {
     body.setAngularVelocity(rigidBody.angularVelocity);
 
     if (rigidBody.type === "kinematic" || rigidBody.type === "static") {
-      const place = this.resolvePlacement(world, entity, transform);
+      const place: { x: number; y: number; rotation: number } = this.resolvePlacement(world, entity, transform);
       body.setTranslation(place.x, place.y);
       body.setRotation(place.rotation);
     }

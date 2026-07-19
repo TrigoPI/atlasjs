@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Bound } from "@atlasjs/math";
+import { Bound, Transform2D, Vec2 } from "@atlasjs/math";
 import {
   Color,
   NebulaRenderer,
@@ -9,7 +9,7 @@ import {
 } from "@atlasjs/nebula";
 import { Entity, NexusWorld } from "@atlasjs/nexus";
 import { Sprite } from "../src/assets";
-import { SpriteRender, Transform2D } from "../src/components";
+import { SpriteRender, WorldTransform2D } from "../src/components";
 import { SpriteRenderSystem } from "../src/systems";
 import { fakeTexture } from "./helpers/fakes";
 
@@ -19,7 +19,7 @@ function setup(): {
   system: SpriteRenderSystem;
 } {
   const world: NexusWorld = new NexusWorld();
-  world.defineComponent(Transform2D).defineComponent(SpriteRender);
+  world.defineComponent(WorldTransform2D).defineComponent(SpriteRender);
 
   const scene: SceneGraph = new SceneGraph();
   const nebula: NebulaRenderer = {
@@ -30,6 +30,17 @@ function setup(): {
   return { world, scene, system: new SpriteRenderSystem(nebula) };
 }
 
+function mount(
+  world: NexusWorld,
+  sprite: Sprite,
+  transform: Transform2D = new Transform2D(),
+): Entity {
+  const entity: Entity = world.createEntity();
+  world.addComponent(entity, WorldTransform2D).matrix.fromTransform2D(transform);
+  world.addComponent(entity, SpriteRender, sprite);
+  return entity;
+}
+
 function children(scene: SceneGraph): ReadonlyArray<SpriteNode> {
   return scene.root.getChildren() as ReadonlyArray<SpriteNode>;
 }
@@ -37,36 +48,43 @@ function children(scene: SceneGraph): ReadonlyArray<SpriteNode> {
 describe("SpriteRenderSystem", () => {
   it("mounts one scene node per SpriteRender entity", () => {
     const { world, scene, system } = setup();
-    const entity: Entity = world.createEntity();
-    world.addComponent(entity, Transform2D);
-    world.addComponent(entity, SpriteRender, new Sprite(fakeTexture()));
+    mount(world, new Sprite(fakeTexture()));
 
     system.update({ world, dt: 0 });
 
     expect(children(scene).length).toBe(1);
   });
 
-  it("applies flip as the sign of the transform scale", () => {
+  it("positions the node at the world transform", () => {
     const { world, scene, system } = setup();
-    const entity: Entity = world.createEntity();
-    world.addComponent(entity, Transform2D);
-    world.addComponent(entity, SpriteRender, new Sprite(fakeTexture()));
+    mount(world, new Sprite(fakeTexture()), new Transform2D(new Vec2(15, 4)));
 
-    world.requireComponent(entity, Transform2D).scale.set(3, 2);
+    system.update({ world, dt: 0 });
+
+    const node: SpriteNode = children(scene)[0];
+    expect(node.transform.position.x).toBeCloseTo(15, 4);
+    expect(node.transform.position.y).toBeCloseTo(4, 4);
+  });
+
+  it("applies flip as the sign of the world scale", () => {
+    const { world, scene, system } = setup();
+    const entity: Entity = mount(
+      world,
+      new Sprite(fakeTexture()),
+      new Transform2D(new Vec2(), new Vec2(3, 2)),
+    );
     world.requireComponent(entity, SpriteRender).flipX = true;
 
     system.update({ world, dt: 0 });
 
     const node: SpriteNode = children(scene)[0];
-    expect(node.transform.scale.x).toBe(-3);
-    expect(node.transform.scale.y).toBe(2);
+    expect(node.transform.scale.x).toBeCloseTo(-3, 4);
+    expect(node.transform.scale.y).toBeCloseTo(2, 4);
   });
 
   it("propagates tint, visibility and sorting order", () => {
     const { world, scene, system } = setup();
-    const entity: Entity = world.createEntity();
-    world.addComponent(entity, Transform2D);
-    world.addComponent(entity, SpriteRender, new Sprite(fakeTexture()));
+    const entity: Entity = mount(world, new Sprite(fakeTexture()));
 
     const render: SpriteRender = world.requireComponent(entity, SpriteRender);
     render.color = Color.Red();
@@ -85,9 +103,7 @@ describe("SpriteRenderSystem", () => {
   it("reuses the node on a same-texture rect swap", () => {
     const { world, scene, system } = setup();
     const texture = fakeTexture("shared", 64, 64);
-    const entity: Entity = world.createEntity();
-    world.addComponent(entity, Transform2D);
-    world.addComponent(entity, SpriteRender, new Sprite(texture));
+    const entity: Entity = mount(world, new Sprite(texture));
 
     system.update({ world, dt: 0 });
     const first: SpriteNode = children(scene)[0];
@@ -104,9 +120,7 @@ describe("SpriteRenderSystem", () => {
 
   it("rebuilds the node on a different-texture swap", () => {
     const { world, scene, system } = setup();
-    const entity: Entity = world.createEntity();
-    world.addComponent(entity, Transform2D);
-    world.addComponent(entity, SpriteRender, new Sprite(fakeTexture("a")));
+    const entity: Entity = mount(world, new Sprite(fakeTexture("a")));
 
     system.update({ world, dt: 0 });
     const first: SpriteNode = children(scene)[0];
@@ -120,9 +134,7 @@ describe("SpriteRenderSystem", () => {
 
   it("unmount removes the node from the scene", () => {
     const { world, scene, system } = setup();
-    const entity: Entity = world.createEntity();
-    world.addComponent(entity, Transform2D);
-    world.addComponent(entity, SpriteRender, new Sprite(fakeTexture()));
+    const entity: Entity = mount(world, new Sprite(fakeTexture()));
 
     system.update({ world, dt: 0 });
     expect(children(scene).length).toBe(1);

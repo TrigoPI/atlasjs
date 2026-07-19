@@ -1,5 +1,6 @@
+import { Vec2 } from "@atlasjs/math";
 import { Sprite } from "../assets";
-import { SpriteRender, Transform2D } from "../components";
+import { SpriteRender, WorldTransform2D } from "../components";
 
 import {
   Color,
@@ -24,10 +25,14 @@ export class SpriteRenderSystem implements NexusSystem {
   private readonly mounted: SparseSet<MountedSprite>;
   private readonly nebula: NebulaRenderer;
   private readonly sampler: Sampler;
+  private readonly positionScratch: Vec2;
+  private readonly scaleScratch: Vec2;
 
   public constructor(nebula: NebulaRenderer) {
     this.mounted = new SparseSet<MountedSprite>();
     this.nebula = nebula;
+    this.positionScratch = new Vec2();
+    this.scaleScratch = new Vec2();
     this.sampler = nebula.createSampler({
       magFilter: "nearest",
       minFilter: "nearest",
@@ -36,16 +41,20 @@ export class SpriteRenderSystem implements NexusSystem {
 
   // prettier-ignore
   public update({ world }: NexusSystemContext): void {
-    world.query(Transform2D, SpriteRender).each((entity, transform, spriteRender) => {
+    world.query(WorldTransform2D, SpriteRender).each((entity, worldTransform, spriteRender) => {
       const node: SpriteNode = this.resolveNode(entity, spriteRender.sprite);
 
-      const scaleX: number = transform.scale.x * (spriteRender.flipX ? -1 : 1);
-      const scaleY: number = transform.scale.y * (spriteRender.flipY ? -1 : 1);
+      const position: Vec2 = worldTransform.getPosition(this.positionScratch);
+      const rotation: number = worldTransform.getRotation();
+      const scale: Vec2 = worldTransform.getScale(this.scaleScratch);
+
+      const scaleX: number = scale.x * (spriteRender.flipX ? -1 : 1);
+      const scaleY: number = scale.y * (spriteRender.flipY ? -1 : 1);
       const color: Color = spriteRender.color;
 
       node
-        .setPosition(transform.position.x, transform.position.y)
-        .setRotation(transform.rotation)
+        .setPosition(position.x, position.y)
+        .setRotation(rotation)
         .setScale(scaleX, scaleY)
         .setTint(color.r, color.g, color.b, color.a)
         .setVisible(spriteRender.visible)
