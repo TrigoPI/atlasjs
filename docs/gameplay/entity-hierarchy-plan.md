@@ -1412,6 +1412,8 @@ git commit -m "feat(gameplay): sprite render + physics push read WorldTransform2
 
 ## Task 5: Script façade — Transform2DComponent.setParent
 
+> **Status: ✅ implemented + reviewed clean (awaiting user commit).** 4/4 façade tests + 95/95 gameplay suite green, `tsc --noEmit` clean. Reviewer re-derived the `worldPositionStays` math against `Mat3` and verified statelessness + raw-field writes. Minor (deferred): detach path `setParent(null)` untested (correct by trace).
+
 **Files:**
 - Modify: `packages/gameplay/src/scripting/components/Transform2DComponent.ts`
 - Test: `packages/gameplay/test/transform-parent-facade.test.ts`

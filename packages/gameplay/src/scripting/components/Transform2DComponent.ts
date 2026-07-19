@@ -1,6 +1,12 @@
-import { Vec2 } from "@atlasjs/math";
+import { Mat3, Vec2 } from "@atlasjs/math";
+import { Entity } from "@atlasjs/nexus";
 
-import { PhysicsBodyRef, RigidBody2D, Transform2D } from "../../components";
+import {
+  PhysicsBodyRef,
+  RigidBody2D,
+  Transform2D,
+  WorldTransform2D,
+} from "../../components";
 
 import { ScriptComponent } from "../core";
 
@@ -65,6 +71,66 @@ export class Transform2DComponent extends ScriptComponent<Transform2D> {
 
   public rotate(angle: number): this {
     return this.setRotation(this.resolve().rotation + angle);
+  }
+
+  public setParent(
+    parent: Transform2DComponent | null,
+    worldPositionStays: boolean = true,
+  ): this {
+    if (!worldPositionStays) {
+      this.world.setParent(this.entity, parent !== null ? parent.entity : null);
+      return this;
+    }
+
+    const currentWorld: Mat3 = this.worldMatrix();
+
+    this.world.setParent(this.entity, parent !== null ? parent.entity : null);
+
+    const parentWorld: Mat3 | null =
+      parent !== null ? parent.worldMatrix() : null;
+
+    const localMatrix: Mat3 =
+      parentWorld !== null
+        ? parentWorld.invert().multiply(currentWorld)
+        : currentWorld;
+
+    const transform: Transform2D = this.resolve();
+    const position: Vec2 = localMatrix.getTranslation();
+    const scale: Vec2 = localMatrix.getScale();
+    transform.position.set(position.x, position.y);
+    transform.rotation = localMatrix.getRotation();
+    transform.scale.set(scale.x, scale.y);
+
+    return this;
+  }
+
+  public get parent(): Transform2DComponent | null {
+    const parentEntity: Entity | undefined = this.world.getParent(this.entity);
+    return parentEntity !== undefined
+      ? new Transform2DComponent(this.world, parentEntity)
+      : null;
+  }
+
+  public getChildren(): Transform2DComponent[] {
+    const children: ReadonlyArray<Entity> = this.world.getChildren(this.entity);
+    const result: Transform2DComponent[] = [];
+    for (let i: number = 0; i < children.length; i++) {
+      if (this.world.hasComponent(children[i], Transform2D)) {
+        result.push(new Transform2DComponent(this.world, children[i]));
+      }
+    }
+    return result;
+  }
+
+  private worldMatrix(): Mat3 {
+    const wt: WorldTransform2D | undefined = this.world.getComponent(
+      this.entity,
+      WorldTransform2D,
+    );
+
+    return wt !== undefined
+      ? wt.matrix.clone()
+      : Mat3.fromTransform2D(this.resolve());
   }
 
   private controllingBody(): PhysicsBodyRef | undefined {
