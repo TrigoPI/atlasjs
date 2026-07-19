@@ -675,6 +675,8 @@ git commit -m "feat(math): Mat3 multiply/invert/decompose + structural fromTrans
 
 ## Task 3: WorldTransform2D + TransformPropagationSystem
 
+> **Status: ✅ implemented + reviewed clean (awaiting user commit).** 5/5 hierarchy unit tests + 88/88 gameplay suite green, `tsc --noEmit` clean. Reviewer verified all 4 named risks (no structural-change-during-iteration, propagation branching, matrix aliasing, recursion termination) against real source. Minor (documented): transform-less root subtree not walked (design §7); `getChildren` returns live array.
+
 **Files:**
 - Create: `packages/gameplay/src/components/WorldTransform2D.ts`, `packages/gameplay/src/systems/TransformPropagationSystem.ts`
 - Modify: `packages/gameplay/src/components/index.ts`, `packages/gameplay/src/systems/index.ts`, `packages/gameplay/src/GameplayPlugin.ts`
