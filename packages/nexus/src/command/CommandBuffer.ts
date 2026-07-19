@@ -7,6 +7,7 @@ export interface CommandBuffer {
   add<T extends object, A extends unknown[]>(entity: Entity, component: Component<T, A>, ...args: A): void;
   set<T extends object, A extends unknown[]>(entity: Entity, component: Component<T, A>, ...args: A): void;
   remove<T extends object>(entity: Entity, component: Component<T>): void;
+  setParent(child: Entity, parent: Entity | null): void;
 }
 
 // prettier-ignore
@@ -17,6 +18,7 @@ export interface CommandTarget {
   addComponent<T extends object, A extends unknown[]>(entity: Entity, component: Component<T, A>, ...args: A): T;
   setComponent<T extends object, A extends unknown[]>(entity: Entity, component: Component<T, A>, ...args: A): T;
   removeComponent<T extends object>(entity: Entity, component: Component<T>): boolean;
+  setParent(child: Entity, parent: Entity | null): void;
 }
 
 export class NexusCommandBuffer implements CommandBuffer {
@@ -65,6 +67,18 @@ export class NexusCommandBuffer implements CommandBuffer {
     component: Component<T>,
   ): void {
     this.queue.push(() => this.world.removeComponent(entity, component));
+  }
+
+  public setParent(child: Entity, parent: Entity | null): void {
+    this.queue.push(() => {
+      if (!this.world.exists(child)) {
+        return;
+      }
+      if (parent !== null && !this.world.exists(parent)) {
+        return;
+      }
+      this.world.setParent(child, parent);
+    });
   }
 
   public flush(): void {

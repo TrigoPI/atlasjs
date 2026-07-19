@@ -3,6 +3,7 @@ import { createLogger, Logger } from "@atlasjs/utils";
 import { Query, EmptyQuery, NexusQuery, StoreResolver } from "../query";
 import { EntityManager } from "../entity";
 import { CommandBuffer, NexusCommandBuffer } from "../command";
+import { Parent, Children } from "../hierarchy";
 import {
   ComponentRegistry,
   defaultComponentRegistry,
@@ -18,6 +19,8 @@ import {
   Entity,
   Unsubscribe,
 } from "../types";
+
+const EMPTY_CHILDREN: ReadonlyArray<Entity> = [];
 
 export class NexusWorld {
   private readonly logger: Logger;
@@ -113,6 +116,19 @@ export class NexusWorld {
   public destroyEntity(entity: Entity): boolean {
     this.assertEntityExists(entity);
 
+    const children: ReadonlyArray<Entity> = this.getChildren(entity);
+    const snapshot: Entity[] = [...children];
+    for (let i: number = 0; i < snapshot.length; i++) {
+      if (this.entityManager.has(snapshot[i])) {
+        this.destroyEntity(snapshot[i]);
+      }
+    }
+
+    const parent: Entity | undefined = this.getParent(entity);
+    if (parent !== undefined && this.entityManager.has(parent)) {
+      this.detachFromParent(entity, parent);
+    }
+
     for (const [id, store] of this.stores) {
       const instance: unknown = store.get(entity);
 
@@ -134,6 +150,82 @@ export class NexusWorld {
 
   public createEntity(): Entity {
     return this.entityManager.create();
+  }
+
+  public getParent(child: Entity): Entity | undefined {
+    return this.getComponent(child, Parent)?.value;
+  }
+
+  public getChildren(entity: Entity): ReadonlyArray<Entity> {
+    const children: Children | undefined = this.getComponent(entity, Children);
+    return children !== undefined ? children.value : EMPTY_CHILDREN;
+  }
+
+  public setParent(child: Entity, parent: Entity | null): void {
+    this.assertEntityExists(child);
+
+    const currentParent: Entity | undefined = this.getParent(child);
+
+    if (parent === null) {
+      if (currentParent !== undefined) {
+        this.detachFromParent(child, currentParent);
+        this.removeComponent(child, Parent);
+      }
+      return;
+    }
+
+    this.assertEntityExists(parent);
+
+    if (parent === child) {
+      throw new Error(`Cannot parent entity ${child} to itself.`);
+    }
+
+    if (currentParent === parent) {
+      return;
+    }
+
+    if (this.isAncestorOf(child, parent)) {
+      throw new Error(
+        `Cannot parent entity ${child} to ${parent}: it would create a cycle.`,
+      );
+    }
+
+    if (currentParent !== undefined) {
+      this.detachFromParent(child, currentParent);
+    }
+
+    const link: Parent | undefined = this.getComponent(child, Parent);
+    if (link !== undefined) {
+      link.value = parent;
+    } else {
+      this.addComponent(child, Parent, parent);
+    }
+
+    const siblings: Children =
+      this.getComponent(parent, Children) ?? this.addComponent(parent, Children);
+    siblings.value.push(child);
+  }
+
+  private detachFromParent(child: Entity, parent: Entity): void {
+    const children: Children | undefined = this.getComponent(parent, Children);
+    if (children === undefined) {
+      return;
+    }
+    const index: number = children.value.indexOf(child);
+    if (index !== -1) {
+      children.value.splice(index, 1);
+    }
+  }
+
+  private isAncestorOf(ancestor: Entity, entity: Entity): boolean {
+    let current: Entity | undefined = this.getParent(entity);
+    while (current !== undefined) {
+      if (current === ancestor) {
+        return true;
+      }
+      current = this.getParent(current);
+    }
+    return false;
   }
 
   public getComponent<TComponent extends object, TArgs extends unknown[]>(
