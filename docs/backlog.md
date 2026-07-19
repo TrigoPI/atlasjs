@@ -91,6 +91,22 @@ Source : [`core/scheduling.md`](core/scheduling.md).
 
 ---
 
+## Gameplay — Entity hierarchy V2
+
+Source : [`gameplay/entity-hierarchy.md`](gameplay/entity-hierarchy.md) (§9, hors périmètre V1).
+
+| #   | Item                                                | Statut | Notes                                                                                                                                                                                                    |
+| --- | ---------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| H1  | **Passe physique de hiérarchie sans latence**       | 📋     | Propagation dédiée dans la lane `fixed`, avant `PhysicsRequest`, pour que les bodies kinematic/static enfants lisent un `WorldTransform2D` frais (élimine la latence d'1 frame actuelle). Voir §5.4.   |
+| H2  | **Rendu exact du shear**                             | 📋     | Seam matrice-monde sur le `Node` nebula (ex. `Node.setLocalMatrix`) pour éviter la décomposition TRS lossy quand un parent a une échelle non-uniforme + rotation imbriquée. Voir §5.5.                 |
+| H3  | **Dirty-tracking par sous-arbre**                    | 📋     | `TransformPropagationSystem` recalcule tout l'arbre chaque frame (V1) ; ajouter un dirty-flag par sous-arbre comme `Node` nebula. Voir §5.2.                                                            |
+| H4  | **Composition de transform pour bodies dynamic**     | 📋     | Un dynamic ignore aujourd'hui la composition parent (autorité physique) ; recalculer local = monde − parent pour le composer proprement. Voir §9.                                                     |
+| H5  | **Destruction orpheline (option)**                   | 📋     | Alternative à la destruction récursive par défaut : reparenter les enfants à la racine au lieu de les détruire en cascade. Voir §3.3.                                                                  |
+| H6  | **Signal éditeur `onReparent` dédié**                | 📋     | `world.onAdd(Parent)`/`world.onRemove(Parent)` suffisent en combinaison aujourd'hui ; un signal unique simplifierait un futur éditeur. Voir §7.                                                        |
+| H7  | **Relations génériques typées (flecs-style)**        | 📋     | Aller au-delà du seul parent/enfant vers des relations typées arbitraires entre entités. Voir §9.                                                                                                      |
+
+---
+
 ## Gameplay — Input scripting
 
 > **Cœur implémenté** : Phase 1 (`ScriptService`/`InputApi`, sources [`gameplay/input-scripting.md`](gameplay/input-scripting.md)) et Phase 2 (actions nommées `defineActions`/`button()`/`vector2()`/`PlayerInput`/`PlayerInputSystem`, source [`gameplay/input-actions.md`](gameplay/input-actions.md)). Utilisé dans `apps/sandbox`. Ne restent que les **extensions V2** ci-dessous.

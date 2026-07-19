@@ -17,6 +17,7 @@ import {
   PhysicsPushSystem,
   PlayerInputSystem,
   SpriteRenderSystem,
+  TransformPropagationSystem,
 } from "./systems";
 
 import {
@@ -26,6 +27,7 @@ import {
   RigidBody2D,
   SpriteRender,
   Transform2D,
+  WorldTransform2D,
 } from "./components";
 
 export class GameplayPlugin extends Plugin {
@@ -60,10 +62,12 @@ export class GameplayPlugin extends Plugin {
     const spriteRenderSystem: SpriteRenderSystem = new SpriteRenderSystem(nebula);
     const playerInputSystem: PlayerInputSystem = new PlayerInputSystem(engine.services);
     const animatorSystem: AnimatorSystem = new AnimatorSystem();
+    const transformPropagationSystem: TransformPropagationSystem = new TransformPropagationSystem();
 
     world
       .defineComponent(RigidBody2D)
       .defineComponent(Transform2D)
+      .defineComponent(WorldTransform2D)
       .defineComponent(SpriteRender)
       .defineComponent(PhysicsBodyRef)
       .defineComponent(PlayerInput)
@@ -82,6 +86,12 @@ export class GameplayPlugin extends Plugin {
 
       world.onRemove(SpriteRender, (entity: Entity) => {
         spriteRenderSystem.unmount(entity);
+      }),
+
+      world.onRemove(Transform2D, (entity: Entity) => {
+        if (world.hasComponent(entity, WorldTransform2D)) {
+          world.removeComponent(entity, WorldTransform2D);
+        }
       }),
     );
 
@@ -113,6 +123,13 @@ export class GameplayPlugin extends Plugin {
         name: "gameplay:animator",
         stage: "Logic",
         after: "gameplay:script-update",
+      }),
+    );
+
+    this.handles.push(
+      registerSystem(update, world, transformPropagationSystem, {
+        name: "gameplay:transform-propagation",
+        stage: "Late",
       }),
     );
 

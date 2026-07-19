@@ -1,6 +1,7 @@
 export * from "./types";
 
 export * from "./entity";
+export * from "./hierarchy";
 export * from "./component";
 export * from "./query";
 export * from "./command";

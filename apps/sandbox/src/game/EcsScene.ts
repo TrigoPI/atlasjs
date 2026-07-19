@@ -16,6 +16,8 @@ import {
   SCRIPT_MANAGER,
   Sprite,
   SpriteAsset,
+  SpriteRender,
+  Transform2D,
   vector2,
 } from "@atlasjs/gameplay";
 
@@ -87,5 +89,12 @@ export class EcsScene extends Scene {
       sprite: blueDinoSprite,
       speed: 250,
     });
+
+    const badge: Entity = nexus.createEntity();
+    const badgeTransform: Transform2D = nexus.addComponent(badge, Transform2D);
+    badgeTransform.position.set(0, -60);
+    badgeTransform.scale.set(0.4, 0.4);
+    nexus.addComponent(badge, SpriteRender, sealionSprite);
+    nexus.setParent(badge, player);
   }
 }
