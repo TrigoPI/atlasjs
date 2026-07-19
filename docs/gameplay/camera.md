@@ -9,7 +9,7 @@
 > - [x] §5 composant `Camera` (LEVEL 1)
 > - [x] §6 `CameraManager` + token `CAMERA_MANAGER`
 > - [x] §7 `CameraSyncSystem`
-> - [ ] §8 `CameraApi`
+> - [x] §8 `CameraApi`
 > - [ ] §10 câblage `GameplayPlugin`
 > - [ ] §12 démo sandbox (optionnel)
 

@@ -30,7 +30,7 @@
 | 3. Composant `Camera` (LEVEL 1) | ✅ implémenté + review clean (attente commit user) |
 | 4. `CameraManager` + token | ✅ implémenté + review clean (attente commit user) |
 | 5. `CameraSyncSystem` | ✅ implémenté + review clean (attente commit user) |
-| 6. `CameraApi` | ⏳ à faire |
+| 6. `CameraApi` | ✅ implémenté + review clean (attente commit user) |
 | 7. Câblage `GameplayPlugin` | ⏳ à faire |
 | 8. Démo sandbox (opt.) | ⏳ à faire |
 
@@ -620,7 +620,7 @@ git commit -m "feat(gameplay): CameraSyncSystem (centered, pushes active camera 
 
 ---
 
-### Task 6: Façade `CameraApi` (gameplay scripting)
+### Task 6: Façade `CameraApi` (gameplay scripting) — ✅ DONE
 
 **Files:**
 - Create: `packages/gameplay/src/scripting/services/CameraApi.ts`
