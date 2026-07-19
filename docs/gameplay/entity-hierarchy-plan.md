@@ -429,6 +429,8 @@ git commit -m "feat(nexus): parent/child relationship primitive + recursive dest
 
 ## Task 2: Mat3 affine operations
 
+> **Status: ✅ implemented + reviewed clean (awaiting user commit).** 4/4 mat3 tests green (multiply/invert/decompose hand-verified by reviewer), `tsc --noEmit` clean, math dist rebuilt. Minor: implementer's report mis-cited the non-breaking rationale (code is fine).
+
 **Files:**
 - Modify: `packages/math/src/Mat3.ts`
 - Create: `packages/math/vitest.config.ts`, `packages/math/test/mat3.test.ts`
