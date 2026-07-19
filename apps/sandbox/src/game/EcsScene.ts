@@ -1,12 +1,11 @@
 import BlueDino from "../../assets/game/dinos/dino_blue.png";
-import Sealion from "../../assets/sealion.png";
+import Sword from "../../assets/game/swords/Iicon_32_01.png";
 
 import { type SceneContext, Scene } from "@atlasjs/core";
 import { type Entity, type NexusWorld, NEXUS } from "@atlasjs/nexus";
 import { type AssetManager, ASSET_MANAGER } from "@atlasjs/assets";
 
 import { TestScript } from "./scripts/TestScript";
-import { WallScript } from "./scripts/WallScript";
 
 import {
   type ScriptManager,
@@ -16,8 +15,6 @@ import {
   SCRIPT_MANAGER,
   Sprite,
   SpriteAsset,
-  SpriteRender,
-  Transform2D,
   vector2,
 } from "@atlasjs/gameplay";
 
@@ -27,6 +24,7 @@ import {
   SpriteSheet,
   TextureAsset,
 } from "@atlasjs/nebula";
+import { SwordScript } from "./scripts/SwordScript";
 
 export class EcsScene extends Scene {
   public constructor() {
@@ -44,9 +42,8 @@ export class EcsScene extends Scene {
     const dinoSpriteAsset: SpriteAsset = new SpriteAsset(dinoAsset);
     const blueDinoSprite: Sprite = await assets.load<Sprite>(dinoSpriteAsset);
 
-    const sealionAsset: TextureAsset = new TextureAsset(Sealion);
-    const sealionSpriteAsset: SpriteAsset = new SpriteAsset(sealionAsset);
-    const sealionSprite: Sprite = await assets.load<Sprite>(sealionSpriteAsset);
+    const swordSpriteAsset: SpriteAsset = SpriteAsset.fromPath(Sword);
+    const swordSprite: Sprite = await assets.load<Sprite>(swordSpriteAsset);
 
     const sheet: SpriteSheet = SpriteSheet.fromAutoGrid({
       name: "blue_dino",
@@ -77,10 +74,13 @@ export class EcsScene extends Scene {
     };
 
     const player: Entity = nexus.createEntity();
-    const wall: Entity = nexus.createEntity();
+    const sword: Entity = nexus.createEntity();
 
-    scriptManager.attach(wall, WallScript, {
-      sprite: sealionSprite,
+    nexus.setParent(sword, player);
+
+    scriptManager.attach(sword, SwordScript, {
+      sprite: swordSprite,
+      scale: 0.7,
     });
 
     scriptManager.attach(player, TestScript, {
@@ -89,12 +89,5 @@ export class EcsScene extends Scene {
       sprite: blueDinoSprite,
       speed: 250,
     });
-
-    const badge: Entity = nexus.createEntity();
-    const badgeTransform: Transform2D = nexus.addComponent(badge, Transform2D);
-    badgeTransform.position.set(0, -60);
-    badgeTransform.scale.set(0.4, 0.4);
-    nexus.addComponent(badge, SpriteRender, sealionSprite);
-    nexus.setParent(badge, player);
   }
 }
