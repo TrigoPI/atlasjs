@@ -429,7 +429,8 @@ git commit -m "feat(nexus): parent/child relationship primitive + recursive dest
 
 ## Task 2: Mat3 affine operations
 
-> **Status: ✅ implemented + reviewed clean (awaiting user commit).** 4/4 mat3 tests green (multiply/invert/decompose hand-verified by reviewer), `tsc --noEmit` clean, math dist rebuilt. Minor: implementer's report mis-cited the non-breaking rationale (code is fine).
+> **Status: ✅ implemented + reviewed clean + committed.** 4/4 mat3 tests green (multiply/invert/decompose hand-verified by reviewer), `tsc --noEmit` clean, math dist rebuilt.
+> **Follow-up refactor (post-commit, awaiting user commit):** instead of a standalone `Transform2DValues` interface, split it as the data-only base and made `Transform2DLike extends Transform2DValues`; `Mat3.fromTransform2D` takes `Transform2DValues`. This lets gameplay's method-less `Transform2D` (LEVEL-1 data component) satisfy the param in Tasks 3/5. Files: `packages/math/src/Transform2DValues.ts` (new), `Transform2DLike.ts`, `Mat3.ts`, `index.ts`. 4/4 mat3 green, `tsc` clean, dist rebuilt.
 
 **Files:**
 - Modify: `packages/math/src/Mat3.ts`

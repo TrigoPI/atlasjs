@@ -1,4 +1,4 @@
-import { Transform2DLike } from "./Transform2DLike";
+import { Transform2DValues } from "./Transform2DValues";
 import { Vec2 } from "./Vec2";
 
 //prettier-ignore
@@ -32,7 +32,7 @@ export class Mat3 {
     return m;
   }
 
-  public fromTransform2D(t: Transform2DLike): Mat3 {
+  public fromTransform2D(t: Transform2DValues): Mat3 {
     const m: Float32Array = this.buffer;
 
     const c: number = Math.cos(t.rotation);
@@ -150,7 +150,7 @@ export class Mat3 {
     return new Mat3();
   }
 
-  public static fromTransform2D(t: Transform2DLike): Mat3 {
+  public static fromTransform2D(t: Transform2DValues): Mat3 {
     return new Mat3().fromTransform2D(t);
   }
 }
