@@ -107,6 +107,24 @@ Source : [`gameplay/entity-hierarchy.md`](gameplay/entity-hierarchy.md) (§9, ho
 
 ---
 
+## Gameplay — Caméra
+
+> **Cœur implémenté** : caméra gameplay (entité Nexus) pilotant la caméra de rendu nebula, `screenToWorld`/`worldToScreen`, une caméra active unique switchable via `CameraManager`. Source : [`gameplay/camera.md`](gameplay/camera.md) (§14 non-objectifs). Ne restent que les **extensions V2** ci-dessous.
+
+| #   | Item                                                         | Statut | Notes                                                                                                                                                                                                                             |
+| --- | ------------------------------------------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C1  | **Rendu simultané multi-caméras**                            | 📋     | Split-screen / minimap / render-to-texture : une `RenderPass` par caméra avec viewport rects distincts. Nécessite une refonte du `SceneRenderer` (aujourd'hui mono-caméra, une passe). Le `CameraManager` est déjà le seam d'autorité pour l'étendre. |
+| C2  | **Rotation de caméra**                                       | 📋     | `Camera2D.view` n'applique que scale+translate ; une rotation exigerait `Mat4.invert` pour le screen↔world (le modèle analytique actuel s'annule sans rotation).                                                                 |
+| C3  | **`clearColor` / viewport rect / `renderTarget` par caméra** | 📋     | Données de rendu par caméra au-delà de `zoom` ; prérequis du multi-caméra (C1).                                                                                                                                                 |
+| C4  | **Couches de rendu / culling mask par caméra**               | 📋     | Filtrer ce que chaque caméra dessine (UI vs monde, calques).                                                                                                                                                                    |
+| C5  | **Mode edit↔play formel**                                    | 📋     | Aujourd'hui l'éditeur et la caméra gameplay écrivent tous deux dans `renderer.camera` sans arbitrage explicite (en pratique : pas de caméra active gameplay en edit mode). Un système de « mode » trancherait l'autorité.        |
+| C6  | **Projection non-ortho (perspective)**                       | 📋     | Ouverture 3D ; l'interface `Camera` (`viewProjection: Mat4`) le permet déjà côté contrat, seul `Camera2D` est ortho.                                                                                                            |
+
+- **Comportements connus (par design, pas des bugs)** : `screenToWorld`/`worldToScreen` lus dans un `onUpdate` reflètent la caméra de la frame précédente (lag d'1 frame — la caméra est un producteur en lane `render`, synchronisé après `update`) ; à la frame 0, `renderer.camera` reste à son défaut tant qu'aucun sync n'a eu lieu.
+- **Lien** : la méthode `Camera2D.screenToWorld`/`worldToScreen` débloque partiellement **B2** (réconciliation editor ↔ nebula — « méthodes `Camera2D` manquantes »).
+
+---
+
 ## Gameplay — Input scripting
 
 > **Cœur implémenté** : Phase 1 (`ScriptService`/`InputApi`, sources [`gameplay/input-scripting.md`](gameplay/input-scripting.md)) et Phase 2 (actions nommées `defineActions`/`button()`/`vector2()`/`PlayerInput`/`PlayerInputSystem`, source [`gameplay/input-actions.md`](gameplay/input-actions.md)). Utilisé dans `apps/sandbox`. Ne restent que les **extensions V2** ci-dessous.
