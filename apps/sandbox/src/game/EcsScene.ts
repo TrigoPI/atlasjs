@@ -1,5 +1,5 @@
 import BlueDino from "../../assets/game/dinos/dino_blue.png";
-import Sword from "../../assets/game/swords/Iicon_32_01.png";
+import Sword from "../../assets/game/swords/Iicon_32_10.png";
 
 import { type SceneContext, Scene } from "@atlasjs/core";
 import { type Entity, type NexusWorld, NEXUS } from "@atlasjs/nexus";
