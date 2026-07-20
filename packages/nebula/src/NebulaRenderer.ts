@@ -1,7 +1,7 @@
+import { Bound } from "@atlasjs/math";
+
 import { SceneGraph } from "./scene";
 import { SceneRenderer } from "./renderers";
-
-import { Bound } from "@atlasjs/math";
 
 import {
   Camera2D,

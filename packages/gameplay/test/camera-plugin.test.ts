@@ -23,4 +23,17 @@ describe("GameplayPlugin — camera wiring", () => {
     h.world.removeComponent(entity, Camera);
     expect(manager.getActive()).toBeUndefined();
   });
+
+  it("clears the active camera when its entity is destroyed", async () => {
+    const h: Harness = await createHarness();
+    const manager: CameraManager = h.services.get(CAMERA_MANAGER);
+
+    const entity: Entity = h.world.createEntity();
+    h.world.addComponent(entity, Camera);
+    manager.setActive(entity);
+    expect(manager.getActive()).toBe(entity);
+
+    h.world.destroyEntity(entity);
+    expect(manager.getActive()).toBeUndefined();
+  });
 });
