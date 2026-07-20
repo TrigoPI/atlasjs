@@ -32,7 +32,7 @@
 | 5. `CameraSyncSystem` | ✅ implémenté + review clean (attente commit user) |
 | 6. `CameraApi` | ✅ implémenté + review clean (attente commit user) |
 | 7. Câblage `GameplayPlugin` | ✅ implémenté + review clean (attente commit user) — inclut un fix d'ordre dans CameraSyncSystem |
-| 8. Démo sandbox (opt.) | ⏳ à faire |
+| 8. Démo sandbox (opt.) | ✅ édit en place (main camera enfant du joueur + setActive) ; vite compile ; vérif visuelle bloquée par le gate d'approbation navigateur (attente user) |
 
 ---
 

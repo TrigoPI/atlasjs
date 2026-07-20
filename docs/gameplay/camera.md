@@ -11,7 +11,7 @@
 > - [x] §7 `CameraSyncSystem`
 > - [x] §8 `CameraApi`
 > - [x] §10 câblage `GameplayPlugin`
-> - [ ] §12 démo sandbox (optionnel)
+> - [x] §12 démo sandbox (édit en place ; vérif visuelle navigateur en attente)
 
 ---
 
