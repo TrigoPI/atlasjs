@@ -1,5 +1,7 @@
 # API composants de script (`@atlasjs/gameplay`) — modèle Unity `GetComponent`
 
+> **Mise à jour :** les façades passthrough (`RigidBody2DComponent`, `SpriteRendererComponent`) ont été supprimées et `Transform2DComponent` renommée `Transform`. Voir [`scripting-component-unification.md`](scripting-component-unification.md).
+
 > **Statut : implémenté (phases 1→4 terminées).** Suite directe de `docs/gameplay/gameplay-redesign.md` (phases 0→6 terminées). Ce document raffine **uniquement la couche d'accès aux composants côté script** (§5 « API de script » de l'ancien doc). Le pont physique, l'autorité déclarée et la source unique restent inchangés.
 
 ## Contexte

@@ -165,10 +165,10 @@ On **garde la forme** du pipeline (déjà alignée sur les stages du core : `Phy
 - `query(RigidBody2D, Transform2D, PhysicsBodyRef)` → pousse dans le body : vélocité/angular depuis `RigidBody2D` ; pour `kinematic`/`static`, pousse aussi la position/rotation depuis `Transform2D` ; sync `mass`/`type`.
 
 **`PhysicsPullSystem`** — stage `PhysicsWriteback` (après `PhysicsStep`) :
-- `query(RigidBody2D, Transform2D, PhysicsBodyRef)` → `transform.position = body.getTranslation()`, `transform.rotation = body.getRotation()`, `rigidBody.velocity = body.getLinearVelocity()`. Vaut pour `dynamic` **et** `kinematic` (ce dernier récupère sa pose résolue par le solveur).
+- `query(RigidBody2D, Transform2D, PhysicsBodyRef)` → `transform.position = body.getTranslation()`, `transform.rotation = body.getRotation()`, `rigidBody.velocity = body.getLinearVelocity()`. Vaut **uniquement pour `dynamic`** (`if (type !== "dynamic") return`) : pour `kinematic`, `Transform2D` reste la source (poussée vers le solveur par `PhysicsPushSystem`), donc le pull n'a rien à en tirer — le lire en retour re-créerait une deuxième autorité sur la même donnée.
 
 **Réponse à « et si je bouge les deux en même temps ? »** — il n'y a plus de « les deux ». Pour une entité donnée, **une seule autorité** détient la position, déterminée par le type de corps :
-- corps `dynamic` : on le déplace en écrivant la **vélocité/force** (via `RigidBody2DComponent`), pas la position ; `setPosition` est un **téléport explicite** qui appelle `body.setTranslation(...)` (échappatoire assumée, jamais un clobber silencieux).
+- corps `dynamic` : on le déplace en écrivant la **vélocité/force** (via `RigidBody`), pas la position ; `setPosition` est un **téléport explicite** qui appelle `body.setTranslation(...)` (échappatoire assumée, jamais un clobber silencieux).
 - corps `kinematic` : `Transform2D` est la source ; le push l'applique au solveur chaque step.
 La décision est prise **au moment de l'écriture**, dans le setter de la façade, en lisant `RigidBody2D.type`. Aucune course possible : deux écritures « concurrentes » passent par la même règle et le même chemin d'autorité.
 
