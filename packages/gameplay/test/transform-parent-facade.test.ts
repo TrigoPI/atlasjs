@@ -3,7 +3,7 @@ import { Vec2, Transform2D as MathTransform2D } from "@atlasjs/math";
 import { NexusWorld, Entity } from "@atlasjs/nexus";
 
 import { Transform2D, WorldTransform2D } from "../src/components";
-import { Transform2DComponent } from "../src/scripting/components";
+import { Transform } from "../src/scripting/components";
 
 function setup(): { world: NexusWorld } {
   const world: NexusWorld = new NexusWorld();
@@ -11,7 +11,7 @@ function setup(): { world: NexusWorld } {
   return { world };
 }
 
-describe("Transform2DComponent parenting", () => {
+describe("Transform parenting", () => {
   it("setParent links the entities structurally", () => {
     const { world } = setup();
     const parentE: Entity = world.createEntity();
@@ -19,8 +19,8 @@ describe("Transform2DComponent parenting", () => {
     world.addComponent(parentE, Transform2D);
     world.addComponent(childE, Transform2D);
 
-    const child: Transform2DComponent = new Transform2DComponent(world, childE);
-    const parent: Transform2DComponent = new Transform2DComponent(world, parentE);
+    const child: Transform = new Transform(world, childE);
+    const parent: Transform = new Transform(world, parentE);
     child.setParent(parent);
 
     expect(world.getParent(childE)).toBe(parentE);
@@ -39,8 +39,8 @@ describe("Transform2DComponent parenting", () => {
     world.addComponent(childE, Transform2D);
     world.addComponent(childE, WorldTransform2D).matrix.identity();
 
-    const child: Transform2DComponent = new Transform2DComponent(world, childE);
-    const parent: Transform2DComponent = new Transform2DComponent(world, parentE);
+    const child: Transform = new Transform(world, childE);
+    const parent: Transform = new Transform(world, parentE);
     child.setParent(parent, true);
 
     const local: Transform2D = world.requireComponent(childE, Transform2D);
@@ -56,8 +56,8 @@ describe("Transform2DComponent parenting", () => {
     const local: Transform2D = world.addComponent(childE, Transform2D);
     local.position.set(5, 0);
 
-    const child: Transform2DComponent = new Transform2DComponent(world, childE);
-    const parent: Transform2DComponent = new Transform2DComponent(world, parentE);
+    const child: Transform = new Transform(world, childE);
+    const parent: Transform = new Transform(world, parentE);
     child.setParent(parent, false);
 
     expect(world.requireComponent(childE, Transform2D).position.x).toBe(5);
@@ -71,8 +71,8 @@ describe("Transform2DComponent parenting", () => {
     world.addComponent(childE, Transform2D);
     world.setParent(childE, parentE);
 
-    const child: Transform2DComponent = new Transform2DComponent(world, childE);
-    const parent: Transform2DComponent = new Transform2DComponent(world, parentE);
+    const child: Transform = new Transform(world, childE);
+    const parent: Transform = new Transform(world, parentE);
 
     expect(child.parent).not.toBeNull();
     expect(parent.getChildren().length).toBe(1);

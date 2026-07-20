@@ -12,7 +12,7 @@ import { Transform2D } from "../src/components";
 import {
   AtlasScript,
   ScriptManager,
-  Transform2DComponent,
+  Transform,
 } from "../src/scripting";
 
 const FIXED = 0.1;
@@ -40,10 +40,10 @@ const fakeNebula = { createSampler: () => ({}), scene: { addChild: () => {} } };
 const fakeInertia = {};
 
 class MoveScript extends AtlasScript {
-  private transform!: Transform2DComponent;
+  private transform!: Transform;
 
   public onCreate(): void {
-    this.transform = this.addComponent(Transform2DComponent);
+    this.transform = this.addComponent(Transform);
   }
   public onFixedUpdate(): void {
     this.transform.translate(1, 0);

@@ -4,7 +4,7 @@ import {
   RigidBody2DComponent,
   Sprite,
   SpriteRendererComponent,
-  Transform2DComponent,
+  Transform,
 } from "@atlasjs/gameplay";
 
 export class WallScript extends AtlasScript<{ sprite: Sprite }> {
@@ -12,11 +12,11 @@ export class WallScript extends AtlasScript<{ sprite: Sprite }> {
 
   private rb: RigidBody2DComponent;
   private spriteRenderer: SpriteRendererComponent;
-  private transform: Transform2DComponent;
+  private transform: Transform;
 
   // prettier-ignore
   public onCreate(): void {
-    this.transform = this.addComponent(Transform2DComponent);
+    this.transform = this.addComponent(Transform);
     this.rb = this.addComponent(RigidBody2DComponent);
     this.spriteRenderer = this.addComponent(SpriteRendererComponent, this.sprite);
 

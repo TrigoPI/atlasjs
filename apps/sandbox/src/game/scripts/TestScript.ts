@@ -12,7 +12,7 @@ import {
   Sprite,
   SpriteAnimation,
   SpriteRendererComponent,
-  Transform2DComponent,
+  Transform,
   Vector2Action,
   registerScriptMetadata,
 } from "@atlasjs/gameplay";
@@ -34,7 +34,7 @@ export class TestScript extends AtlasScript<{
   private readonly speed: number;
   private readonly controls: PlayerControlsDescriptor;
 
-  private transform: Transform2DComponent;
+  private transform: Transform;
   private rigidbody: RigidBody2DComponent;
   private spriteRenderer: SpriteRendererComponent;
   private animator: Animator;
@@ -47,7 +47,7 @@ export class TestScript extends AtlasScript<{
   public onCreate(): void {
     const actions = this.addComponent(PlayerInput, this.controls);
 
-    this.transform = this.addComponent(Transform2DComponent);
+    this.transform = this.addComponent(Transform);
     this.rigidbody = this.addComponent(RigidBody2DComponent);
 
     this.spriteRenderer = this.addComponent(SpriteRendererComponent, this.sprite);

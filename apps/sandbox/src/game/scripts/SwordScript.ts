@@ -5,7 +5,7 @@ import {
   AtlasScript,
   registerScriptMetadata,
   SpriteRendererComponent,
-  Transform2DComponent,
+  Transform,
   CameraApi,
   InputApi,
 } from "@atlasjs/gameplay";
@@ -19,7 +19,7 @@ export class SwordScript extends AtlasScript<{
   private readonly sprite: Sprite;
   private readonly scale: number;
 
-  private transform: Transform2DComponent;
+  private transform: Transform;
   private spriteRenderer: SpriteRendererComponent;
 
   private camera: CameraApi;
@@ -27,7 +27,7 @@ export class SwordScript extends AtlasScript<{
 
   // prettier-ignore
   public onCreate(): void {
-    this.transform = this.addComponent(Transform2DComponent);
+    this.transform = this.addComponent(Transform);
     this.spriteRenderer = this.addComponent(SpriteRendererComponent, this.sprite);
 
     this.transform.setScale(this.scale, this.scale);

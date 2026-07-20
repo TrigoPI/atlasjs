@@ -10,13 +10,13 @@ import {
   WorldTransform2D,
 } from "../../components";
 
-export class Transform2DComponent extends ScriptComponent<Transform2D> {
+export class Transform extends ScriptComponent<Transform2D> {
   public static readonly engine = Transform2D;
 
-  public get parent(): Transform2DComponent | null {
+  public get parent(): Transform | null {
     const parentEntity: Entity | undefined = this.world.getParent(this.entity);
     return parentEntity !== undefined
-      ? new Transform2DComponent(this.world, parentEntity)
+      ? new Transform(this.world, parentEntity)
       : null;
   }
 
@@ -85,7 +85,7 @@ export class Transform2DComponent extends ScriptComponent<Transform2D> {
   }
 
   public setParent(
-    parent: Transform2DComponent | null,
+    parent: Transform | null,
     worldPositionStays: boolean = true,
   ): this {
     if (!worldPositionStays) {
@@ -116,12 +116,12 @@ export class Transform2DComponent extends ScriptComponent<Transform2D> {
     return this;
   }
 
-  public getChildren(): Transform2DComponent[] {
+  public getChildren(): Transform[] {
     const children: ReadonlyArray<Entity> = this.world.getChildren(this.entity);
-    const result: Transform2DComponent[] = [];
+    const result: Transform[] = [];
     for (let i: number = 0; i < children.length; i++) {
       if (this.world.hasComponent(children[i], Transform2D)) {
-        result.push(new Transform2DComponent(this.world, children[i]));
+        result.push(new Transform(this.world, children[i]));
       }
     }
     return result;

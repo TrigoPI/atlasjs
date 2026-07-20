@@ -6,7 +6,7 @@ import { RigidBody2D, Transform2D } from "../src/components";
 import {
   AtlasScript,
   RigidBody2DComponent,
-  Transform2DComponent,
+  Transform,
 } from "../src/scripting";
 import { createHarness, Harness } from "./helpers/harness";
 
@@ -21,19 +21,19 @@ class Health {
 // Exercises the context dispatch: façade types resolve to the backing engine
 // component + return a proxy; plain data types go straight through as raw.
 class DispatchProbe extends AtlasScript {
-  public transform!: Transform2DComponent;
+  public transform!: Transform;
   public rigidbody: RigidBody2DComponent | undefined;
   public health!: Health;
   public hadTransformEngine: boolean = false;
   public hadRigidbodyBefore: boolean = true;
 
   public onCreate(): void {
-    this.transform = this.addComponent(Transform2DComponent);
+    this.transform = this.addComponent(Transform);
     this.transform.setPosition(11, 22);
 
     this.health = this.addComponent(Health, 50);
 
-    this.hadTransformEngine = this.hasComponent(Transform2DComponent);
+    this.hadTransformEngine = this.hasComponent(Transform);
     this.hadRigidbodyBefore = this.hasComponent(RigidBody2DComponent);
     this.rigidbody = this.getComponent(RigidBody2DComponent);
   }
@@ -60,7 +60,7 @@ describe("Gameplay — script context dispatch (façade vs raw data)", () => {
     const real: Transform2D = h.world.requireComponent(e, Transform2D);
     expect(real.position.x).toBe(11);
     expect(real.position.y).toBe(22);
-    expect(probe.transform).toBeInstanceOf(Transform2DComponent);
+    expect(probe.transform).toBeInstanceOf(Transform);
   });
 
   it("addComponent(dataComponent, ...args) forwards args and returns the raw instance", () => {
