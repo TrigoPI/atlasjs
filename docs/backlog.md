@@ -165,6 +165,17 @@ Source : [`gameplay/entity-hierarchy.md`](gameplay/entity-hierarchy.md) (§9, ho
 
 ---
 
+## Gameplay — Modèle de composants de script (unification — Phase B)
+
+> **Phase A implémentée** (mergée) : frontière principielle **façade ⇔ comportement moteur réel** → une **seule** façade (`Transform`), le reste en composants données pures via aliases propres (`RigidBody`/`SpriteRenderer`) ou bruts (`Animator`/`PlayerInput`), vocabulaire uniforme `addComponent(X)` sans suffixe. Source + roadmap Phase B : [`gameplay/scripting-component-unification.md`](gameplay/scripting-component-unification.md) (§5).
+
+- 📋 **B1 — Couche token `defineScriptComponent(engine, ops?)`** : vocabulaire 100% uniforme (plus de distinction façade/alias visible), collapse du dispatch `isFacade` en un seul chemin, `ops` en fonctions libres ; passthrough = identité (préserve les génériques de `PlayerInput`). C'est la **cible d'émission du compilateur**. Voir §5.1.
+- 📋 **B2 — Compilateur (volet composants)** : surface `interface` authored → mapping vers composant moteur, inline de la résolution token + `ops` → appels bruts (zéro dispatch runtime). **Même compilateur** que celui listé dans « Gameplay — Variables exposées de script » (réécriture `addComponent<T>`, génération `registerScriptMetadata`). Voir §5.2.
+- 📋 **B3 — `Transform` = donnée pure via `Changed<T>`** : tuer la dernière façade. **Dépend** du primitif change-detection tick-based listé dans « Core / ECS (Nexus) ». Autorité kinematic/static optimisée par Changed (non-ambigu : le pull n'écrit pas ces Transform). **Dragon** : le téléport d'un `dynamic` ne peut **pas** être une écriture `Transform` brute (clobberée le frame suivant par le pull `dynamic-only`, et `Changed` ne peut pas l'attribuer) → **canal explicite requis** (`rigidBody.teleport()` ou composant-commande `Teleport`). Helpers hiérarchie/world-matrix (`worldPosition`, `setParent`, `getChildren`) → fonctions libres. Voir §5.3.
+- 💭 Polish doc non-bloquant (relevé à la review finale Phase A) : bullet CLAUDE.md « `ScriptComponent<TEngine>` subclasses only » à préciser (le barrel réexporte aussi 2 aliases non-subclasses) ; le corps de `scripting-components.md` décrit encore les 3 anciennes façades (doc historique, note pointeur déjà en tête).
+
+---
+
 ## Notes transverses (risques acceptés, à surveiller)
 
 - **Gameplay** ([`gameplay/gameplay-redesign.md`](gameplay/gameplay-redesign.md)) : contrat `setComponent` « muter en place, jamais remplacer » (sinon durcir Nexus pour émettre `onRemove`+`onAdd`) ; téléport d'un `dynamic` avant existence de son body (1ère frame) ; scripts en lane `update` variable mutant un `dynamic` → préférer vélocité/force.
