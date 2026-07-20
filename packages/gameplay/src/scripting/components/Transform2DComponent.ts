@@ -1,14 +1,14 @@
 import { Mat3, Vec2 } from "@atlasjs/math";
 import { Entity } from "@atlasjs/nexus";
 
+import { ScriptComponent } from "../core";
+
 import {
   PhysicsBodyRef,
   RigidBody2D,
   Transform2D,
   WorldTransform2D,
 } from "../../components";
-
-import { ScriptComponent } from "../core";
 
 export class Transform2DComponent extends ScriptComponent<Transform2D> {
   public static readonly engine = Transform2D;
@@ -22,6 +22,10 @@ export class Transform2DComponent extends ScriptComponent<Transform2D> {
 
   public get position(): Vec2 {
     return this.resolve().position;
+  }
+
+  public get worldPosition(): Vec2 {
+    return this.worldMatrix().getTranslation();
   }
 
   public set position(value: Vec2) {
