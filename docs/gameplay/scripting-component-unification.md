@@ -1,6 +1,6 @@
 # Unification du vocabulaire de composants de script (`@atlasjs/gameplay`)
 
-> **Statut : design (à implémenter).** Phase A à faire maintenant ; Phase B documentée pour une session future.
+> **Statut : Phase A ✅ implémentée** (branche `claude/refactor/components` — commits `5220cc9` Transform, `239bc36` SpriteRenderer, `5ee07d8` RigidBody, `7a66f47` docs ; review finale whole-branch clean, 0 Critical/0 Important). **Phase B documentée (§5) pour une session future.**
 > Suite directe de [`scripting-components.md`](scripting-components.md) (modèle Unity `GetComponent`, façades LEVEL-2) et de [`gameplay-redesign.md`](gameplay-redesign.md) (source unique + autorité par type de corps).
 >
 > Prérequis de lecture : `scripting-components.md`, `gameplay-redesign.md` (§4 pont physique).

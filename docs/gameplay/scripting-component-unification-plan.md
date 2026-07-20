@@ -1,6 +1,8 @@
 # Scripting Component Unification — Phase A — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
+
+> **Statut : ✅ Phase A implémentée — les 5 tâches terminées** (subagent-driven, branche `claude/refactor/components`, chaque tâche reviewée Spec ✅/Approved). Commits : `5220cc9` (T1 Transform), `239bc36` (T2 SpriteRenderer), `5ee07d8` (T3 RigidBody), `7a66f47` (T4 docs). Review finale whole-branch (opus) : **Ready to merge — 0 Critical / 0 Important**. Vérifié à l'exécution (preview sandbox). Toutes les cases ci-dessous cochées.
 
 **Goal:** Rendre la frontière façade/raw principielle (façade ⇔ comportement moteur réel) et unifier le vocabulaire de composants côté script, sans compilateur ni nouveau primitif.
 
@@ -56,18 +58,18 @@ Renommage pur, les deux autres façades restent en place → tout compile et les
 **Interfaces:**
 - Produces: classe `Transform extends ScriptComponent<Transform2D>` avec `static engine = Transform2D`, exportée depuis `@atlasjs/gameplay` sous le nom `Transform`. API inchangée (`position`/`rotation`/`scale`, `setPosition`/`setRotation`/`setScale`/`translate`/`rotate`, `parent`/`getChildren`/`setParent`, `worldPosition`).
 
-- [ ] **Step 1: Rename the source file**
+- [x] **Step 1: Rename the source file**
 
 ```bash
 git mv packages/gameplay/src/scripting/components/Transform2DComponent.ts \
        packages/gameplay/src/scripting/components/Transform.ts
 ```
 
-- [ ] **Step 2: Rename the class and its internal self-references in `Transform.ts`**
+- [x] **Step 2: Rename the class and its internal self-references in `Transform.ts`**
 
 Dans `packages/gameplay/src/scripting/components/Transform.ts`, remplacer **toutes** les occurrences de `Transform2DComponent` par `Transform`. Il y en a 5 : la déclaration de classe (`export class Transform extends ScriptComponent<Transform2D>`), le type de retour du getter `parent` (`public get parent(): Transform | null`), le `new Transform(this.world, parentEntity)` dans `parent`, le type de retour de `getChildren` (`public getChildren(): Transform[]`), le tableau local `const result: Transform[] = []`, et le `new Transform(this.world, children[i])`. Le champ `public static readonly engine = Transform2D;` (le composant moteur) **ne change pas**.
 
-- [ ] **Step 3: Update the scripting-components barrel**
+- [x] **Step 3: Update the scripting-components barrel**
 
 `packages/gameplay/src/scripting/components/index.ts` :
 
@@ -77,7 +79,7 @@ export * from "./SpriteRendererComponent";
 export * from "./Transform";
 ```
 
-- [ ] **Step 4: Update all test references**
+- [x] **Step 4: Update all test references**
 
 Dans chacun de ces fichiers, remplacer toutes les occurrences de `Transform2DComponent` par `Transform` (imports, types de champ, `new Transform2DComponent(...)`, `toBeInstanceOf(Transform2DComponent)`) :
 - `test/determinism.test.ts`
@@ -88,11 +90,11 @@ Dans chacun de ces fichiers, remplacer toutes les occurrences de `Transform2DCom
 
 Ne **pas** toucher aux références `RigidBody2DComponent` (traitées en Task 3).
 
-- [ ] **Step 5: Update sandbox scripts (Transform only)**
+- [x] **Step 5: Update sandbox scripts (Transform only)**
 
 Dans `TestScript.ts`, `WallScript.ts`, `SwordScript.ts` : remplacer `Transform2DComponent` par `Transform` (import + type de champ + `addComponent(Transform2DComponent)` → `addComponent(Transform)`). Laisser `RigidBody2DComponent`/`SpriteRendererComponent` intacts pour l'instant.
 
-- [ ] **Step 6: Typecheck + tests + sandbox**
+- [x] **Step 6: Typecheck + tests + sandbox**
 
 Run:
 ```bash
@@ -102,7 +104,7 @@ pnpm --filter sandbox exec tsc -b
 ```
 Expected: tsc clean, tous les tests PASS (comportement inchangé), sandbox tsc clean.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
@@ -124,7 +126,7 @@ git commit -m "refactor(gameplay): rename Transform2DComponent facade to Transfo
 - Consumes: `SpriteRender` (composant moteur, `components/SpriteRender.ts`, ctor `(sprite, color?, flipX?, flipY?, visible?, sortingOrder?)`).
 - Produces: `SpriteRenderer` exporté depuis `@atlasjs/gameplay` = alias de `SpriteRender`. `addComponent(SpriteRenderer, sprite)` renvoie l'instance brute `SpriteRender`.
 
-- [ ] **Step 1: Write the failing test (alias returns the raw component)**
+- [x] **Step 1: Write the failing test (alias returns the raw component)**
 
 Créer `packages/gameplay/test/script-component-alias.test.ts` :
 
@@ -171,12 +173,12 @@ describe("Gameplay — script component aliases (raw engine components)", () => 
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `pnpm --filter @atlasjs/gameplay test script-component-alias`
 Expected: FAIL — `SpriteRenderer` n'est pas encore exporté (import error).
 
-- [ ] **Step 3: Delete the passthrough façade + wire the alias**
+- [x] **Step 3: Delete the passthrough façade + wire the alias**
 
 Supprimer le fichier :
 ```bash
@@ -192,18 +194,18 @@ export * from "./RigidBody2DComponent";
 export * from "./Transform";
 ```
 
-- [ ] **Step 4: Delete the obsolete façade test**
+- [x] **Step 4: Delete the obsolete façade test**
 
 ```bash
 git rm packages/gameplay/test/sprite-renderer-facade.test.ts
 ```
 
-- [ ] **Step 5: Run the alias test to verify it passes**
+- [x] **Step 5: Run the alias test to verify it passes**
 
 Run: `pnpm --filter @atlasjs/gameplay test script-component-alias`
 Expected: PASS.
 
-- [ ] **Step 6: Migrate the sandbox scripts to `SpriteRenderer` (raw access)**
+- [x] **Step 6: Migrate the sandbox scripts to `SpriteRenderer` (raw access)**
 
 `TestScript.ts` : import `SpriteRendererComponent` → `SpriteRenderer` ; type de champ `private spriteRenderer: SpriteRenderer;` ; `this.addComponent(SpriteRenderer, this.sprite)`. Le `this.spriteRenderer.flipX = v.x < 0` en `onUpdate` reste (champ brut).
 
@@ -224,7 +226,7 @@ this.spriteRenderer.setSortingOrder(10);
 this.spriteRenderer.sortingOrder = 10;
 ```
 
-- [ ] **Step 7: Typecheck + tests + sandbox**
+- [x] **Step 7: Typecheck + tests + sandbox**
 
 Run:
 ```bash
@@ -234,7 +236,7 @@ pnpm --filter sandbox exec tsc -b
 ```
 Expected: tout vert.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add -A
@@ -257,7 +259,7 @@ git commit -m "refactor(gameplay): drop SpriteRendererComponent facade, use raw 
 - Consumes: `RigidBody2D` (composant moteur, `components/RigidBody2D.ts`, ctor `()`, champs `type`/`mass`/`velocity`/`angularVelocity`/`rotation`).
 - Produces: `RigidBody` exporté depuis `@atlasjs/gameplay` = alias de `RigidBody2D`. `addComponent(RigidBody)` renvoie l'instance brute `RigidBody2D`.
 
-- [ ] **Step 1: Add a failing test (RigidBody alias returns raw)**
+- [x] **Step 1: Add a failing test (RigidBody alias returns raw)**
 
 Dans `packages/gameplay/test/script-component-alias.test.ts`, ajouter l'import et un `it`. Import mis à jour :
 
@@ -292,12 +294,12 @@ it("addComponent(RigidBody) returns the raw RigidBody2D", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `pnpm --filter @atlasjs/gameplay test script-component-alias`
 Expected: FAIL — `RigidBody` n'est pas exporté.
 
-- [ ] **Step 3: Delete the passthrough façade + wire the alias**
+- [x] **Step 3: Delete the passthrough façade + wire the alias**
 
 ```bash
 git rm packages/gameplay/src/scripting/components/RigidBody2DComponent.ts
@@ -312,12 +314,12 @@ export { SpriteRender as SpriteRenderer } from "../../components";
 export * from "./Transform";
 ```
 
-- [ ] **Step 4: Run the alias test to verify it passes**
+- [x] **Step 4: Run the alias test to verify it passes**
 
 Run: `pnpm --filter @atlasjs/gameplay test script-component-alias`
 Expected: PASS (les deux `it`).
 
-- [ ] **Step 5: Rewrite `script-context-dispatch.test.ts`**
+- [x] **Step 5: Rewrite `script-context-dispatch.test.ts`**
 
 Remplacer le contenu **entier** par (façade branch via `Transform` — la seule façade — et raw branch via `RigidBody`/`Health`) :
 
@@ -437,12 +439,12 @@ describe("Gameplay — script context dispatch (façade vs raw)", () => {
 });
 ```
 
-- [ ] **Step 6: Update `script-components.test.ts` (drop the RigidBody façade case)**
+- [x] **Step 6: Update `script-components.test.ts` (drop the RigidBody façade case)**
 
 - Import ligne 6 : `import { RigidBody2DComponent, Transform } from "../src/scripting";` → `import { Transform } from "../src/scripting";` (retirer `RigidBody2DComponent` ; `Transform` déjà renommé en Task 1).
 - Supprimer le dernier bloc `it("RigidBody2DComponent writes through to the real component", ...)` (le commentaire `// --- RigidBody2D façade proxies the real component ---` inclus). `RigidBody2D` reste importé depuis `../src/components` (utilisé par les tests d'autorité kinematic/dynamic).
 
-- [ ] **Step 7: Migrate `script-integration.test.ts` to raw RigidBody**
+- [x] **Step 7: Migrate `script-integration.test.ts` to raw RigidBody**
 
 Import :
 ```ts
@@ -468,13 +470,13 @@ class KinematicMover extends AtlasScript {
 ```
 Ajouter `RigidBody2D` à l'import moteur ligne 5 : `import { RigidBody2D, Transform2D } from "../src/components";`.
 
-- [ ] **Step 8: Migrate the sandbox scripts to `RigidBody` (raw access)**
+- [x] **Step 8: Migrate the sandbox scripts to `RigidBody` (raw access)**
 
 `TestScript.ts` : import `RigidBody2DComponent` → `RigidBody` ; type de champ `private rigidbody: RigidBody;` ; `this.addComponent(RigidBody)` ; `this.rigidbody.type = "kinematic"` reste (champ) ; remplacer `this.rigidbody.setMass(1)` → `this.rigidbody.mass = 1`.
 
 `WallScript.ts` : import + type `RigidBody` ; `this.rb = this.addComponent(RigidBody)` ; `this.rb.type = "static"` reste (champ).
 
-- [ ] **Step 9: Typecheck + tests + sandbox**
+- [x] **Step 9: Typecheck + tests + sandbox**
 
 Run:
 ```bash
@@ -488,7 +490,7 @@ grep -rn "RigidBody2DComponent\|SpriteRendererComponent" --include="*.ts" packag
 ```
 Expected: aucune sortie.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add -A
@@ -504,7 +506,7 @@ git commit -m "refactor(gameplay): drop RigidBody2DComponent facade, use raw Rig
 - Modify: `docs/gameplay/gameplay-redesign.md`
 - Modify: `docs/gameplay/scripting-components.md`
 
-- [ ] **Step 1: Rewrite the taxonomy rule in the package CLAUDE.md**
+- [x] **Step 1: Rewrite the taxonomy rule in the package CLAUDE.md**
 
 Dans `packages/gameplay/CLAUDE.md`, section « The two component levels » : remplacer la description LEVEL-2 pour refléter la nouvelle règle. Points à écrire :
 - La **seule** façade est `Transform` (`scripting/components/Transform.ts`), justifiée par un comportement réel (routage d'autorité `setPosition`→body dynamic, hiérarchie, world-matrix).
@@ -513,15 +515,15 @@ Dans `packages/gameplay/CLAUDE.md`, section « The two component levels » : rem
 - Noter l'asymétrie de péremption assumée : une réf brute périme silencieusement si le composant est retiré/re-ajouté ; une façade re-résout et throw.
 - Mettre à jour la ligne « Layout » `scripting/components/` (une façade `Transform` + alias) et la section « Façade & service dispatch » (seul `Transform` emprunte la branche façade).
 
-- [ ] **Step 2: Fix the doc↔code drift in `gameplay-redesign.md`**
+- [x] **Step 2: Fix the doc↔code drift in `gameplay-redesign.md`**
 
 Dans `docs/gameplay/gameplay-redesign.md` §4, `PhysicsPullSystem` : corriger « Vaut pour `dynamic` **et** `kinematic` » → **dynamic uniquement** (le code fait `if (type !== "dynamic") return`). Ajuster la phrase sur la pose kinematic résolue en conséquence.
 
-- [ ] **Step 3: Add a pointer at the top of `scripting-components.md`**
+- [x] **Step 3: Add a pointer at the top of `scripting-components.md`**
 
 Ajouter en tête de `docs/gameplay/scripting-components.md` une note : *« Mise à jour : les façades passthrough (`RigidBody2DComponent`, `SpriteRendererComponent`) ont été supprimées et `Transform2DComponent` renommée `Transform`. Voir [`scripting-component-unification.md`](scripting-component-unification.md). »*
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add -A
@@ -534,7 +536,7 @@ git commit -m "docs(gameplay): update component taxonomy rule + fix pull-system 
 
 **Files:** aucun changement de code ; vérification bout-en-bout.
 
-- [ ] **Step 1: Full typecheck, tests, build**
+- [x] **Step 1: Full typecheck, tests, build**
 
 Run:
 ```bash
@@ -545,7 +547,7 @@ pnpm --filter sandbox exec tsc -b
 ```
 Expected: tout vert.
 
-- [ ] **Step 2: Confirm no dangling references**
+- [x] **Step 2: Confirm no dangling references**
 
 Run:
 ```bash
@@ -553,7 +555,7 @@ grep -rn "Transform2DComponent\|RigidBody2DComponent\|SpriteRendererComponent" -
 ```
 Expected: aucune sortie.
 
-- [ ] **Step 3: Visual preview (sandbox)**
+- [x] **Step 3: Visual preview (sandbox)**
 
 Démarrer le dev server sandbox (via l'outil preview, `.claude/launch.json`) et vérifier au runtime :
 - le joueur (dino) se déplace au clavier (WASD/flèches) et s'anime (idle/run), flip selon la direction ;
@@ -562,7 +564,7 @@ Démarrer le dev server sandbox (via l'outil preview, `.claude/launch.json`) et 
 
 Capturer un screenshot comme preuve. En cas d'erreur console, diagnostiquer et corriger avant de clore.
 
-- [ ] **Step 4: Commit (si un ajustement a été nécessaire au Step 3)**
+- [x] **Step 4: Commit (si un ajustement a été nécessaire au Step 3)**
 
 ```bash
 git add -A
