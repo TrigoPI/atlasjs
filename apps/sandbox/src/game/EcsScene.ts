@@ -6,16 +6,22 @@ import { type Entity, type NexusWorld, NEXUS } from "@atlasjs/nexus";
 import { type AssetManager, ASSET_MANAGER } from "@atlasjs/assets";
 
 import { TestScript } from "./scripts/TestScript";
+import { SwordScript } from "./scripts/SwordScript";
 
 import {
+  type CameraManager,
   type ScriptManager,
-  button,
-  defineActions,
   Key,
-  SCRIPT_MANAGER,
+  button,
+  Camera,
   Sprite,
-  SpriteAsset,
   vector2,
+  CAMERA_MANAGER,
+  defineActions,
+  SCRIPT_MANAGER,
+  SpriteAsset,
+  Transform2D,
+  SpriteRender,
 } from "@atlasjs/gameplay";
 
 import {
@@ -24,7 +30,6 @@ import {
   SpriteSheet,
   TextureAsset,
 } from "@atlasjs/nebula";
-import { SwordScript } from "./scripts/SwordScript";
 
 export class EcsScene extends Scene {
   public constructor() {
@@ -35,6 +40,7 @@ export class EcsScene extends Scene {
     const nexus: NexusWorld = ctx.services.get(NEXUS);
     const assets: AssetManager = ctx.services.get(ASSET_MANAGER);
     const scriptManager: ScriptManager = ctx.services.get(SCRIPT_MANAGER);
+    const cameraManager: CameraManager = ctx.services.get(CAMERA_MANAGER);
 
     const dinoAsset: TextureAsset = new TextureAsset(BlueDino);
     const blueDinoTexture: Texture2D = await assets.load<Texture2D>(dinoAsset);
@@ -76,7 +82,15 @@ export class EcsScene extends Scene {
     const player: Entity = nexus.createEntity();
     const sword: Entity = nexus.createEntity();
 
-    nexus.setParent(sword, player);
+    const cameraEntity: Entity = nexus.createEntity();
+    const cameraComponent: Camera = nexus.addComponent(cameraEntity, Camera);
+
+    nexus.addComponent(cameraEntity, Transform2D);
+    cameraComponent.zoom = 1;
+
+    const sword2: Entity = nexus.createEntity();
+    nexus.addComponent(sword2, Transform2D);
+    nexus.addComponent(sword2, SpriteRender, swordSprite);
 
     scriptManager.attach(sword, SwordScript, {
       sprite: swordSprite,
@@ -89,5 +103,10 @@ export class EcsScene extends Scene {
       sprite: blueDinoSprite,
       speed: 250,
     });
+
+    nexus.setParent(sword, player);
+    nexus.setParent(cameraEntity, player);
+
+    cameraManager.setActive(cameraEntity);
   }
 }

@@ -37,3 +37,48 @@ describe("Camera2D.update", () => {
     expect(center.y).toBeCloseTo(0);
   });
 });
+
+describe("Camera2D.screenToWorld / worldToScreen", () => {
+  it("screenToWorld maps the screen origin to the camera position", () => {
+    const camera: Camera2D = new Camera2D();
+    camera.setPosition(100, 50).setZoom(2);
+
+    const world: Vec2 = camera.screenToWorld(new Vec2(0, 0));
+
+    expect(world.x).toBeCloseTo(100);
+    expect(world.y).toBeCloseTo(50);
+  });
+
+  it("screenToWorld divides the screen offset by the zoom", () => {
+    const camera: Camera2D = new Camera2D();
+    camera.setPosition(100, 50).setZoom(2);
+
+    const world: Vec2 = camera.screenToWorld(new Vec2(800, 600));
+
+    expect(world.x).toBeCloseTo(100 + 400);
+    expect(world.y).toBeCloseTo(50 + 300);
+  });
+
+  it("worldToScreen is the inverse of screenToWorld", () => {
+    const camera: Camera2D = new Camera2D();
+    camera.setPosition(-30, 12).setZoom(3);
+
+    const screen: Vec2 = camera.worldToScreen(new Vec2(70, 42));
+    const roundTrip: Vec2 = camera.screenToWorld(screen);
+
+    expect(roundTrip.x).toBeCloseTo(70);
+    expect(roundTrip.y).toBeCloseTo(42);
+  });
+
+  it("writes into the provided out vector", () => {
+    const camera: Camera2D = new Camera2D();
+    camera.setPosition(0, 0).setZoom(1);
+    const out: Vec2 = new Vec2();
+
+    const result: Vec2 = camera.screenToWorld(new Vec2(5, 9), out);
+
+    expect(result).toBe(out);
+    expect(out.x).toBeCloseTo(5);
+    expect(out.y).toBeCloseTo(9);
+  });
+});

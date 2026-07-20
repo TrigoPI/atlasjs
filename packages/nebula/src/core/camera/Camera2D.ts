@@ -49,4 +49,18 @@ export class Camera2D implements Camera {
       .copy(this.projection)
       .multiply(this.view);
   }
+
+  public screenToWorld(screen: Vec2, out: Vec2 = new Vec2()): Vec2 {
+    return out.set(
+      this.position.x + screen.x / this.zoom,
+      this.position.y + screen.y / this.zoom,
+    );
+  }
+
+  public worldToScreen(world: Vec2, out: Vec2 = new Vec2()): Vec2 {
+    return out.set(
+      (world.x - this.position.x) * this.zoom,
+      (world.y - this.position.y) * this.zoom,
+    );
+  }
 }

@@ -3,6 +3,7 @@ export { Color } from "@atlasjs/nebula";
 
 export * from "./tokens";
 export * from "./components";
+export * from "./camera";
 export * from "./assets";
 export * from "./scripting";
 export * from "./registerSystem";
