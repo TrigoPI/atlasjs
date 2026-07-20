@@ -4,7 +4,7 @@ import {
   Sprite,
   AtlasScript,
   registerScriptMetadata,
-  SpriteRendererComponent,
+  SpriteRenderer,
   Transform,
   CameraApi,
   InputApi,
@@ -20,7 +20,7 @@ export class SwordScript extends AtlasScript<{
   private readonly scale: number;
 
   private transform: Transform;
-  private spriteRenderer: SpriteRendererComponent;
+  private spriteRenderer: SpriteRenderer;
 
   private camera: CameraApi;
   private input: InputApi;
@@ -28,10 +28,10 @@ export class SwordScript extends AtlasScript<{
   // prettier-ignore
   public onCreate(): void {
     this.transform = this.addComponent(Transform);
-    this.spriteRenderer = this.addComponent(SpriteRendererComponent, this.sprite);
+    this.spriteRenderer = this.addComponent(SpriteRenderer, this.sprite);
 
     this.transform.setScale(this.scale, this.scale);
-    this.spriteRenderer.setSortingOrder(10);
+    this.spriteRenderer.sortingOrder = 10;
 
     this.camera = this.getService(CameraApi);
     this.input = this.getService(InputApi);

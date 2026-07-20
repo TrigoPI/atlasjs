@@ -11,7 +11,7 @@ import {
   RigidBody2DComponent,
   Sprite,
   SpriteAnimation,
-  SpriteRendererComponent,
+  SpriteRenderer,
   Transform,
   Vector2Action,
   registerScriptMetadata,
@@ -36,7 +36,7 @@ export class TestScript extends AtlasScript<{
 
   private transform: Transform;
   private rigidbody: RigidBody2DComponent;
-  private spriteRenderer: SpriteRendererComponent;
+  private spriteRenderer: SpriteRenderer;
   private animator: Animator;
 
   private move: Vector2Action;
@@ -50,7 +50,7 @@ export class TestScript extends AtlasScript<{
     this.transform = this.addComponent(Transform);
     this.rigidbody = this.addComponent(RigidBody2DComponent);
 
-    this.spriteRenderer = this.addComponent(SpriteRendererComponent, this.sprite);
+    this.spriteRenderer = this.addComponent(SpriteRenderer, this.sprite);
     this.animator = this.addComponent(Animator, this.clips, "idle");
 
     this.move = actions.get("move");
