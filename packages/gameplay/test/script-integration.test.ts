@@ -2,23 +2,19 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { Entity } from "@atlasjs/nexus";
 
-import { Transform2D } from "../src/components";
-import {
-  AtlasScript,
-  RigidBody2DComponent,
-  Transform,
-} from "../src/scripting";
+import { RigidBody2D, Transform2D } from "../src/components";
+import { AtlasScript, RigidBody, Transform } from "../src/scripting";
 import { createHarness, Harness } from "./helpers/harness";
 
 // A script that drives a kinematic body entirely through the façade —
 // the sandbox's real scenario. onCreate seeds the pose, onFixedUpdate steps it.
 class KinematicMover extends AtlasScript {
   private transform!: Transform;
-  private rigidbody!: RigidBody2DComponent;
+  private rigidbody!: RigidBody2D;
 
   public onCreate(): void {
     this.transform = this.addComponent(Transform);
-    this.rigidbody = this.addComponent(RigidBody2DComponent);
+    this.rigidbody = this.addComponent(RigidBody);
     this.rigidbody.type = "kinematic";
     this.transform.setPosition(100, 0);
   }

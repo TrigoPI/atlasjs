@@ -1,7 +1,7 @@
 import {
   AtlasScript,
   registerScriptMetadata,
-  RigidBody2DComponent,
+  RigidBody,
   Sprite,
   SpriteRenderer,
   Transform,
@@ -10,14 +10,14 @@ import {
 export class WallScript extends AtlasScript<{ sprite: Sprite }> {
   private readonly sprite: Sprite;
 
-  private rb: RigidBody2DComponent;
+  private rb: RigidBody;
   private spriteRenderer: SpriteRenderer;
   private transform: Transform;
 
   // prettier-ignore
   public onCreate(): void {
     this.transform = this.addComponent(Transform);
-    this.rb = this.addComponent(RigidBody2DComponent);
+    this.rb = this.addComponent(RigidBody);
     this.spriteRenderer = this.addComponent(SpriteRenderer, this.sprite);
 
     this.rb.type = "static";

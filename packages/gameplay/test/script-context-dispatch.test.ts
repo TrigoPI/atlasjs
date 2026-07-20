@@ -3,11 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Entity } from "@atlasjs/nexus";
 
 import { RigidBody2D, Transform2D } from "../src/components";
-import {
-  AtlasScript,
-  RigidBody2DComponent,
-  Transform,
-} from "../src/scripting";
+import { AtlasScript, RigidBody, Transform } from "../src/scripting";
 import { createHarness, Harness } from "./helpers/harness";
 
 class Health {
@@ -18,28 +14,29 @@ class Health {
   }
 }
 
-// Exercises the context dispatch: façade types resolve to the backing engine
-// component + return a proxy; plain data types go straight through as raw.
+// Façade branch (Transform) + raw branch (RigidBody alias + Health data).
 class DispatchProbe extends AtlasScript {
   public transform!: Transform;
-  public rigidbody: RigidBody2DComponent | undefined;
   public health!: Health;
+  public hadTransformBefore: boolean = true;
+  public transformBefore: Transform | undefined;
   public hadTransformEngine: boolean = false;
-  public hadRigidbodyBefore: boolean = true;
+  public rigidbodyRaw: RigidBody2D | undefined;
 
   public onCreate(): void {
+    this.hadTransformBefore = this.hasComponent(Transform);
+    this.transformBefore = this.getComponent(Transform);
+
     this.transform = this.addComponent(Transform);
     this.transform.setPosition(11, 22);
+    this.hadTransformEngine = this.hasComponent(Transform);
 
     this.health = this.addComponent(Health, 50);
-
-    this.hadTransformEngine = this.hasComponent(Transform);
-    this.hadRigidbodyBefore = this.hasComponent(RigidBody2DComponent);
-    this.rigidbody = this.getComponent(RigidBody2DComponent);
+    this.rigidbodyRaw = this.getComponent(RigidBody);
   }
 }
 
-describe("Gameplay — script context dispatch (façade vs raw data)", () => {
+describe("Gameplay — script context dispatch (façade vs raw)", () => {
   let h: Harness;
 
   beforeEach(async () => {
@@ -63,6 +60,17 @@ describe("Gameplay — script context dispatch (façade vs raw data)", () => {
     expect(probe.transform).toBeInstanceOf(Transform);
   });
 
+  it("hasComponent/getComponent(façade) reflect the backing engine component", () => {
+    const e: Entity = h.world.createEntity();
+    const probe: DispatchProbe = h.scripts.attach(e, DispatchProbe);
+
+    h.frame();
+
+    expect(probe.hadTransformBefore).toBe(false);
+    expect(probe.transformBefore).toBeUndefined();
+    expect(probe.hadTransformEngine).toBe(true);
+  });
+
   it("addComponent(dataComponent, ...args) forwards args and returns the raw instance", () => {
     const e: Entity = h.world.createEntity();
     const probe: DispatchProbe = h.scripts.attach(e, DispatchProbe);
@@ -74,44 +82,32 @@ describe("Gameplay — script context dispatch (façade vs raw data)", () => {
     expect(h.world.requireComponent(e, Health)).toBe(probe.health);
   });
 
-  it("hasComponent(façade) tests the backing engine component", () => {
+  it("getComponent(rawAlias) uses the raw branch and returns undefined when absent", () => {
     const e: Entity = h.world.createEntity();
     const probe: DispatchProbe = h.scripts.attach(e, DispatchProbe);
 
     h.frame();
 
-    expect(probe.hadTransformEngine).toBe(true);
-    expect(probe.hadRigidbodyBefore).toBe(false);
-  });
-
-  it("getComponent(façade) returns undefined when the engine component is absent", () => {
-    const e: Entity = h.world.createEntity();
-    const probe: DispatchProbe = h.scripts.attach(e, DispatchProbe);
-
-    h.frame();
-
-    expect(probe.rigidbody).toBeUndefined();
+    expect(probe.rigidbodyRaw).toBeUndefined();
   });
 
   it("removeComponent(façade) removes the backing engine component", () => {
     const e: Entity = h.world.createEntity();
-    h.world.addComponent(e, RigidBody2D);
     const probe: DispatchProbe = h.scripts.attach(e, DispatchProbe);
 
     h.frame();
 
-    expect(probe.rigidbody).toBeInstanceOf(RigidBody2DComponent);
-
-    probe.removeComponent(RigidBody2DComponent);
-    expect(h.world.hasComponent(e, RigidBody2D)).toBe(false);
+    expect(h.world.hasComponent(e, Transform2D)).toBe(true);
+    probe.removeComponent(Transform);
+    expect(h.world.hasComponent(e, Transform2D)).toBe(false);
   });
 
   it("requireComponent(façade) throws when the engine component is missing", () => {
     const e: Entity = h.world.createEntity();
-    const probe: DispatchProbe = h.scripts.attach(e, DispatchProbe);
+    const bare: AtlasScript = h.scripts.attach(e, class extends AtlasScript {});
 
     h.frame();
 
-    expect(() => probe.requireComponent(RigidBody2DComponent)).toThrow();
+    expect(() => bare.requireComponent(Transform)).toThrow();
   });
 });

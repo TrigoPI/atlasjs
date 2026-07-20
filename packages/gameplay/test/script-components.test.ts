@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Entity } from "@atlasjs/nexus";
 
 import { RigidBody2D, Transform2D } from "../src/components";
-import { RigidBody2DComponent, Transform } from "../src/scripting";
+import { Transform } from "../src/scripting";
 import { createHarness, Harness } from "./helpers/harness";
 
 describe("Gameplay — script components (façade over the real ECS)", () => {
@@ -116,21 +116,5 @@ describe("Gameplay — script components (façade over the real ECS)", () => {
       0,
       5,
     );
-  });
-
-  // --- RigidBody2D façade proxies the real component ---
-
-  it("RigidBody2DComponent writes through to the real component", () => {
-    const e: Entity = h.world.createEntity();
-    h.world.addComponent(e, RigidBody2D);
-
-    const rigidbody: RigidBody2DComponent = new RigidBody2DComponent(h.world, e);
-    rigidbody.type = "kinematic";
-    rigidbody.setVelocity(3, 4);
-
-    const real: RigidBody2D = h.world.requireComponent(e, RigidBody2D);
-    expect(real.type).toBe("kinematic");
-    expect(real.velocity.x).toBe(3);
-    expect(real.velocity.y).toBe(4);
   });
 });
