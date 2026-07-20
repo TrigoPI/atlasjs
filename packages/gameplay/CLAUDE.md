@@ -4,7 +4,8 @@ The gameplay layer of AtlasJS: a Unity-style **scripting** framework (`AtlasScri
 
 > Design docs at the repo root — read the relevant one before changing a subsystem:
 > - `docs/gameplay/gameplay-redesign.md` — the sync/physics-bridge refactor (single source of truth in Nexus, authority by body type).
-> - `docs/gameplay/scripting-components.md` — the Unity-`GetComponent` model for scripts (façades, dispatch). **The taxonomy below comes from here.**
+> - `docs/gameplay/scripting-components.md` — the Unity-`GetComponent` model for scripts (façades, dispatch).
+> - `docs/gameplay/scripting-component-unification.md` — the façade⇔real-behavior rule below and the clean-alias vocabulary come from here.
 > - `docs/gameplay/input-scripting.md` — Phase 1: scripts reach services via `getService` + the `InputApi` façade.
 > - `docs/gameplay/input-actions.md` — Phase 2: the named-action system (`PlayerInput` + `PlayerInputSystem`).
 > - `docs/gameplay/sprite-animation.md` — **implemented**: `Animator` (LEVEL-1 component, named clips + `play(name)`) + `AnimatorSystem` (dt-driven, pushes the current frame into `SpriteRender.sprite`), reusing nebula `SpriteSheet`/`SpriteAnimation`. See `components/Animator.ts`, `systems/AnimatorSystem.ts`.
@@ -14,14 +15,20 @@ The gameplay layer of AtlasJS: a Unity-style **scripting** framework (`AtlasScri
 This is the core mental model. Two folders, two meanings:
 
 - **`components/` — engine components (LEVEL 1).** Plain Nexus components **operated on by systems**: `Transform2D`, `RigidBody2D`, `SpriteRender`, `PhysicsBodyRef`, `PlayerInput`. Naming: **no suffix**. A component belongs here if a system queries/mutates it — even if scripts also use it directly (`PlayerInput` is sampled by `PlayerInputSystem`, so it lives here despite being script-facing).
-- **`scripting/components/` — scripting façades (LEVEL 2).** `ScriptComponent<TEngine>` subclasses only: stateless `(world, entity)` proxies with a `static engine` backing, exposing a curated API and routing authority. Naming: **`*Component` suffix** (`Transform2DComponent`, `RigidBody2DComponent`, `SpriteRendererComponent`). A façade exists **only** when there's engine-internal behavior to hide (e.g. `Transform2DComponent.setPosition` routes to the physics body). If a component has nothing to hide, it stays LEVEL 1 and scripts use it raw — **do not** wrap it in a façade for symmetry.
+- **`scripting/components/` — scripting façades (LEVEL 2).** `ScriptComponent<TEngine>` subclasses only: stateless `(world, entity)` proxies with a `static engine` backing, exposing a curated API and routing authority.
 
-> Why `PlayerInput` is not `PlayerInputComponent` in `scripting/components/`: a `ScriptComponent` façade's `(world, entity)` ctor **severs** a generic type parameter, so a façade over `PlayerInput<T>` would lose the typed `get(name)`. It has no authority to route anyway. So `PlayerInput` is the LEVEL-1 component *and* its own script API. This was tried and deliberately reverted.
+**Rule: a façade exists only when there is real engine behavior to hide.** After the component-unification cleanup, that is **exactly one** façade: `Transform` (`scripting/components/Transform.ts`), justified by authority routing (`setPosition` on a dynamic body teleports the physics body, not just the ECS datum), hierarchy (`parent`/`setParent`/`getChildren`), and world-matrix helpers (`worldPosition`). Everything else is a **data-pure** component with nothing to hide, so scripts use it **raw**: `RigidBody2D`, `SpriteRender`, `Animator`, `PlayerInput`. Do not wrap a data-pure component in a façade for symmetry — the old rule ("façade whenever a component is script-facing") produced two unjustified passthrough façades (`RigidBody2DComponent`, `SpriteRendererComponent`, both 100% `this.resolve().x` forwarding) that were removed; see `docs/gameplay/scripting-component-unification.md`.
+
+**Uniform script vocabulary, no `*Component` suffix anywhere.** Scripts always write `this.addComponent(X, …)`, whether `X` resolves to the façade or a raw component — the suffix that used to mark LEVEL-2 (`Transform2DComponent`, `RigidBody2DComponent`, `SpriteRendererComponent`) is gone. The scripting barrel (`scripting/components/index.ts`) exposes clean names for the data-pure components too, as **export aliases** with zero wrapper: `RigidBody` (= `RigidBody2D`) and `SpriteRenderer` (= `SpriteRender`). `Animator` and `PlayerInput` were already clean and need no alias. So a script imports `Transform`, `RigidBody`, `SpriteRenderer`, `Animator`, `PlayerInput` from `@atlasjs/gameplay`; only `Transform` is an actual façade class, the rest are the engine components themselves under a curated name — `addComponent(RigidBody)` returns the raw `RigidBody2D` instance, not a proxy.
+
+> Accepted **péremption (staleness) asymmetry**: a raw component reference (`this.rigidbody`, `this.spriteRenderer`) is a live instance that goes stale **silently** if the component is removed and re-added — the field still points at the old object. A façade reference (`this.transform`) re-resolves the backing component on every access and **throws loudly** if it's missing. Invisible under the common pattern (`addComponent` once in `onCreate`, never removed), but real under component churn. Documented and accepted rather than solved — see `scripting-component-unification.md` §1/§7.
+
+> Why `PlayerInput` is not a façade in `scripting/components/`: a `ScriptComponent` façade's `(world, entity)` ctor **severs** a generic type parameter, so a façade over `PlayerInput<T>` would lose the typed `get(name)`. It has no authority to route anyway. So `PlayerInput` is the LEVEL-1 component *and* its own script API. This was tried and deliberately reverted.
 
 ## Layout
 
 - `scripting/core/` — the script framework (abstract): `AtlasScript` (lifecycle + `getComponent`/`addComponent`/`getService`), `ScriptContext`, `ScriptComponent` (+ `ScriptComponentCtor`), `ScriptService` (+ `ScriptServiceCtor`), `ScriptLifeCycle`.
-- `scripting/components/` — LEVEL-2 façades (mirror of `components/`).
+- `scripting/components/` — one LEVEL-2 façade (`Transform`) + the two clean export aliases (`RigidBody`, `SpriteRenderer`) over LEVEL-1 components.
 - `scripting/services/` — service façades: `InputApi` (curated read-only view over the `@atlasjs/input` service; scripts never touch the raw backend).
 - `scripting/runtime/` — orchestration: `ScriptManager` (attach/update/destroy scripts), `RuntimeScriptContext`, `IncrementalScriptIdGenerator`.
 - `components/` — LEVEL-1 engine components.
@@ -31,12 +38,12 @@ This is the core mental model. Two folders, two meanings:
 ## Façade & service dispatch (scripting/runtime)
 
 `AtlasScript` routes through `RuntimeScriptContext`:
-- `getComponent`/`addComponent`/`requireComponent`/`hasComponent`/`removeComponent` — dispatch on `prototype instanceof ScriptComponent`: façade → operate on `type.engine`, return a fresh stateless proxy; otherwise → raw Nexus component.
+- `getComponent`/`addComponent`/`requireComponent`/`hasComponent`/`removeComponent` — dispatch on `prototype instanceof ScriptComponent`: façade → operate on `type.engine`, return a fresh stateless proxy; otherwise → raw Nexus component. Only `Transform` takes the façade branch today; `RigidBody`/`SpriteRenderer`/`Animator`/`PlayerInput` all take the raw branch (the aliases are not `ScriptComponent` subclasses, so `instanceof` fails and they fall through to raw Nexus access).
 - `getService(Facade)` — resolves a `ScriptService` façade (declares `static token`) from the engine `ServiceRegistry`, caching the resolved service in the façade ctor (a service is never unprovided). Throws loudly if the service is absent.
 
 ## Invariants — do not break
 
-- **Respect the two levels.** New system-driven Nexus data → `components/` (no suffix). New curated proxy hiding engine behavior → `scripting/components/` (`*Component`, extends `ScriptComponent`, `static engine`). Don't put non-façades in `scripting/components/`.
+- **Respect the two levels.** New system-driven Nexus data → `components/` (no suffix). New curated proxy hiding real engine behavior → `scripting/components/` (extends `ScriptComponent`, `static engine`) — reserve this for genuine authority/hierarchy/derived-state logic, not for giving a component a nicer script-facing name (use a plain export alias for that). Don't put non-façades in `scripting/components/`.
 - **Façades are stateless.** No per-instance state beyond `(world, entity)`; re-resolve via `requireComponent` on each access. A cached datum reintroduces the stale-cache bug the redesign killed.
 - **Service façades cache, and never leak the backend.** `getService` returns the façade (e.g. `InputApi`), never the raw service; the façade exposes only a curated surface.
 - **Input naming:** `isDown` = held, `isPressed`/`isReleased` = this-frame edges (matches `@atlasjs/input`).

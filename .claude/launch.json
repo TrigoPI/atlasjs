@@ -12,7 +12,7 @@
       "name": "sandbox",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "sandbox", "dev"],
-      "port": 5174,
+      "port": 5173,
       "autoPort": true
     }
   ]

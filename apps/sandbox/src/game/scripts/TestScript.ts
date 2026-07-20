@@ -8,11 +8,11 @@ import {
   AtlasScript,
   ButtonAction,
   PlayerInput,
-  RigidBody2DComponent,
+  RigidBody,
   Sprite,
   SpriteAnimation,
-  SpriteRendererComponent,
-  Transform2DComponent,
+  SpriteRenderer,
+  Transform,
   Vector2Action,
   registerScriptMetadata,
 } from "@atlasjs/gameplay";
@@ -34,9 +34,9 @@ export class TestScript extends AtlasScript<{
   private readonly speed: number;
   private readonly controls: PlayerControlsDescriptor;
 
-  private transform: Transform2DComponent;
-  private rigidbody: RigidBody2DComponent;
-  private spriteRenderer: SpriteRendererComponent;
+  private transform: Transform;
+  private rigidbody: RigidBody;
+  private spriteRenderer: SpriteRenderer;
   private animator: Animator;
 
   private move: Vector2Action;
@@ -47,10 +47,10 @@ export class TestScript extends AtlasScript<{
   public onCreate(): void {
     const actions = this.addComponent(PlayerInput, this.controls);
 
-    this.transform = this.addComponent(Transform2DComponent);
-    this.rigidbody = this.addComponent(RigidBody2DComponent);
+    this.transform = this.addComponent(Transform);
+    this.rigidbody = this.addComponent(RigidBody);
 
-    this.spriteRenderer = this.addComponent(SpriteRendererComponent, this.sprite);
+    this.spriteRenderer = this.addComponent(SpriteRenderer, this.sprite);
     this.animator = this.addComponent(Animator, this.clips, "idle");
 
     this.move = actions.get("move");
@@ -59,7 +59,7 @@ export class TestScript extends AtlasScript<{
 
     this.rigidbody.type = "kinematic";
     this.transform.setScale(3, 3)
-    this.rigidbody.setMass(1);
+    this.rigidbody.mass = 1;
   }
 
   public onUpdate(dt: number): void {
