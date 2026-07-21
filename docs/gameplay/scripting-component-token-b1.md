@@ -93,7 +93,7 @@ Structure cible :
 
 ```ts
 export interface Transform {
-  parent: Transform | null;
+  readonly parent: Transform | null;
   position: Vec2;
   rotation: number;
   scale: Vec2;

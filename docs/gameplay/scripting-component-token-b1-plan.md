@@ -240,7 +240,7 @@ import {
 const ENTITY: unique symbol = Symbol("Transform.entity");
 
 export interface Transform {
-  parent: Transform | null;
+  readonly parent: Transform | null;
   position: Vec2;
   rotation: number;
   scale: Vec2;
@@ -896,7 +896,7 @@ Expected: comportement **identique** à avant B1.
 - Modify: `docs/gameplay/scripting-component-unification.md`
 - Modify: `docs/backlog.md`
 
-- [ ] **Step 1 : Réécrire la section « The two component levels » de `packages/gameplay/CLAUDE.md`**
+- [x] **Step 1 : Réécrire la section « The two component levels » de `packages/gameplay/CLAUDE.md`**
 
 Remplacer la description « façade = `ScriptComponent` subclass » par le modèle token. Points à refléter :
 - `scripting/components/` ne contient plus de classe façade : tous les composants de script sont mintés par `defineScriptComponent(engine, create?)`.
@@ -911,7 +911,7 @@ Dans « ## Invariants — do not break », remplacer « extends `ScriptComponent
 
 Dans « ## Layout », mettre à jour : `scripting/core/` liste `ScriptComponentToken` (`defineScriptComponent`/`isScriptComponentToken`) au lieu de `ScriptComponent` (+ `ScriptComponentCtor`).
 
-- [ ] **Step 2 : Marquer B1 fait dans `docs/gameplay/scripting-component-unification.md`**
+- [x] **Step 2 : Marquer B1 fait dans `docs/gameplay/scripting-component-unification.md`**
 
 En tête de la §5.1 (`### 5.1 B1 — Couche scripting-component uniforme`), ajouter une ligne de statut :
 
@@ -919,7 +919,7 @@ En tête de la §5.1 (`### 5.1 B1 — Couche scripting-component uniforme`), ajo
 > **Statut : ✅ implémenté.** Plan : [`scripting-component-token-b1-plan.md`](scripting-component-token-b1-plan.md) ; spec : [`scripting-component-token-b1.md`](scripting-component-token-b1.md).
 ```
 
-- [ ] **Step 3 : Basculer B1 en fait dans `docs/backlog.md`**
+- [x] **Step 3 : Basculer B1 en fait dans `docs/backlog.md`**
 
 Dans la section « Gameplay — Modèle de composants de script (unification — Phase B) », remplacer la puce B1 `📋` par une puce ✅ (déplacer l'item hors des `📋` à faire, en gardant B2/B3 `📋`). Texte proposé :
 
@@ -927,12 +927,12 @@ Dans la section « Gameplay — Modèle de composants de script (unification —
 - ✅ **B1 — Couche token `defineScriptComponent(engine, create?)`** : vocabulaire uniforme, dispatch collapsé sur un brand, `Transform` migré de classe façade vers token, passthrough = identité (génériques `PlayerInput<T>` préservés). Spec : [`gameplay/scripting-component-token-b1.md`](gameplay/scripting-component-token-b1.md).
 ```
 
-- [ ] **Step 4 : Vérif finale**
+- [x] **Step 4 : Vérif finale**
 
 Run: `pnpm --filter @atlasjs/gameplay exec tsc --noEmit && pnpm --filter @atlasjs/gameplay test`
 Expected: vert (les docs ne touchent pas le code, mais on re-confirme l'état).
 
-- [ ] **Step 5 : Stage + handoff commit**
+- [x] **Step 5 : Stage + handoff commit**
 
 ```bash
 git add packages/gameplay/CLAUDE.md \

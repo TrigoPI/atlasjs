@@ -30,7 +30,7 @@ This is the core mental model. Two folders, two meanings:
 ## Layout
 
 - `scripting/core/` — the script framework (abstract): `AtlasScript` (lifecycle + `getComponent`/`addComponent`/`getService`), `ScriptContext`, `ScriptComponentToken` (`defineScriptComponent`/`isScriptComponentToken`), `ScriptService` (+ `ScriptServiceCtor`), `ScriptLifeCycle`.
-- `scripting/components/` — one LEVEL-2 façade (`Transform`) + the two clean export aliases (`RigidBody`, `SpriteRenderer`) over LEVEL-1 components.
+- `scripting/components/` — one LEVEL-2 behavioral token (`Transform`) + two identity tokens (`RigidBody`, `SpriteRenderer`) over LEVEL-1 components.
 - `scripting/services/` — service façades: `InputApi` (curated read-only view over the `@atlasjs/input` service; scripts never touch the raw backend).
 - `scripting/runtime/` — orchestration: `ScriptManager` (attach/update/destroy scripts), `RuntimeScriptContext`, `IncrementalScriptIdGenerator`.
 - `components/` — LEVEL-1 engine components.
