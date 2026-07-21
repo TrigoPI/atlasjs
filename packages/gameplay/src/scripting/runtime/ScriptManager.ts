@@ -174,6 +174,27 @@ export class ScriptManager {
     return scripts;
   }
 
+  public getScript<T extends AtlasScript>(
+    entity: Entity,
+    type: ScriptConstructor<T>,
+  ): T | undefined {
+    const recordIds: Set<ScriptID> | undefined = this.recordsByEntity.get(entity);
+
+    if (!recordIds) {
+      return undefined;
+    }
+
+    for (const recordId of recordIds) {
+      const record: ScriptInstanceRecord | undefined = this.records.get(recordId);
+
+      if (record && !record.isDestroyed && record.instance instanceof type) {
+        return record.instance as T;
+      }
+    }
+
+    return undefined;
+  }
+
   private injectProps(
     instance: AtlasScript,
     ScriptType: ScriptConstructor,
