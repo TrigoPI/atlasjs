@@ -12,6 +12,7 @@ import {
   ScriptID,
   ScriptInstanceRecord,
   ScriptMetadata,
+  ScriptResolver,
   getScriptMetadata,
 } from "../core";
 
@@ -19,7 +20,7 @@ type PropsOf<T> = T extends AtlasScript<infer P> ? P : {};
 type PropsOfArgs<T> =
   {} extends PropsOf<T> ? [props?: PropsOf<T>] : [props: PropsOf<T>];
 
-export class ScriptManager {
+export class ScriptManager implements ScriptResolver {
   private readonly records: Map<ScriptID, ScriptInstanceRecord>;
   private readonly recordsByEntity: Map<Entity, Set<ScriptID>>;
   private readonly idGenerator: IncrementalScriptIdGenerator;

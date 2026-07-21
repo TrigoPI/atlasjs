@@ -1,4 +1,5 @@
 export * from "./AtlasScript";
+export * from "./GameEntity";
 export * from "./ScriptContext";
 export * from "./ScriptComponentToken";
 export * from "./ScriptService";
