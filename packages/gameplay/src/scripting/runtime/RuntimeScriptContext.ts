@@ -2,10 +2,10 @@ import { ServiceRegistry } from "@atlasjs/core";
 import { Component, Entity, NexusWorld } from "@atlasjs/nexus";
 
 import {
-  ScriptComponent,
-  ScriptComponentCtor,
+  ScriptComponentToken,
   ScriptContext,
   ScriptServiceCtor,
+  isScriptComponentToken,
 } from "../core";
 
 // prettier-ignore
@@ -30,46 +30,39 @@ export class RuntimeScriptContext implements ScriptContext {
     return new type(this.services);
   }
 
-  public hasComponent<TComponent extends object>(
-    type: Component<TComponent, any[]>,
+  public hasComponent(
+    type: Component<object, any[]> | ScriptComponentToken<unknown, object, any[]>,
   ): boolean {
-    if (this.isFacade(type)) {
-      return this.world.hasComponent(this.entity, type.engine);
-    }
-
-    return this.world.hasComponent(this.entity, type);
+    return this.world.hasComponent(
+      this.entity,
+      isScriptComponentToken(type) ? type.engine : type,
+    );
   }
 
-  public getComponent<TComponent extends object>(
-    type: Component<TComponent, any[]>,
-  ): TComponent | undefined {
-    if (this.isFacade(type)) {
+  public getComponent<TApi, TEngine extends object>(type: ScriptComponentToken<TApi, TEngine, any[]>): TApi | undefined;
+  public getComponent<TComponent extends object>(type: Component<TComponent, any[]>): TComponent | undefined;
+  public getComponent(type: Component<object, any[]> | ScriptComponentToken<unknown, object, any[]>): unknown {
+    if (isScriptComponentToken(type)) {
       if (!this.world.hasComponent(this.entity, type.engine)) {
         return undefined;
       }
-
-      return new type(this.world, this.entity);
+      return type.create(this.world, this.entity);
     }
 
     return this.world.getComponent(this.entity, type);
   }
 
-  public addComponent<TFacade, TEngine extends object, TArgs extends unknown[]>(type: ScriptComponentCtor<TFacade, TEngine, TArgs>, ...args: TArgs): TFacade;
+  public addComponent<TApi, TEngine extends object, TArgs extends unknown[]>(type: ScriptComponentToken<TApi, TEngine, TArgs>, ...args: TArgs): TApi;
   public addComponent<TComponent extends object, TArgs extends unknown[]>(type: Component<TComponent, TArgs>, ...args: TArgs): TComponent;
-  public addComponent<TComponent extends object, TArgs extends unknown[]>(type: Component<TComponent, TArgs> | ScriptComponentCtor<TComponent, object, TArgs>, ...args: TArgs): TComponent {
-    if (this.isFacade(type)) {
+  public addComponent(type: Component<object, any[]> | ScriptComponentToken<unknown, object, any[]>, ...args: any[]): unknown {
+    if (isScriptComponentToken(type)) {
       if (!this.world.hasComponent(this.entity, type.engine)) {
         this.world.addComponent(this.entity, type.engine, ...args);
       }
-
-      return new type(this.world, this.entity);
+      return type.create(this.world, this.entity);
     }
 
-    const existing: TComponent | undefined = this.world.getComponent(
-      this.entity,
-      type,
-    );
-
+    const existing: object | undefined = this.world.getComponent(this.entity, type);
     if (existing !== undefined) {
       return existing;
     }
@@ -77,20 +70,12 @@ export class RuntimeScriptContext implements ScriptContext {
     return this.world.addComponent(this.entity, type, ...args);
   }
 
-  public removeComponent<TComponent extends object>(
-    type: Component<TComponent, any[]>,
+  public removeComponent(
+    type: Component<object, any[]> | ScriptComponentToken<unknown, object, any[]>,
   ): void {
-    if (this.isFacade(type)) {
-      this.world.removeComponent(this.entity, type.engine);
-      return;
-    }
-
-    this.world.removeComponent(this.entity, type);
-  }
-
-  private isFacade<TComponent extends object, TArgs extends unknown[]>(
-    type: Component<TComponent, TArgs> | ScriptComponentCtor<TComponent, object, TArgs>,
-  ): type is ScriptComponentCtor<TComponent, object, TArgs> {
-    return type.prototype instanceof ScriptComponent;
+    this.world.removeComponent(
+      this.entity,
+      isScriptComponentToken(type) ? type.engine : type,
+    );
   }
 }

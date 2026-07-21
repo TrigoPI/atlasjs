@@ -220,7 +220,7 @@ Message de commit proposé (l'auteur commite) :
   - `Transform.create(world, entity): Transform` (matérialisation d'un proxy).
   - `AtlasScript`/`ScriptContext`/`RuntimeScriptContext` : `addComponent`/`getComponent`/`requireComponent` overloadés `token → TApi` sinon `Component → TEngine` ; `hasComponent`/`removeComponent` acceptent l'union.
 
-- [ ] **Step 1 : Réécrire `Transform.ts` (classe → token)**
+- [x] **Step 1 : Réécrire `Transform.ts` (classe → token)**
 
 Remplacer **tout** le contenu de `packages/gameplay/src/scripting/components/Transform.ts` par :
 
@@ -420,7 +420,7 @@ function createTransform(world: NexusWorld, entity: Entity): Transform {
 export const Transform = defineScriptComponent(Transform2D, createTransform);
 ```
 
-- [ ] **Step 2 : Réécrire `RuntimeScriptContext.ts` (dispatch brand)**
+- [x] **Step 2 : Réécrire `RuntimeScriptContext.ts` (dispatch brand)**
 
 Remplacer **tout** le contenu de `packages/gameplay/src/scripting/runtime/RuntimeScriptContext.ts` par :
 
@@ -508,7 +508,7 @@ export class RuntimeScriptContext implements ScriptContext {
 }
 ```
 
-- [ ] **Step 3 : Réécrire `ScriptContext.ts` (overloads token)**
+- [x] **Step 3 : Réécrire `ScriptContext.ts` (overloads token)**
 
 Remplacer **tout** le contenu de `packages/gameplay/src/scripting/core/ScriptContext.ts` par :
 
@@ -555,7 +555,7 @@ export interface ScriptContext {
 }
 ```
 
-- [ ] **Step 4 : Réécrire `AtlasScript.ts` (overloads token + `requireComponent`)**
+- [x] **Step 4 : Réécrire `AtlasScript.ts` (overloads token + `requireComponent`)**
 
 Remplacer **tout** le contenu de `packages/gameplay/src/scripting/core/AtlasScript.ts` par :
 
@@ -650,7 +650,7 @@ export abstract class AtlasScript<TProps extends object = {}> implements ScriptL
 }
 ```
 
-- [ ] **Step 5 : Retirer l'export `ScriptComponent` du barrel `core`**
+- [x] **Step 5 : Retirer l'export `ScriptComponent` du barrel `core`**
 
 Modify `packages/gameplay/src/scripting/core/index.ts` — supprimer la ligne `export * from "./ScriptComponent";`. Résultat attendu :
 
@@ -664,13 +664,13 @@ export * from "./core-types";
 export * from "./ScriptMetadata";
 ```
 
-- [ ] **Step 6 : Supprimer `ScriptComponent.ts`**
+- [x] **Step 6 : Supprimer `ScriptComponent.ts`**
 
 ```bash
 git rm packages/gameplay/src/scripting/core/ScriptComponent.ts
 ```
 
-- [ ] **Step 7 : Migrer `script-components.test.ts`**
+- [x] **Step 7 : Migrer `script-components.test.ts`**
 
 Dans `packages/gameplay/test/script-components.test.ts`, remplacer chaque `new Transform(...)` par `Transform.create(...)`. Il y a 7 occurrences ; le résultat de chacune :
 - `new Transform(h.world, e).setPosition(3, 4).setScale(2, 2);` → `Transform.create(h.world, e).setPosition(3, 4).setScale(2, 2);`
@@ -681,11 +681,11 @@ Dans `packages/gameplay/test/script-components.test.ts`, remplacer chaque `new T
 
 L'import `import { Transform } from "../src/scripting";` reste inchangé (le type `Transform` et le token `Transform` partagent le nom).
 
-- [ ] **Step 8 : Migrer `transform-parent-facade.test.ts`**
+- [x] **Step 8 : Migrer `transform-parent-facade.test.ts`**
 
 Dans `packages/gameplay/test/transform-parent-facade.test.ts`, remplacer les 8 `new Transform(world, ...)` par `Transform.create(world, ...)` (ex. `const child: Transform = new Transform(world, childE);` → `const child: Transform = Transform.create(world, childE);`). Import inchangé.
 
-- [ ] **Step 9 : Migrer `script-context-dispatch.test.ts`**
+- [x] **Step 9 : Migrer `script-context-dispatch.test.ts`**
 
 Dans `packages/gameplay/test/script-context-dispatch.test.ts`, une seule assertion casse (`toBeInstanceOf(Transform)` — un token n'est pas une classe). Remplacer, dans le test `"addComponent(façade) adds the backing engine component and proxies it"` :
 
@@ -700,7 +700,7 @@ par :
 
 Tout le reste du fichier (annotations `: Transform`, `Transform | undefined`, imports `RigidBody`/`Transform`) reste inchangé.
 
-- [ ] **Step 10 : Migrer `script-component-contract.test.ts`**
+- [x] **Step 10 : Migrer `script-component-contract.test.ts`**
 
 Le mode d'échec « façade oublie `static engine` » disparaît (plus de classe `ScriptComponent`). Remplacer **tout** le contenu de `packages/gameplay/test/script-component-contract.test.ts` par (on conserve et reformule le cas anti-mal-classement du `Decoy`) :
 
@@ -751,12 +751,12 @@ describe("Gameplay — script component dispatch (brand, not `static engine`)", 
 });
 ```
 
-- [ ] **Step 11 : Typecheck**
+- [x] **Step 11 : Typecheck**
 
 Run: `pnpm --filter @atlasjs/gameplay exec tsc --noEmit`
 Expected: aucune erreur. (Si erreur « `Transform` only refers to a type but is being used as a value » ou similaire dans un test → une occurrence `new Transform` a été oubliée en Step 7/8.)
 
-- [ ] **Step 12 : Lancer la suite complète**
+- [x] **Step 12 : Lancer la suite complète**
 
 Run: `pnpm --filter @atlasjs/gameplay test`
 Expected: PASS intégral. En particulier verts :
@@ -765,7 +765,7 @@ Expected: PASS intégral. En particulier verts :
 - `script-context-dispatch.test.ts` — add/get/has/remove `Transform`, args forwarding raw.
 - `script-component-contract.test.ts` — `Decoy` reste raw.
 
-- [ ] **Step 13 : Stage + handoff commit**
+- [x] **Step 13 : Stage + handoff commit**
 
 ```bash
 git add packages/gameplay/src/scripting/ packages/gameplay/test/
