@@ -19,8 +19,8 @@ describe("Transform parenting", () => {
     world.addComponent(parentE, Transform2D);
     world.addComponent(childE, Transform2D);
 
-    const child: Transform = new Transform(world, childE);
-    const parent: Transform = new Transform(world, parentE);
+    const child: Transform = Transform.create(world, childE);
+    const parent: Transform = Transform.create(world, parentE);
     child.setParent(parent);
 
     expect(world.getParent(childE)).toBe(parentE);
@@ -39,8 +39,8 @@ describe("Transform parenting", () => {
     world.addComponent(childE, Transform2D);
     world.addComponent(childE, WorldTransform2D).matrix.identity();
 
-    const child: Transform = new Transform(world, childE);
-    const parent: Transform = new Transform(world, parentE);
+    const child: Transform = Transform.create(world, childE);
+    const parent: Transform = Transform.create(world, parentE);
     child.setParent(parent, true);
 
     const local: Transform2D = world.requireComponent(childE, Transform2D);
@@ -56,8 +56,8 @@ describe("Transform parenting", () => {
     const local: Transform2D = world.addComponent(childE, Transform2D);
     local.position.set(5, 0);
 
-    const child: Transform = new Transform(world, childE);
-    const parent: Transform = new Transform(world, parentE);
+    const child: Transform = Transform.create(world, childE);
+    const parent: Transform = Transform.create(world, parentE);
     child.setParent(parent, false);
 
     expect(world.requireComponent(childE, Transform2D).position.x).toBe(5);
@@ -71,8 +71,8 @@ describe("Transform parenting", () => {
     world.addComponent(childE, Transform2D);
     world.setParent(childE, parentE);
 
-    const child: Transform = new Transform(world, childE);
-    const parent: Transform = new Transform(world, parentE);
+    const child: Transform = Transform.create(world, childE);
+    const parent: Transform = Transform.create(world, parentE);
 
     expect(child.parent).not.toBeNull();
     expect(parent.getChildren().length).toBe(1);

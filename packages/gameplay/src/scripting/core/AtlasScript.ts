@@ -1,6 +1,9 @@
 import { Component, Entity } from "@atlasjs/nexus";
 
-import { ScriptComponentCtor } from "./ScriptComponent";
+import {
+  ScriptComponentToken,
+  isScriptComponentToken,
+} from "./ScriptComponentToken";
 import { ScriptServiceCtor } from "./ScriptService";
 import { ScriptContext } from "./ScriptContext";
 import { ScriptLifecycle } from "./ScriptLifeCycle";
@@ -44,41 +47,35 @@ export abstract class AtlasScript<TProps extends object = {}> implements ScriptL
     return this.context.getService(type);
   }
 
-  public hasComponent<TComponent extends object>(
-    type: Component<TComponent, any[]>,
-  ): boolean {
+  public hasComponent(type: Component<object, any[]> | ScriptComponentToken<unknown, object, any[]>): boolean {
     return this.context.hasComponent(type);
   }
 
-  public getComponent<TComponent extends object>(
-    type: Component<TComponent, any[]>,
-  ): TComponent | undefined {
-    return this.context.getComponent(type);
+  public getComponent<TApi, TEngine extends object>(type: ScriptComponentToken<TApi, TEngine, any[]>): TApi | undefined;
+  public getComponent<TComponent extends object>(type: Component<TComponent, any[]>): TComponent | undefined;
+  public getComponent(type: Component<object, any[]> | ScriptComponentToken<unknown, object, any[]>): unknown {
+    return this.context.getComponent(type as Component<object, any[]>);
   }
 
-  public addComponent<TFacade, TEngine extends object, TArgs extends unknown[]>(type: ScriptComponentCtor<TFacade, TEngine, TArgs>, ...args: TArgs): TFacade;
+  public addComponent<TApi, TEngine extends object, TArgs extends unknown[]>(type: ScriptComponentToken<TApi, TEngine, TArgs>, ...args: TArgs): TApi;
   public addComponent<TComponent extends object, TArgs extends unknown[]>(type: Component<TComponent, TArgs>, ...args: TArgs): TComponent;
-  public addComponent<TComponent extends object, TArgs extends unknown[]>(type: Component<TComponent, TArgs> | ScriptComponentCtor<TComponent, object, TArgs>, ...args: TArgs): TComponent {
-    return this.context.addComponent(
-      type as Component<TComponent, TArgs>,
-      ...args,
-    );
+  public addComponent(type: Component<object, any[]> | ScriptComponentToken<unknown, object, any[]>, ...args: any[]): unknown {
+    return this.context.addComponent(type as Component<object, any[]>, ...args);
   }
 
-  public removeComponent<TComponent extends object>(
-    type: Component<TComponent, any[]>,
-  ): void {
+  public removeComponent(type: Component<object, any[]> | ScriptComponentToken<unknown, object, any[]>): void {
     this.context.removeComponent(type);
   }
 
-  public requireComponent<TComponent extends object>(
-    type: Component<TComponent, any[]>,
-  ): TComponent {
-    const component: TComponent | undefined = this.getComponent(type);
+  public requireComponent<TApi, TEngine extends object>(type: ScriptComponentToken<TApi, TEngine, any[]>): TApi;
+  public requireComponent<TComponent extends object>(type: Component<TComponent, any[]>): TComponent;
+  public requireComponent(type: Component<object, any[]> | ScriptComponentToken<unknown, object, any[]>): unknown {
+    const component: unknown = this.getComponent(type as Component<object, any[]>);
 
     if (component === undefined) {
+      const name: string = isScriptComponentToken(type) ? type.engine.name : type.name;
       throw new Error(
-        `[AtlasScript] Required component "${type.name}" is missing on entity "${this.entityId}".`,
+        `[AtlasScript] Required component "${name}" is missing on entity "${this.entityId}".`,
       );
     }
 

@@ -57,7 +57,8 @@ describe("Gameplay — script context dispatch (façade vs raw)", () => {
     const real: Transform2D = h.world.requireComponent(e, Transform2D);
     expect(real.position.x).toBe(11);
     expect(real.position.y).toBe(22);
-    expect(probe.transform).toBeInstanceOf(Transform);
+    expect(typeof probe.transform.setPosition).toBe("function");
+    expect(probe.transform.position.x).toBe(11);
   });
 
   it("hasComponent/getComponent(façade) reflect the backing engine component", () => {
