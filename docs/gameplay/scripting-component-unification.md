@@ -145,6 +145,8 @@ this.rigidbody.mass = 1;                                        // champ brut (p
 
 ### 5.1 B1 — Couche scripting-component uniforme (cible du compilateur)
 
+> **Statut : ✅ implémenté.** Plan : [`scripting-component-token-b1-plan.md`](scripting-component-token-b1-plan.md) ; spec : [`scripting-component-token-b1.md`](scripting-component-token-b1.md).
+
 **But** : remplacer le nommage/alias de Phase A par un modèle **token** unique, collapser le dispatch, et donner au compilateur une forme d'émission unique.
 
 - `defineScriptComponent(engine, ops?)` → `ScriptComponentToken` :

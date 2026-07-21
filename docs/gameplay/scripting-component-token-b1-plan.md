@@ -857,26 +857,26 @@ Message de commit proposé :
 
 **Files:** aucun (vérification seule).
 
-- [ ] **Step 1 : Rebuild `@atlasjs/gameplay` (dist consommée par la preview vite du sandbox)**
+- [x] **Step 1 : Rebuild `@atlasjs/gameplay` (dist consommée par la preview vite du sandbox)**
 
 Run: `pnpm --filter @atlasjs/gameplay build`
 Expected: build OK (tsdown → `dist`).
 
-- [ ] **Step 2 : Typecheck du sandbox**
+- [x] **Step 2 : Typecheck du sandbox**
 
 Run: `pnpm --filter sandbox exec tsc --noEmit`
 Expected: aucune erreur. `TestScript`/`WallScript`/`SwordScript` utilisent `Transform`/`RigidBody`/`SpriteRenderer`/`Animator`/`PlayerInput` — tous inchangés en surface. Si erreur → une régression de surface d'API a été introduite (revenir sur Task 2/3).
 
-- [ ] **Step 3 : Lancer la preview sandbox**
+- [x] **Step 3 : Lancer la preview sandbox**
 
 Démarrer le serveur dev via l'outil preview (config `sandbox` de `.claude/launch.json`, port 5173) : `preview_start({ name: "sandbox" })`.
 
-- [ ] **Step 4 : Vérifier l'absence d'erreurs runtime**
+- [x] **Step 4 : Vérifier l'absence d'erreurs runtime**
 
 Via les outils preview : `read_console_messages({ onlyErrors: true })` puis `preview_logs({ level: "error" })`.
 Expected: aucune erreur console/serveur.
 
-- [ ] **Step 5 : Validation visuelle (parité)**
+- [x] **Step 5 : Validation visuelle (parité)**
 
 Confirmer via screenshot/interaction :
 - le dino (`TestScript`) bouge au clavier (WASD/flèches selon `controls`) et flippe selon la direction ;
@@ -885,7 +885,7 @@ Confirmer via screenshot/interaction :
 
 Expected: comportement **identique** à avant B1.
 
-- [ ] **Step 6 : (aucun commit)** — tâche de vérification pure. Si tout est vert, passer à Task 5. Sinon, corriger la tâche fautive.
+- [x] **Step 6 : (aucun commit)** — tâche de vérification pure. Si tout est vert, passer à Task 5. Sinon, corriger la tâche fautive.
 
 ---
 
