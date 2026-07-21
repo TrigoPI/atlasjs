@@ -94,7 +94,18 @@ export class EcsScene extends Scene {
 
     scriptManager.attach(sword, SwordScript, {
       sprite: swordSprite,
-      scale: 0.7,
+      scale: 1,
+      maxPower: 200,
+      orbitRadius: 10,
+      throwDuration: 1,
+      rotationSpeed: {
+        max: 10 * Math.PI,
+        min: Math.PI / 2,
+      },
+      orbitSpeed: {
+        max: 6 * Math.PI,
+        min: Math.PI,
+      },
     });
 
     scriptManager.attach(player, TestScript, {
