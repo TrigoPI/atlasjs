@@ -785,7 +785,7 @@ Message de commit proposé :
 - Consumes : `defineScriptComponent` (Task 1), `RigidBody2D`/`SpriteRender` (`../../components`).
 - Produces : `const RigidBody` (= `RigidBody2D` par identité) + `type RigidBody = RigidBody2D` ; `const SpriteRenderer` (= `SpriteRender`) + `type SpriteRenderer = SpriteRender`.
 
-- [ ] **Step 1 : Écrire le test qui échoue**
+- [x] **Step 1 : Écrire le test qui échoue**
 
 Create `packages/gameplay/test/script-passthrough-tokens.test.ts` :
 
@@ -808,12 +808,12 @@ describe("Gameplay — passthrough script components (identity)", () => {
 });
 ```
 
-- [ ] **Step 2 : Lancer, vérifier l'état**
+- [x] **Step 2 : Lancer, vérifier l'état**
 
 Run: `pnpm --filter @atlasjs/gameplay test script-passthrough-tokens`
 Expected : les deux `toBe` PASSENT déjà (l'alias Phase A `export { RigidBody2D as RigidBody }` est aussi une identité), mais l'objectif est de router l'export via `defineScriptComponent` pour uniformiser. (Si le test passe déjà, il verrouille l'invariant ; on procède au Step 3 pour la forme uniforme.)
 
-- [ ] **Step 3 : Router les exports via `defineScriptComponent`**
+- [x] **Step 3 : Router les exports via `defineScriptComponent`**
 
 Remplacer **tout** le contenu de `packages/gameplay/src/scripting/components/index.ts` par :
 
@@ -830,17 +830,17 @@ export type SpriteRenderer = SpriteRender;
 export * from "./Transform";
 ```
 
-- [ ] **Step 4 : Lancer le test, vérifier le succès**
+- [x] **Step 4 : Lancer le test, vérifier le succès**
 
 Run: `pnpm --filter @atlasjs/gameplay test script-passthrough-tokens`
 Expected: PASS (2 tests). `defineScriptComponent(RigidBody2D)` renvoie `RigidBody2D` par identité → `RigidBody === RigidBody2D`.
 
-- [ ] **Step 5 : Typecheck + suite complète**
+- [x] **Step 5 : Typecheck + suite complète**
 
 Run: `pnpm --filter @atlasjs/gameplay exec tsc --noEmit && pnpm --filter @atlasjs/gameplay test`
 Expected: aucun message d'erreur ; suite intégralement verte (notamment `script-context-dispatch.test.ts` qui importe `RigidBody`).
 
-- [ ] **Step 6 : Stage + handoff commit**
+- [x] **Step 6 : Stage + handoff commit**
 
 ```bash
 git add packages/gameplay/src/scripting/components/index.ts \
