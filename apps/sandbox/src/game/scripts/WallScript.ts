@@ -2,6 +2,7 @@ import {
   AtlasScript,
   registerScriptMetadata,
   RigidBody,
+  ScriptMetadata,
   Sprite,
   SpriteRenderer,
   Transform,
@@ -30,6 +31,6 @@ export class WallScript extends AtlasScript<{ sprite: Sprite }> {
 
 registerScriptMetadata(WallScript, {
   exposed: {
-    sprite: { required: true },
+    sprite: ScriptMetadata.field({ required: true }),
   },
 });

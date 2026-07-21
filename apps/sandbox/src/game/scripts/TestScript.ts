@@ -9,6 +9,7 @@ import {
   ButtonAction,
   PlayerInput,
   RigidBody,
+  ScriptMetadata,
   Sprite,
   SpriteAnimation,
   SpriteRenderer,
@@ -78,9 +79,9 @@ export class TestScript extends AtlasScript<{
 
 registerScriptMetadata(TestScript, {
   exposed: {
-    sprite: { required: true },
-    clips: { required: true },
-    speed: { required: true },
-    controls: { required: true },
+    sprite: ScriptMetadata.field({ required: true }),
+    clips: ScriptMetadata.field({ required: true }),
+    speed: ScriptMetadata.field({ required: true }),
+    controls: ScriptMetadata.field({ required: true }),
   },
 });

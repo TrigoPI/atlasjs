@@ -2,7 +2,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { Entity } from "@atlasjs/nexus";
 
-import { AtlasScript, registerScriptMetadata } from "../src/scripting";
+import {
+  AtlasScript,
+  ScriptMetadata,
+  registerScriptMetadata,
+} from "../src/scripting";
 import { createHarness, Harness } from "./helpers/harness";
 
 class Injected extends AtlasScript<{ label: string; count: number }> {
@@ -16,7 +20,10 @@ class Injected extends AtlasScript<{ label: string; count: number }> {
   }
 }
 registerScriptMetadata(Injected, {
-  exposed: { label: { required: true }, count: { required: true } },
+  exposed: {
+    label: ScriptMetadata.field({ required: true }),
+    count: ScriptMetadata.field({ required: true }),
+  },
 });
 
 class NoProps extends AtlasScript {

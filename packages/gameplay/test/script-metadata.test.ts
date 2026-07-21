@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   ExposeFieldMetadata,
+  ScriptMetadata,
   getExposedFields,
   getScriptMetadata,
   registerScriptMetadata,
@@ -11,17 +12,19 @@ class NoMeta {}
 
 class Simple {}
 registerScriptMetadata(Simple, {
-  exposed: { a: { required: true }, b: {} },
+  exposed: { a: ScriptMetadata.field({ required: true }), b: ScriptMetadata.field() },
 });
 
 class Base {}
-registerScriptMetadata(Base, { exposed: { base: {} } });
+registerScriptMetadata(Base, { exposed: { base: ScriptMetadata.field() } });
 
 class Child extends Base {}
-registerScriptMetadata(Child, { exposed: { a: {}, b: {} } });
+registerScriptMetadata(Child, {
+  exposed: { a: ScriptMetadata.field(), b: ScriptMetadata.field() },
+});
 
 class GrandChild extends Child {}
-registerScriptMetadata(GrandChild, { exposed: { c: {} } });
+registerScriptMetadata(GrandChild, { exposed: { c: ScriptMetadata.field() } });
 
 describe("registerScriptMetadata / getScriptMetadata", () => {
   it("records exposed fields without instantiating", () => {
@@ -62,7 +65,7 @@ describe("registerScriptMetadata / getScriptMetadata", () => {
 
   it("returns a copy the caller cannot use to mutate the registry", () => {
     const map: Map<string, ExposeFieldMetadata> = getExposedFields(Simple);
-    map.set("hacked", {});
+    map.set("hacked", ScriptMetadata.field());
     expect(getExposedFields(Simple).has("hacked")).toBe(false);
   });
 
@@ -74,9 +77,27 @@ describe("registerScriptMetadata / getScriptMetadata", () => {
 
   it("last registration wins when called twice on the same constructor", () => {
     class Rebound {}
-    registerScriptMetadata(Rebound, { exposed: { a: { required: true } } });
-    registerScriptMetadata(Rebound, { exposed: { b: {} } });
+    registerScriptMetadata(Rebound, { exposed: { a: ScriptMetadata.field({ required: true }) } });
+    registerScriptMetadata(Rebound, { exposed: { b: ScriptMetadata.field() } });
 
     expect([...getExposedFields(Rebound).keys()]).toEqual(["b"]);
+  });
+});
+
+describe("ScriptMetadata builders", () => {
+  it("field() tags an entry as a field", () => {
+    expect(ScriptMetadata.field({ required: true })).toEqual({
+      type: "field",
+      required: true,
+    });
+    expect(ScriptMetadata.field()).toEqual({ type: "field", required: undefined });
+  });
+
+  it("entity() tags an entry as an entity ref", () => {
+    expect(ScriptMetadata.entity({ required: true })).toEqual({
+      type: "entity",
+      required: true,
+    });
+    expect(ScriptMetadata.entity()).toEqual({ type: "entity", required: undefined });
   });
 });

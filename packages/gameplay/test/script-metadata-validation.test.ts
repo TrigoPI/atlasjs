@@ -6,6 +6,7 @@ import { Logger } from "@atlasjs/utils";
 import {
   AtlasScript,
   ScriptManager,
+  ScriptMetadata,
   registerScriptMetadata,
 } from "../src/scripting";
 import { createHarness, Harness } from "./helpers/harness";
@@ -13,12 +14,16 @@ import { createHarness, Harness } from "./helpers/harness";
 class Required extends AtlasScript<{ needed: string }> {
   public needed!: string;
 }
-registerScriptMetadata(Required, { exposed: { needed: { required: true } } });
+registerScriptMetadata(Required, {
+  exposed: { needed: ScriptMetadata.field({ required: true }) },
+});
 
 class SingleField extends AtlasScript<{ a: string }> {
   public a!: string;
 }
-registerScriptMetadata(SingleField, { exposed: { a: { required: true } } });
+registerScriptMetadata(SingleField, {
+  exposed: { a: ScriptMetadata.field({ required: true }) },
+});
 
 class Bare extends AtlasScript {}
 
