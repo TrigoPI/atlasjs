@@ -1,12 +1,14 @@
 import { Component, Entity } from "@atlasjs/nexus";
 
+import { ScriptServiceCtor } from "./ScriptService";
+import { ScriptContext } from "./ScriptContext";
+import { ScriptLifecycle } from "./ScriptLifeCycle";
+import type { GameEntity } from "./GameEntity";
+
 import {
   ScriptComponentToken,
   isScriptComponentToken,
 } from "./ScriptComponentToken";
-import { ScriptServiceCtor } from "./ScriptService";
-import { ScriptContext } from "./ScriptContext";
-import { ScriptLifecycle } from "./ScriptLifeCycle";
 
 // prettier-ignore
 export abstract class AtlasScript<TProps extends object = {}> implements ScriptLifecycle {
@@ -39,6 +41,10 @@ export abstract class AtlasScript<TProps extends object = {}> implements ScriptL
 
   public get entityId(): Entity {
     return this.context.getEntityId();
+  }
+
+  public getEntity(entity: Entity): GameEntity {
+    return this.context.getEntity(entity);
   }
 
   public getService<TFacade, TService>(

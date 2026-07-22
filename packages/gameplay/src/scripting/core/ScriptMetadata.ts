@@ -1,10 +1,19 @@
-export interface ExposeFieldMetadata {
-  required?: boolean;
-}
+export type ExposeFieldMetadata =
+  | { type: "field"; required?: boolean }
+  | { type: "entity"; required?: boolean };
 
 export interface ScriptMetadata {
   exposed: Record<string, ExposeFieldMetadata>;
 }
+
+export const ScriptMetadata = {
+  field(options: { required?: boolean } = {}): ExposeFieldMetadata {
+    return { type: "field", required: options.required };
+  },
+  entity(options: { required?: boolean } = {}): ExposeFieldMetadata {
+    return { type: "entity", required: options.required };
+  },
+};
 
 const REGISTRY: WeakMap<Function, ScriptMetadata> = new WeakMap();
 

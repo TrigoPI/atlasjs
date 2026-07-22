@@ -176,6 +176,18 @@ Source : [`gameplay/entity-hierarchy.md`](gameplay/entity-hierarchy.md) (§9, ho
 
 ---
 
+## Gameplay — Références d'entités dans les scripts (`GameEntity`)
+
+> **Cœur implémenté** : handle stateless `GameEntity` (`otherEntity.getComponent(...)` / `otherEntity.getScript(SwordScript)`), `ScriptManager.getScript(entityId, type)`, métadonnée en union discriminée `{ type: "field" | "entity" }` + builders `ScriptMetadata.field()`/`.entity()`, injection d'une `Entity` brute → `GameEntity` (typage call-site `AttachProps`), `RuntimeScriptContext` délègue à un `GameEntity` de sa propre entité + `this.getEntity(entity)` pour wrapper une entité runtime. Source : [`gameplay/script-entity-references.md`](gameplay/script-entity-references.md) (§5 non-objectifs). Ne restent que les extensions V2 ci-dessous.
+
+- 📋 **Champs entité optionnels / tableaux** (`sword?: GameEntity`, `GameEntity[]`) : le type conditionnel `AttachProps` ne les substitue pas encore (une union `GameEntity | undefined` ou un tableau ne matche pas `extends GameEntity`) ; à généraliser (`NonNullable`, mapping récursif). Connexe : passer explicitement `{ champ: undefined }` wrappe `undefined` au lieu d'émettre le warn « required manquant » (le warn ne se déclenche que si la clé est **absente**).
+- 📋 **(Dé)sérialisation des refs d'entité** (scène/prefab sur disque) : demande des ids d'entité stables cross-session ; à lier au chantier `AssetRef` par id.
+- 📋 **Métadonnée éditeur riche sur les refs** (`kind`, contrainte de composant requis façon Unity `[RequireComponent]`, tooltip…) : l'union discriminée `ExposeFieldMetadata` est déjà ouverte à l'extension.
+- 📋 **`getScripts(type)` pluriel** (toutes les instances d'un type sur une entité) — `getScript` singulier suffit aujourd'hui.
+- **Comportement connu (par design)** : `getScript` peut renvoyer une instance dont `onCreate` n'a pas encore tourné (dépend de l'ordre d'`attach` dans un même flush) → lire l'état d'un autre script en `onUpdate`, pas en `onCreate`.
+
+---
+
 ## Notes transverses (risques acceptés, à surveiller)
 
 - **Gameplay** ([`gameplay/gameplay-redesign.md`](gameplay/gameplay-redesign.md)) : contrat `setComponent` « muter en place, jamais remplacer » (sinon durcir Nexus pour émettre `onRemove`+`onAdd`) ; téléport d'un `dynamic` avant existence de son body (1ère frame) ; scripts en lane `update` variable mutant un `dynamic` → préférer vélocité/force.

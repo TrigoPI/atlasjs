@@ -7,8 +7,10 @@ import {
   Animator,
   AtlasScript,
   ButtonAction,
+  type GameEntity,
   PlayerInput,
   RigidBody,
+  ScriptMetadata,
   Sprite,
   SpriteAnimation,
   SpriteRenderer,
@@ -16,6 +18,8 @@ import {
   Vector2Action,
   registerScriptMetadata,
 } from "@atlasjs/gameplay";
+
+import { SwordScript } from "./SwordScript";
 
 type PlayerControlsDescriptor = ActionMapDescriptor<{
   move: Vector2ActionSpec;
@@ -28,16 +32,20 @@ export class TestScript extends AtlasScript<{
   speed: number;
   controls: PlayerControlsDescriptor;
   clips: Record<string, SpriteAnimation>;
+  sword: GameEntity;
 }> {
   private readonly sprite: Sprite;
   private readonly clips: Record<string, SpriteAnimation>;
   private readonly speed: number;
   private readonly controls: PlayerControlsDescriptor;
+  private sword!: GameEntity;
 
   private transform: Transform;
   private rigidbody: RigidBody;
   private spriteRenderer: SpriteRenderer;
   private animator: Animator;
+  private swordScript: SwordScript | undefined;
+  private swordRenderer: SpriteRenderer | undefined;
 
   private move: Vector2Action;
   private boost: ButtonAction;
@@ -58,6 +66,9 @@ export class TestScript extends AtlasScript<{
     this.rigidbody.type = "kinematic";
     this.transform.setScale(3, 3)
     this.rigidbody.mass = 1;
+
+    this.swordScript = this.sword.getScript(SwordScript);
+    this.swordRenderer = this.sword.getComponent(SpriteRenderer);
   }
 
   public onUpdate(dt: number): void {
@@ -71,6 +82,11 @@ export class TestScript extends AtlasScript<{
     } else {
       this.animator.play("idle");
     }
+
+    if (this.swordScript !== undefined && this.swordRenderer !== undefined) {
+      const boosting: boolean = this.boost.isDown();
+      this.swordRenderer.color.set(1, boosting ? 0.4 : 1, boosting ? 0.4 : 1, 1);
+    }
   }
 
   public onDestroy(): void {}
@@ -78,9 +94,10 @@ export class TestScript extends AtlasScript<{
 
 registerScriptMetadata(TestScript, {
   exposed: {
-    sprite: { required: true },
-    clips: { required: true },
-    speed: { required: true },
-    controls: { required: true },
+    sprite: ScriptMetadata.field({ required: true }),
+    clips: ScriptMetadata.field({ required: true }),
+    speed: ScriptMetadata.field({ required: true }),
+    controls: ScriptMetadata.field({ required: true }),
+    sword: ScriptMetadata.entity({ required: true }),
   },
 });

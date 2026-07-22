@@ -4,6 +4,7 @@ import {
   Sprite,
   AtlasScript,
   registerScriptMetadata,
+  ScriptMetadata,
   SpriteRenderer,
   Transform,
   InputApi,
@@ -187,12 +188,12 @@ export class SwordScript extends AtlasScript<{
 
 registerScriptMetadata(SwordScript, {
   exposed: {
-    sprite: { required: true },
-    scale: { required: true },
-    maxPower: { required: true },
-    rotationSpeed: { required: true },
-    orbitRadius: { required: true },
-    orbitSpeed: { required: true },
-    throwDuration: { required: true },
+    sprite: ScriptMetadata.field({ required: true }),
+    scale: ScriptMetadata.field({ required: true }),
+    maxPower: ScriptMetadata.field({ required: true }),
+    rotationSpeed: ScriptMetadata.field({ required: true }),
+    orbitRadius: ScriptMetadata.field({ required: true }),
+    orbitSpeed: ScriptMetadata.field({ required: true }),
+    throwDuration: ScriptMetadata.field({ required: true }),
   },
 });

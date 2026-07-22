@@ -8,18 +8,26 @@ import { IncrementalScriptIdGenerator } from "./IncrementalScriptIdGenerator";
 import {
   AtlasScript,
   ExposeFieldMetadata,
+  GameEntity,
   ScriptConstructor,
   ScriptID,
   ScriptInstanceRecord,
   ScriptMetadata,
+  ScriptResolver,
+  createGameEntity,
   getScriptMetadata,
 } from "../core";
 
 type PropsOf<T> = T extends AtlasScript<infer P> ? P : {};
+type AttachProps<P> = {
+  [K in keyof P]: P[K] extends GameEntity ? Entity : P[K];
+};
 type PropsOfArgs<T> =
-  {} extends PropsOf<T> ? [props?: PropsOf<T>] : [props: PropsOf<T>];
+  {} extends AttachProps<PropsOf<T>>
+    ? [props?: AttachProps<PropsOf<T>>]
+    : [props: AttachProps<PropsOf<T>>];
 
-export class ScriptManager {
+export class ScriptManager implements ScriptResolver {
   private readonly records: Map<ScriptID, ScriptInstanceRecord>;
   private readonly recordsByEntity: Map<Entity, Set<ScriptID>>;
   private readonly idGenerator: IncrementalScriptIdGenerator;
@@ -57,6 +65,7 @@ export class ScriptManager {
       entityId,
       this.world,
       this.services,
+      this,
     );
 
     instance.__bindContext(context);
@@ -174,6 +183,29 @@ export class ScriptManager {
     return scripts;
   }
 
+  public getScript<T extends AtlasScript>(
+    entityId: Entity,
+    type: ScriptConstructor<T>,
+  ): T | undefined {
+    const recordIds: Set<ScriptID> | undefined =
+      this.recordsByEntity.get(entityId);
+
+    if (!recordIds) {
+      return undefined;
+    }
+
+    for (const recordId of recordIds) {
+      const record: ScriptInstanceRecord | undefined =
+        this.records.get(recordId);
+
+      if (record && !record.isDestroyed && record.instance instanceof type) {
+        return record.instance as T;
+      }
+    }
+
+    return undefined;
+  }
+
   private injectProps(
     instance: AtlasScript,
     ScriptType: ScriptConstructor,
@@ -192,9 +224,14 @@ export class ScriptManager {
     >;
 
     for (const field of Object.keys(exposed)) {
+      const meta: ExposeFieldMetadata = exposed[field];
+
       if (field in source) {
-        target[field] = source[field];
-      } else if (exposed[field].required === true) {
+        target[field] =
+          meta.type === "entity"
+            ? createGameEntity(source[field] as Entity, this.world, this)
+            : source[field];
+      } else if (meta.required === true) {
         this.logger.warn(
           `"${ScriptType.name}" exposes required field "${field}" but no value was provided.`,
         );
