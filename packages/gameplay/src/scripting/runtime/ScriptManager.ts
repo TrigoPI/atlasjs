@@ -184,11 +184,11 @@ export class ScriptManager implements ScriptResolver {
   }
 
   public getScript<T extends AtlasScript>(
-    entity: Entity,
+    entityId: Entity,
     type: ScriptConstructor<T>,
   ): T | undefined {
     const recordIds: Set<ScriptID> | undefined =
-      this.recordsByEntity.get(entity);
+      this.recordsByEntity.get(entityId);
 
     if (!recordIds) {
       return undefined;

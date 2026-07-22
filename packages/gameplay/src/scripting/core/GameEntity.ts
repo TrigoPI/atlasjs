@@ -1,9 +1,9 @@
 import { Component, Entity, NexusWorld } from "@atlasjs/nexus";
 
-import { AtlasScript } from "./AtlasScript";
-import { ScriptConstructor } from "./core-types";
+import type { AtlasScript } from "./AtlasScript";
+import type { ScriptConstructor } from "./core-types";
 import {
-  ScriptComponentToken,
+  type ScriptComponentToken,
   isScriptComponentToken,
 } from "./ScriptComponentToken";
 
@@ -29,7 +29,7 @@ export interface GameEntity {
 
 // prettier-ignore
 export interface ScriptResolver {
-  getScript<T extends AtlasScript>(entity: Entity, type: ScriptConstructor<T>): T | undefined;
+  getScript<T extends AtlasScript>(entityId: Entity, type: ScriptConstructor<T>): T | undefined;
 }
 
 // prettier-ignore

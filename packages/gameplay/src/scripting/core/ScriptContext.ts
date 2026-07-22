@@ -1,6 +1,6 @@
 import { Component, Entity } from "@atlasjs/nexus";
 
-import { GameEntity } from "./GameEntity";
+import type { GameEntity } from "./GameEntity";
 import { ScriptComponentToken } from "./ScriptComponentToken";
 import { ScriptServiceCtor } from "./ScriptService";
 

@@ -3,7 +3,7 @@ import { Component, Entity } from "@atlasjs/nexus";
 import { ScriptServiceCtor } from "./ScriptService";
 import { ScriptContext } from "./ScriptContext";
 import { ScriptLifecycle } from "./ScriptLifeCycle";
-import { GameEntity } from "./GameEntity";
+import type { GameEntity } from "./GameEntity";
 
 import {
   ScriptComponentToken,
