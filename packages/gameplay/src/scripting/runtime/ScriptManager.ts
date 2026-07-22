@@ -58,6 +58,7 @@ export class ScriptManager implements ScriptResolver {
       entityId,
       this.world,
       this.services,
+      this,
     );
 
     instance.__bindContext(context);
@@ -179,14 +180,16 @@ export class ScriptManager implements ScriptResolver {
     entity: Entity,
     type: ScriptConstructor<T>,
   ): T | undefined {
-    const recordIds: Set<ScriptID> | undefined = this.recordsByEntity.get(entity);
+    const recordIds: Set<ScriptID> | undefined =
+      this.recordsByEntity.get(entity);
 
     if (!recordIds) {
       return undefined;
     }
 
     for (const recordId of recordIds) {
-      const record: ScriptInstanceRecord | undefined = this.records.get(recordId);
+      const record: ScriptInstanceRecord | undefined =
+        this.records.get(recordId);
 
       if (record && !record.isDestroyed && record.instance instanceof type) {
         return record.instance as T;

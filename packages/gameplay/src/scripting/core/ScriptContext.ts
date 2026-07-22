@@ -1,11 +1,14 @@
 import { Component, Entity } from "@atlasjs/nexus";
 
+import { GameEntity } from "./GameEntity";
 import { ScriptComponentToken } from "./ScriptComponentToken";
 import { ScriptServiceCtor } from "./ScriptService";
 
 // prettier-ignore
 export interface ScriptContext {
   getEntityId(): Entity;
+
+  getEntity(entity: Entity): GameEntity;
 
   getService<TFacade, TService>(type: ScriptServiceCtor<TFacade, TService>): TFacade;
   hasComponent(type: | Component<object, any[]> | ScriptComponentToken<unknown, object, any[]>): boolean;
