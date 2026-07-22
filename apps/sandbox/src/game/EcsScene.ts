@@ -113,6 +113,7 @@ export class EcsScene extends Scene {
       controls,
       sprite: blueDinoSprite,
       speed: 250,
+      sword,
     });
 
     nexus.setParent(sword, player);

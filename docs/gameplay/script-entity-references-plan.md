@@ -1049,7 +1049,9 @@ Message suggéré : `feat(scripting): inject entity refs as GameEntity + AttachP
 
 Dans `apps/sandbox/src/game/scripts/TestScript.ts` :
 
-1. Ajouter `GameEntity` et `ScriptMetadata` à l'import `@atlasjs/gameplay` (`SwordScript` est déjà dans le dossier `scripts/`, l'importer depuis `./SwordScript`).
+1. Ajouter `ScriptMetadata` (valeur) et **`type GameEntity`** à l'import `@atlasjs/gameplay` (`SwordScript` est déjà dans le dossier `scripts/`, l'importer depuis `./SwordScript`).
+
+> ⚠️ **`GameEntity` DOIT être importé en `type`** (qualificateur inline `type` comme les `ActionMapDescriptor`/`ButtonActionSpec` voisins) : c'est une interface sans export runtime dans `dist/index.mjs`. Un import de valeur compile sous `tsc --noEmit` (effacé) mais **casse au runtime sous Vite/esbuild** (`SyntaxError: does not provide an export named 'GameEntity'`), ce qui fait planter tout le montage React → écran noir. `ScriptMetadata`/`SwordScript`/`SpriteRenderer` restent des imports de valeur (ce sont de vrais exports runtime).
 
 ```ts
 import { SwordScript } from "./SwordScript";
