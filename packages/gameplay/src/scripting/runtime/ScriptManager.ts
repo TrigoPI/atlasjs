@@ -8,17 +8,24 @@ import { IncrementalScriptIdGenerator } from "./IncrementalScriptIdGenerator";
 import {
   AtlasScript,
   ExposeFieldMetadata,
+  GameEntity,
   ScriptConstructor,
   ScriptID,
   ScriptInstanceRecord,
   ScriptMetadata,
   ScriptResolver,
+  createGameEntity,
   getScriptMetadata,
 } from "../core";
 
 type PropsOf<T> = T extends AtlasScript<infer P> ? P : {};
+type AttachProps<P> = {
+  [K in keyof P]: P[K] extends GameEntity ? Entity : P[K];
+};
 type PropsOfArgs<T> =
-  {} extends PropsOf<T> ? [props?: PropsOf<T>] : [props: PropsOf<T>];
+  {} extends AttachProps<PropsOf<T>>
+    ? [props?: AttachProps<PropsOf<T>>]
+    : [props: AttachProps<PropsOf<T>>];
 
 export class ScriptManager implements ScriptResolver {
   private readonly records: Map<ScriptID, ScriptInstanceRecord>;
@@ -217,9 +224,14 @@ export class ScriptManager implements ScriptResolver {
     >;
 
     for (const field of Object.keys(exposed)) {
+      const meta: ExposeFieldMetadata = exposed[field];
+
       if (field in source) {
-        target[field] = source[field];
-      } else if (exposed[field].required === true) {
+        target[field] =
+          meta.type === "entity"
+            ? createGameEntity(source[field] as Entity, this.world, this)
+            : source[field];
+      } else if (meta.required === true) {
         this.logger.warn(
           `"${ScriptType.name}" exposes required field "${field}" but no value was provided.`,
         );
