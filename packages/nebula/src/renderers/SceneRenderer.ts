@@ -6,6 +6,7 @@ import { Node } from "../graphics";
 import { RenderQueue } from "./RenderQueue";
 import { SpriteRenderer } from "./SpriteRenderer";
 import { ShapeRenderer } from "./ShapeRenderer";
+import { TileMapNodeRenderer } from "./TileMapNodeRenderer";
 import { NodeRenderer } from "./NodeRenderer";
 import { DrawCommand } from "./DrawCommand";
 
@@ -19,10 +20,15 @@ export class SceneRenderer {
 
   public constructor(renderer: Renderer) {
     this.renderer = renderer;
-    this.nodeRenderers = [new SpriteRenderer(renderer), new ShapeRenderer()];
     this.queue = new RenderQueue();
     this.worldBoundScratch = new Bound();
     this.cameraViewport = new Bound();
+
+    this.nodeRenderers = [
+      new SpriteRenderer(renderer),
+      new ShapeRenderer(),
+      new TileMapNodeRenderer(renderer),
+    ];
 
     for (let i: number = 0; i < this.nodeRenderers.length; i++) {
       const nr: NodeRenderer = this.nodeRenderers[i];

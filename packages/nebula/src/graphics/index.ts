@@ -4,5 +4,6 @@ export * from "./Node";
 export * from "./RectNode";
 export * from "./ShapeNode";
 export * from "./SpriteNode";
+export * from "./TileMapNode";
 export * from "./Transformable";
 export * from "./graphics-types";

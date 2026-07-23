@@ -1,6 +1,8 @@
 # TileSet & TileMap — Design (v1)
 
-> **Statut : design validé, non implémenté.** Spec issue d'un brainstorm. Le plan d'exécution phasé vivra dans [`tilemap-plan.md`](tilemap-plan.md).
+> **Statut : ✅ implémenté** (branche `claude/feat/tileset`, commits `53cc7ee`→`b11711d`, 10 tasks TDD + review whole-branch opus « ready to merge »). Plan d'exécution : [`tilemap-plan.md`](tilemap-plan.md). Extensions reportées : [`../backlog.md`](../backlog.md) § *Gameplay — TileSet & TileMap*.
+>
+> **Note de rendu (piège vérifié en vrai)** : une tuile est dessinée à la **taille native** de son sprite, positionnée à l'origine de sa cellule. Pour un tiling **sans trou**, `Grid.cellSize` doit **égaler la taille native de la tuile** (ex. `128`) ; pour agrandir le rendu, on **scale l'entité `Grid`** (son `Transform2D`), ce qui se propage au calque — on ne gonfle **pas** `cellSize`. Mettre `cellSize` = taille × facteur tout en dessinant à taille native laisse des trous (le *fit-to-cell scaling* qui lèverait cette contrainte est au backlog).
 
 ## 1. Vue d'ensemble
 

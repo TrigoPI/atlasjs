@@ -1882,9 +1882,9 @@ Dans `apps/sandbox/src/game/EcsScene.ts` :
     );
 
     const grid: Entity = nexus.createEntity();
-    nexus.addComponent(grid, Grid, new Vec2(128 * 2.5, 128 * 2.5));
+    nexus.addComponent(grid, Grid, new Vec2(128, 128));            // cellSize = TAILLE NATIVE de la tuile
     const gridTransform: Transform2D = nexus.addComponent(grid, Transform2D);
-    gridTransform.scale.set(1, 1);
+    gridTransform.scale.set(2.5, 2.5);                            // agrandissement via le scale de la Grid (se propage au calque)
 
     const ground: Entity = nexus.createEntity();
     const groundMap: TileMap = nexus.addComponent(ground, TileMap, grassTileset);
@@ -1895,7 +1895,9 @@ Dans `apps/sandbox/src/game/EcsScene.ts` :
     groundMap.fill(0, 0, 9, 9, grassTileset.indexOf(0, 1));
 ```
 
-> Note : le sandbox actuel dessinait la région `(0,128,128,128)` mise à l'échelle 2.5 et espacée de `128*2.5`. Ici la `Grid` porte cet espacement (`cellSize = 128*2.5`) et la tuile `(col 0, row 1)` du tileset reproduit la même région source. Ajuster `indexOf(...)` selon la découpe réelle de `grass.png` (le tileset est en tuiles de 128 ; l'ancienne région `y=128` correspond à `row 1`).
+> **ERRATUM (corrigé après vérif navigateur)** : une version antérieure de cet exemple mettait `cellSize = new Vec2(128 * 2.5, 128 * 2.5)` avec un scale de Grid à 1 — **c'est faux** et ça laisse des trous noirs (192px) entre les tuiles. Les tuiles sont dessinées à leur **taille native (128px)** ; donc `cellSize` doit **égaler la taille native** (`128`) pour un tiling jointif, et l'agrandissement se fait via le **`scale` du `Transform2D` de la `Grid`** (qui se propage au calque). Cf. la note de rendu en tête de [`tilemap.md`](tilemap.md). Le *fit-to-cell scaling* (découpler taille de rendu et taille native) est au backlog.
+>
+> Note tuile : l'ancien sandbox dessinait la région source `(0,128,128,128)` = `(col 0, row 1)` d'un tileset en tuiles de 128 → `indexOf(0, 1)`. Ajuster selon la découpe réelle de `grass.png`.
 
 - [ ] **Step 3: Typecheck the app**
 

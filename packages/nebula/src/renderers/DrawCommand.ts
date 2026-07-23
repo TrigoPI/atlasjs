@@ -25,4 +25,17 @@ export type ShapeDrawCommand = {
   readonly params: Vec4;
 };
 
-export type DrawCommand = SpriteDrawCommand | ShapeDrawCommand;
+export type TileMapDrawCommand = {
+  readonly kind: "tilemap";
+  readonly sortKey: number;
+  readonly batchKey: number;
+  readonly renderState: RenderState;
+  readonly texture: Texture2D;
+  readonly sampler: Sampler;
+  readonly tint: Vec4;
+  readonly models: ReadonlyArray<Mat4>;
+  readonly uvRects: ReadonlyArray<Vec4>;
+  readonly count: number;
+};
+
+export type DrawCommand = SpriteDrawCommand | ShapeDrawCommand | TileMapDrawCommand;
