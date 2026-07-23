@@ -8,7 +8,7 @@ import { ASSET_MANAGER, AssetManager } from "@atlasjs/assets";
 import { SCRIPT_MANAGER } from "./tokens";
 import { CameraManager, CAMERA_MANAGER } from "./camera";
 import { registerSystem } from "./registerSystem";
-import { SpriteLoader } from "./assets";
+import { SpriteLoader, TileSetLoader } from "./assets";
 
 import { ScriptManager } from "./scripting";
 
@@ -58,6 +58,7 @@ export class GameplayPlugin extends Plugin {
     const assets: AssetManager = await engine.services.wait(ASSET_MANAGER);
     
     assets.register(new SpriteLoader());
+    assets.register(new TileSetLoader());
 
     this.scriptManager = new ScriptManager(world, engine.services);
 
