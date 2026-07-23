@@ -1,15 +1,16 @@
 import { Vec2 } from "@atlasjs/math";
 
 import {
+  Key,
   Sprite,
+  InputApi,
+  CameraApi,
+  Transform,
   AtlasScript,
-  registerScriptMetadata,
   ScriptMetadata,
   SpriteRenderer,
-  Transform,
-  InputApi,
-  Key,
-  CameraApi,
+  registerScriptMetadata,
+  type GameEntity,
 } from "@atlasjs/gameplay";
 
 type MinMax = {
@@ -24,6 +25,7 @@ const DISCHARGE_RATE: number = 3;
 const THROW_THRESHOLD: number = 0.05;
 
 export class SwordScript extends AtlasScript<{
+  owner: GameEntity;
   scale: number;
   sprite: Sprite;
   maxPower: number;
@@ -32,7 +34,8 @@ export class SwordScript extends AtlasScript<{
   orbitSpeed: MinMax;
   throwDuration: number;
 }> {
-  private readonly sprite: Sprite;
+  private readonly owner: GameEntity;
+
   private readonly rotationSpeed: MinMax;
   private readonly orbitSpeed: MinMax;
 
@@ -47,8 +50,6 @@ export class SwordScript extends AtlasScript<{
   private input: InputApi;
   private camera: CameraApi;
 
-  private savedParent: Transform | null;
-
   private state: SwordState;
   private charge: number;
   private orbitAngle: number;
@@ -62,13 +63,11 @@ export class SwordScript extends AtlasScript<{
     this.input = this.getService(InputApi);
     this.camera = this.getService(CameraApi);
 
-    this.transform = this.addComponent(Transform);
-    this.spriteRenderer = this.addComponent(SpriteRenderer, this.sprite);
+    this.transform = this.requireComponent(Transform);
+    this.spriteRenderer = this.requireComponent(SpriteRenderer);
 
     this.transform.setScale(this.scale, this.scale);
-    this.spriteRenderer.sortingOrder = 10;
-
-    this.savedParent = this.transform.parent;
+    this.spriteRenderer.sortingOrder = 20;
 
     this.state = "orbit";
     this.charge = 0;
@@ -81,14 +80,16 @@ export class SwordScript extends AtlasScript<{
   }
 
   public onUpdate(dt: number): void {
+    const ownerTransform: Transform = this.owner.requireComponent(Transform);
+
     if (this.state === "orbit") {
-      this.tickOrbit(dt);
+      this.tickOrbit(dt, ownerTransform.worldPosition);
     } else {
-      this.tickThrown(dt);
+      this.tickThrown(dt, ownerTransform.worldPosition);
     }
   }
 
-  private tickOrbit(dt: number): void {
+  private tickOrbit(dt: number, ownerPosition: Vec2): void {
     if (this.input.isDown(Key.MouseLeft)) {
       this.charge = Math.min(1, this.charge + CHARGE_RATE * dt);
     } else {
@@ -113,23 +114,18 @@ export class SwordScript extends AtlasScript<{
     const x: number = Math.cos(this.orbitAngle) * this.orbitRadius;
     const y: number = Math.sin(this.orbitAngle) * this.orbitRadius;
 
-    this.transform.setPosition(x, y);
     this.transform.setRotation(this.spin);
+    this.transform.position.set(x, y).add(ownerPosition);
 
     if (this.input.isReleased(Key.MouseLeft) && this.charge > THROW_THRESHOLD) {
-      this.beginThrow();
+      this.beginThrow(ownerPosition);
     }
   }
 
   // prettier-ignore
-  private beginThrow(): void {
-    if (this.savedParent === null) {
-      return;
-    }
-
-    const parentWorld: Vec2 = this.savedParent.worldPosition;
-    const x: number = parentWorld.x + Math.cos(this.orbitAngle) * this.orbitRadius;
-    const y: number = parentWorld.y + Math.sin(this.orbitAngle) * this.orbitRadius;
+  private beginThrow(ownerPosition: Vec2): void {
+    const x: number = ownerPosition.x + Math.cos(this.orbitAngle) * this.orbitRadius;
+    const y: number = ownerPosition.y + Math.sin(this.orbitAngle) * this.orbitRadius;
 
     this.startWorld.set(x, y);
 
@@ -145,17 +141,14 @@ export class SwordScript extends AtlasScript<{
   }
 
   // prettier-ignore
-  private tickThrown(dt: number): void {
-    const parent: Transform | null = this.savedParent;
-
+  private tickThrown(dt: number, ownerPosition: Vec2): void {
     this.throwTime += dt;
 
     const t: number = Math.min(this.throwTime / this.throwDuration, 1);
     const amplitude: number = this.charge * this.maxPower * Math.sin(Math.PI * t);
 
-    const parentWorld: Vec2 = parent !== null ? parent.worldPosition : this.startWorld;
-    const homeX: number = parentWorld.x + Math.cos(this.orbitAngle) * this.orbitRadius;
-    const homeY: number = parentWorld.y + Math.sin(this.orbitAngle) * this.orbitRadius;
+    const homeX: number = ownerPosition.x + Math.cos(this.orbitAngle) * this.orbitRadius;
+    const homeY: number = ownerPosition.y + Math.sin(this.orbitAngle) * this.orbitRadius;
 
     const x: number = this.lerp(this.startWorld.x, homeX, t) + this.throwDir.x * amplitude;
     const y: number = this.lerp(this.startWorld.y, homeY, t) + this.throwDir.y * amplitude;
@@ -166,16 +159,16 @@ export class SwordScript extends AtlasScript<{
     this.transform.setRotation(this.spin);
 
     if (t >= 1) {
-      this.endThrow();
+      this.endThrow(ownerPosition);
     }
   }
 
-  private endThrow(): void {
-    this.transform.setParent(this.savedParent, false);
-    this.transform.setPosition(
-      Math.cos(this.orbitAngle) * this.orbitRadius,
-      Math.sin(this.orbitAngle) * this.orbitRadius,
-    );
+  // prettier-ignore
+  private endThrow(ownerPosition: Vec2): void {
+    const x: number = ownerPosition.x + Math.cos(this.orbitAngle) * this.orbitRadius;
+    const y: number = ownerPosition.y + Math.sin(this.orbitAngle) * this.orbitRadius;
+
+    this.transform.setPosition(x, y);
 
     this.state = "orbit";
     this.charge = 0;
@@ -188,6 +181,7 @@ export class SwordScript extends AtlasScript<{
 
 registerScriptMetadata(SwordScript, {
   exposed: {
+    owner: ScriptMetadata.entity({ required: true }),
     sprite: ScriptMetadata.field({ required: true }),
     scale: ScriptMetadata.field({ required: true }),
     maxPower: ScriptMetadata.field({ required: true }),

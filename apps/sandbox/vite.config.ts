@@ -7,6 +7,7 @@ export default defineConfig({
     alias: {
       "@css": "/css",
       "@sandbox": "/src",
+      "@assets": "/assets",
     },
   },
   define: {

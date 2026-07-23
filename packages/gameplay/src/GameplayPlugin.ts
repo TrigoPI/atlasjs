@@ -56,6 +56,7 @@ export class GameplayPlugin extends Plugin {
     const nebula: NebulaRenderer = await engine.services.wait(NEBULA_RENDERER);
     const inertia: PhysicsWorld = await engine.services.wait(INERTIAL_ENGINE);
     const assets: AssetManager = await engine.services.wait(ASSET_MANAGER);
+    
     assets.register(new SpriteLoader());
 
     this.scriptManager = new ScriptManager(world, engine.services);
@@ -65,8 +66,8 @@ export class GameplayPlugin extends Plugin {
     const spriteRenderSystem: SpriteRenderSystem = new SpriteRenderSystem(nebula);
     const playerInputSystem: PlayerInputSystem = new PlayerInputSystem(engine.services);
     const animatorSystem: AnimatorSystem = new AnimatorSystem();
-    const transformPropagationSystem: TransformPropagationSystem = new TransformPropagationSystem();
     const cameraManager: CameraManager = new CameraManager(nebula);
+    const transformPropagationSystem: TransformPropagationSystem = new TransformPropagationSystem();
     const cameraSyncSystem: CameraSyncSystem = new CameraSyncSystem(cameraManager, nebula);
 
     world

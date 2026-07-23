@@ -31,6 +31,7 @@ export class AssetManager implements LoadContext {
 
   public load<R extends Resource>(asset: Asset): Promise<R> {
     const pending: Promise<Resource> | undefined = this.loading.get(asset.id);
+
     if (pending) {
       return pending as Promise<R>;
     }
@@ -38,6 +39,7 @@ export class AssetManager implements LoadContext {
     const loader: AssetLoader<Asset, Resource> | undefined = this.loaders.get(
       asset.type,
     );
+
     if (!loader) {
       return Promise.reject(
         new Error(

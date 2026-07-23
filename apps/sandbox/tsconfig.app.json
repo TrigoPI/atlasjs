@@ -26,7 +26,8 @@
     "strictPropertyInitialization": false,
     "paths": {
       "@css/*": ["./css/*"],
-      "@sandbox/*": ["./src/*"]
+      "@sandbox/*": ["./src/*"],
+      "@assets/*": ["./assets/*"]
     }
   },
   "include": ["src"]

@@ -1,12 +1,16 @@
-import BlueDino from "../../assets/game/dinos/dino_blue.png";
-import Sword from "../../assets/game/swords/Iicon_32_10.png";
+import BlueDino from "@assets/game/dinos/dino_blue.png";
+import Sword from "@assets/game/swords/Iicon_32_10.png";
+import GrassTileset from "@assets/game/environement/grass.png";
 
 import { type SceneContext, Scene } from "@atlasjs/core";
 import { type Entity, type NexusWorld, NEXUS } from "@atlasjs/nexus";
 import { type AssetManager, ASSET_MANAGER } from "@atlasjs/assets";
+import { Bound } from "@atlasjs/math";
 
-import { TestScript } from "./scripts/TestScript";
+import { PlayerScript } from "./scripts/PlayerScript";
 import { SwordScript } from "./scripts/SwordScript";
+import { PlayerMovementScript } from "./scripts/PlayerMovementScript";
+import { CameraScript } from "./scripts/CameraScript";
 
 import {
   type CameraManager,
@@ -20,8 +24,11 @@ import {
   defineActions,
   SCRIPT_MANAGER,
   SpriteAsset,
+  SpriteRenderer,
+  Animator,
+  RigidBody,
+  PlayerInput,
   Transform2D,
-  SpriteRender,
 } from "@atlasjs/gameplay";
 
 import {
@@ -36,6 +43,7 @@ export class EcsScene extends Scene {
     super("game-scene");
   }
 
+  // prettier-ignore
   public override async onCreate(ctx: SceneContext): Promise<void> {
     const nexus: NexusWorld = ctx.services.get(NEXUS);
     const assets: AssetManager = ctx.services.get(ASSET_MANAGER);
@@ -43,15 +51,16 @@ export class EcsScene extends Scene {
     const cameraManager: CameraManager = ctx.services.get(CAMERA_MANAGER);
 
     const dinoAsset: TextureAsset = new TextureAsset(BlueDino);
-    const blueDinoTexture: Texture2D = await assets.load<Texture2D>(dinoAsset);
-
+    const grassTilesetAsset: TextureAsset = new TextureAsset(GrassTileset);
     const dinoSpriteAsset: SpriteAsset = new SpriteAsset(dinoAsset);
-    const blueDinoSprite: Sprite = await assets.load<Sprite>(dinoSpriteAsset);
-
     const swordSpriteAsset: SpriteAsset = SpriteAsset.fromPath(Sword);
+    
+    const blueDinoTexture: Texture2D = await assets.load<Texture2D>(dinoAsset);
+    const grassTilesetTexture: Texture2D = await assets.load<Texture2D>(grassTilesetAsset);
+    const blueDinoSprite: Sprite = await assets.load<Sprite>(dinoSpriteAsset);
     const swordSprite: Sprite = await assets.load<Sprite>(swordSpriteAsset);
 
-    const sheet: SpriteSheet = SpriteSheet.fromAutoGrid({
+    const playerSheet: SpriteSheet = SpriteSheet.fromAutoGrid({
       name: "blue_dino",
       texture: blueDinoTexture,
       rows: 1,
@@ -66,13 +75,13 @@ export class EcsScene extends Scene {
 
     const clips: Record<string, SpriteAnimation> = {
       idle: new SpriteAnimation({
-        frames: sheet.getManyInRange("blue_dino_", 0, 3),
+        frames: playerSheet.getManyInRange("blue_dino_", 0, 3),
         fps: 5,
         loop: true,
         autoPlay: true,
       }),
       run: new SpriteAnimation({
-        frames: sheet.getManyInRange("blue_dino_", 4, 9),
+        frames: playerSheet.getManyInRange("blue_dino_", 4, 9),
         fps: 12,
         loop: true,
         autoPlay: true,
@@ -80,23 +89,26 @@ export class EcsScene extends Scene {
     };
 
     const player: Entity = nexus.createEntity();
+    nexus.addComponent(player, Transform2D);
+    nexus.addComponent(player, RigidBody);
+    nexus.addComponent(player, Animator, clips, "idle");
+    nexus.addComponent(player, SpriteRenderer, blueDinoSprite);
+    nexus.addComponent(player, PlayerInput, controls);
+
     const sword: Entity = nexus.createEntity();
+    nexus.addComponent(sword, Transform2D);
+    nexus.addComponent(sword, SpriteRenderer, swordSprite);
 
     const cameraEntity: Entity = nexus.createEntity();
-    const cameraComponent: Camera = nexus.addComponent(cameraEntity, Camera);
-
+    nexus.addComponent(cameraEntity, Camera);
     nexus.addComponent(cameraEntity, Transform2D);
-    cameraComponent.zoom = 1;
-
-    const sword2: Entity = nexus.createEntity();
-    nexus.addComponent(sword2, Transform2D);
-    nexus.addComponent(sword2, SpriteRender, swordSprite);
 
     scriptManager.attach(sword, SwordScript, {
+      scale: 1.7,
+      owner: player,
       sprite: swordSprite,
-      scale: 1,
-      maxPower: 200,
-      orbitRadius: 10,
+      maxPower: 500,
+      orbitRadius: 45,
       throwDuration: 1,
       rotationSpeed: {
         max: 10 * Math.PI,
@@ -108,17 +120,30 @@ export class EcsScene extends Scene {
       },
     });
 
-    scriptManager.attach(player, TestScript, {
-      clips,
-      controls,
-      sprite: blueDinoSprite,
+    scriptManager.attach(player, PlayerScript);
+    scriptManager.attach(player, PlayerMovementScript, {
       speed: 250,
-      sword,
     });
 
-    nexus.setParent(sword, player);
-    nexus.setParent(cameraEntity, player);
+    scriptManager.attach(cameraEntity, CameraScript, {
+      target: player,
+    });
 
     cameraManager.setActive(cameraEntity);
+
+    for (let y: number = 0; y < 10; y++) {
+      for (let x: number = 0; x < 10; x++) {
+        const tile: Entity = nexus.createEntity();
+        const rect: Bound = new Bound(0, 128, 128, 128);
+        const sprite: Sprite = new Sprite(grassTilesetTexture, { rect });
+        const spriteRenderer: SpriteRenderer = nexus.addComponent(tile, SpriteRenderer, sprite);
+        const transform: Transform2D = nexus.addComponent(tile, Transform2D);
+        
+        spriteRenderer.sortingOrder = 0;
+
+        transform.scale.set(2.5, 2.5);
+        transform.position.set(x * 128 * 2.5, y * 128 * 2.5);
+      }
+    }
   }
 }

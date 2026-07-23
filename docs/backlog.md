@@ -188,6 +188,22 @@ Source : [`gameplay/entity-hierarchy.md`](gameplay/entity-hierarchy.md) (§9, ho
 
 ---
 
+## Gameplay — TileSet & TileMap
+
+> **Cœur v1 (design validé, non implémenté)** : `TileSet` en asset complet, `Grid` → N `TileMap` enfants (multi-calque), remplissage code-first, rendu instancié via `TileMapNode` dédié + culling, tri par `sortingOrder`. Source : [`gameplay/tilemap.md`](gameplay/tilemap.md) (§2 non-objectifs). Ne restent que les **extensions** ci-dessous.
+
+- 📋 **(Dé)sérialisation JSON d'une tilemap** + schéma de référence de tuile (`tilesetId` + index) = le chantier `AssetRef`-par-id (le `TileSet.id` stable est déjà posé comme ancre). Objectif d'origine du sujet, reporté volontairement.
+- 📋 **Multi-tileset par tilemap + `Tile` riche** (modèle B2) : couleur / `colliderType` / tuiles animées par tuile, agrégeables depuis plusieurs sources ; la cellule pointerait un `Tile` plutôt qu'un `int`. Le seam `Tile` est déjà en place.
+- 📋 **Sorting layers nommés + order-in-layer** : feature de rendu **transverse** (touche `SpriteRender` *et* `TileMapRenderer` *et* le sort key de `NodeRendererBase.computeSortKey` — bits libres disponibles). À designer à part, pas propre au tilemap.
+- 📋 **Colliders de tilemap** : composant générant les colliders (via `@atlasjs/rapier`) depuis les cellules pleines ; dépend d'un modèle de collision 2D côté gameplay.
+- 📋 **Layouts isométrique / hexagonal + cell swizzle** : la v1 est rectangulaire uniquement ; généraliser la conversion cellule↔monde dans `Grid`.
+- 📋 **Palette / éditeur** : authoring visuel des tuiles (peindre dans la grille) ; dépend d'un éditeur.
+- 📋 **Optimisations de rendu** : buffer d'instances persistant (static batch, upload une fois au lieu de chaque frame), cache par `revision` + plage-visible, chunking + culling par chunk. La v1 reconstruit les instances visibles chaque frame.
+- 📋 **Util de slicing en grille partagé** : `TileSet` refait sa propre boucle (décision A) ; extraire un util commun avec `SpriteSheet.fromGrid`/`fromAutoGrid` (nebula), et/ou exposer un accès `(row,col)`/index dans `SpriteSheet`.
+- 📋 **Tile Anchor configurable + scaling *fit-to-cell*** : la v1 ancre la tuile au coin d'origine de la cellule et la dessine à sa taille native ; permettre un ancrage centré (défaut Unity) et un redimensionnement à `cellSize`.
+
+---
+
 ## Notes transverses (risques acceptés, à surveiller)
 
 - **Gameplay** ([`gameplay/gameplay-redesign.md`](gameplay/gameplay-redesign.md)) : contrat `setComponent` « muter en place, jamais remplacer » (sinon durcir Nexus pour émettre `onRemove`+`onAdd`) ; téléport d'un `dynamic` avant existence de son body (1ère frame) ; scripts en lane `update` variable mutant un `dynamic` → préférer vélocité/force.
