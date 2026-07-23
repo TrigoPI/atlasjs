@@ -19,16 +19,20 @@ import {
   PhysicsPushSystem,
   PlayerInputSystem,
   SpriteRenderSystem,
+  TileMapRenderSystem,
   TransformPropagationSystem,
 } from "./systems";
 
 import {
   Animator,
   Camera,
+  Grid,
   PhysicsBodyRef,
   PlayerInput,
   RigidBody2D,
   SpriteRender,
+  TileMap,
+  TileMapRenderer,
   Transform2D,
   WorldTransform2D,
 } from "./components";
@@ -65,6 +69,7 @@ export class GameplayPlugin extends Plugin {
     const physicsPushSystem: PhysicsPushSystem = new PhysicsPushSystem(inertia);
     const physicsPullSystem: PhysicsPullSystem = new PhysicsPullSystem();
     const spriteRenderSystem: SpriteRenderSystem = new SpriteRenderSystem(nebula);
+    const tileMapRenderSystem: TileMapRenderSystem = new TileMapRenderSystem(nebula);
     const playerInputSystem: PlayerInputSystem = new PlayerInputSystem(engine.services);
     const animatorSystem: AnimatorSystem = new AnimatorSystem();
     const cameraManager: CameraManager = new CameraManager(nebula);
@@ -79,7 +84,10 @@ export class GameplayPlugin extends Plugin {
       .defineComponent(PhysicsBodyRef)
       .defineComponent(PlayerInput)
       .defineComponent(Animator)
-      .defineComponent(Camera);
+      .defineComponent(Camera)
+      .defineComponent(Grid)
+      .defineComponent(TileMap)
+      .defineComponent(TileMapRenderer);
 
     this.unsubscribers.push(
       world.onRemove(PhysicsBodyRef, (_entity: Entity, ref: PhysicsBodyRef) => {
@@ -94,6 +102,10 @@ export class GameplayPlugin extends Plugin {
 
       world.onRemove(SpriteRender, (entity: Entity) => {
         spriteRenderSystem.unmount(entity);
+      }),
+
+      world.onRemove(TileMap, (entity: Entity) => {
+        tileMapRenderSystem.unmount(entity);
       }),
 
       world.onRemove(Transform2D, (entity: Entity) => {
@@ -170,6 +182,14 @@ export class GameplayPlugin extends Plugin {
       registerSystem(render, world, spriteRenderSystem, {
         name: "gameplay:sprite-render",
         stage: "PreRender",
+      }),
+    );
+
+    this.handles.push(
+      registerSystem(render, world, tileMapRenderSystem, {
+        name: "gameplay:tilemap-render",
+        stage: "PreRender",
+        after: "gameplay:sprite-render",
       }),
     );
 
