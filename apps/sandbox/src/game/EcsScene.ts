@@ -141,7 +141,7 @@ export class EcsScene extends Scene {
     const grid: Entity = nexus.createEntity();
     nexus.addComponent(grid, Grid, new Vec2(128, 128));
     const gridTransform: Transform2D = nexus.addComponent(grid, Transform2D);
-    gridTransform.scale.set(2.5, 2.5);
+    gridTransform.scale.set(2, 2);
 
     const ground: Entity = nexus.createEntity();
     const groundMap: TileMap = nexus.addComponent(ground, TileMap, grassTileset);

@@ -29,8 +29,8 @@ export class TileMapNodeRenderer
     this.nextBatchId = 0;
 
     this.defaultSampler = renderer.createSampler({
-      minFilter: "linear",
-      magFilter: "linear",
+      minFilter: "nearest",
+      magFilter: "nearest",
       addressModeU: "clamp-to-edge",
       addressModeV: "clamp-to-edge",
     });
