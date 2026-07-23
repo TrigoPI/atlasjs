@@ -1,6 +1,6 @@
 import { Vec2, Vec4 } from "@atlasjs/math";
 import { TileMapNode } from "@atlasjs/nebula";
-import type { Bound } from "@atlasjs/math";
+import type { Bound, Mat3 } from "@atlasjs/math";
 import type { NebulaRenderer, TileInstance } from "@atlasjs/nebula";
 
 import type { Tile } from "../assets/Tile";
@@ -8,7 +8,8 @@ import { Grid } from "../components/Grid";
 import { TileMap } from "../components/TileMap";
 import { TileMapRenderer } from "../components/TileMapRenderer";
 import { WorldTransform2D } from "../components/WorldTransform2D";
-import { cellOrigin } from "./tilemap-geometry";
+import { cellOrigin, visibleCellRange, worldBoundToLocalBound } from "./tilemap-geometry";
+import type { CellRange } from "./tilemap-geometry";
 
 import type {
   Entity,
@@ -47,7 +48,7 @@ export class TileMapRenderSystem implements NexusSystem {
 
           const node: TileMapNode = this.resolveNode(entity);
           this.syncNode(node, worldTransform, renderer, tileMap);
-          this.rebuildInstances(node, grid, tileMap);
+          this.rebuildInstances(node, grid, tileMap, worldTransform);
         },
       );
   }
@@ -107,6 +108,7 @@ export class TileMapRenderSystem implements NexusSystem {
     node: TileMapNode,
     grid: Grid,
     tileMap: TileMap,
+    worldTransform: WorldTransform2D,
   ): void {
     const instances: TileInstance[] = node.instances;
     instances.length = 0;
@@ -114,32 +116,44 @@ export class TileMapRenderSystem implements NexusSystem {
     const textureWidth: number = tileMap.tileset.texture.width;
     const textureHeight: number = tileMap.tileset.texture.height;
 
-    tileMap.forEachTile((cx: number, cy: number, index: number) => {
-      const tile: Tile | undefined = tileMap.tileset.tryGetTile(index);
-      if (tile === undefined) {
-        return;
+    const viewport: Bound = this.nebula.getCameraViewport();
+    const invWorld: Mat3 = worldTransform.matrix.clone().invert();
+    const localViewport: Bound = worldBoundToLocalBound(invWorld, viewport);
+    const range: CellRange = visibleCellRange(grid.cellSize, grid.cellGap, localViewport);
+
+    for (let cy: number = range.cyMin; cy <= range.cyMax; cy++) {
+      for (let cx: number = range.cxMin; cx <= range.cxMax; cx++) {
+        const index: number = tileMap.getTile(cx, cy);
+        if (index < 0) {
+          continue;
+        }
+
+        const tile: Tile | undefined = tileMap.tileset.tryGetTile(index);
+        if (tile === undefined) {
+          continue;
+        }
+
+        const origin: { x: number; y: number } = cellOrigin(
+          grid.cellSize,
+          grid.cellGap,
+          cx,
+          cy,
+        );
+        const rect: Bound = tile.sprite.rect;
+
+        instances.push({
+          x: origin.x,
+          y: origin.y,
+          width: rect.width,
+          height: rect.height,
+          uvRect: new Vec4(
+            rect.x / textureWidth,
+            rect.y / textureHeight,
+            rect.width / textureWidth,
+            rect.height / textureHeight,
+          ),
+        });
       }
-
-      const origin: { x: number; y: number } = cellOrigin(
-        grid.cellSize,
-        grid.cellGap,
-        cx,
-        cy,
-      );
-      const rect: Bound = tile.sprite.rect;
-
-      instances.push({
-        x: origin.x,
-        y: origin.y,
-        width: rect.width,
-        height: rect.height,
-        uvRect: new Vec4(
-          rect.x / textureWidth,
-          rect.y / textureHeight,
-          rect.width / textureWidth,
-          rect.height / textureHeight,
-        ),
-      });
-    });
+    }
   }
 }

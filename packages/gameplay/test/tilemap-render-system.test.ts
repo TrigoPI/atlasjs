@@ -98,4 +98,27 @@ describe("TileMapRenderSystem", () => {
     system.unmount(layer);
     expect(nodes(scene).length).toBe(0);
   });
+
+  it("culls cells outside the camera viewport", () => {
+    const { world, scene, system } = setup(new Bound(-64, -64, 256, 256));
+    const tileset: TileSet = makeTileSet();
+
+    const grid: Entity = world.createEntity();
+    world.addComponent(grid, Grid, new Vec2(128, 128));
+    const layer: Entity = world.createEntity();
+    world.addComponent(layer, WorldTransform2D).matrix.fromTransform2D(new Transform2D());
+    const map: TileMap = world.addComponent(layer, TileMap, tileset);
+    world.addComponent(layer, TileMapRenderer);
+    world.setParent(layer, grid);
+
+    map.setTile(0, 0, 0);
+    map.setTile(100, 100, 0);
+
+    system.update({ world, dt: 0 });
+
+    const node: TileMapNode = nodes(scene)[0];
+    expect(node.instances.length).toBe(1);
+    expect(node.instances[0].x).toBe(0);
+    expect(node.instances[0].y).toBe(0);
+  });
 });
