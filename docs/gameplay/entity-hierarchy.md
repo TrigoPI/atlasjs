@@ -75,6 +75,7 @@ world.getChildren(entity: Entity): ReadonlyArray<Entity>
 - `setParent(child, parent)` : pose/déplace le lien. Met à jour **atomiquement** le `Parent` de l'enfant et les tableaux `Children` des deux côtés (retrait de l'ancien parent, ajout au nouveau).
 - `setParent(child, null)` : détache (retire `Parent`, retire l'enfant de l'ancien `Children`). L'entité redevient une racine.
 - `getChildren` renvoie `[]` si aucun enfant.
+- `getChildren` renvoie le **tableau `Children.value` vivant** (pas une copie défensive), typé `ReadonlyArray` : ne pas le muter (caster pour contourner le `readonly` corromprait la hiérarchie), ni le retenir à travers un `setParent`/`destroyEntity` (il change sous la main).
 - **Racines pour l'éditeur** : entités sans `Parent`, obtenues via `world.query(SomeBase).without(Parent)` (voir §7 pour la convention « les nœuds de groupe portent un `Transform2D` »).
 
 ### 3.3 Invariants

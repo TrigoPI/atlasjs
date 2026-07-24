@@ -127,7 +127,7 @@ Source : [`gameplay/entity-hierarchy.md`](gameplay/entity-hierarchy.md) (§9, ho
 
 ## Gameplay — Input scripting
 
-> **Cœur implémenté** : Phase 1 (`ScriptService`/`InputApi`, sources [`gameplay/input-scripting.md`](gameplay/input-scripting.md)) et Phase 2 (actions nommées `defineActions`/`button()`/`vector2()`/`PlayerInput`/`PlayerInputSystem`, source [`gameplay/input-actions.md`](gameplay/input-actions.md)). Utilisé dans `apps/sandbox`. Ne restent que les **extensions V2** ci-dessous.
+> **Cœur implémenté** : Phase 1 (`ScriptService`/`InputApi`) et Phase 2 (actions nommées `defineActions`/`button()`/`vector2()`/`PlayerInput`/`PlayerInputSystem`). Source unifiée : [`gameplay/input-scripting.md`](gameplay/input-scripting.md). Utilisé dans `apps/sandbox`. Ne restent que les **extensions V2** ci-dessous.
 
 - 📋 Events / callbacks (aujourd'hui polling seulement).
 - 📋 Interactions (hold / tap / multi-tap).
@@ -142,7 +142,7 @@ Source : [`gameplay/entity-hierarchy.md`](gameplay/entity-hierarchy.md) (§9, ho
 
 ## Gameplay — Variables exposées de script (`@Expose` → `registerScriptMetadata`)
 
-> **Pivot en cours** : le décorateur stage-3 `@Expose()` (+ `Symbol.metadata` + Babel) est remplacé par un **registre plain-JS** alimenté par `registerScriptMetadata(Ctor, metadata)`, unique source de vérité runtime, aligné sur la vision compilateur custom. Spec : [`gameplay/script-metadata-registry.md`](gameplay/script-metadata-registry.md). Source d'origine (implémentation `@Expose` remplacée) : [`gameplay/exposed-script-variables.md`](gameplay/exposed-script-variables.md).
+> **Pivot fait** : le décorateur stage-3 `@Expose()` (+ `Symbol.metadata` + Babel) a été remplacé par un **registre plain-JS** alimenté par `registerScriptMetadata(Ctor, metadata)`, unique source de vérité runtime, aligné sur la vision compilateur custom. Spec unifiée (registre + `GameEntity`) : [`gameplay/exposed-script-variables.md`](gameplay/exposed-script-variables.md).
 > Le pivot **résout** : le risque `Symbol()` module-local (plus de symbole partagé writer↔reader) et **câble le warn minimal** de cohérence (`required` sans valeur / clé non exposée). Restent les **extensions V2** ci-dessous.
 
 - 📋 Validation stricte de cohérence `TProps` ↔ metadata **avec throw** + lien automatique (aujourd'hui : double déclaration générique `AtlasScript<{...}>` / `registerScriptMetadata` sans lien, un champ renommé d'un côté reste `undefined` silencieusement). Le warn minimal est fait ; le lien automatique viendra avec le **compilateur custom**.
@@ -167,18 +167,17 @@ Source : [`gameplay/entity-hierarchy.md`](gameplay/entity-hierarchy.md) (§9, ho
 
 ## Gameplay — Modèle de composants de script (unification — Phase B)
 
-> **Phase A implémentée** (mergée) : frontière principielle **façade ⇔ comportement moteur réel** → une **seule** façade (`Transform`), le reste en composants données pures via aliases propres (`RigidBody`/`SpriteRenderer`) ou bruts (`Animator`/`PlayerInput`), vocabulaire uniforme `addComponent(X)` sans suffixe. Source + roadmap Phase B : [`gameplay/scripting-component-unification.md`](gameplay/scripting-component-unification.md) (§5).
+> **Phase A implémentée** (mergée) : frontière principielle **façade ⇔ comportement moteur réel** → une **seule** façade (`Transform`), le reste en composants données pures via aliases propres (`RigidBody`/`SpriteRenderer`) ou bruts (`Animator`/`PlayerInput`), vocabulaire uniforme `addComponent(X)` sans suffixe. Source + roadmap Phase B : [`gameplay/scripting-components.md`](gameplay/scripting-components.md) (§ Roadmap).
 
-- ✅ **B1 — Couche token `defineScriptComponent(engine, create?)`** : vocabulaire uniforme, dispatch collapsé sur un brand, `Transform` migré de classe façade vers token, passthrough = identité (génériques `PlayerInput<T>` préservés). Spec : [`gameplay/scripting-component-token-b1.md`](gameplay/scripting-component-token-b1.md).
-- 📋 **B2 — Compilateur (volet composants)** : surface `interface` authored → mapping vers composant moteur, inline de la résolution token + `ops` → appels bruts (zéro dispatch runtime). **Même compilateur** que celui listé dans « Gameplay — Variables exposées de script » (réécriture `addComponent<T>`, génération `registerScriptMetadata`). Voir §5.2.
-- 📋 **B3 — `Transform` = donnée pure via `Changed<T>`** : tuer la dernière façade. **Dépend** du primitif change-detection tick-based listé dans « Core / ECS (Nexus) ». Autorité kinematic/static optimisée par Changed (non-ambigu : le pull n'écrit pas ces Transform). **Dragon** : le téléport d'un `dynamic` ne peut **pas** être une écriture `Transform` brute (clobberée le frame suivant par le pull `dynamic-only`, et `Changed` ne peut pas l'attribuer) → **canal explicite requis** (`rigidBody.teleport()` ou composant-commande `Teleport`). Helpers hiérarchie/world-matrix (`worldPosition`, `setParent`, `getChildren`) → fonctions libres. Voir §5.3.
-- 💭 Polish doc non-bloquant (relevé à la review finale Phase A) : bullet CLAUDE.md « `ScriptComponent<TEngine>` subclasses only » à préciser (le barrel réexporte aussi 2 aliases non-subclasses) ; le corps de `scripting-components.md` décrit encore les 3 anciennes façades (doc historique, note pointeur déjà en tête).
+- ✅ **B1 — Couche token `defineScriptComponent(engine, create?)`** : vocabulaire uniforme, dispatch collapsé sur un brand, `Transform` migré de classe façade vers token, passthrough = identité (génériques `PlayerInput<T>` préservés). Spec : [`gameplay/scripting-components.md`](gameplay/scripting-components.md) (modèle token).
+- 📋 **B2 — Compilateur (volet composants)** : surface `interface` authored → mapping vers composant moteur, inline de la résolution token + `ops` → appels bruts (zéro dispatch runtime). **Même compilateur** que celui listé dans « Gameplay — Variables exposées de script » (réécriture `addComponent<T>`, génération `registerScriptMetadata`). Voir § Roadmap.
+- 📋 **B3 — `Transform` = donnée pure via `Changed<T>`** : tuer la dernière façade. **Dépend** du primitif change-detection tick-based listé dans « Core / ECS (Nexus) ». Autorité kinematic/static optimisée par Changed (non-ambigu : le pull n'écrit pas ces Transform). **Dragon** : le téléport d'un `dynamic` ne peut **pas** être une écriture `Transform` brute (clobberée le frame suivant par le pull `dynamic-only`, et `Changed` ne peut pas l'attribuer) → **canal explicite requis** (`rigidBody.teleport()` ou composant-commande `Teleport`). Helpers hiérarchie/world-matrix (`worldPosition`, `setParent`, `getChildren`) → fonctions libres. Voir § Roadmap.
 
 ---
 
 ## Gameplay — Références d'entités dans les scripts (`GameEntity`)
 
-> **Cœur implémenté** : handle stateless `GameEntity` (`otherEntity.getComponent(...)` / `otherEntity.getScript(SwordScript)`), `ScriptManager.getScript(entityId, type)`, métadonnée en union discriminée `{ type: "field" | "entity" }` + builders `ScriptMetadata.field()`/`.entity()`, injection d'une `Entity` brute → `GameEntity` (typage call-site `AttachProps`), `RuntimeScriptContext` délègue à un `GameEntity` de sa propre entité + `this.getEntity(entity)` pour wrapper une entité runtime. Source : [`gameplay/script-entity-references.md`](gameplay/script-entity-references.md) (§5 non-objectifs). Ne restent que les extensions V2 ci-dessous.
+> **Cœur implémenté** : handle stateless `GameEntity` (`otherEntity.getComponent(...)` / `otherEntity.getScript(SwordScript)`), `ScriptManager.getScript(entityId, type)`, métadonnée en union discriminée `{ type: "field" | "entity" }` + builders `ScriptMetadata.field()`/`.entity()`, injection d'une `Entity` brute → `GameEntity` (typage call-site `AttachProps`), `RuntimeScriptContext` délègue à un `GameEntity` de sa propre entité + `this.getEntity(entity)` pour wrapper une entité runtime. Source : [`gameplay/exposed-script-variables.md`](gameplay/exposed-script-variables.md) (§ hors périmètre). Ne restent que les extensions V2 ci-dessous.
 
 - 📋 **Champs entité optionnels / tableaux** (`sword?: GameEntity`, `GameEntity[]`) : le type conditionnel `AttachProps` ne les substitue pas encore (une union `GameEntity | undefined` ou un tableau ne matche pas `extends GameEntity`) ; à généraliser (`NonNullable`, mapping récursif). Connexe : passer explicitement `{ champ: undefined }` wrappe `undefined` au lieu d'émettre le warn « required manquant » (le warn ne se déclenche que si la clé est **absente**).
 - 📋 **(Dé)sérialisation des refs d'entité** (scène/prefab sur disque) : demande des ids d'entité stables cross-session ; à lier au chantier `AssetRef` par id.
@@ -203,6 +202,12 @@ Source : [`gameplay/entity-hierarchy.md`](gameplay/entity-hierarchy.md) (§9, ho
 - 📋 **Tile Anchor configurable + scaling *fit-to-cell*** : la v1 ancre la tuile au coin d'origine de la cellule et la dessine à sa taille native ; permettre un ancrage centré (défaut Unity) et un redimensionnement à `cellSize`. (C'est ce qui lèverait la contrainte « `cellSize` = taille native » — sinon trous entre tuiles.)
 - 📋 **Durcissements notés à la review finale** (tous Minor, acceptés en v1) : `TileSet` ne valide pas des `columns`/`rows` explicites surdimensionnés vs la texture (uvRect > 1, clampé par `clamp-to-edge` — dégrade sans crash) → warn dev optionnel ; `TileMap.setTile` bumpe `revision` même sur réécriture identique (inoffensif tant que `revision` ne gate pas un cache) ; culling vs rendu peuvent diverger sous shear + scale non-uniforme + rotation (cull conservateur → sans artefact, même chemin lossy que `SpriteRenderSystem`).
 - ✅ **Vérif à faire** : le sandbox n'exerce qu'**un seul calque** — un check navigateur 2 calques (sol z=0 + déco z=10) fermerait le dernier trou de vérif (l'analyse sort-key/batch confirme la correction ; pas de changement de code attendu).
+
+---
+
+## Dette technique
+
+- 📋 **`tsc -b` du sandbox rouge** : 4 erreurs `noUnusedLocals`/`noUnusedParameters` pré-existantes dans `apps/sandbox/src/game/Player.ts` et `Sword.ts` (code legacy hors ECS) — cleanup séparé, sans lien avec un chantier de design.
 
 ---
 

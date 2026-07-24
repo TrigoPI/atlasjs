@@ -1,21 +1,22 @@
-import BlueDino from "@assets/game/dinos/dino_blue.png";
-import Sword from "@assets/game/swords/Iicon_32_10.png";
-import GrassTileset from "@assets/game/environement/grass.png";
-
+import { Vec2 } from "@atlasjs/math";
 import { type SceneContext, Scene } from "@atlasjs/core";
 import { type Entity, type NexusWorld, NEXUS } from "@atlasjs/nexus";
 import { type AssetManager, ASSET_MANAGER } from "@atlasjs/assets";
-import { Vec2 } from "@atlasjs/math";
 
-import { PlayerScript } from "./scripts/PlayerScript";
-import { SwordScript } from "./scripts/SwordScript";
-import { PlayerMovementScript } from "./scripts/PlayerMovementScript";
-import { CameraScript } from "./scripts/CameraScript";
+import { ResourcesPath } from "./ResourcesPath";
+import { MapLoader } from "./map-loader";
+
+import {
+  SwordScript,
+  PlayerScript,
+  PlayerMovementScript,
+  CameraScript,
+  MapBuilderScript,
+} from "./scripts";
 
 import {
   type CameraManager,
   type ScriptManager,
-  type TileSet,
   Key,
   button,
   Camera,
@@ -33,6 +34,7 @@ import {
   Transform2D,
   TileMap,
   TileMapRenderer,
+  TileSet,
   TileSetAsset,
 } from "@atlasjs/gameplay";
 
@@ -50,14 +52,54 @@ export class EcsScene extends Scene {
 
   // prettier-ignore
   public override async onCreate(ctx: SceneContext): Promise<void> {
+    await this.loadMap(ctx);
+    await this.initializePlayer(ctx);
+  }
+
+  private async loadMap(ctx: SceneContext): Promise<void> {
+    const nexus: NexusWorld = ctx.services.get(NEXUS);
+    const assets: AssetManager = ctx.services.get(ASSET_MANAGER);
+    const scriptManager: ScriptManager = ctx.services.get(SCRIPT_MANAGER);
+
+    const mapLoader: MapLoader = new MapLoader(ResourcesPath.Map);
+
+    // prettier-ignore
+    const groundTileSetAsset: TileSetAsset = TileSetAsset.fromPath(ResourcesPath.Tilesets.Ground.Grass, {
+      tileHeight: 32,
+      tileWidth: 32,
+    });
+
+    const groundTileSet: TileSet =
+      await assets.load<TileSet>(groundTileSetAsset);
+
+    const gridEntity: Entity = nexus.createEntity();
+    nexus.addComponent(gridEntity, Transform2D);
+    nexus.addComponent(gridEntity, Grid, new Vec2(32, 32));
+
+    const ground: Entity = nexus.createEntity();
+    nexus.addComponent(ground, Transform2D);
+    nexus.addComponent(ground, TileMapRenderer);
+    nexus.addComponent(ground, TileMap, groundTileSet);
+
+    nexus.setParent(ground, gridEntity);
+
+    scriptManager.attach(ground, MapBuilderScript, {
+      grid: gridEntity,
+      loader: mapLoader,
+      scale: 2,
+    });
+  }
+
+  // prettier-ignore
+  private async initializePlayer(ctx: SceneContext): Promise<void> {
     const nexus: NexusWorld = ctx.services.get(NEXUS);
     const assets: AssetManager = ctx.services.get(ASSET_MANAGER);
     const scriptManager: ScriptManager = ctx.services.get(SCRIPT_MANAGER);
     const cameraManager: CameraManager = ctx.services.get(CAMERA_MANAGER);
 
-    const dinoAsset: TextureAsset = new TextureAsset(BlueDino);
+    const dinoAsset: TextureAsset = new TextureAsset(ResourcesPath.Dinos.Blue);
     const dinoSpriteAsset: SpriteAsset = new SpriteAsset(dinoAsset);
-    const swordSpriteAsset: SpriteAsset = SpriteAsset.fromPath(Sword);
+    const swordSpriteAsset: SpriteAsset = SpriteAsset.fromPath(ResourcesPath.Swords.Default);
 
     const blueDinoTexture: Texture2D = await assets.load<Texture2D>(dinoAsset);
     const blueDinoSprite: Sprite = await assets.load<Sprite>(dinoSpriteAsset);
@@ -133,22 +175,5 @@ export class EcsScene extends Scene {
     });
 
     cameraManager.setActive(cameraEntity);
-
-    const grassTileset: TileSet = await assets.load<TileSet>(
-      TileSetAsset.fromPath(GrassTileset, { tileWidth: 128, tileHeight: 128 }),
-    );
-
-    const grid: Entity = nexus.createEntity();
-    nexus.addComponent(grid, Grid, new Vec2(128, 128));
-    const gridTransform: Transform2D = nexus.addComponent(grid, Transform2D);
-    gridTransform.scale.set(2, 2);
-
-    const ground: Entity = nexus.createEntity();
-    const groundMap: TileMap = nexus.addComponent(ground, TileMap, grassTileset);
-    nexus.addComponent(ground, TileMapRenderer, 0);
-    nexus.addComponent(ground, Transform2D);
-    nexus.setParent(ground, grid);
-
-    groundMap.fill(0, 0, 9, 9, grassTileset.indexOf(0, 1));
   }
 }

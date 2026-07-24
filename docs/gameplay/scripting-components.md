@@ -1,101 +1,231 @@
-# API composants de script (`@atlasjs/gameplay`) — modèle Unity `GetComponent`
+# API composants de script (`@atlasjs/gameplay`) — modèle token `defineScriptComponent`
 
-> **Mise à jour :** les façades passthrough (`RigidBody2DComponent`, `SpriteRendererComponent`) ont été supprimées et `Transform2DComponent` renommée `Transform`. Voir [`scripting-component-unification.md`](scripting-component-unification.md).
+> **Statut : implémenté.** État final de la saga d'unification de l'accès composant côté script. Ce document décrit le **modèle token** (`defineScriptComponent`), qui **supersède** successivement le modèle façade-classe (`ScriptComponent<TEngine>` + getters magiques) puis le nommage/alias de Phase A. Suite directe de `docs/gameplay/gameplay-redesign.md` (phases 0→6 : source unique + autorité par type de corps). Ce document raffine **uniquement la couche d'accès aux composants côté script** ; le pont physique, l'autorité déclarée et la source unique restent inchangés.
+>
+> L'historique des étapes superséded (magic getters → façade-classe → aliases Phase A → token) est résumé en appendice (§13).
 
-> **Statut : implémenté (phases 1→4 terminées).** Suite directe de `docs/gameplay/gameplay-redesign.md` (phases 0→6 terminées). Ce document raffine **uniquement la couche d'accès aux composants côté script** (§5 « API de script » de l'ancien doc). Le pont physique, l'autorité déclarée et la source unique restent inchangés.
+---
 
-## Contexte
+## 1. Statut & lignée
 
-`docs/gameplay/gameplay-redesign.md` a supprimé l'ECS fantôme et introduit des **façades fines** (`Transform2DComponent`, `RigidBody2DComponent`) : des proxys `(world, entity)` sur une source unique dans Nexus, avec routage d'autorité dans les setters. Mais l'accès à ces façades a deux défauts :
+La couche d'accès composant a traversé trois états successifs, tous décrits historiquement dans cette saga :
 
-1. **Getters magiques imposés.** `AtlasScript` expose `get transform()` / `get rigidbody()`, et `ScriptComponentRegistry` **construit d'office** les deux façades pour *toute* entité scriptée (`EntityScriptComponents` news `transform` **et** `rigidbody`), même une entité sans rigidbody.
-2. **Crash différé, incohérence.** `this.transform` a toujours l'air présent mais `resolve()` fait `requireComponent` → **throw à l'accès** si `addComponent(Transform2D)` n'a pas été fait avant. Et l'accès aux façades (`this.transform`) suit un chemin différent de l'accès aux autres composants (`this.getComponent(X)`).
+1. **Façade-classe (superséded).** Modèle Unity `GetComponent` : une classe façade `ScriptComponent<TEngine>` déclarant `static engine`, dispatch runtime par `prototype instanceof ScriptComponent`.
+2. **Aliases Phase A (superséded).** Élagage des façades passthrough injustifiées, `Transform2DComponent` renommée `Transform`, `RigidBody`/`SpriteRenderer` en simples alias d'export.
+3. **Token (état final, ci-dessous).** Un primitif unique `defineScriptComponent(engine, create?)` mint **tous** les composants de script ; le dispatch collapse en un seul point de bifurcation (le brand du token).
 
-L'objectif : **unifier tout l'accès composant sur le modèle Unity** — l'utilisateur récupère explicitement ce dont il a besoin et le stocke lui-même :
+Ce document décrit l'état **3** comme la référence courante. Les mécaniques des états 1 et 2 (`ScriptComponent<TEngine>`, `ScriptComponentCtor`, dispatch `instanceof`, alias d'export) ne survivent que dans l'appendice historique.
+
+## 2. Contexte & objectifs — le modèle Unity `GetComponent`
+
+`gameplay-redesign.md` a supprimé l'ECS fantôme et introduit des **façades fines** : des proxys `(world, entity)` sur une source unique dans Nexus, avec routage d'autorité dans les setters. L'accès initial à ces façades avait deux défauts :
+
+1. **Getters magiques imposés.** `AtlasScript` exposait `get transform()` / `get rigidbody()` et construisait d'office les deux façades pour *toute* entité scriptée, même une entité sans rigidbody.
+2. **Crash différé, incohérence.** `this.transform` avait toujours l'air présent mais throw à l'accès si le composant moteur n'avait pas été ajouté ; et l'accès aux façades suivait un chemin différent de `this.getComponent(X)`.
+
+L'objectif directeur, tenu jusqu'à l'état final : **unifier tout l'accès composant sur le modèle Unity** — l'utilisateur récupère explicitement ce dont il a besoin et le stocke lui-même.
 
 ```ts
-this.transform = this.addComponent(Transform2DComponent);
-this.rigidbody = this.getComponent(RigidBody2DComponent);
+this.transform = this.addComponent(Transform);
+this.rigidbody = this.addComponent(RigidBody);
 ```
 
-## Décisions validées avec l'auteur
+L'utilisateur écrit `addComponent(X, …)` de façon homogène, **sans suffixe `*Component`**, sans distinction visible façade/raw. Les scripts restent des classes TS lisibles, débuggables et runnables **sans** compilateur — ce qu'on écrit aujourd'hui est l'output qu'aurait produit le futur compilateur (B2).
 
-1. **Nommage par le type scripting (fidèle à Unity).** L'utilisateur ne nomme **que** la façade : `getComponent(Transform2DComponent)`. Le composant moteur `Transform2D` est **invisible** au script. Signature uniforme `getComponent<T>(new (...) => T): T` — tu reçois une instance du type que tu passes. Les composants de **données pures** (`Health`, `Inventory`) n'ont pas de façade → `getComponent(Health)` renvoie le raw. C'est le split C++/C# : une classe nommée côté script, la classe moteur cachée.
+## 3. Le principe : façade ⇔ vrai comportement moteur
 
-2. **Backing déclaré par `static engine`, dispatch runtime par `prototype instanceof ScriptComponent`.** Une façade déclare son composant moteur via un champ statique. **Pas de registre de mapping.** Le dispatch façade-vs-raw teste l'appartenance à la classe de base (`type.prototype instanceof ScriptComponent`) — **pas** la présence d'un champ `"engine"` : ça évite qu'un composant de données portant par hasard un `static engine` soit mal classé, et ça reste collision-proof. Une façade → opère sur `type.engine`, renvoie le proxy ; sinon → composant Nexus normal (renvoie le raw). Une façade qui oublie `static engine` **throw à la construction** (garde bruyante dans `ScriptComponent`), pas de dégradation silencieuse en raw.
+Deux niveaux de composants, et un seul critère pour la frontière entre eux :
 
-3. **Args forwardés vers le moteur.** `addComponent(Façade, ...args)` type ses `...args` depuis le **constructeur du composant moteur** backing (pas depuis la façade, qui prend `(world, entity)`). Prépare la vision long terme : un plugin TS custom réécrira `addComponent<T>(...args)` → `addComponent(T, ...args)` (injection du token runtime, `<T>()` façon C# `GetComponent<T>()`). La signature `addComponent(Type, ...args)` d'aujourd'hui est déjà la cible du plugin.
+- **NIVEAU 1 — composant moteur** (`components/`, sans suffixe). Donnée pure Nexus, opérée par les systèmes (`Transform2D`, `RigidBody2D`, `SpriteRender`, `PhysicsBodyRef`, `PlayerInput`). Le « C++ ».
+- **NIVEAU 2 — composant scripting** (`scripting/components/`). Une API curée + autorité par-dessus un composant moteur. Le « C# ».
 
-4. **Deux niveaux de composants, façade = le composant scripting.** Niveau 1 = composant moteur (`Transform2D`, donnée pure Nexus, opéré par les systèmes, « C++ »). Niveau 2 = façade scripting (`Transform2DComponent`, proxy + API curée + autorité, « C# »). Les composants de données utilisateur ne sont **pas** un troisième niveau : composants Nexus normaux, accédés en raw. **Pas de troisième concept.**
+Les composants de données utilisateur ne sont **pas** un troisième niveau : ce sont des composants Nexus normaux, accédés en raw. Pas de troisième concept.
 
-5. **Backing 1:1.** Une façade est backée par **exactement un** composant moteur (pour add/get/remove + forward d'args), mais peut *lire/écrire d'autres* composants moteur dans ses méthodes (déjà le cas : `Transform2DComponent` lit `RigidBody2D` + `PhysicsBodyRef` pour l'autorité).
+**Règle de principe : une façade (comportement) existe uniquement quand il y a du vrai comportement moteur à cacher.** Sinon le composant reste NIVEAU 1 et le script l'utilise brut. La douleur qui a motivé le nettoyage n'était pas « il existe des façades » — c'était que la frontière était **incohérente** : le code violait la règle sur 2 façades passthrough sur 3.
 
-6. **Pas de barrière runtime sur le moteur.** On n'interdit **pas** `getComponent(Transform2D)` (le type moteur brut). Le boundary est une convention typée, pas une barrière : `Transform2D` reste importable (les systèmes en ont besoin). Écrire le raw d'un dynamic body sans routage d'autorité est un escape-hatch assumé. Bloquer exigerait la table inverse moteur→façade qu'on refuse de maintenir.
+| Façade historique | Contenu réel | Verdict |
+| --- | --- | --- |
+| `Transform2DComponent` | routage d'autorité (`setPosition`→body dynamic), hiérarchie, world-matrix | **comportement réel → justifiée** |
+| `RigidBody2DComponent` | 100 % `this.resolve().x` (passthrough) | **curation pure → injustifiée, supprimée** |
+| `SpriteRendererComponent` | 100 % `this.resolve().x` + sucre fluent | **curation pure → injustifiée, supprimée** |
 
-7. **Cache/registre supprimés (`ScriptComponentRegistry`, `EntityScriptComponents`, `invalidate()`).** Avec le pattern Unity, `getComponent` n'est appelé qu'une fois (dans `onCreate`) et l'utilisateur détient l'instance. La façade devient un **pur wrapper apatride** `(world, entity)` qui **re-résout à chaque accès** (`world.requireComponent(engine)`). Élimine la machinerie d'invalidation et son seul vrai bug (cache périmé sur `setComponent`, cf. point ouvert de l'ancien doc). Le doc de refonte notait déjà que re-résoudre à chaque accès est négligeable à l'échelle cible (1k–3k entités).
+Après nettoyage il reste **exactement une** façade comportementale — `Transform`. La frontière doit être **principielle** (façade ⇔ comportement réel), pas arbitraire : `SpriteRender` avait une façade mais `Animator` non, sans raison de principe.
 
-8. **Échec bruyant.** Une façade détenue dont le composant moteur a été retiré **throw à l'accès** (`requireComponent`). C'est le contrat Unity (utiliser un composant détruit lève). L'utilisateur ne garde pas une façade au-delà du retrait de son composant.
+## 4. La primitive token — `scripting/core/ScriptComponentToken.ts`
 
-9. **Classe de base `ScriptComponent<TEngine>`.** Centralise le contrat façade↔moteur : stocke `(world, entity)`, expose `resolve()`. Limite TS assumée : `abstract static engine` n'existe pas — le `static engine` reste une convention par sous-classe, capturée au niveau type par `ScriptComponentCtor`, non forçable par la base.
-
-## Modèle retenu
-
-### Contrat façade↔moteur (`scripting/core/ScriptComponent.ts`)
+Le primitif `defineScriptComponent(engine, create?)` mint tous les composants de script sous une forme unique, et sert de **forme d'émission unique** au futur compilateur (B2).
 
 ```ts
 import { Component, Entity, NexusWorld } from "@atlasjs/nexus";
 
-export interface ScriptComponentCtor<
-  TFacade,
-  TEngine extends object,
-  TArgs extends unknown[],
-> {
-  new (world: NexusWorld, entity: Entity): TFacade;
+const BRAND: unique symbol = Symbol("ScriptComponentToken");
+
+export interface ScriptComponentToken<TApi, TEngine extends object, TArgs extends unknown[]> {
+  readonly [BRAND]: true;
   readonly engine: Component<TEngine, TArgs>;
+  create(world: NexusWorld, entity: Entity): TApi;
 }
 
-export abstract class ScriptComponent<TEngine extends object> {
-  protected constructor(
-    protected readonly world: NexusWorld,
-    protected readonly entity: Entity,
-  ) {}
-
-  protected resolve(): TEngine {
-    const ctor: ScriptComponentCtor<this, TEngine, unknown[]> = this
-      .constructor as ScriptComponentCtor<this, TEngine, unknown[]>;
-    return this.world.requireComponent(this.entity, ctor.engine);
+export function defineScriptComponent<TEngine extends object, TArgs extends unknown[]>(
+  engine: Component<TEngine, TArgs>,
+): Component<TEngine, TArgs>;
+export function defineScriptComponent<TApi, TEngine extends object, TArgs extends unknown[]>(
+  engine: Component<TEngine, TArgs>,
+  create: (world: NexusWorld, entity: Entity) => TApi,
+): ScriptComponentToken<TApi, TEngine, TArgs>;
+export function defineScriptComponent<TApi, TEngine extends object, TArgs extends unknown[]>(
+  engine: Component<TEngine, TArgs>,
+  create?: (world: NexusWorld, entity: Entity) => TApi,
+): Component<TEngine, TArgs> | ScriptComponentToken<TApi, TEngine, TArgs> {
+  if (create === undefined) {
+    return engine;
   }
+
+  return { [BRAND]: true, engine, create };
+}
+
+export function isScriptComponentToken(
+  type: unknown,
+): type is ScriptComponentToken<unknown, object, unknown[]> {
+  return typeof type === "object" && type !== null && BRAND in type;
 }
 ```
 
-### Façade concrète (`scripting/components/Transform2DComponent.ts`)
+Deux formes, une seule primitive :
+
+- **Passthrough = identité.** `defineScriptComponent(engine)` sans `create` renvoie `engine` **tel quel** (même référence). Aucun wrapper → les génériques de `PlayerInput<T>` sont préservés gratuitement (le point qui avait tué la façade `PlayerInput` : un ctor `(world, entity)` sévère le paramètre générique). Un composant brut **est** son propre token passthrough.
+- **Proxy comportemental.** `defineScriptComponent(engine, create)` renvoie un token brandé `{ [BRAND], engine, create }`. `create` mint un **proxy apatride frais** exposant l'API curée + l'autorité.
+- `isScriptComponentToken` : un `Component` est une **fonction** → jamais confondu avec un token (objet brandé). Le brand est aussi une garde contre un objet quelconque portant `engine` : c'est le brand, pas la présence d'`engine`, qui décide du dispatch.
+
+## 5. `Transform`, le seul token comportemental — `scripting/components/Transform.ts`
+
+`Transform` est justifié par trois comportements moteur réels : routage d'autorité, hiérarchie et world-matrix. L'API authored (getters, setters, méthodes chaînables) est portée 1:1 dans l'objet renvoyé par `create` — **inchangée pour l'auteur**. Les helpers privés (`worldMatrix`, `controllingBody`) et la logique parent/enfants sont des **fonctions libres de module** `(world, entity, …)`.
 
 ```ts
-export class Transform2DComponent extends ScriptComponent<Transform2D> {
-  public static readonly engine = Transform2D;
+export interface Transform {
+  readonly parent: Transform | null;
+  position: Vec2;
+  rotation: number;
+  scale: Vec2;
+  readonly worldPosition: Vec2;
+  setPosition(x: number, y: number): Transform;
+  setRotation(rotation: number): Transform;
+  setScale(x: number, y: number): Transform;
+  translate(dx: number, dy: number): Transform;
+  rotate(angle: number): Transform;
+  setParent(parent: Transform | null, worldPositionStays?: boolean): Transform;
+  getChildren(): Transform[];
+}
 
-  public get position(): Vec2 { return this.resolve().position; }
-  public setPosition(x: number, y: number): this {
-    this.resolve().position.set(x, y);
-    const body: PhysicsBodyRef | undefined = this.controllingBody();
-    if (body !== undefined) body.body.setTranslation(x, y);   // autorité: téléport dynamic
-    return this;
-  }
-  // ... reste de l'API curée, inchangée par rapport à aujourd'hui (sans le cache interne)
+export const Transform = defineScriptComponent(Transform2D, createTransform);
+```
 
-  private controllingBody(): PhysicsBodyRef | undefined {
-    const rb: RigidBody2D | undefined = this.world.getComponent(this.entity, RigidBody2D);
-    if (rb === undefined || rb.type !== "dynamic") return undefined;
-    return this.world.getComponent(this.entity, PhysicsBodyRef);
+`export const Transform` (valeur = token) **et** `export interface Transform` (type = l'API) partagent le nom : `private transform: Transform` (annotation) **et** `this.addComponent(Transform)` (valeur) fonctionnent tous deux.
+
+**Routage d'autorité (téléport dynamic).** Le setter re-résout la donnée puis, si le corps est dynamic, téléporte le corps physique — jamais une simple écriture ECS :
+
+```ts
+setPosition(x: number, y: number): Transform {
+  world.requireComponent(entity, Transform2D).position.set(x, y);
+
+  const body: PhysicsBodyRef | undefined = controllingBody(world, entity);
+  if (body !== undefined) {
+    body.body.setTranslation(x, y);
   }
+
+  return this;
 }
 ```
 
-Différence avec aujourd'hui : plus de champ `cached`, plus de `invalidate()`. `resolve()` re-résout à chaque appel.
+`controllingBody(world, entity)` renvoie le `PhysicsBodyRef` uniquement si un `RigidBody2D` de type `"dynamic"` existe. `worldMatrix(world, entity)` lit `WorldTransform2D` (ou dérive de `Transform2D`) pour `worldPosition` et pour la conservation de la position monde dans `setParent`.
 
-### Dispatch dans le contexte (`scripting/runtime/RuntimeScriptContext.ts`)
+**Threading de l'`entity` entre proxies — le symbole `ENTITY`.** Choix de conception load-bearing hérité du plan d'implémentation : le proxy n'est **plus une classe** portant `this.entity`, mais un objet littéral. Or `setParent(parent)` a besoin de lire l'`entity` du **parent** (un autre proxy `Transform`) pour appeler `world.setParent(entity, parentEntity)`. La solution : chaque proxy porte son `entity` sous une **clé symbole** privée au module :
 
-Le trio, avec dispatch `"engine" in type` :
+```ts
+const ENTITY: unique symbol = Symbol("Transform.entity");
+
+type TransformHandle = Transform & { readonly [ENTITY]: Entity };
+
+function entityOf(transform: Transform): Entity {
+  return (transform as TransformHandle)[ENTITY];
+}
+```
+
+`createTransform` pose `[ENTITY]: entity` sur l'objet renvoyé ; `setParent` lit l'entity du parent via `entityOf(parent)`. Le champ `parent` et `getChildren()` re-mintent via `createTransform(world, childEntity)` — ce qui remplace l'ancien `new Transform(world, entity)` de la classe. Le symbole est invisible à l'auteur (il ne fait pas partie de l'interface `Transform`).
+
+## 6. Composants passthrough
+
+Tout le reste est **data-pure** — accédé brut, via l'identité case.
+
+| Nom de script | Backing moteur | Retour de `addComponent` | Forme |
+| --- | --- | --- | --- |
+| `Transform` | `Transform2D` | proxy `Transform` (API curée) | token comportemental |
+| `RigidBody` | `RigidBody2D` | `RigidBody2D` brut | token identité |
+| `SpriteRenderer` | `SpriteRender` | `SpriteRender` brut | token identité |
+| `Animator` | `Animator` | `Animator` brut | export brut (déjà propre) |
+| `PlayerInput` | `PlayerInput` | `PlayerInput<T>` brut (génériques préservés) | export brut (déjà propre) |
+
+`RigidBody` / `SpriteRenderer` passent par l'identité case, avec un `type` alias qui restaure l'annotation :
+
+```ts
+import { RigidBody2D, SpriteRender } from "../../components";
+import { defineScriptComponent } from "../core";
+
+export const RigidBody = defineScriptComponent(RigidBody2D);
+export type RigidBody = RigidBody2D;
+
+export const SpriteRenderer = defineScriptComponent(SpriteRender);
+export type SpriteRenderer = SpriteRender;
+
+export * from "./Transform";
+```
+
+`defineScriptComponent(RigidBody2D)` renvoie `RigidBody2D` (identité, même réf runtime) ; le `type RigidBody = RigidBody2D` restaure l'annotation. `addComponent(RigidBody)` renvoie donc l'instance moteur brute, pas un proxy.
+
+`Animator` / `PlayerInput` : leur nom de script **==** leur nom moteur. Les router via `defineScriptComponent` sous le même nom collisionnerait au barrel racine `@atlasjs/gameplay` (déjà exportés depuis `components/`) et serait un no-op (identité). Ils **restent des exports bruts** — cohérent avec « un composant brut est son propre token passthrough ». Asymétrie purement au site de définition, **invisible à l'auteur** (qui écrit `addComponent(PlayerInput)` de façon identique). `PlayerInput<T>` conserve ses génériques précisément parce qu'aucun ctor `(world, entity)` ne les efface.
+
+On garde `Transform2D`/`RigidBody2D`/… importables : le boundary est une **convention typée**, pas une barrière runtime. Écrire le raw d'un dynamic sans routage d'autorité est un escape-hatch assumé (bloquer exigerait une table inverse moteur→façade qu'on refuse de maintenir).
+
+## 7. Dispatch runtime — `scripting/runtime/RuntimeScriptContext.ts`
+
+Le dispatch collapse en un **seul point de bifurcation** : « le type est-il un token comportemental ? » (brand). Plus d'`instanceof`/`isFacade` dupliqué.
+
+```ts
+public hasComponent(type) {
+  return this.world.hasComponent(
+    this.entity,
+    isScriptComponentToken(type) ? type.engine : type,
+  );
+}
+
+public getComponent(type) {
+  if (isScriptComponentToken(type)) {
+    if (!this.world.hasComponent(this.entity, type.engine)) return undefined;
+    return type.create(this.world, this.entity);
+  }
+  return this.world.getComponent(this.entity, type);
+}
+
+public addComponent(type, ...args) {
+  if (isScriptComponentToken(type)) {
+    if (!this.world.hasComponent(this.entity, type.engine)) {
+      this.world.addComponent(this.entity, type.engine, ...args);
+    }
+    return type.create(this.world, this.entity);
+  }
+  const existing = this.world.getComponent(this.entity, type);
+  return existing ?? this.world.addComponent(this.entity, type, ...args);
+}
+
+public removeComponent(type) {
+  this.world.removeComponent(
+    this.entity,
+    isScriptComponentToken(type) ? type.engine : type,
+  );
+}
+```
+
+Sémantique du trio (identique quel que soit le niveau) :
 
 | Méthode | Sémantique | Retour | Si absent |
 |---|---|---|---|
@@ -105,49 +235,31 @@ Le trio, avec dispatch `"engine" in type` :
 | `hasComponent(X)` | présence | `boolean` | — |
 | `removeComponent(X)` | retire | `void` | no-op |
 
-```ts
-private isFacade(type: unknown): type is ScriptComponentCtor<object, object, unknown[]> {
-  return (type as { prototype?: unknown }).prototype instanceof ScriptComponent;
-}
+Pour un token, `addComponent` forwarde les `...args` au **composant moteur** (`type.engine`), puis mint un proxy frais. Seul `Transform` emprunte la branche token aujourd'hui ; `RigidBody`/`SpriteRenderer`/`Animator`/`PlayerInput` sont des `Component` (valeurs `function`) → `isScriptComponentToken` est faux → branche raw.
 
-public getComponent<T extends object>(type: Component<T, any[]> | ScriptComponentCtor<T, object, any[]>): T | undefined {
-  if (this.isFacade(type)) {
-    if (!this.world.hasComponent(this.entity, type.engine)) return undefined;
-    return new type(this.world, this.entity);          // wrapper apatride, à la demande
-  }
-  return this.world.getComponent(this.entity, type as Component<T, any[]>);
-}
+⚠️ Piège documenté (comportement Nexus, conservé) : `addComponent(token, ...args)` **ignore les args si le composant moteur existe déjà** (get-or-create).
 
-public addComponent<T extends object, A extends unknown[]>(type: ..., ...args: A): T {
-  if (this.isFacade(type)) {
-    if (!this.world.hasComponent(this.entity, type.engine)) {
-      this.world.addComponent(this.entity, type.engine, ...args);   // args forwardés au moteur
-    }
-    return new type(this.world, this.entity) as T;
-  }
-  const existing = this.world.getComponent(this.entity, type);
-  return existing ?? this.world.addComponent(this.entity, type, ...args);
-}
-```
+## 8. Typage — `AtlasScript` + `ScriptContext`
 
-⚠️ Piège documenté : `addComponent(Façade, ...args)` **ignore les args si le composant moteur existe déjà** (get-or-create). Comportement Nexus actuel, conservé.
+Les signatures acceptent l'union `Component | ScriptComponentToken` (le type `ScriptComponentCtor` de l'ère façade-classe est supprimé) :
 
-### Surface finale de `AtlasScript`
+- `addComponent` : overload `token → TApi` (en premier, plus spécifique) + overload `Component → TEngine`. Un token est un **objet**, un `Component` une **fonction** → pas de chevauchement, résolution d'overload nette.
+- `getComponent` : overload `token → TApi | undefined` + `Component → TComponent | undefined`. Idem `requireComponent` (`token → TApi`).
+- `hasComponent` / `removeComponent` : type de paramètre élargi à l'union (retour `boolean`/`void`, pas d'overload de retour).
+- `requireComponent` (dans `AtlasScript`) : le message d'erreur prend `type.engine.name` pour un token (helper local `typeName(type)`).
 
-**Supprimé** : `get transform()`, `get rigidbody()` (+ `readonly transform`/`rigidbody` de `ScriptContext`), toute construction eager de façade.
-
-**Conservé** (recâblé pour dispatcher) : `getComponent` / `addComponent` / `requireComponent` / `removeComponent` / `hasComponent`, `entityId`, cycle de vie `onCreate/onUpdate/onFixedUpdate/onDestroy`.
+**Invariant `any[]` (load-bearing).** Les `any[]` des signatures de composant sont *load-bearing* : le dispatch repose sur l'assignabilité `Component<T, any[]>`. Les resserrer en `unknown[]` (tentant sous la règle « always type ») **casse** la résolution. Ne pas « durcir » ce type.
 
 Côté utilisateur — chacun déclare ses champs (modèle Unity) :
 
 ```ts
 export class TestScript extends AtlasScript {
-  private transform!: Transform2DComponent;
-  private rigidbody!: RigidBody2DComponent;
+  private transform!: Transform;
+  private rigidbody!: RigidBody;
 
   public onCreate(): void {
-    this.transform = this.addComponent(Transform2DComponent);
-    this.rigidbody = this.addComponent(RigidBody2DComponent);
+    this.transform = this.addComponent(Transform);
+    this.rigidbody = this.addComponent(RigidBody);
     this.rigidbody.type = "kinematic";
     this.transform.setScale(3, 3).setPosition(400, 300);
   }
@@ -158,56 +270,60 @@ export class TestScript extends AtlasScript {
 }
 ```
 
-## Réorganisation `packages/gameplay/src`
-
-Rendre les deux niveaux visibles dans l'arbre et séparer le framework de script de l'orchestration :
+## 9. Layout de package — `packages/gameplay/src`
 
 ```
 src/
   components/                     # NIVEAU 1 — composants moteur (donnée pure Nexus)
     Transform2D.ts  RigidBody2D.ts  SpriteRender.ts  PhysicsBodyRef.ts  index.ts
-  systems/                        # systèmes ECS (inchangé)
+  systems/                        # systèmes ECS
     PhysicsPushSystem.ts  PhysicsPullSystem.ts  SpriteRenderSystem.ts  index.ts
   scripting/
     core/                         # FRAMEWORK de script (abstrait)
       AtlasScript.ts  ScriptContext.ts  ScriptLifeCycle.ts
-      ScriptComponent.ts          # base + type ScriptComponentCtor
+      ScriptComponentToken.ts     # defineScriptComponent / isScriptComponentToken
       index.ts
-    components/                   # NIVEAU 2 — façades scripting (concrètes)
-      Transform2DComponent.ts  RigidBody2DComponent.ts  index.ts
-    runtime/                      # ORCHESTRATION (plus de registre)
+    components/                   # NIVEAU 2 — tokens scripting
+      Transform.ts                # seul token comportemental
+      index.ts                    # RigidBody / SpriteRenderer (identité) + Transform
+    runtime/                      # ORCHESTRATION
       ScriptManager.ts  RuntimeScriptContext.ts  IncrementalScriptIdGenerator.ts  index.ts
     index.ts
   GameplayPlugin.ts  registerSystem.ts  tokens.ts  index.ts
 ```
 
-Mouvements clés :
-- Façades `scripting/runtime/` → `scripting/components/` : **miroir** de `components/` moteur (niveau 1 vs niveau 2).
-- `ScriptComponent` + `ScriptComponentCtor` → `scripting/core/` (contrat du framework).
-- `scripting/runtime/` ne garde que l'orchestration. `ScriptComponentRegistry` + `EntityScriptComponents` **supprimés**.
+- `scripting/core/` porte le contrat du framework : `ScriptComponentToken` (`defineScriptComponent`/`isScriptComponentToken`).
+- `scripting/components/` miroir de `components/` moteur (niveau 1 vs niveau 2).
+- `scripting/runtime/` ne garde que l'orchestration.
 
-## Plan d'implémentation (par phases, chacune verte : tsc + tests)
+## 10. Invariants à ne pas régresser
 
-- **Phase 1 — Base + contrat, façades reshapées & déplacées.** Créer `scripting/core/ScriptComponent.ts` (base + `ScriptComponentCtor`). `Transform2DComponent`/`RigidBody2DComponent` héritent, déclarent `static engine`, **conservent transitoirement** `invalidate()`/cache (le registre existant compile encore). Déplacer vers `scripting/components/`. Mettre à jour imports + tests qui construisent les façades.
-- **Phase 2 — Dispatch dans le contexte.** Réécrire `getComponent`/`addComponent`/`requireComponent`/`hasComponent`/`removeComponent` avec `"engine" in type` + sémantique du trio. Les getters magiques restent (délèguent encore au registre). Vert.
-- **Phase 3 — Suppression getters magiques + registre + cache façade.** Retirer `get transform()`/`get rigidbody()` (`AtlasScript` + `ScriptContext`), supprimer `ScriptComponentRegistry`/`EntityScriptComponents`, retirer `cached`/`invalidate()` des façades (re-résolution à chaque accès). Simplifier `ScriptManager` (plus d'arg registre ni `release`) + `GameplayPlugin`. Migrer `TestScript` (sandbox) + `MoveScript`/tests dans la même phase (les getters disparaissent). Vert.
-- **Phase 4 — Exports + finitions.** `index.ts` (export public des types façade), nettoyage, `tsc` gameplay + sandbox, suite de tests complète.
+- **Les proxies sont apatrides.** Un proxy ne détient **aucun** état par-instance : chaque accès re-résout via `world.requireComponent(entity, engine)`. Ré-introduire un champ d'instance (ex. un cache) recréerait silencieusement le bug de péremption que cette saga a supprimé.
+- **Dispatch par le brand, pas par la présence d'`engine`.** `isScriptComponentToken` teste le brand symbole — un objet quelconque portant `engine` reste raw. Ne pas re-tester une forme structurelle.
+- **Re-résolution + throw bruyant.** Un proxy détenu dont le composant moteur a été retiré **throw à l'accès** (`requireComponent`). C'est le contrat Unity (utiliser un composant détruit lève).
+- **`any[]` load-bearing** (cf. §8) — ne pas resserrer en `unknown[]`.
 
-## Checklist
+## 11. Asymétrie de staleness (raw vs proxy)
 
-- [x] Phase 1 — base `ScriptComponent<TEngine>` (cache/`invalidate` conservés transitoirement) + `ScriptComponentCtor` dans `scripting/core/` ; `Transform2DComponent`/`RigidBody2DComponent` héritent, déclarent `static engine`, déplacées vers `scripting/components/` (miroir de `components/` moteur). Constructeur de base `public` (façades `new`-ées par le registre puis, en Phase 3, par le contexte). Registre/contexte/`AtlasScript`/`ScriptContext` repointés sur `../components`. tsc gameplay + build + tsc sandbox OK, 20/20 tests verts.
-- [x] Phase 2 — dispatch `"engine" in type` + trio dans `RuntimeScriptContext` (`get`/`add`/`require`/`has`/`remove` : façade → opère sur `type.engine`, renvoie un proxy neuf ; sinon raw). Typage : façade `new (world, entity) => T` déjà assignable à `Component<T, any[]>` → seul `addComponent` a besoin d'overloads (args forwardés depuis le moteur) sur `ScriptContext`/`AtlasScript`/`RuntimeScriptContext`. Getters magiques inchangés (délèguent au registre). 6 tests de dispatch ajoutés (façade add/has/get/remove/require + raw data + forward d'args). 26/26 verts, tsc gameplay + build + tsc sandbox OK.
-- [x] Phase 3 — getters magiques (`AtlasScript` + `ScriptContext`) supprimés ; `ScriptComponentRegistry`/`EntityScriptComponents` supprimés ; `cached`/`invalidate()` retirés de `ScriptComponent` (re-résolution pure via `requireComponent`, échec bruyant si absent). `RuntimeScriptContext` réduit à `(entity, world)` ; `ScriptManager(world)` sans registre ni `release` ; `GameplayPlugin` nettoyé. `MoveScript`/`KinematicMover`/`TestScript` migrés sur `this.x = this.addComponent(Façade)` + champs `!`. `script-components.test.ts` réécrit (façades construites directement, sémantique re-résolution + throw-si-absent). 25/25 verts, tsc gameplay + build + tsc sandbox OK.
-- [x] Post-review (code-reviewer + architect-reviewer) — durcissement : dispatch `"engine" in type` → `prototype instanceof ScriptComponent` (anti-collision) + garde bruyante dans `ScriptComponent` si `static engine` manque ; overloads `addComponent` réalignés façade-first dans `RuntimeScriptContext` (cohérent avec l'interface) ; barrel `runtime` réduit à `ScriptManager` (plus de fuite `RuntimeScriptContext`/`IncrementalScriptIdGenerator`) ; `GameplayPlugin` locals/`ctx: StepContext` typés ; `ScriptLifecycle.onFixedUpdate` sans `dt` (cohérent runtime). 2 tests de contrat ajoutés (decoy anti-collision + garde). 27/27 verts, tsc + build + tsc -b sandbox OK.
-- [x] Phase 4 — surface publique vérifiée (façades, `ScriptComponent`, `ScriptComponentCtor`, `AtlasScript`, `ScriptManager` exportés via `src/index.ts`) ; arbre `src/` conforme à la structure cible. Vérif faisant autorité : `tsc -b` (le `tsconfig.json` racine du sandbox a `files: []` → `tsc --noEmit` était un no-op ; `tsc -b` suit les references). Résultat : `TestScript.ts` + l'API de scripting = **zéro erreur** ; gameplay `src`+`test` tsc clean ; 25 tests verts. Échecs pré-existants hors scope : `apps/webgpu/src/ecs.ts` (ancienne API Nexus string-based) et `apps/sandbox` (`Sword.ts` vars inutilisées, `TestScene.ts` : `@atlasjs/assets` manquant + API nebula `RectNode`/`createSprite`/`Camera2D.rotation` dérivée) — sans lien avec la refonte scripting.
+Garder une réf brute (`this.rigidbody`, `this.spriteRenderer`) vs un proxy (`this.transform`) a une **sémantique de péremption opposée** :
 
-## Invariants d'implémentation (à ne pas régresser)
+- **Réf brute** : instance vivante qui **périme silencieusement** si le composant est retiré/re-ajouté (le champ pointe toujours l'ancien objet).
+- **Proxy** : re-résout à chaque accès et **throw bruyamment** si le composant moteur manque.
 
-- **Les façades sont apatrides.** Un façade ne détient **aucun** état par-instance : `getComponent`/`addComponent` en fabriquent un neuf à chaque appel et le jettent. Ré-introduire un champ d'instance (ex. un cache comme l'ancien `cached`/`invalidate()`) recréerait silencieusement le bug de péremption que cette refonte a supprimé, puisque l'instance n'est pas conservée entre deux appels. `ScriptComponent` doit rester sans champ au-delà de `(world, entity)`.
-- **Les `any[]` de `getComponent`/`hasComponent`/`removeComponent`/`requireComponent` sont *load-bearing*.** Le dispatch façade sur ces méthodes repose sur le fait qu'un ctor de façade (`new (world, entity) => T`) est assignable à `Component<T, any[]>`. Les resserrer en `unknown[]` (tentant sous la règle « always type ») **casse** le dispatch : `new (world, entity) => T` n'est pas assignable à `new (...args: unknown[]) => T`. Ne pas « durcir » ce type.
+Invisible au pattern commun (`addComponent` une fois en `onCreate`, jamais retiré), mais réel sous churn de composants. Documenté et assumé, pas résolu.
 
-## Points ouverts / risques
+## 12. Roadmap / items ouverts
 
-- **`getComponent(façade)` mint un wrapper neuf à chaque appel.** Sans conséquence au pattern visé (appel unique en `onCreate`), mais deux `getComponent` successifs renvoient deux instances distinctes wrappant la même donnée. Acceptable (apatride, cf. invariant ci-dessus).
-- **`addComponent(Façade, ...args)` ignore les args si le moteur existe déjà** (get-or-create). Documenté ; comportement Nexus.
-- **Plugin TS `<T>()` → `(T, ...args)`** : hors scope ici. La signature `addComponent(Type, ...args)` est conçue pour être la cible de la réécriture sans changement ultérieur.
+- **B2 — le compilateur custom.** Sur la surface token, un compilateur TS réécrit `addComponent<T>(...args)` → `addComponent(T, ...args)` (injection du token runtime, syntaxe façon C# `GetComponent<T>()`), génère les métadonnées d'exposition, et **inline** la résolution token + factory → appels bruts directs (zéro dispatch runtime). Le token B1 fournit sa forme d'émission unique.
+- **B3 — `Transform` = donnée pure via Nexus `Changed<T>`.** Tuer la dernière façade : `Transform2D` devient donnée pure, l'autorité reste par type de corps mais sans écriture-temps-réel dans un setter. **Dépend** d'un primitif ECS `Changed<T>` absent aujourd'hui (backlog ECS, style Bevy — dirty-tick, pas snapshot de valeur). Le « dragon » : téléporter un dynamic **doit** passer par un canal explicite (reco : `rigidBody.teleport(x, y)` → `body.setTranslation`), car `Changed<T>` ne peut pas distinguer « le script a téléporté » de « le pull a écrit ». Ne pas démarrer B3 avant B2/le primitif.
+- **Ré-ergonomies fluent optionnelles** (`SpriteRenderer.setColor()`, `RigidBody.setMass()`) : hors périmètre. Réintroductibles trivialement comme tokens comportementaux si un besoin concret apparaît — sans recréer de classe façade.
+
+## 13. Appendice — historique (superseded)
+
+Les états ci-dessous ne sont plus le modèle courant ; conservés pour comprendre la lignée.
+
+**A. Magic getters + registry (superséded).** `AtlasScript` exposait `get transform()`/`get rigidbody()` ; un `ScriptComponentRegistry` + `EntityScriptComponents` construisaient d'office les façades pour toute entité scriptée, avec un cache invalidable (`invalidate()`). Bug structurel : cache périmé sur `setComponent`, crash différé si le composant n'avait pas été ajouté. Supprimé au profit du modèle Unity explicite.
+
+**B. Façade-classe `ScriptComponent<TEngine>` (superséded).** Une classe de base centralisait le contrat façade↔moteur (`(world, entity)` + `resolve()`), chaque façade déclarant son backing via `static engine`, typé par `ScriptComponentCtor`. Le dispatch runtime testait `type.prototype instanceof ScriptComponent` (choisi sur `"engine" in type` pour éviter qu'un composant de données portant un `static engine` par hasard soit mal classé), avec garde bruyante à la construction si `static engine` manquait. Proxies déjà apatrides (re-résolution via `requireComponent`, cache supprimé). Limite TS assumée : `abstract static engine` n'existe pas → `static engine` restait une convention par sous-classe. Remplacé par le token : la classe et `ScriptComponentCtor` disparaissent, le dispatch `instanceof` devient un test de brand, la garde « `static engine` oublié » disparaît (plus de classe à sous-classer).
+
+**C. Aliases Phase A (superséded).** Étape intermédiaire, sans machinerie token : les deux façades passthrough injustifiées (`RigidBody2DComponent`, `SpriteRendererComponent`) supprimées, `Transform2DComponent` renommée `Transform` (seule façade-classe restante), `RigidBody`/`SpriteRenderer` fournis comme **alias d'export** des composants moteur (`export { RigidBody2D as RigidBody }`). Le boundary script↔moteur devenait un boundary de **nommage**. Remplacé par le token, qui formalise ce boundary en un primitif unique et collapse le dispatch.

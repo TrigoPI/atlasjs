@@ -6,12 +6,12 @@ export default defineConfig({
   resolve: {
     alias: {
       "@css": "/css",
-      "@sandbox": "/src",
       "@assets": "/assets",
+      "@maps": "/maps",
     },
   },
   define: {
-    __DEV__: "true",
+    __DEV__: "false",
     __CONSOLE_TRANSPORT__: "true",
     __WEBSOCKET_TRANSPORT__: "false",
   },

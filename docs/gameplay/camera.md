@@ -1,9 +1,9 @@
 # Caméra gameplay — `Camera` + `CameraManager` + `CameraSyncSystem` + `CameraApi` (`@atlasjs/gameplay`)
 
-> **Statut : design validé, à implémenter.** Introduit une caméra **gameplay** (entité Nexus) qui pilote la caméra de rendu de `@atlasjs/nebula`, plus `screenToWorld`/`worldToScreen`. La caméra gameplay est **un producteur de plus** qui écrit dans `renderer.camera`, exactement comme `SpriteRenderSystem` pousse les sprites ou `PhysicsPushSystem` pousse les transforms. Le modèle mono-caméra de nebula (une seule passe de rendu) est **inchangé**.
+> **Statut : ✅ implémenté** (cœur ; extensions V2 → [`../backlog.md`](../backlog.md) § *Gameplay — Caméra*). Introduit une caméra **gameplay** (entité Nexus) qui pilote la caméra de rendu de `@atlasjs/nebula`, plus `screenToWorld`/`worldToScreen`. La caméra gameplay est **un producteur de plus** qui écrit dans `renderer.camera`, exactement comme `SpriteRenderSystem` pousse les sprites ou `PhysicsPushSystem` pousse les transforms. Le modèle mono-caméra de nebula (une seule passe de rendu) est **inchangé**.
 > Prérequis de lecture : `docs/gameplay/gameplay-redesign.md` (bridge par système, source de vérité unique), `docs/gameplay/scripting-components.md` (les deux niveaux de composants + façades de service), `docs/gameplay/input-scripting.md` (le pattern `ScriptService`/`InputApi` que `CameraApi` reprend), `docs/core/scheduling.md` (lanes/stages), `docs/rendering/renderer-architecture.md` (interface `Camera`, `Renderer.camera`).
 
-> **État d'implémentation** (plan : `docs/gameplay/camera-plan.md`) :
+> **État d'implémentation** :
 > - [x] §4 `Camera2D.screenToWorld`/`worldToScreen` (nebula)
 > - [x] §4bis `NebulaRenderer.getCameraViewport()` passthrough (nebula)
 > - [x] §5 composant `Camera` (LEVEL 1)

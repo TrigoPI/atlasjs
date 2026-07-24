@@ -1,19 +1,21 @@
-# Variables exposées de script — `@Expose` + injection typée (`@atlasjs/gameplay`)
+# Variables exposées & références d'entités dans les scripts — `registerScriptMetadata` + `GameEntity` (`@atlasjs/gameplay`)
 
-> **Statut : design (à implémenter).** Ajoute à la voie scripting un mécanisme d'injection de références d'assets dans les scripts, façon Unity `[SerializeField]` : le script déclare des dépendances via `@Expose()`, la composition root (scène aujourd'hui, `AssetManager`/éditeur demain) les fabrique et les fournit à `scriptManager.attach(entity, Script, props)`. Débloque la création de `SpriteRender`/`Animator` **depuis un script**, sans que le script touche jamais le GPU.
-> Prérequis de lecture : `docs/gameplay/scripting-components.md` (les deux niveaux de composants, `AtlasScript`, façades), `docs/gameplay/sprite-animation.md` (`Animator`, `SpriteAnimation`), `docs/rendering/sprites.md` (`Sprite`/`Texture2D`).
+> **Statut : ✅ implémenté.** Donne à la voie scripting un mécanisme d'injection de dépendances dans les scripts, façon Unity `[SerializeField]` : le script déclare ses champs injectables via un **registre plain-JS** `registerScriptMetadata(Script, { … })`, et la composition root (scène aujourd'hui, `AssetManager`/éditeur demain) fabrique les valeurs et les fournit à `scriptManager.attach(entity, Script, props)`. Débloque la création de `SpriteRender`/`Animator` **depuis un script** (sans jamais toucher le GPU) et le passage d'**autres entités** en paramètre via le handle `GameEntity` (`sword.getComponent(Transform)`, `sword.getScript(SwordScript)`).
+>
+> Prérequis de lecture : `docs/gameplay/scripting-components.md` (les deux niveaux de composants, `AtlasScript`, façades, modèle `GetComponent`, `attach`), `docs/gameplay/sprite-animation.md` (`Animator`, `SpriteAnimation`), `docs/rendering/sprites.md` (`Sprite`/`Texture2D`).
 
 ---
 
-## 1. Contexte et problème
+## 1. Contexte & problème
 
-La règle de couche est respectée : un script n'importe que `@atlasjs/gameplay` et `@atlasjs/math`. Mais trois frictions bloquent l'écriture de vrais scripts de rendu :
+La règle de couche est respectée : un script n'importe que `@atlasjs/gameplay` et `@atlasjs/math`. Mais plusieurs frictions bloquent l'écriture de vrais scripts de rendu et de coordination :
 
 1. **`SpriteRender` exige un `Sprite`** à la construction, et **`Sprite` exige un `Texture2D`** (`packages/gameplay/src/assets/Sprite.ts`). Or `Texture2D` est une **ressource GPU** créée par le renderer (`nebula.createTexture2D`). Un script ne peut donc pas construire un `Sprite`, ni faire `addComponent(SpriteRender, ...)`.
 2. **`Animator` exige des clips `Record<string, SpriteAnimation>`**, eux-mêmes construits depuis un `SpriteSheet` → `Texture2D`. Même blocage.
 3. Aujourd'hui c'est la **scène** qui pose `SpriteRender` et `Animator` (`apps/sandbox/src/game/EcsScene.ts`), et le script fait `requireComponent`. Ça marche mais le script ne maîtrise pas son propre assemblage, et rien ne prépare un futur éditeur.
+4. Un script opère **exclusivement sur sa propre entité** : il n'a aucun moyen ergonomique de recevoir une autre entité en paramètre, ni de lire/muter ses composants (`sword.getComponent(Transform)`), ni de récupérer un script attaché ailleurs (`sword.getScript(SwordScript)`). Dès qu'un comportement coordonne deux entités (un joueur qui pilote son épée), il faut tout mettre dans un seul script ou passer par des singletons/services.
 
-### Insight central
+### Insight central — la frontière GPU
 
 Le blocage GPU **n'est pas une limitation à contourner : c'est correct**. Un script ne doit jamais fabriquer une texture/un sprite/une animation. Exactement le modèle Unity : on ne fait pas `new Texture()` dans un `MonoBehaviour`, on reçoit une référence via `[SerializeField]`.
 
@@ -24,269 +26,491 @@ Il y a donc **deux contextes distincts**, séparés par responsabilité (pas par
 | **Composition root** — `Scene`, futur `AssetManager`, futur éditeur | Fabriquer les ressources GPU, câbler les entités  | nebula, nexus, gameplay                         |
 | **Logique de jeu** — scripts                                        | Consommer des références, décider du comportement | `@atlasjs/gameplay`, `@atlasjs/math` uniquement |
 
-Les trois frictions ont **une seule racine** : _les scripts consomment des références d'assets, la composition root les fabrique et les injecte._ Une fois l'injection en place, (1), (2) et (3) tombent ensemble.
+Les frictions (1), (2), (3) ont **une seule racine** : _les scripts consomment des références (assets ou entités), la composition root les fabrique et les injecte._ Une fois l'injection en place, elles tombent ensemble ; la friction (4) est la même idée étendue aux entités (référence `GameObject` d'Unity).
 
-### Décisions de placement (actées)
+### Modèle cible pour les références d'entités
+
+Unity expose une **référence `GameObject`** dans l'inspecteur : `public GameObject sword;` puis `sword.GetComponent<T>()`. On transpose : un handle **`GameEntity`** qui wrappe `(world, entity)` (+ un résolveur de script), exposant la même surface d'accès composant que `AtlasScript` pour une entité arbitraire, plus `getScript(ScriptClass)`.
+
+---
+
+## 2. Décisions de placement & de design
+
+### Placement (acté)
 
 - **`SpriteSheet`/`SpriteAnimation` restent physiquement dans `@atlasjs/nebula`** (domaine rendering : frames, fps, régions de texture). Elles sont atteintes via le **re-export `@atlasjs/gameplay`** déjà en place (`packages/gameplay/src/index.ts`). Le package physique ≠ le point d'entrée public : la règle de couche est satisfaite par le re-export. On ne les bouge pas (inverserait la direction de dépendance gameplay→nebula), on ne les wrappe pas (abstraction gratuite, YAGNI).
 - **Une scène qui touche nebula/nexus est cohérente** : elle _est_ le composition root. La règle « gameplay+math » ne s'applique qu'à la couche logique. (Le `loadTexture` DOM privé de la scène relève du futur `AssetManager` — hors périmètre ici.)
 - **Modèle d'autorité : script auteur, assets injectés.** La scène fabrique sprite + clips et les injecte ; le script pose lui-même `SpriteRender`/`Animator` dans `onCreate`.
 
----
+### Design du runtime (acté)
 
-## 2. Contrainte toolchain (vérifiée empiriquement)
+1. **Tuer Babel.** Aucune syntaxe décorateur dans les scripts : le prédécesseur `@Expose()` (décorateur stage-3 + `Symbol.metadata` + Babel) est **remplacé** par une fonction explicite `registerScriptMetadata(Script, { … })` écrite à la main. Voir §8.
+2. **Schéma par champ minimal + type extensible.** Le runtime stocke ce dont il a besoin (discriminant + `required?`). `ExposeFieldMetadata` reste ouvert à l'extension : compilateur/éditeur ajouteront `kind`/`assetKind`/`runtimeType`/`tooltip`/… sans casser l'API. On ne fige **pas** de schéma éditeur spéculatif.
+3. **Validation = warn minimal.** `injectProps` émet un `logger.warn` si un champ `required` n'a pas de valeur, ou si une clé de `props` n'est pas exposée. **Jamais de throw** (ne casse pas le jeu). Le reste (éditeur, throw strict) reste au backlog.
+4. **Héritage fusionné.** `getScriptMetadata(Child)` fusionne les métadonnées parent→enfant via la chaîne de prototypes des constructeurs, sans piège de pollution.
+5. **Pas de nouveau package.** Le code reste dans `@atlasjs/gameplay` (`scripting/core`). La discipline de découplage (`scripting/core`+`runtime` ne dépendent que des packages **foundational** `@atlasjs/nexus`, `@atlasjs/core` et `@atlasjs/utils` — ce dernier pour le logging) est maintenue pour rendre une future extraction `@atlasjs/scripting` triviale, mais l'extraction n'est **pas** faite ici (YAGNI : un seul consommateur aujourd'hui).
 
-TS 5.9, `useDefineForClassFields: true`. On utilise les **décorateurs standards stage-3** (pas `experimentalDecorators`).
+### Design des références d'entités (acté)
 
-Faits mesurés (probes vitest + `tsc` + build) :
-
-1. **esbuild ne transforme PAS les décorateurs stage-3** (il les laisse passer → `SyntaxError` au runtime). **tsdown/oxc non plus.** La transformation doit donc venir de **Babel**.
-2. **Solution retenue (déjà en place côté tests)** : `@rolldown/plugin-babel` + `@babel/plugin-proposal-decorators` (`version: "2023-11"`) dans `packages/gameplay/vitest.config.ts`. Vérifié : le décorateur s'exécute correctement sous vitest.
-3. **Le `dist` de gameplay (tsdown) reste sain** malgré (1) : gameplay ne fait que **définir** `Expose`, il n'**applique** aucun `@decorator` dans son source → aucune syntaxe décorateur à transpiler dans le build de la lib. La syntaxe `@Expose()` n'apparaît que dans les **tests** (transpilés par babel) et les **scripts de l'app** (à transpiler par babel côté sandbox, cf. §3.5).
-4. **Babel n'émet `Symbol.metadata` que si le symbole bien connu existe au runtime** — or Node ne le fournit pas → il faut un **polyfill** (`Symbol.metadata ??= Symbol.for("Symbol.metadata")`) exécuté avant toute définition de classe décorée. Une fois polyfillé, `Ctor[Symbol.metadata]` est bien peuplé (vérifié), y compris l'héritage via la chaîne de prototypes de l'objet metadata.
-5. **`tsc` type-checke les décorateurs stage-3 sans `experimentalDecorators`**, mais **`lib` doit inclure `ESNext.Decorators`** (pour `Symbol.metadata` + `ClassFieldDecoratorContext.metadata`). Vérifié.
-6. **`erasableSyntaxOnly` (sandbox) est compatible** avec les décorateurs stage-3 (contrairement aux legacy) → **on n'y touche pas**.
-
-Conséquences de design :
-
-- Un décorateur **ne peut pas** modifier le type public de la classe ni synthétiser le type du props object → le typage vient d'un **générique** `AtlasScript<TProps>`, pas du décorateur.
-- **Métadonnées via `Symbol.metadata`** (approche stage-3 idiomatique), avec polyfill + gestion du piège d'héritage (cf. §3.2). Avantage : champs exposés lisibles **sans instancier** la classe → prêt pour un futur inspecteur d'éditeur.
-- Pas de `emitDecoratorMetadata`/`reflect-metadata`.
+6. **`getScript` séparé, pas de `getComponent` unifié.** Récupérer un script se fait via `entity.getScript(SwordScript)`, **pas** via une surcharge de `getComponent`. Composants ECS (Nexus) et scripts (`ScriptManager`) restent deux sous-systèmes distincts — les mélanger forcerait un sniffing de constructeur (`Ctor.prototype instanceof AtlasScript`) et coupler l'accès composant au `ScriptManager`, en violation de la règle des 2 niveaux.
+7. **Bag de props plat + typage mappé.** On garde l'appel `attach(entity, Script, { … })` **plat** (pas de sous-bag `{ exposed, entities }`). Un champ entité est typé `GameEntity` **dans le script**, mais accepté comme `Entity` brute **au call site** via le type mappé `AttachProps`. `injectProps` wrappe la `Entity` reçue en `GameEntity` avant l'assignation.
+8. **Handle stateless.** `GameEntity` ne cache **aucune donnée composant** : il re-résout à chaque appel (règle « façades stateless »). Il ne porte que l'identité `(world, entity, resolver)`. Entité détruite → `getComponent`/`getScript` renvoient `undefined`, jamais de crash.
+9. **Pas de cycle de packages/couches.** `GameEntity` vit dans `scripting/core` et dépend d'une **interface** `ScriptResolver` (core), pas du `ScriptManager` concret (runtime). `ScriptManager` implémente `ScriptResolver`. La direction `runtime → core` est préservée.
+10. **Réutilisation, pas duplication (du corps).** Le **corps** du dispatch token/composant vit **une seule fois** (dans `GameEntity`) ; `RuntimeScriptContext` délègue son propre accès composant à un `GameEntity` de sa propre entité. Les **signatures** d'overloads restent déclarées sur chaque surface (un impl à signature large ne satisfait pas des overloads à retour typé).
 
 ---
 
-## 3. Design
+## 3. Registre de métadonnées
 
-### 3.1 `AtlasScript<TProps>` générique
+### API publique — `scripting/core/ScriptMetadata.ts`
+
+```ts
+export function registerScriptMetadata(
+  ctor: Function,
+  metadata: ScriptMetadata,
+): void;
+
+export function getScriptMetadata(ctor: Function): ScriptMetadata | undefined;
+
+export function getExposedFields(
+  ctor: Function,
+): Map<string, ExposeFieldMetadata>;
+```
+
+- `registerScriptMetadata` écrit l'entrée **propre** du constructeur dans le registre (uniquement les champs déclarés par cette classe).
+- `getScriptMetadata` retourne la métadonnée **fusionnée** (héritage inclus, cf. plus bas), ou `undefined` si aucun ancêtre n'a de metadata.
+- `getExposedFields` est une commodité au-dessus de `getScriptMetadata` : retourne une **copie** (`Map`) des champs exposés fusionnés (isolation de l'appelant). Utile aux tests et aux consommateurs externes (futur éditeur) ; `ScriptManager.injectProps` consomme directement `getScriptMetadata` (il lui faut `required` et `type`).
+
+### Registre
+
+```ts
+const REGISTRY: WeakMap<Function, ScriptMetadata> = new WeakMap();
+```
+
+- Backing store module-local, **clés = constructeurs**. `WeakMap` → pas de fuite mémoire (une classe déchargée libère son entrée).
+- **Pas de `Symbol` partagé writer↔reader** : `registerScriptMetadata` et `getScriptMetadata` sont deux fonctions du même module, elles partagent le `REGISTRY` tant qu'un consommateur les importe depuis `@atlasjs/gameplay`. (Le risque théorique « deux copies du module gameplay » demeure comme pour n'importe quel singleton de module — c'est le cas nominal d'un package publié.)
+
+### Héritage (fusion parent→enfant)
+
+`getScriptMetadata(ctor)` remonte la chaîne statique des constructeurs et fusionne :
+
+```ts
+export function getScriptMetadata(ctor: Function): ScriptMetadata | undefined {
+  const chain: Function[] = [];
+  let current: Function | null = ctor;
+  while (current && current !== Function.prototype) {
+    chain.push(current);
+    current = Object.getPrototypeOf(current);
+  }
+
+  let merged: Record<string, ExposeFieldMetadata> | undefined;
+  // du plus ancêtre au plus dérivé : l'enfant écrase le parent par champ
+  for (let i = chain.length - 1; i >= 0; i--) {
+    const own: ScriptMetadata | undefined = REGISTRY.get(chain[i]);
+    if (own === undefined) continue;
+    merged = { ...(merged ?? {}), ...own.exposed };
+  }
+
+  return merged === undefined ? undefined : { exposed: merged };
+}
+```
+
+- `Child` hérite des champs de `Base` ; `Base` n'est **jamais** pollué (chaque ctor a son entrée propre isolée dans le `WeakMap`) ; `GrandChild` fusionne toute la chaîne ; une sous-classe sans metadata propre hérite du parent.
+- La fusion est calculée **à la lecture**, jamais écrite dans le store.
+- Écrasement **par champ** (l'enfant peut redéclarer un champ du parent avec d'autres options).
+
+---
+
+## 4. Métadonnée de champ (union discriminée) & builders
+
+`ExposeFieldMetadata` est une **union discriminée** sur `type`, extensible pour les kinds futurs (asset, range…) du backlog :
+
+```ts
+// prettier-ignore
+export type ExposeFieldMetadata =
+  | { type: "field";  required?: boolean }
+  | { type: "entity"; required?: boolean };
+
+export interface ScriptMetadata {
+  exposed: Record<string, ExposeFieldMetadata>;
+}
+```
+
+Builders d'authoring, **namespacés** sur `ScriptMetadata` par déclaration-merging (interface en espace de type + `const` homonyme en espace de valeur — pas de mot-clé `namespace`), dans le même esprit que `button()`/`vector2()` côté input. Ils posent toujours le discriminant :
+
+```ts
+// prettier-ignore
+export const ScriptMetadata = {
+  field(options: { required?: boolean } = {}): ExposeFieldMetadata {
+    return { type: "field", required: options.required };
+  },
+  entity(options: { required?: boolean } = {}): ExposeFieldMetadata {
+    return { type: "entity", required: options.required };
+  },
+};
+```
+
+Usage :
+
+```ts
+registerScriptMetadata(TestScript, {
+  exposed: {
+    speed: ScriptMetadata.field({ required: true }),
+    sword: ScriptMetadata.entity({ required: true }),
+  },
+});
+```
+
+`registerScriptMetadata`/`getScriptMetadata` (merge d'héritage) copient les entrées telles quelles, quel que soit le `type`.
+
+---
+
+## 5. `AtlasScript<TProps>` + `attach` typé
+
+### `AtlasScript<TProps>` générique
 
 ```ts
 export abstract class AtlasScript<
   TProps extends object = {},
 > implements ScriptLifecycle {
   declare readonly __props?: TProps; // phantom : sert uniquement à l'inférence de PropsOf
-  // ... reste strictement inchangé
+  // ... reste inchangé
 }
 ```
 
-- Défaut `{}` → **100 % rétrocompatible** : tous les scripts actuels (sans props) compilent inchangés.
+- Défaut `{}` → **100 % rétrocompatible** : tous les scripts sans props compilent inchangés.
 - `__props` est un champ fantôme (jamais assigné, `declare`) qui porte `TProps` pour que `attach` puisse l'inférer.
 
-### 3.2 Décorateur `@Expose()` (`packages/gameplay/src/scripting/core/Expose.ts`)
+### `attach` typé + typage mappé des entités
 
-Décorateur de champ **stage-3** (signature `(value, context)`), métadonnées via `context.metadata` → `Symbol.metadata`. Le polyfill `Symbol.metadata` et la lecture des métadonnées d'un constructeur sont isolés dans un module dédié `SymbolMetadata.ts`, `Expose.ts` en dépend.
-
-```ts
-// SymbolMetadata.ts
-(Symbol as { metadata?: symbol }).metadata ??= Symbol.for("Symbol.metadata");
-
-export function getCtorMetadata<T>(ctor: Function): T | undefined {
-  return (ctor as { [Symbol.metadata]?: T })[Symbol.metadata];
-}
-```
+Props **requis** si le script en déclare, **omis** sinon. Un champ entité est typé `GameEntity` dans le `TProps` du script ; au call site d'`attach`, le type mappé `AttachProps` le ramène à `Entity` :
 
 ```ts
-// Expose.ts
-import { getCtorMetadata } from "./SymbolMetadata";
+// scripting/runtime/ScriptManager.ts
+type AttachProps<P> = { [K in keyof P]: P[K] extends GameEntity ? Entity : P[K] };
 
-export interface ExposeOptions {
-  // vide pour l'instant — point d'accroche futur éditeur : tooltip?, range?, step?, category?
-}
-
-export type ExposedMetadata = Map<string, ExposeOptions>;
-
-export type FieldDecorator<This = unknown> = (
-  value: undefined,
-  context: ClassFieldDecoratorContext<This>,
-) => void;
-
-const EXPOSED: unique symbol = Symbol("atlas.exposed");
-
-export function Expose(options: ExposeOptions = {}): FieldDecorator {
-  return (_: undefined, context: ClassFieldDecoratorContext): void => {
-    if (context.private) {
-      throw new Error(
-        "[@Expose] private (#) fields cannot be exposed; use a soft-private field.",
-      );
-    }
-
-    const metadata: Record<symbol, ExposedMetadata | undefined> =
-      context.metadata as Record<symbol, ExposedMetadata | undefined>;
-
-    let store: ExposedMetadata | undefined = metadata[EXPOSED];
-
-    if (!Object.prototype.hasOwnProperty.call(metadata, EXPOSED)) {
-      store = new Map<string, ExposeOptions>(store);
-      metadata[EXPOSED] = store;
-    }
-
-    (store as ExposedMetadata).set(context.name as string, options);
-  };
-}
-
-export function getExposedFields(ctor: Function): ExposedMetadata {
-  const metadata: Record<symbol, ExposedMetadata | undefined> | undefined =
-    getCtorMetadata<Record<symbol, ExposedMetadata | undefined>>(ctor);
-
-  return new Map<string, ExposeOptions>(metadata?.[EXPOSED] ?? []);
-}
-```
-
-- **Polyfill en tête de `SymbolMetadata.ts` (top-level, jamais dans une fonction)** : `Symbol.metadata` n'existe pas au runtime Node ; sans lui, babel n'attache pas l'objet metadata au constructeur. Le module `SymbolMetadata.ts` étant importé (transitivement, via `Expose.ts`) avant toute classe décorée, le polyfill s'exécute d'abord (ordre d'évaluation ESM). **Le placer dans le corps de `getCtorMetadata` le ferait tourner trop tard** (à l'appel de `getExposedFields`, après la définition des classes décorées) → metadata jamais attachée. Vérifié end-to-end.
-- **Sans instancier** : le décorateur s'exécute à la définition de classe et `Symbol.metadata` est posé sur le constructeur → un éditeur peut lire les champs exposés sans `new`.
-- **Piège d'héritage (géré)** : `context.metadata` d'une sous-classe a l'objet metadata du parent comme **prototype**. Un `metadata[EXPOSED] ??= …` naïf trouverait le `Map` du parent par héritage et le **polluerait**. On fait donc du **clone-on-own-write** : si `EXPOSED` n'est pas une propriété **propre**, on clone la `Map` héritée (`new Map(store)`) et on la pose en propre. Résultat vérifié : `Child` = `{base, a, b}`, `Base` reste `{base}`.
-- `getExposedFields` lit directement `Ctor[Symbol.metadata][EXPOSED]` (propriété propre **ou** héritée via la chaîne statique des constructeurs — une sous-classe sans `@Expose` propre hérite du metadata du parent). Retourne une **copie** (isolation de l'appelant).
-- `ExposeOptions` **existe déjà mais vide** → l'éditeur pourra enrichir (`@Expose({ range: [0, 1] })`) sans casser l'API.
-- Champs `private`/`readonly` (soft-private TS) autorisés. Les **`#private`** sont rejetés au runtime (`context.private`) avec un message clair.
-
-### 3.3 `attach` typé + injection (`packages/gameplay/src/scripting/runtime/ScriptManager.ts`)
-
-Typage : props **requis** si le script en déclare, **omis** sinon.
-
-```ts
 type PropsOf<T> = T extends AtlasScript<infer P> ? P : {};
+type PropsOfArgs<T> =
+  {} extends AttachProps<PropsOf<T>>
+    ? [props?: AttachProps<PropsOf<T>>]
+    : [props: AttachProps<PropsOf<T>>];
 
 public attach<TScript extends AtlasScript>(
   entityId: Entity,
   ScriptType: ScriptConstructor<TScript>,
-  ...rest: {} extends PropsOf<TScript>
-    ? [props?: PropsOf<TScript>]
-    : [props: PropsOf<TScript>]
+  ...rest: PropsOfArgs<TScript>
 ): TScript
 ```
 
-Runtime, dans `attach`, **après** `new ScriptType()` + `__bindContext`, **avant** `onCreate` (garanti par la file `pendingCreate` existante — `onCreate` est différé au prochain `flushCreates`) :
+- `GameEntity` étant une interface riche en méthodes, aucune valeur « champ » (nombre, objet POJO) ne matche `extends GameEntity` — la substitution ne cible **que** les champs entité. Symétriquement, `Entity` (`number & brand`) ne matche pas `GameEntity`, donc au call site on passe bien une `Entity`.
+- `ScriptConstructor` reste `new () => T` : la construction ne prend **aucun** argument, les props sont injectées après.
+
+---
+
+## 6. Injection + validation
+
+Runtime, dans `attach`, **après** `new ScriptType()` + `__bindContext`, **avant** `onCreate` (garanti par la file `pendingCreate` — `onCreate` est différé au prochain `flushCreates`). `ScriptManager` possède un `Logger` (`createLogger("ScriptManager")`). `injectProps` dispatch sur `meta.type` :
 
 ```ts
-private injectProps(instance: AtlasScript, ScriptType: ScriptConstructor, props?: object): void {
-  if (props === undefined) return;
-
-  const exposed: ExposedMetadata = getExposedFields(ScriptType);
-  if (exposed.size === 0) return;
-
+private injectProps(
+  instance: AtlasScript,
+  ScriptType: ScriptConstructor,
+  props?: object,
+): void {
+  const metadata: ScriptMetadata | undefined = getScriptMetadata(ScriptType);
+  const exposed: Record<string, ExposeFieldMetadata> = metadata?.exposed ?? {};
+  const source: Record<string, unknown> = (props ?? {}) as Record<string, unknown>;
   const target: Record<string, unknown> = instance as unknown as Record<string, unknown>;
-  const source: Record<string, unknown> = props as Record<string, unknown>;
 
-  for (const field of exposed.keys()) {
+  for (const field of Object.keys(exposed)) {
+    const meta: ExposeFieldMetadata = exposed[field];
+
     if (field in source) {
-      target[field] = source[field];
+      target[field] =
+        meta.type === "entity"
+          ? createGameEntity(source[field] as Entity, this.world, this)
+          : source[field];
+    } else if (meta.required === true) {
+      this.logger.warn(
+        `"${ScriptType.name}" exposes required field "${field}" but no value was provided.`,
+      );
+    }
+  }
+
+  for (const key in source) {
+    if (!(key in exposed)) {
+      this.logger.warn(
+        `prop "${key}" provided to "${ScriptType.name}" is not exposed and was ignored.`,
+      );
     }
   }
 }
 ```
 
-- **On n'assigne que les champs exposés** (discipline) : une clé de `props` non décorée `@Expose` est ignorée (le typage l'empêche déjà normalement).
+- **On n'assigne que les champs exposés** ; une clé de `props` non exposée est ignorée **et signalée**.
+- Un champ `type: "entity"` est **wrappé** en `GameEntity` (le `this` passé à `createGameEntity` est le `ScriptManager` lui-même, qui satisfait `ScriptResolver`) ; un champ `field` est assigné tel quel.
+- **Warn, jamais throw** : (a) un champ `required` sans valeur ; (b) une clé fournie non exposée.
+- **Cas nominal silencieux** : script sans metadata et sans props (`attach(e, Script)`) → `exposed = {}`, `source = {}`, aucun warn.
 - Injection **avant `onCreate`** : le script lit ses champs injectés dans `onCreate` en toute sûreté.
-- `ScriptConstructor` reste `new () => T` : la construction ne prend **aucun** argument, les props sont injectées après.
-
-### 3.4 Exports
-
-`packages/gameplay/src/scripting/core/index.ts` : exporter `./Expose` (`Expose`, `getExposedFields`, `ExposeOptions`, `ExposedMetadata`, `FieldDecorator`) et `./SymbolMetadata` (`getCtorMetadata`). Remontent via `scripting/index.ts` → `index.ts`, donc `import { Expose } from "@atlasjs/gameplay"`.
-
-### 3.5 Config toolchain
-
-Pas de `experimentalDecorators` (on reste en stage-3). Deux axes : **transformation** (babel) et **type-check** (`lib`).
-
-**Transformation babel** (là où `@Expose()` est _appliqué_) :
-
-- `packages/gameplay/vitest.config.ts` → **déjà fait** : `@rolldown/plugin-babel` + `@babel/plugin-proposal-decorators` (`version: "2023-11"`). Devdeps `@babel/plugin-proposal-decorators`, `@rolldown/plugin-babel` **déjà ajoutées**.
-- `apps/sandbox/vite.config.ts` → **à ajouter** : le même `@rolldown/plugin-babel` + `@babel/plugin-proposal-decorators` (`version: "2023-11"`), sinon `@Expose()` dans `TestScript` → `SyntaxError` en dev/build. Vite est ici en **7** (rollup) ; le plugin s'applique quand même via le container de plugins vite (prouvé par le vitest de gameplay). Un cast `babel(...) as unknown as PluginOption` est requis car le type de retour du plugin (pensé rolldown/vite 8) est incompatible avec `PluginOption` de vite 7 — visible seulement parce que `tsc -b` du sandbox typecheck `vite.config.ts`, runtime inchangé. Ajouter les devdeps correspondantes à `apps/sandbox`.
-- `dist` gameplay (tsdown) : **aucun changement** — gameplay n'applique pas de décorateur (cf. §2.3).
-
-**Type-check `lib`** (pour `Symbol.metadata` + `ClassFieldDecoratorContext.metadata`) :
-
-- `tsconfig.base.json` → ajouter `"ESNext.Decorators"` à `lib` (devient `["ES2022", "DOM", "ESNext.Decorators"]`). Couvre gameplay (qui hérite du base sans override de `lib`).
-- `apps/sandbox/tsconfig.app.json` → ajouter `"ESNext.Decorators"` à son `lib` (il override le base : `["ES2022", "DOM", "DOM.Iterable", "ESNext.Decorators"]`). **`erasableSyntaxOnly` reste** (compatible stage-3).
-
-Vérifs : `pnpm --filter @atlasjs/gameplay test` + `tsc --noEmit` (gameplay & sandbox), `pnpm --filter sandbox build`, et lancement dev sandbox sans `SyntaxError`.
 
 ---
 
-## 4. Résultat côté jeu
+## 7. Le handle `GameEntity` & `ScriptResolver`
 
-`apps/sandbox/src/game/scripts/TestScript.ts` :
+### Interface & résolveur — `scripting/core/GameEntity.ts`
+
+Surface d'accès composant identique à `AtlasScript`, plus `getScript` :
+
+```ts
+import { Component, Entity, NexusWorld } from "@atlasjs/nexus";
+
+import { AtlasScript } from "./AtlasScript";
+import { ScriptConstructor } from "./core-types";
+import { ScriptComponentToken } from "./ScriptComponentToken";
+
+// prettier-ignore
+export interface GameEntity {
+  readonly id: Entity;
+
+  hasComponent(type: Component<object, any[]> | ScriptComponentToken<unknown, object, any[]>): boolean;
+
+  getComponent<TApi, TEngine extends object>(type: ScriptComponentToken<TApi, TEngine, any[]>): TApi | undefined;
+  getComponent<TComponent extends object>(type: Component<TComponent, any[]>): TComponent | undefined;
+
+  addComponent<TApi, TEngine extends object, TArgs extends unknown[]>(type: ScriptComponentToken<TApi, TEngine, TArgs>, ...args: TArgs): TApi;
+  addComponent<TComponent extends object, TArgs extends unknown[]>(type: Component<TComponent, TArgs>, ...args: TArgs): TComponent;
+
+  removeComponent(type: Component<object, any[]> | ScriptComponentToken<unknown, object, any[]>): void;
+
+  requireComponent<TApi, TEngine extends object>(type: ScriptComponentToken<TApi, TEngine, any[]>): TApi;
+  requireComponent<TComponent extends object>(type: Component<TComponent, any[]>): TComponent;
+
+  getScript<T extends AtlasScript>(type: ScriptConstructor<T>): T | undefined;
+}
+```
+
+Le résolveur de script (interface core, pour éviter le cycle `core → runtime`) :
+
+```ts
+// prettier-ignore
+export interface ScriptResolver {
+  getScript<T extends AtlasScript>(entity: Entity, type: ScriptConstructor<T>): T | undefined;
+}
+```
+
+Factory (implémentation **unique** du dispatch token/composant, réutilisée par `RuntimeScriptContext`) :
+
+```ts
+// prettier-ignore
+export function createGameEntity(entity: Entity, world: NexusWorld, scripts: ScriptResolver): GameEntity {
+  const api: GameEntity = {
+    get id(): Entity {
+      return entity;
+    },
+
+    hasComponent(type): boolean {
+      return world.hasComponent(entity, isScriptComponentToken(type) ? type.engine : type);
+    },
+
+    getComponent(type): unknown {
+      if (isScriptComponentToken(type)) {
+        return world.hasComponent(entity, type.engine) ? type.create(world, entity) : undefined;
+      }
+      return world.getComponent(entity, type);
+    },
+
+    addComponent(type, ...args: any[]): unknown {
+      if (isScriptComponentToken(type)) {
+        if (!world.hasComponent(entity, type.engine)) {
+          world.addComponent(entity, type.engine, ...args);
+        }
+        return type.create(world, entity);
+      }
+      const existing: object | undefined = world.getComponent(entity, type);
+      return existing !== undefined ? existing : world.addComponent(entity, type, ...args);
+    },
+
+    removeComponent(type): void {
+      world.removeComponent(entity, isScriptComponentToken(type) ? type.engine : type);
+    },
+
+    requireComponent(type): unknown {
+      const component: unknown = api.getComponent(type as Component<object, any[]>);
+      if (component === undefined) {
+        const name: string = isScriptComponentToken(type) ? type.engine.name : (type as Component).name;
+        throw new Error(`[GameEntity] Required component "${name}" is missing on entity "${entity}".`);
+      }
+      return component;
+    },
+
+    getScript(type): unknown {
+      return scripts.getScript(entity, type);
+    },
+  } as GameEntity;
+
+  return api;
+}
+```
+
+> Ce corps est **le** dispatch token/composant, celui qui vivait autrefois dans `RuntimeScriptContext`. Après ce refactor, `RuntimeScriptContext` ne le duplique plus (délégation ci-dessous).
+
+### `getScript` côté `ScriptManager` — `scripting/runtime/ScriptManager.ts`
+
+`ScriptManager` implémente `ScriptResolver`. Il balaie les records de l'entité et renvoie la première instance `instanceof type` (parité Unity : les sous-classes matchent ; ignore les records `isDestroyed`) :
+
+```ts
+public getScript<T extends AtlasScript>(entity: Entity, type: ScriptConstructor<T>): T | undefined {
+  const recordIds: Set<ScriptID> | undefined = this.recordsByEntity.get(entity);
+  if (!recordIds) {
+    return undefined;
+  }
+  for (const recordId of recordIds) {
+    const record: ScriptInstanceRecord | undefined = this.records.get(recordId);
+    if (record && !record.isDestroyed && record.instance instanceof type) {
+      return record.instance as T;
+    }
+  }
+  return undefined;
+}
+```
+
+### Délégation `RuntimeScriptContext` + `AtlasScript.getEntity`
+
+`RuntimeScriptContext` reçoit désormais le `ScriptResolver` (le `ScriptManager`, passé par `this` à la construction) et construit **un** `GameEntity` de sa propre entité auquel il forwarde l'accès composant :
+
+```ts
+// scripting/runtime/RuntimeScriptContext.ts (schéma)
+export class RuntimeScriptContext implements ScriptContext {
+  private readonly self: GameEntity;
+  // …
+  public constructor(entity: Entity, world: NexusWorld, services: ServiceRegistry, scripts: ScriptResolver) {
+    this.self = createGameEntity(entity, world, scripts);
+    // … stocke aussi world + scripts (pour getEntity) et services + entity (pour getService/getEntityId)
+  }
+  public getComponent(type: any): unknown { return this.self.getComponent(type); }
+  public addComponent(type: any, ...args: any[]): unknown { return this.self.addComponent(type, ...args); }
+  public hasComponent(type: any): boolean { return this.self.hasComponent(type); }
+  public removeComponent(type: any): void { this.self.removeComponent(type); }
+  public getEntity(entity: Entity): GameEntity { return createGameEntity(entity, this.world, this.scripts); }
+  // getService / getEntityId : inchangés
+}
+```
+
+- **`ScriptContext` (interface core)** gagne `getEntity(entity: Entity): GameEntity`.
+- **`AtlasScript`** gagne un passthrough `public getEntity(entity: Entity): GameEntity { return this.context.getEntity(entity); }`, pour wrapper une `Entity` obtenue au runtime (résultat de `world.query`, d'un raycast futur, etc.) — ce qui subsume aussi un « handle de soi-même » (`this.getEntity(this.entityId)`).
+- **`ScriptManager.attach`** passe `this` en 4ᵉ argument du `RuntimeScriptContext`.
+
+---
+
+## 8. Toolchain (sans Babel / sans décorateurs)
+
+Le prédécesseur de ce système était `@Expose()` — un décorateur de champ **stage-3** portant ses métadonnées via `Symbol.metadata`, qui imposait Babel (`@rolldown/plugin-babel` + `@babel/plugin-proposal-decorators`) dans vitest **et** dans chaque application, un polyfill `Symbol.metadata` top-level fragile, et une gestion clone-on-own-write du piège d'héritage. Il a été **entièrement remplacé** par le registre `registerScriptMetadata` (les fichiers `Expose.ts` et `SymbolMetadata.ts` ont été supprimés).
+
+État final : **aucun décorateur nulle part**, donc **aucune chaîne Babel**.
+
+- `packages/gameplay/vitest.config.ts` / `apps/sandbox/vite.config.ts` : plus de plugin `@rolldown/plugin-babel` ; `react()` reste côté sandbox.
+- `package.json` (gameplay & sandbox) : plus de devdeps `@babel/plugin-proposal-decorators` / `@rolldown/plugin-babel`.
+- `tsconfig.base.json` & `apps/sandbox/tsconfig.app.json` : `"ESNext.Decorators"` dans `lib` est devenu inutile mais **laissé en place, inerte** (inoffensif, `Symbol.metadata` peut rester référencé par d'autres libs ; retrait optionnel, non bloquant). `erasableSyntaxOnly` (sandbox) est conservé.
+- Le `dist` de gameplay (tsdown) ne change pas de nature : gameplay n'appliquait déjà aucun décorateur dans son source — la seule différence est qu'il n'y a plus de décorateur du tout.
+
+---
+
+## 9. Exemple complet (sandbox)
+
+**`apps/sandbox/src/game/scripts/TestScript.ts`** — reçoit ses assets **et** l'entité `sword`, et la pilote :
 
 ```ts
 export class TestScript extends AtlasScript<{
   sprite: Sprite;
   clips: Record<string, SpriteAnimation>;
+  speed: number;
+  controls: PlayerControlsDescriptor;
+  sword: GameEntity;                      // handle dans le script
 }> {
-  @Expose() private readonly sprite!: Sprite;
-  @Expose() private readonly clips!: Record<string, SpriteAnimation>;
+  private readonly sprite!: Sprite;
+  private readonly clips!: Record<string, SpriteAnimation>;
+  private readonly speed!: number;
+  private readonly controls!: PlayerControlsDescriptor;
+  private readonly sword!: GameEntity;
 
   private spriteRenderer!: SpriteRendererComponent;
   private animator!: Animator;
-  // ... transform, rigidbody, actions inchangés
+  // … transform, rigidbody, actions
 
   public onCreate(): void {
-    const actions = this.addComponent(PlayerInput, controls);
+    const actions = this.addComponent(PlayerInput, this.controls);
     this.transform = this.addComponent(Transform2DComponent);
     this.rigidbody = this.addComponent(RigidBody2DComponent);
 
-    this.spriteRenderer = this.addComponent(
-      SpriteRendererComponent,
-      this.sprite,
-    );
+    this.spriteRenderer = this.addComponent(SpriteRendererComponent, this.sprite);
     this.animator = this.addComponent(Animator, this.clips, "idle");
-    // ... reste inchangé
+
+    const swordScript: SwordScript | undefined = this.sword.getScript(SwordScript);
+    const swordTransform: Transform = this.sword.requireComponent(Transform);
+    // pilotage de l'épée depuis ici
   }
 }
+
+registerScriptMetadata(TestScript, {
+  exposed: {
+    sprite: ScriptMetadata.field({ required: true }),
+    clips: ScriptMetadata.field({ required: true }),
+    speed: ScriptMetadata.field({ required: true }),
+    controls: ScriptMetadata.field({ required: true }),
+    sword: ScriptMetadata.entity({ required: true }),
+  },
+});
 ```
 
-`apps/sandbox/src/game/EcsScene.ts` : construit `sprite` + `clips`, **ne pose plus** `SpriteRender`/`Animator`, injecte :
+**`apps/sandbox/src/game/EcsScene.ts`** — fabrique les assets, ne pose plus `SpriteRender`/`Animator`, et passe l'entité `sword` **brute** :
 
 ```ts
 const blueDinoSprite: Sprite = new Sprite(blueDinoTexture);
-const sheet: SpriteSheet = SpriteSheet.fromAutoGrid({
-  /* ... */
-});
+const sheet: SpriteSheet = SpriteSheet.fromAutoGrid({ /* ... */ });
 const clips: Record<string, SpriteAnimation> = {
   idle: new SpriteAnimation({
     frames: sheet.getManyInRange("blue_dino_", 0, 3),
-    fps: 5,
-    loop: true,
-    autoPlay: true,
+    fps: 5, loop: true, autoPlay: true,
   }),
   run: new SpriteAnimation({
     frames: sheet.getManyInRange("blue_dino_", 4, 9),
-    fps: 12,
-    loop: true,
-    autoPlay: true,
+    fps: 12, loop: true, autoPlay: true,
   }),
 };
 
-const player1: Entity = nexus.createEntity();
-scriptManager.attach(player1, TestScript, { sprite: blueDinoSprite, clips });
+const player: Entity = nexus.createEntity();
+const sword: Entity = nexus.createEntity();
+
+scriptManager.attach(player, TestScript, {
+  clips,
+  controls,
+  sprite: blueDinoSprite,
+  speed: 250,
+  sword,                                  // Entity brute — injectProps la wrappe en GameEntity
+});
 ```
 
-Les trois frictions du §1 sont résolues par **le même** mécanisme.
+Toutes les frictions du §1 sont résolues par **le même** mécanisme d'injection.
 
 ---
 
-## 5. Hors périmètre (V2 → `docs/backlog.md`)
+## 10. Caveats assumés
 
-- Métadonnées d'éditeur riches dans `ExposeOptions` (tooltip, range, step, category) + inspecteur.
-- Sérialisation des valeurs exposées (scène/prefab sur disque).
-- Injection de services ou de composants via `@Expose` (reste `getService`/`addComponent`).
-- Validation stricte de cohérence props↔metadata (champ exposé sans valeur fournie, clé fournie non exposée).
-- `AssetManager` (fabrique de `Texture2D`/`Sprite` hors scène) — déjà au backlog, orthogonal.
-
----
-
-## 6. Tests (TDD, harness `packages/gameplay/test/helpers/harness.ts`)
-
-- **`@Expose` / `getExposedFields`** : enregistre les champs **sans instancier** la classe ; deux scripts distincts n'ont pas de fuite mutuelle ; l'héritage conserve les champs du parent **sans polluer** le `Map` de la base (`Child` = `{base, a, b}`, `Base` = `{base}`) ; sous-classe sans `@Expose` propre hérite quand même ; classe sans `@Expose` → `Map` vide ; la `Map` retournée est une copie ; `#private` → throw.
-- **`attach` (runtime)** : injecte chaque champ exposé **avant** `onCreate` (assert dans `onCreate` que `this.sprite` est défini) ; une clé de `props` non exposée n'est jamais assignée ; script sans `TProps` → comportement inchangé, `attach(e, S)` sans 3ᵉ argument.
-- **Typage** : `attach(e, TestScript)` sans props → **erreur compile** ; `attach(e, EmptyScript)` sans props → OK. (Test de type via `tsc --noEmit` sur un fichier de fixtures, ou `expectTypeOf` si dispo.)
-- **Intégration** : `TestScript` reçoit `sprite` + `clips`, pose `SpriteRender` + `Animator` dans `onCreate`, l'entité rend la frame courante après quelques `frame()` (l'anim traverse jusqu'au rendu).
+- **Ordre de création vs `onCreate`.** `getScript` renvoie l'instance dès qu'elle est enregistrée, y compris avant que son `onCreate` ait tourné (record en attente). Dans un même flush, l'ordre d'`attach` = l'ordre de `flushCreates`, donc référencer une entité attachée **avant** soi et lire ses champs dans `onCreate` est sûr ; l'inverse (lire dans `onCreate` les champs d'un script attaché après) peut voir des champs non initialisés. Recommandation : lire les états d'autres scripts dans `onUpdate`, pas `onCreate`.
+- **Staleness / entité détruite.** Le handle est stateless : si l'entité est détruite, `getComponent`/`getScript` renvoient `undefined` et `requireComponent` throw (cohérent avec le contrat façade). Le champ `this.sword` continue de pointer un handle valide en objet mais « vide » côté monde — pas de dangling data.
+- **Désync `TProps` ↔ metadata.** Un champ injectable est déclaré **deux fois** : dans le générique `AtlasScript<{ … }>` (type de `attach`) **et** dans `registerScriptMetadata` (runtime), sans lien automatique — y compris l'accord `GameEntity` (type au call site) ↔ `ScriptMetadata.entity()` (wrapping runtime), et `required`. C'est inhérent tant que le compilateur custom n'existe pas ; il générera les deux à terme.
+- **`GameEntity` DOIT être importé en `import type`.** Dans les fichiers d'app/scripts (`TestScript.ts`, etc.), `GameEntity` n'est qu'un type — un import de **valeur** (`import { GameEntity }`) passe `tsc --noEmit` (il est effacé au type-check) mais **casse au runtime** sous Vite/esbuild : `SyntaxError: The requested module '@atlasjs/gameplay' does not provide an export named 'GameEntity'` → écran noir React. Toujours `import type { GameEntity } from "@atlasjs/gameplay";`. À vérifier au navigateur, pas seulement au `tsc`.
 
 ---
 
-## 7. Ordre d'implémentation suggéré
+## 11. Hors périmètre (V2 → `docs/backlog.md`)
 
-1. `tsconfig.base.json` : ajouter `"ESNext.Decorators"` à `lib`. (Le babel vitest est **déjà** en place.)
-2. `SymbolMetadata.ts` (polyfill top-level + `getCtorMetadata`) puis `Expose` décorateur stage-3 + `getExposedFields` (`Symbol.metadata`, clone-on-own-write) + tests unitaires.
-3. `AtlasScript<TProps>` générique (+ phantom `__props`) + tests de rétrocompat (scripts existants compilent).
-4. `attach` typé (`PropsOf`, tuple conditionnel) + `injectProps` + tests runtime & type.
-5. Exports gameplay ; `tsc --noEmit` ; `pnpm --filter @atlasjs/gameplay build`.
-6. Migrer `apps/sandbox` : babel dans `vite.config.ts` (+ devdeps), `"ESNext.Decorators"` dans `tsconfig.app.json`, `TestScript` (générique + `@Expose`), `EcsScene` (fabrique clips + `attach` avec props, retire les `addComponent` visuels).
-7. Validation visuelle `apps/sandbox` (le dino s'anime, injection de bout en bout).
+- **Métadonnées d'éditeur riches** dans `ExposeFieldMetadata` (`kind`, `assetKind`, `runtimeType`, `tooltip`, `range`, `step`, `category`, contrainte de composant requis type Unity `[RequireComponent]`) + inspecteur — l'union discriminée est ouverte à l'extension mais aucun schéma spéculatif n'est figé ; elles seront **générées par le compilateur**.
+- **Compilateur TypeScript custom** (réécriture `addComponent<T>(a, b)` → `addComponent(T, a, b)`, génération de `registerScriptMetadata`, lien automatique `TProps` ↔ metadata, réintroduction de `@Expose()` comme pur marqueur compile-time) — projet distinct, futur.
+- **(Dé)sérialisation** des valeurs exposées et des refs d'entité (scène/prefab sur disque) — les refs demandent des ids d'entité stables cross-session, à lier au chantier `AssetRef` par id du backlog assets.
+- **Validation stricte avec throw** ; **inspecteur d'éditeur**.
+- **Champs entité optionnels** (`sword?: GameEntity`) et **tableaux** (`GameEntity[]`) : le type mappé `AttachProps` ne les substitue pas encore (une union `GameEntity | undefined` ou un `GameEntity[]` ne matche pas `extends GameEntity`). À généraliser (`NonNullable`, mapping récursif) sur besoin concret.
+- **`getScripts(type)` pluriel** (toutes les instances d'un type sur une entité) — `getScript` singulier suffit au besoin actuel.
+- **Injection de services ou de composants via metadata** (reste `getService`/`addComponent`).
+- **`AssetManager`** (fabrique de `Texture2D`/`Sprite` hors scène) — déjà au backlog, orthogonal.
+- **Extraction `@atlasjs/scripting`** — déclenchée le jour où l'éditeur/compilateur devient un consommateur hors gameplay ; discipline de découplage maintenue d'ici là.

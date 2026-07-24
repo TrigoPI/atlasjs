@@ -14,17 +14,13 @@ export class CameraScript extends AtlasScript<{ target: GameEntity }> {
   private transform: Transform;
 
   public onCreate(): void {
+    const transformTarget: Transform = this.target.requireComponent(Transform);
     this.transform = this.requireComponent(Transform);
+    this.transform.position.copyFrom(transformTarget.worldPosition);
   }
 
   public onUpdate(): void {
-    const targetTransform: Transform | undefined =
-      this.target.getComponent(Transform);
-
-    if (!targetTransform) {
-      return;
-    }
-
+    const targetTransform: Transform = this.target.requireComponent(Transform);
     const offset: Vec2 = targetTransform.worldPosition
       .clone()
       .sub(this.transform.position)

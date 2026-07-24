@@ -2,7 +2,7 @@
 
 Input for AtlasJS: low-level device polling **and** a high-level named-action layer. Depends only on `@atlasjs/core`, `@atlasjs/math`, `@atlasjs/utils` — it knows **nothing** about the ECS (Nexus), rendering, or the scripting layer. The ECS integration lives in `@atlasjs/gameplay`; this package stays pure and reusable on its own.
 
-> Design docs at the repo root: **`docs/gameplay/input-scripting.md`** (how scripts reach input — the façade in gameplay sits on this package's service) and **`docs/gameplay/input-actions.md`** (the named-action system, incl. the explicit "V1 limits & backlog" section). Read the latter before touching `public/actions/`.
+> Design doc at the repo root: **`docs/gameplay/input-scripting.md`** — the unified input-scripting doc. Phase 1: how scripts reach input (the façade in gameplay sits on this package's service). Phase 2: the named-action system, incl. the V2/out-of-scope section. Read it before touching `public/actions/`.
 
 ## Two layers
 
@@ -28,7 +28,7 @@ Input for AtlasJS: low-level device polling **and** a high-level named-action la
 
 ## V1 is deliberately partial
 
-No events/callbacks, interactions, processors (hence no normalization/deadzone), gamepad/analog, control schemes, device assignment, runtime rebinding, or asset (de)serialization. The runtime model leaves seams for all of these — see `docs/gameplay/input-actions.md` §"Coutures d'extensibilité" and §"Limites & manques V1" before extending.
+No events/callbacks, interactions, processors (hence no normalization/deadzone), gamepad/analog, control schemes, device assignment, runtime rebinding, or asset (de)serialization. The runtime model leaves seams for all of these — see `docs/gameplay/input-scripting.md` (Phase 2 seams + V2/out-of-scope) before extending.
 
 ## Build & test
 

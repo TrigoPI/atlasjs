@@ -24,10 +24,12 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "strictPropertyInitialization": false,
+    "resolveJsonModule": true,
     "paths": {
       "@css/*": ["./css/*"],
       "@sandbox/*": ["./src/*"],
-      "@assets/*": ["./assets/*"]
+      "@assets/*": ["./assets/*"],
+      "@maps/*": ["./maps/*"]
     }
   },
   "include": ["src"]

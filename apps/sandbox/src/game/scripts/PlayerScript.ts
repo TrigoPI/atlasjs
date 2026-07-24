@@ -36,7 +36,7 @@ export class PlayerScript extends AtlasScript {
     this.move = actions.get("move");
 
     this.transform.setScale(3, 3);
-    this.transform.setPosition(600, 500);
+    this.transform.setPosition(800, 600);
     this.spriteRenderer.sortingOrder = 10;
   }
 
