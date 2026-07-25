@@ -1,3 +1,3 @@
 export * from "./Layer";
 export * from "./MapLoader";
-export * from "./tiled.type";
+export * from "./map-object/tiled.type";

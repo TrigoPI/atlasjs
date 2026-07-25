@@ -1,4 +1,4 @@
-export type TiledLayer = TiledGroupLayer | TiledTileLayer;
+export type TiledLayer = TiledGroupLayer | TiledTileLayer | TiledObjectGroup;
 
 export type TiledTileLayer = {
   type: "tilelayer";
@@ -13,6 +13,28 @@ export type TiledGroupLayer = {
   name: string;
   layers: TiledLayer[];
 };
+
+export type TiledObjectGroup = {
+  type: "objectgroup";
+  objects: TiledObject[];
+};
+
+export type TiledPinObject = {
+  name: string;
+  point: boolean;
+  x: number;
+  y: number;
+};
+
+export type TiledRectPointObject = {
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+export type TiledObject = TiledPinObject | TiledRectPointObject;
 
 export type TiledTileSet = {
   name: string;

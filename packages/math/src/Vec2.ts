@@ -109,4 +109,8 @@ export class Vec2 {
   public static create(x: number = 0, y: number = 0): Vec2 {
     return new Vec2(x, y);
   }
+
+  public static zero(): Vec2 {
+    return new Vec2(0, 0);
+  }
 }

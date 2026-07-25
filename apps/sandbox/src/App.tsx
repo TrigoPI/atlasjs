@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useRef } from "react";
+import { type RefObject, useEffect, useRef, useState } from "react";
 
 import { Engine } from "@atlasjs/core";
 import { AssetPlugin } from "@atlasjs/assets";
@@ -11,8 +11,10 @@ import { NebulaPlugin } from "@atlasjs/nebula";
 import { WebGPURenderer } from "@atlasjs/nebula-webgpu";
 
 import { EcsScene } from "./game";
+import { throttle } from "./utils";
 
 export function App() {
+  const [fps, setFps] = useState<number>(0);
   const mountRef: RefObject<HTMLCanvasElement | null> =
     useRef<HTMLCanvasElement | null>(null);
 
@@ -48,11 +50,31 @@ export function App() {
       .use(gameplayPlugin);
 
     engine.start().then(() => {
-      engine.scene.set(new EcsScene());
+      const cb = throttle((frame: number) => {
+        setFps(Math.round(frame));
+      }, 250);
+
+      engine.scene.set(new EcsScene(cb));
     });
 
     return () => engine.stop();
   }, []);
 
-  return <canvas ref={mountRef} style={{ width: "100vw", height: "100vh" }} />;
+  return (
+    <div>
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          zIndex: 1,
+          color: "white",
+          padding: "10px",
+        }}
+      >
+        <span>{fps} fps</span>
+      </div>
+      <canvas ref={mountRef} style={{ width: "100vw", height: "100vh" }} />;
+    </div>
+  );
 }

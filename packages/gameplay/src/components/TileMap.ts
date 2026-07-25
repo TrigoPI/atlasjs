@@ -29,7 +29,8 @@ export class TileMap {
   }
 
   public getTile(cx: number, cy: number): number {
-    const value: number | undefined = this.cells.get(this.key(cx, cy));
+    const key: number | undefined = this.key(cx, cy);
+    const value: number | undefined = this.cells.get(key);
     return value === undefined ? -1 : value;
   }
 
@@ -43,7 +44,13 @@ export class TileMap {
     }
   }
 
-  public fill(cx0: number, cy0: number, cx1: number, cy1: number, tileIndex: number): void {
+  public fill(
+    cx0: number,
+    cy0: number,
+    cx1: number,
+    cy1: number,
+    tileIndex: number,
+  ): void {
     const xMin: number = Math.min(cx0, cx1);
     const xMax: number = Math.max(cx0, cx1);
     const yMin: number = Math.min(cy0, cy1);
@@ -63,7 +70,9 @@ export class TileMap {
     }
   }
 
-  public forEachTile(fn: (cx: number, cy: number, tileIndex: number) => void): void {
+  public forEachTile(
+    fn: (cx: number, cy: number, tileIndex: number) => void,
+  ): void {
     for (const [packed, index] of this.cells) {
       const cx: number = Math.floor(packed / KEY_STRIDE) - KEY_OFFSET;
       const cy: number = (packed % KEY_STRIDE) - KEY_OFFSET;

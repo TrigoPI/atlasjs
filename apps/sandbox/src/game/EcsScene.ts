@@ -3,6 +3,7 @@ import { type SceneContext, Scene } from "@atlasjs/core";
 import { type Entity, type NexusWorld, NEXUS } from "@atlasjs/nexus";
 import { type AssetManager, ASSET_MANAGER } from "@atlasjs/assets";
 
+import type { PinObject } from "./map-loader/map-object";
 import { ResourcesPath } from "./ResourcesPath";
 import { MapLoader } from "./map-loader";
 
@@ -45,23 +46,31 @@ import {
   TextureAsset,
 } from "@atlasjs/nebula";
 
+const MAP_SCALE: number = 2;
+
 export class EcsScene extends Scene {
-  public constructor() {
+  private fpsCallback: (fps: number) => void;
+
+  public constructor(cb: (fps: number) => void) {
     super("game-scene");
+    this.fpsCallback = cb;
   }
 
   // prettier-ignore
   public override async onCreate(ctx: SceneContext): Promise<void> {
-    await this.loadMap(ctx);
-    await this.initializePlayer(ctx);
+    const mapLoader: MapLoader = new MapLoader(ResourcesPath.Map);
+
+    await this.loadMap(mapLoader, ctx);
+    await this.initializePlayer(mapLoader, ctx);
   }
 
-  private async loadMap(ctx: SceneContext): Promise<void> {
+  private async loadMap(
+    mapLoader: MapLoader,
+    ctx: SceneContext,
+  ): Promise<void> {
     const nexus: NexusWorld = ctx.services.get(NEXUS);
     const assets: AssetManager = ctx.services.get(ASSET_MANAGER);
     const scriptManager: ScriptManager = ctx.services.get(SCRIPT_MANAGER);
-
-    const mapLoader: MapLoader = new MapLoader(ResourcesPath.Map);
 
     // prettier-ignore
     const groundTileSetAsset: TileSetAsset = TileSetAsset.fromPath(ResourcesPath.Tilesets.Ground.Grass, {
@@ -69,8 +78,16 @@ export class EcsScene extends Scene {
       tileWidth: 32,
     });
 
+    // prettier-ignore
+    const propsTileSetAsset: TileSetAsset = TileSetAsset.fromPath(ResourcesPath.Tilesets.Props.Default, {
+      tileHeight: 32,
+      tileWidth: 32,
+    });
+
     const groundTileSet: TileSet =
       await assets.load<TileSet>(groundTileSetAsset);
+
+    const propsTileSet: TileSet = await assets.load<TileSet>(propsTileSetAsset);
 
     const gridEntity: Entity = nexus.createEntity();
     nexus.addComponent(gridEntity, Transform2D);
@@ -81,29 +98,45 @@ export class EcsScene extends Scene {
     nexus.addComponent(ground, TileMapRenderer);
     nexus.addComponent(ground, TileMap, groundTileSet);
 
+    const props: Entity = nexus.createEntity();
+    nexus.addComponent(props, Transform2D);
+    nexus.addComponent(props, TileMapRenderer);
+    nexus.addComponent(props, TileMap, propsTileSet);
+
     nexus.setParent(ground, gridEntity);
+    nexus.setParent(props, gridEntity);
 
     scriptManager.attach(ground, MapBuilderScript, {
+      tilesetName: "ground_layer",
       grid: gridEntity,
+      scale: MAP_SCALE,
       loader: mapLoader,
-      scale: 2,
+    });
+
+    scriptManager.attach(props, MapBuilderScript, {
+      tilesetName: "props_layer",
+      grid: gridEntity,
+      scale: MAP_SCALE,
+      loader: mapLoader,
     });
   }
 
   // prettier-ignore
-  private async initializePlayer(ctx: SceneContext): Promise<void> {
+  private async initializePlayer(mapLoader: MapLoader, ctx: SceneContext): Promise<void> {
     const nexus: NexusWorld = ctx.services.get(NEXUS);
     const assets: AssetManager = ctx.services.get(ASSET_MANAGER);
     const scriptManager: ScriptManager = ctx.services.get(SCRIPT_MANAGER);
     const cameraManager: CameraManager = ctx.services.get(CAMERA_MANAGER);
 
-    const dinoAsset: TextureAsset = new TextureAsset(ResourcesPath.Dinos.Blue);
+    const swordSpriteAsset: SpriteAsset = SpriteAsset.fromPath(ResourcesPath.Sprites.Swords.Default);
+    const shadowSpriteAsset: SpriteAsset = SpriteAsset.fromPath(ResourcesPath.Sprites.Props.Shadow);
+    const dinoAsset: TextureAsset = new TextureAsset(ResourcesPath.Sprites.Dinos.Yellow);
     const dinoSpriteAsset: SpriteAsset = new SpriteAsset(dinoAsset);
-    const swordSpriteAsset: SpriteAsset = SpriteAsset.fromPath(ResourcesPath.Swords.Default);
 
     const blueDinoTexture: Texture2D = await assets.load<Texture2D>(dinoAsset);
     const blueDinoSprite: Sprite = await assets.load<Sprite>(dinoSpriteAsset);
     const swordSprite: Sprite = await assets.load<Sprite>(swordSpriteAsset);
+    const shadowSprite: Sprite = await assets.load<Sprite>(shadowSpriteAsset);
 
     const playerSheet: SpriteSheet = SpriteSheet.fromAutoGrid({
       name: "blue_dino",
@@ -148,6 +181,17 @@ export class EcsScene extends Scene {
     nexus.addComponent(cameraEntity, Camera);
     nexus.addComponent(cameraEntity, Transform2D);
 
+    const shadow: Entity = nexus.createEntity();
+    nexus.addComponent(shadow, Transform2D);
+    nexus.addComponent(shadow, SpriteRenderer, shadowSprite);
+
+    const spawn: PinObject | undefined = mapLoader.getObject<PinObject>("spawn_point");
+    const spawnPosition: Vec2 = spawn ? 
+      Vec2.create(spawn.x, spawn.y).mult(MAP_SCALE) : 
+      Vec2.zero();
+
+    nexus.setParent(shadow, player);
+
     scriptManager.attach(sword, SwordScript, {
       scale: 1.7,
       owner: player,
@@ -165,7 +209,11 @@ export class EcsScene extends Scene {
       },
     });
 
-    scriptManager.attach(player, PlayerScript);
+    scriptManager.attach(player, PlayerScript, {
+      shadow: shadow,
+      spawn: spawnPosition,
+    });
+
     scriptManager.attach(player, PlayerMovementScript, {
       speed: 250,
     });
@@ -175,5 +223,9 @@ export class EcsScene extends Scene {
     });
 
     cameraManager.setActive(cameraEntity);
+  }
+
+  public onUpdate(dt: number): void {
+    this.fpsCallback(1 / dt);
   }
 }

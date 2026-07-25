@@ -1,21 +1,39 @@
 import Map from "@maps/dino_brawl.json";
+
 import GrassTileset from "@assets/tilesets/ground/grass-tileset.png";
+import Props from "@assets/tilesets/props/props.png";
 
-import BlueDino from "@assets/dinos/dino_blue.png";
+import BlueDino from "@assets/sprites/dinos/dino_blue.png";
+import GreenDino from "@assets/sprites/dinos/dino_green.png";
+import RedDino from "@assets/sprites/dinos/dino_red.png";
+import YellowDino from "@assets/sprites/dinos/dino_yellow.png";
 
-import Default from "@assets/swords/Iicon_32_01.png";
+import Shadow from "@assets/sprites/props/shadow.png";
+
+import Default from "@assets/sprites/swords/Iicon_32_01.png";
 
 export const ResourcesPath = {
   Map,
-  Dinos: {
-    Blue: BlueDino,
-  },
-  Swords: {
-    Default: Default,
+  Sprites: {
+    Props: {
+      Shadow: Shadow,
+    },
+    Dinos: {
+      Blue: BlueDino,
+      Green: GreenDino,
+      Red: RedDino,
+      Yellow: YellowDino,
+    },
+    Swords: {
+      Default: Default,
+    },
   },
   Tilesets: {
     Ground: {
       Grass: GrassTileset,
+    },
+    Props: {
+      Default: Props,
     },
   },
 };

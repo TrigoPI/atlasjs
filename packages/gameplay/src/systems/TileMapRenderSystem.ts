@@ -4,12 +4,18 @@ import type { Bound, Mat3 } from "@atlasjs/math";
 import type { NebulaRenderer, TileInstance } from "@atlasjs/nebula";
 
 import type { Tile } from "../assets/Tile";
+import type { CellRange } from "./tilemap-geometry";
+
 import { Grid } from "../components/Grid";
 import { TileMap } from "../components/TileMap";
 import { TileMapRenderer } from "../components/TileMapRenderer";
 import { WorldTransform2D } from "../components/WorldTransform2D";
-import { cellOrigin, visibleCellRange, worldBoundToLocalBound } from "./tilemap-geometry";
-import type { CellRange } from "./tilemap-geometry";
+
+import {
+  cellOrigin,
+  visibleCellRange,
+  worldBoundToLocalBound,
+} from "./tilemap-geometry";
 
 import type {
   Entity,
@@ -31,16 +37,11 @@ export class TileMapRenderSystem implements NexusSystem {
     this.scaleScratch = new Vec2();
   }
 
+  // prettier-ignore
   public update({ world }: NexusSystemContext): void {
     world
       .query(WorldTransform2D, TileMap, TileMapRenderer)
-      .each(
-        (
-          entity: Entity,
-          worldTransform: WorldTransform2D,
-          tileMap: TileMap,
-          renderer: TileMapRenderer,
-        ) => {
+      .each((entity: Entity, worldTransform: WorldTransform2D, tileMap: TileMap, renderer: TileMapRenderer) => {
           const grid: Grid | undefined = this.resolveGrid(world, entity);
           if (grid === undefined) {
             return;
@@ -119,16 +120,22 @@ export class TileMapRenderSystem implements NexusSystem {
     const viewport: Bound = this.nebula.getCameraViewport();
     const invWorld: Mat3 = worldTransform.matrix.clone().invert();
     const localViewport: Bound = worldBoundToLocalBound(invWorld, viewport);
-    const range: CellRange = visibleCellRange(grid.cellSize, grid.cellGap, localViewport);
+    const range: CellRange = visibleCellRange(
+      grid.cellSize,
+      grid.cellGap,
+      localViewport,
+    );
 
     for (let cy: number = range.cyMin; cy <= range.cyMax; cy++) {
       for (let cx: number = range.cxMin; cx <= range.cxMax; cx++) {
         const index: number = tileMap.getTile(cx, cy);
+
         if (index < 0) {
           continue;
         }
 
         const tile: Tile | undefined = tileMap.tileset.tryGetTile(index);
+
         if (tile === undefined) {
           continue;
         }
