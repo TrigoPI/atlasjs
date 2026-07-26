@@ -268,8 +268,8 @@
          "x":0,
          "y":0
         }],
- "nextlayerid":11,
- "nextobjectid":22,
+ "nextlayerid":13,
+ "nextobjectid":64,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",
@@ -592,6 +592,33 @@
          "tilecount":256,
          "tileheight":32,
          "tilewidth":32
+        }, 
+        {
+         "columns":0,
+         "firstgid":577,
+         "grid":
+            {
+             "height":1,
+             "orientation":"orthogonal",
+             "width":1
+            },
+         "margin":0,
+         "name":"test",
+         "spacing":0,
+         "tilecount":1,
+         "tileheight":160,
+         "tiles":[
+                {
+                 "height":160,
+                 "id":0,
+                 "image":"..\/assets\/tilesets\/player\/plant.png",
+                 "imageheight":512,
+                 "imagewidth":512,
+                 "width":160,
+                 "x":0,
+                 "y":0
+                }],
+         "tilewidth":160
         }],
  "tilewidth":32,
  "type":"map",

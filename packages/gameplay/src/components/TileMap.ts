@@ -5,8 +5,8 @@ const KEY_STRIDE: number = 65536;
 
 export class TileMap {
   public readonly tileset: TileSet;
-
   private readonly cells: Map<number, number>;
+
   private currentRevision: number;
 
   public constructor(tileset: TileSet) {
@@ -24,6 +24,7 @@ export class TileMap {
       this.removeTile(cx, cy);
       return;
     }
+
     this.cells.set(this.key(cx, cy), tileIndex);
     this.currentRevision++;
   }

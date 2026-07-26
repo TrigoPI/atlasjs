@@ -4,7 +4,7 @@ import type { Bound, Mat3 } from "@atlasjs/math";
 import type { NebulaRenderer, TileInstance } from "@atlasjs/nebula";
 
 import type { Tile } from "../assets/Tile";
-import type { CellRange } from "./tilemap-geometry";
+import type { CellOrigin, CellRange } from "./utils";
 
 import { Grid } from "../components/Grid";
 import { TileMap } from "../components/TileMap";
@@ -15,7 +15,7 @@ import {
   cellOrigin,
   visibleCellRange,
   worldBoundToLocalBound,
-} from "./tilemap-geometry";
+} from "./utils/tilemap-geometry";
 
 import type {
   Entity,
@@ -140,12 +140,8 @@ export class TileMapRenderSystem implements NexusSystem {
           continue;
         }
 
-        const origin: { x: number; y: number } = cellOrigin(
-          grid.cellSize,
-          grid.cellGap,
-          cx,
-          cy,
-        );
+        // prettier-ignore
+        const origin: CellOrigin = cellOrigin(grid.cellSize, grid.cellGap, cx, cy);
         const rect: Bound = tile.sprite.rect;
 
         instances.push({

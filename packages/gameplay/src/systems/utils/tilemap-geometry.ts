@@ -1,25 +1,33 @@
 import { Bound, type Mat3, type Vec2 } from "@atlasjs/math";
 
-export interface CellRange {
+export type CellRange = {
   cxMin: number;
   cyMin: number;
   cxMax: number;
   cyMax: number;
-}
+};
+
+export type CellOrigin = {
+  x: number;
+  y: number;
+};
 
 export function cellOrigin(
   cellSize: Vec2,
   cellGap: Vec2,
   cx: number,
   cy: number,
-): { x: number; y: number } {
+): CellOrigin {
   return {
     x: cx * (cellSize.x + cellGap.x),
     y: cy * (cellSize.y + cellGap.y),
   };
 }
 
-export function worldBoundToLocalBound(invWorld: Mat3, worldBound: Bound): Bound {
+export function worldBoundToLocalBound(
+  invWorld: Mat3,
+  worldBound: Bound,
+): Bound {
   const x0: number = worldBound.x;
   const y0: number = worldBound.y;
   const x1: number = worldBound.x + worldBound.width;

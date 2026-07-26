@@ -13,6 +13,7 @@ import {
   PlayerMovementScript,
   CameraScript,
   MapBuilderScript,
+  CameraZoomScript,
 } from "./scripts";
 
 import {
@@ -164,6 +165,12 @@ export class EcsScene extends Scene {
         loop: true,
         autoPlay: true,
       }),
+      sprint: new SpriteAnimation({
+        frames: playerSheet.getManyInRange("blue_dino_", 17, 23),
+        fps: 12,
+        loop: true,
+        autoPlay: true,
+      })
     };
 
     const player: Entity = nexus.createEntity();
@@ -221,6 +228,8 @@ export class EcsScene extends Scene {
     scriptManager.attach(cameraEntity, CameraScript, {
       target: player,
     });
+
+    scriptManager.attach(cameraEntity, CameraZoomScript, {});
 
     cameraManager.setActive(cameraEntity);
   }

@@ -6,6 +6,7 @@ import {
   type Vector2ActionSpec,
   Animator,
   AtlasScript,
+  ButtonAction,
   Color,
   PlayerInput,
   ScriptMetadata,
@@ -33,6 +34,7 @@ export class PlayerScript extends AtlasScript<{
   private spriteRenderer: SpriteRenderer;
 
   private move: Vector2Action;
+  private boost: ButtonAction;
 
   // prettier-ignore
   public onCreate(): void {
@@ -46,6 +48,7 @@ export class PlayerScript extends AtlasScript<{
     this.spriteRenderer = this.requireComponent(SpriteRenderer);
 
     this.move = actions.get("move");
+    this.boost = actions.get("boost");
 
     this.transform.setScale(3, 3);
     this.transform.position.copyFrom(this.spawn);
@@ -62,7 +65,8 @@ export class PlayerScript extends AtlasScript<{
     const v: Vec2 = this.move.readValue();
 
     if (v.x !== 0 || v.y !== 0) {
-      this.animator.play("run");
+      const animation: string = this.boost.isDown() ? "sprint" : "run";
+      this.animator.play(animation);
     } else {
       this.animator.play("idle");
     }
