@@ -4,7 +4,7 @@ import {
   cellOrigin,
   visibleCellRange,
   worldBoundToLocalBound,
-} from "../src/systems/tilemap-geometry";
+} from "../src/systems/utils/tilemap-geometry";
 
 describe("cellOrigin", () => {
   it("computes the min-corner origin including the gap", () => {
