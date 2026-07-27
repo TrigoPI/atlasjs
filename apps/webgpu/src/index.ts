@@ -114,7 +114,7 @@ async function getImage(src: string): Promise<ImageBitmap> {
     .add("idle", idleAnimation)
     .setDefault("idle");
 
-  swordSprite.setScale(0.7, 0.7).setZIndex(-1);
+  swordSprite.setScale(0.7, 0.7).setSortPrimary(-1);
 
   dinoSprite
     .setScale(3, 3)
@@ -129,13 +129,13 @@ async function getImage(src: string): Promise<ImageBitmap> {
   // dinoSprite.addChild(swordSprite);
 
   const bgRect: RectNode = new RectNode(320, 240);
-  bgRect.setColor(0.15, 0.2, 0.55, 1).setPosition(200, 200).setZIndex(-1);
+  bgRect.setColor(0.15, 0.2, 0.55, 1).setPosition(200, 200).setSortPrimary(-1);
 
   const circle: CircleNode = new CircleNode(70);
-  circle.setColor(0.9, 0.3, 0.3, 1).setPosition(330, 130).setZIndex(1);
+  circle.setColor(0.9, 0.3, 0.3, 1).setPosition(330, 130).setSortPrimary(1);
 
   const line: LineNode = new LineNode(80, 320, 360, 250, 1);
-  line.setColor(0.2, 0.9, 0.4, 1).setZIndex(2);
+  line.setColor(0.2, 0.9, 0.4, 1).setSortPrimary(2);
 
   nebula.scene.addChild(bgRect);
   nebula.scene.addChild(circle);

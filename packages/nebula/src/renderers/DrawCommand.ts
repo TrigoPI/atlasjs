@@ -5,7 +5,10 @@ import { Texture2D, Sampler } from "../core/resources";
 
 export type SpriteDrawCommand = {
   readonly kind: "sprite";
-  readonly sortKey: number;
+  readonly sortingLayer: number;
+  readonly sortPrimary: number;
+  readonly sortSecondary: number;
+  readonly kindOrder: number;
   readonly batchKey: number;
   readonly renderState: RenderState;
   readonly texture: Texture2D;
@@ -17,7 +20,10 @@ export type SpriteDrawCommand = {
 
 export type ShapeDrawCommand = {
   readonly kind: "shape";
-  readonly sortKey: number;
+  readonly sortingLayer: number;
+  readonly sortPrimary: number;
+  readonly sortSecondary: number;
+  readonly kindOrder: number;
   readonly batchKey: number;
   readonly renderState: RenderState;
   readonly model: Mat4;
@@ -27,7 +33,10 @@ export type ShapeDrawCommand = {
 
 export type TileMapDrawCommand = {
   readonly kind: "tilemap";
-  readonly sortKey: number;
+  readonly sortingLayer: number;
+  readonly sortPrimary: number;
+  readonly sortSecondary: number;
+  readonly kindOrder: number;
   readonly batchKey: number;
   readonly renderState: RenderState;
   readonly texture: Texture2D;

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { Mat4, Bound } from "@atlasjs/math";
 
-import { computeModelWorldBound } from "../src/renderers/worldBound";
+import { computeModelWorldBound } from "../src/renderers/utils/worldBound";
 
 describe("computeModelWorldBound", () => {
   it("maps the identity model to the unit quad AABB", () => {

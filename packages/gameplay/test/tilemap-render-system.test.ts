@@ -60,7 +60,7 @@ describe("TileMapRenderSystem", () => {
     expect(nodes(scene).length).toBe(1);
     const node: TileMapNode = nodes(scene)[0];
     expect(node.instances.length).toBe(4);
-    expect(node.zIndex).toBe(7);
+    expect(node.sortPrimary).toBe(7);
     expect(node.texture).toBe(tileset.texture);
     expect(renderer.sortingOrder).toBe(7);
   });

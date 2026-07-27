@@ -4,7 +4,9 @@ import { TraverseCallback } from "./graphics-types";
 
 export class Node extends Transformable {
   public visible: boolean;
-  public zIndex: number;
+  public sortingLayer: number;
+  public sortPrimary: number;
+  public sortSecondary: number;
 
   private readonly children: Node[];
   private parent: Node | null;
@@ -12,7 +14,9 @@ export class Node extends Transformable {
   public constructor() {
     super();
 
-    this.zIndex = 0;
+    this.sortingLayer = 0;
+    this.sortPrimary = 0;
+    this.sortSecondary = 0;
     this.visible = true;
     this.children = [];
 
@@ -70,8 +74,18 @@ export class Node extends Transformable {
     return this;
   }
 
-  public setZIndex(zIndex: number): this {
-    this.zIndex = zIndex;
+  public setSortingLayer(sortingLayer: number): this {
+    this.sortingLayer = sortingLayer;
+    return this;
+  }
+
+  public setSortPrimary(sortPrimary: number): this {
+    this.sortPrimary = sortPrimary;
+    return this;
+  }
+
+  public setSortSecondary(sortSecondary: number): this {
+    this.sortSecondary = sortSecondary;
     return this;
   }
 

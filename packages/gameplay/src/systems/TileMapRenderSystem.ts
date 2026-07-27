@@ -95,7 +95,7 @@ export class TileMapRenderSystem implements NexusSystem {
     node.setScale(scale.x, scale.y);
 
     node.texture = tileMap.tileset.texture;
-    node.zIndex = renderer.sortingOrder;
+    node.sortPrimary = renderer.sortingOrder;
     node.visible = renderer.visible;
     node.tint.set(
       renderer.color.r,

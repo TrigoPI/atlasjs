@@ -21,7 +21,12 @@ export class RenderQueue {
 
   public sort(): void {
     this.commands.sort(
-      (a: DrawCommand, b: DrawCommand) => a.sortKey - b.sortKey,
+      (a: DrawCommand, b: DrawCommand) =>
+        a.sortingLayer - b.sortingLayer ||
+        a.sortPrimary - b.sortPrimary ||
+        a.sortSecondary - b.sortSecondary ||
+        a.kindOrder - b.kindOrder ||
+        a.batchKey - b.batchKey,
     );
   }
 

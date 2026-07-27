@@ -97,7 +97,7 @@ describe("SpriteRenderSystem", () => {
     expect(node.tint.x).toBe(1);
     expect(node.tint.y).toBe(0);
     expect(node.visible).toBe(false);
-    expect(node.zIndex).toBe(4);
+    expect(node.sortPrimary).toBe(4);
   });
 
   it("reuses the node on a same-texture rect swap", () => {

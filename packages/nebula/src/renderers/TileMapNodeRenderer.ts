@@ -60,7 +60,10 @@ export class TileMapNodeRenderer
 
     return {
       kind: "tilemap",
-      sortKey: this.computeSortKey(tilemap.zIndex, KIND_ORDER.tilemap, batchId),
+      sortingLayer: tilemap.sortingLayer,
+      sortPrimary: tilemap.sortPrimary,
+      sortSecondary: tilemap.sortSecondary,
+      kindOrder: KIND_ORDER.tilemap,
       batchKey: batchId,
       renderState: NodeRendererBase.RENDER_STATES[tilemap.blend],
       texture: tilemap.texture,
