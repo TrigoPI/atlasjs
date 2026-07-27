@@ -13,12 +13,14 @@ export interface Collider {
   setFriction(value: number): this;
   setDensity(value: number): this;
   setEnabled(value: boolean): this;
+  setUserData(data: unknown): this;
 
   getCollisionGroup(): number;
   getCollisionMask(): number;
   getRestitution(): number;
   getFriction(): number;
   getDensity(): number;
+  getUserData<T = unknown>(): T | undefined;
 
   getRigidBody(): RigidBody | null;
 }

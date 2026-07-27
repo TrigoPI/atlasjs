@@ -13,6 +13,7 @@ import { PhysicsUnitConverter } from "./PhysicsUnitConverter";
 import {
   Collider,
   ColliderDesc,
+  CollisionHandler,
   PhysicsQuery,
   PhysicsWorld,
   PhysicsWorldOptions,
@@ -62,6 +63,8 @@ export class RapierPhysicsWorld implements PhysicsWorld {
     this.world.step();
   }
 
+  public drainCollisions(_handler: CollisionHandler): void {}
+
   public setGravity(x: number, y: number): void {
     this.world.gravity = { x, y };
   }
@@ -98,7 +101,6 @@ export class RapierPhysicsWorld implements PhysicsWorld {
   }
 
   public createCollider(descriptor: ColliderDesc, body?: RigidBody): Collider {
-    const unitScale: number = this.unitsPerMeter;
     const colDesc: RAPIER.ColliderDesc = mapColliderDesc(
       descriptor,
       this.converter,
@@ -118,8 +120,8 @@ export class RapierPhysicsWorld implements PhysicsWorld {
     const id: string = String(rawCollider.handle);
     const wrapper: RapierCollider = new RapierCollider(rawCollider, {
       id,
-      unitScale,
       body: parentBody,
+      userData: descriptor.userData,
     });
 
     this.colliders.set(rawCollider.handle, wrapper);

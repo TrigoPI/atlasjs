@@ -34,6 +34,7 @@ export type ColliderDesc = {
   collisionGroup?: number;
   collisionMask?: number;
   enabled?: boolean;
+  events?: boolean;
   userData?: unknown;
 };
 
@@ -100,3 +101,9 @@ export type CharacterControllerState = {
   readonly grounded: boolean;
   readonly jumpQueued: boolean;
 };
+
+export type CollisionHandler = (
+  a: Collider,
+  b: Collider,
+  started: boolean,
+) => void;

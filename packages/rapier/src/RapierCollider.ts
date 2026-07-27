@@ -1,14 +1,13 @@
 import RAPIER from "@dimforge/rapier2d-compat";
 import { Collider, RigidBody } from "@atlasjs/inertia";
 import { RapierColliderOption } from "./rapier-types";
-import { PhysicsUnitConverter } from "./PhysicsUnitConverter";
 
 export class RapierCollider implements Collider {
   public readonly id: string;
   public readonly rapierCollider: RAPIER.Collider;
 
   private readonly body: RigidBody | null;
-  private readonly converter: PhysicsUnitConverter; // not used for now
+  private userData: unknown;
 
   public constructor(
     rapierCollider: RAPIER.Collider,
@@ -17,7 +16,7 @@ export class RapierCollider implements Collider {
     this.body = options.body;
     this.id = options.id;
     this.rapierCollider = rapierCollider;
-    this.converter = new PhysicsUnitConverter(options.unitScale);
+    this.userData = options.userData;
   }
 
   public isSensor(): boolean {
@@ -81,6 +80,15 @@ export class RapierCollider implements Collider {
 
   public getDensity(): number {
     return this.rapierCollider.density();
+  }
+
+  public getUserData<T = unknown>(): T | undefined {
+    return this.userData as T | undefined;
+  }
+
+  public setUserData(data: unknown): this {
+    this.userData = data;
+    return this;
   }
 
   public getRigidBody(): RigidBody | null {

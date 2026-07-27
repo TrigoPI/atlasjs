@@ -11,6 +11,6 @@ export type RapierRigidBodyOption = {
 
 export type RapierColliderOption = {
   id: string;
-  unitScale: number;
   body: RigidBody | null;
+  userData?: unknown;
 };

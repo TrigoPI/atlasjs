@@ -1,5 +1,5 @@
 import { Vec2 } from "@atlasjs/math";
-import { RigidBodyDesc, ColliderDesc } from "./inertial-type";
+import { RigidBodyDesc, ColliderDesc, CollisionHandler } from "./inertial-type";
 import { Collider } from "./Collider";
 import { PhysicsQuery } from "./PhysicsQuery";
 import { RigidBody } from "./RigidBody";
@@ -7,6 +7,7 @@ import { RigidBody } from "./RigidBody";
 export interface PhysicsWorld {
   init?(): Promise<void>;
   step(dt: number): void;
+  drainCollisions(handler: CollisionHandler): void;
   setGravity(x: number, y: number): void;
   getGravity(): Vec2;
   createRigidBody(descriptor: RigidBodyDesc): RigidBody;

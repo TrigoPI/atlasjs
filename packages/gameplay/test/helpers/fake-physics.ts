@@ -3,6 +3,7 @@ import { Vec2 } from "@atlasjs/math";
 import {
   Collider,
   ColliderDesc,
+  CollisionHandler,
   PhysicsQuery,
   PhysicsWorld,
   RigidBody,
@@ -165,6 +166,8 @@ export class FakePhysicsWorld implements PhysicsWorld {
       body.integrate(dt);
     }
   }
+
+  public drainCollisions(_handler: CollisionHandler): void {}
 
   public setGravity(x: number, y: number): void {
     this.gravity.set(x, y);
