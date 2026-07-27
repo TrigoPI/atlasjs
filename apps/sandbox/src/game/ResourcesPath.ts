@@ -2,6 +2,7 @@ import Map from "@maps/dino_brawl.json";
 
 import GrassTileset from "@assets/tilesets/ground/grass-tileset.png";
 import Props from "@assets/tilesets/props/props.png";
+import Tree1 from "@assets/tilesets/player/tree1.png";
 
 import BlueDino from "@assets/sprites/dinos/dino_blue.png";
 import GreenDino from "@assets/sprites/dinos/dino_green.png";
@@ -34,6 +35,9 @@ export const ResourcesPath = {
     },
     Props: {
       Default: Props,
+    },
+    Player: {
+      Tree1: Tree1,
     },
   },
 };

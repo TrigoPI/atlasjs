@@ -58,7 +58,7 @@ export class PlayerScript extends AtlasScript<{
     spriteRendererShadow.color = new Color(1, 1, 1, 0.4);
 
     transformShadow.setScale(0.7, 0.6);
-    transformShadow.setPosition(0, 9);
+    transformShadow.setPosition(-0.5, -3);
   }
 
   public onUpdate(): void {

@@ -19,6 +19,7 @@ import {
 import {
   type CameraManager,
   type ScriptManager,
+  type SortingLayers,
   Key,
   button,
   Camera,
@@ -28,6 +29,7 @@ import {
   CAMERA_MANAGER,
   defineActions,
   SCRIPT_MANAGER,
+  SORTING_LAYERS,
   SpriteAsset,
   SpriteRenderer,
   Animator,
@@ -60,6 +62,13 @@ export class EcsScene extends Scene {
   // prettier-ignore
   public override async onCreate(ctx: SceneContext): Promise<void> {
     const mapLoader: MapLoader = new MapLoader(ResourcesPath.Map);
+
+    const sortingLayers: SortingLayers = ctx.services.get(SORTING_LAYERS);
+    sortingLayers.define([
+      { name: "Ground", mode: "manual" },
+      { name: "Entities", mode: "ySorted" },
+      { name: "Overhead", mode: "manual" },
+    ]);
 
     await this.loadMap(mapLoader, ctx);
     await this.initializePlayer(mapLoader, ctx);
@@ -96,12 +105,12 @@ export class EcsScene extends Scene {
 
     const ground: Entity = nexus.createEntity();
     nexus.addComponent(ground, Transform2D);
-    nexus.addComponent(ground, TileMapRenderer);
+    nexus.addComponent(ground, TileMapRenderer).sortingLayer = "Ground";
     nexus.addComponent(ground, TileMap, groundTileSet);
 
     const props: Entity = nexus.createEntity();
     nexus.addComponent(props, Transform2D);
-    nexus.addComponent(props, TileMapRenderer);
+    nexus.addComponent(props, TileMapRenderer).sortingLayer = "Ground";
     nexus.addComponent(props, TileMap, propsTileSet);
 
     nexus.setParent(ground, gridEntity);
@@ -132,7 +141,9 @@ export class EcsScene extends Scene {
     const swordSpriteAsset: SpriteAsset = SpriteAsset.fromPath(ResourcesPath.Sprites.Swords.Default);
     const shadowSpriteAsset: SpriteAsset = SpriteAsset.fromPath(ResourcesPath.Sprites.Props.Shadow);
     const dinoAsset: TextureAsset = new TextureAsset(ResourcesPath.Sprites.Dinos.Yellow);
-    const dinoSpriteAsset: SpriteAsset = new SpriteAsset(dinoAsset);
+    const dinoSpriteAsset: SpriteAsset = new SpriteAsset(dinoAsset, {
+      pivot: new Vec2(0.5, 1),
+    });
 
     const blueDinoTexture: Texture2D = await assets.load<Texture2D>(dinoAsset);
     const blueDinoSprite: Sprite = await assets.load<Sprite>(dinoSpriteAsset);
@@ -144,6 +155,7 @@ export class EcsScene extends Scene {
       texture: blueDinoTexture,
       rows: 1,
       columns: 24,
+      pivot: new Vec2(0.5, 1),
     });
 
     const controls = defineActions({
@@ -177,12 +189,12 @@ export class EcsScene extends Scene {
     nexus.addComponent(player, Transform2D);
     nexus.addComponent(player, RigidBody);
     nexus.addComponent(player, Animator, clips, "idle");
-    nexus.addComponent(player, SpriteRenderer, blueDinoSprite);
+    nexus.addComponent(player, SpriteRenderer, blueDinoSprite).sortingLayer = "Entities";
     nexus.addComponent(player, PlayerInput, controls);
 
     const sword: Entity = nexus.createEntity();
     nexus.addComponent(sword, Transform2D);
-    nexus.addComponent(sword, SpriteRenderer, swordSprite);
+    nexus.addComponent(sword, SpriteRenderer, swordSprite).sortingLayer = "Entities";
 
     const cameraEntity: Entity = nexus.createEntity();
     nexus.addComponent(cameraEntity, Camera);
@@ -190,12 +202,32 @@ export class EcsScene extends Scene {
 
     const shadow: Entity = nexus.createEntity();
     nexus.addComponent(shadow, Transform2D);
-    nexus.addComponent(shadow, SpriteRenderer, shadowSprite);
+    const shadowRender: SpriteRenderer = nexus.addComponent(shadow, SpriteRenderer, shadowSprite);
+    shadowRender.sortingLayer = "Entities";
+    shadowRender.sortingOrder = -1;
 
     const spawn: PinObject | undefined = mapLoader.getObject<PinObject>("spawn_point");
-    const spawnPosition: Vec2 = spawn ? 
-      Vec2.create(spawn.x, spawn.y).mult(MAP_SCALE) : 
+    const spawnPosition: Vec2 = spawn ?
+      Vec2.create(spawn.x, spawn.y).mult(MAP_SCALE) :
       Vec2.zero();
+
+    const treeAsset: SpriteAsset = SpriteAsset.fromPath(ResourcesPath.Tilesets.Player.Tree1, {
+      pivot: new Vec2(0.5, 0.95),
+    });
+    
+    const treeSprite: Sprite = await assets.load<Sprite>(treeAsset);
+
+    const treePositions: Vec2[] = [
+      new Vec2(spawnPosition.x - 110, spawnPosition.y - 48),
+      new Vec2(spawnPosition.x + 110, spawnPosition.y + 48),
+    ];
+
+    for (const treePosition of treePositions) {
+      const tree: Entity = nexus.createEntity();
+      const treeTransform: Transform2D = nexus.addComponent(tree, Transform2D);
+      treeTransform.position = treePosition;
+      nexus.addComponent(tree, SpriteRenderer, treeSprite).sortingLayer = "Entities";
+    }
 
     nexus.setParent(shadow, player);
 
