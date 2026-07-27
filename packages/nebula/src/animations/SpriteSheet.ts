@@ -1,4 +1,4 @@
-import { Bound } from "@atlasjs/math";
+import { Bound, Vec2 } from "@atlasjs/math";
 
 import { Frame } from "./Frame";
 import { Texture2D } from "../core";
@@ -6,10 +6,12 @@ import { FromAutoGridOptions, FromGridOptions } from "./animation-types";
 
 export class SpriteSheet {
   private readonly texture: Texture2D;
+  private readonly pivot: Vec2;
   private readonly frames: Map<string, Frame>;
 
-  public constructor(texture: Texture2D) {
+  public constructor(texture: Texture2D, pivot: Vec2 = new Vec2(0.5, 0.5)) {
     this.texture = texture;
+    this.pivot = pivot;
     this.frames = new Map();
   }
 
@@ -25,7 +27,7 @@ export class SpriteSheet {
     height: number,
   ): this {
     const bound: Bound = new Bound(x, y, width, height);
-    const frame: Frame = new Frame(this.texture, bound);
+    const frame: Frame = new Frame(this.texture, bound, this.pivot.clone());
     this.frames.set(name, frame);
     return this;
   }
@@ -62,8 +64,9 @@ export class SpriteSheet {
     texture,
     rows,
     columns,
+    pivot,
   }: FromAutoGridOptions): SpriteSheet {
-    const spriteSheet: SpriteSheet = new SpriteSheet(texture);
+    const spriteSheet: SpriteSheet = new SpriteSheet(texture, pivot);
     const frameWidth: number = texture.width / columns;
     const frameHeight: number = texture.height / rows;
 
@@ -87,8 +90,9 @@ export class SpriteSheet {
     frameWidth,
     spacing = 0,
     margin = 0,
+    pivot,
   }: FromGridOptions): SpriteSheet {
-    const spriteSheet: SpriteSheet = new SpriteSheet(texture);
+    const spriteSheet: SpriteSheet = new SpriteSheet(texture, pivot);
     let id: number = 0;
 
     for (let y = margin; y + frameHeight <= texture.height; y += frameHeight + spacing) {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Bound } from "@atlasjs/math";
+import { Bound, Vec2 } from "@atlasjs/math";
 import { Entity } from "@atlasjs/nexus";
 
 import { Animator, Sprite, SpriteRender, Transform2D } from "../src";
@@ -87,5 +87,30 @@ describe("AnimatorSystem", () => {
     expect(
       (harness.world.getComponent(entity, SpriteRender) as SpriteRender).sprite,
     ).toBe(staticSprite);
+  });
+
+  it("forwards the frame pivot into the swapped Sprite", async () => {
+    const harness: Harness = await createHarness();
+    const texture = fakeTexture("sheet", 64, 32);
+    const frames: Frame[] = [
+      new Frame(texture, new Bound(0, 0, 16, 32), new Vec2(0.5, 1)),
+    ];
+    const clip: SpriteAnimation = new SpriteAnimation({
+      frames,
+      fps: 10,
+      loop: true,
+      autoPlay: true,
+    });
+
+    const entity: Entity = harness.world.createEntity();
+    harness.world.addComponent(entity, Transform2D);
+    harness.world.addComponent(entity, SpriteRender, new Sprite(texture));
+    harness.world.addComponent(entity, Animator, { walk: clip }, "walk");
+
+    harness.frame();
+
+    const spriteRender = harness.world.getComponent(entity, SpriteRender) as SpriteRender;
+    expect(spriteRender.sprite.pivot.x).toBe(0.5);
+    expect(spriteRender.sprite.pivot.y).toBe(1);
   });
 });

@@ -32,7 +32,7 @@ export class AnimatorSystem implements NexusSystem {
     let sprite: Sprite | undefined = this.spriteCache.get(frame);
 
     if (sprite === undefined) {
-      sprite = new Sprite(frame.texture, { rect: frame.rect });
+      sprite = new Sprite(frame.texture, { rect: frame.rect, pivot: frame.pivot });
       this.spriteCache.set(frame, sprite);
     }
 
