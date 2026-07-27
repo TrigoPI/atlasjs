@@ -1,4 +1,5 @@
 export * from "./Collider";
+export * from "./CollisionLayers";
 export * from "./InertialPlugin";
 export * from "./PhysicsQuery";
 export * from "./PhysicsWorld";
