@@ -69,7 +69,6 @@ export class SpriteRenderer
     );
 
     const batchId: number = this.getBatchId(materialKey);
-
     const data: SpriteRenderData = this.getOrCreateRenderData(sprite);
     const sourceRect: Bound = sprite.getSourceRect(this.sourceRectScratch);
 
@@ -79,13 +78,13 @@ export class SpriteRenderer
     return {
       kind: "sprite",
       sortKey: this.computeSortKey(sprite.zIndex, KIND_ORDER.sprite, batchId),
-      batchKey: batchId,
-      texture: sprite.texture,
-      sampler,
       renderState: NodeRendererBase.RENDER_STATES[sprite.blend],
+      texture: sprite.texture,
+      batchKey: batchId,
       model: data.model,
       uvRect: data.uvRect,
       tint: sprite.tint,
+      sampler,
     };
   }
 

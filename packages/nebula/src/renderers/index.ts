@@ -7,4 +7,4 @@ export * from "./SceneRenderer";
 export * from "./ShapeRenderer";
 export * from "./SpriteRenderer";
 export * from "./TileMapNodeRenderer";
-export * from "./worldBound";
+export * from "./utils/worldBound";

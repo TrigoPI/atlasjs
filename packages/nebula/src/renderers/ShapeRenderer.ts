@@ -1,12 +1,13 @@
 import { Bound, Mat4, Vec2, Vec4 } from "@atlasjs/math";
 
 import { BlendMode, Renderer } from "../core";
+import { computeModelWorldBound } from "./utils";
 import { Node, ShapeNode, RectNode, CircleNode, LineNode } from "../graphics";
+
+import { ShapeBatcher } from "./Batchers";
 import { ShapeDrawCommand } from "./DrawCommand";
 import { NodeRendererBase } from "./NodeRendererBase";
 import { NodeRenderer, Batcher, KIND_ORDER } from "./NodeRenderer";
-import { ShapeBatcher } from "./Batchers";
-import { computeModelWorldBound } from "./worldBound";
 
 type ShapeRenderData = {
   readonly model: Mat4;
