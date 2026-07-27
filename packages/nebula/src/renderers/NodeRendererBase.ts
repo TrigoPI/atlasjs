@@ -1,11 +1,6 @@
 import { BlendMode, RenderState } from "../core";
 import { Node } from "../graphics";
 
-const Z_OFFSET: number = 32768;
-const Z_MAX: number = 65535;
-const KIND_RANGE: number = 16;
-const BATCH_RANGE: number = 65536;
-
 export abstract class NodeRendererBase<TNode extends Node, TData> {
   protected static readonly RENDER_STATES: Record<BlendMode, RenderState> = {
     opaque: { blend: "opaque", depthTest: false, cull: "none" },
@@ -21,19 +16,6 @@ export abstract class NodeRendererBase<TNode extends Node, TData> {
   }
 
   protected abstract createRenderData(): TData;
-
-  protected computeSortKey(
-    zIndex: number,
-    kindOrder: number,
-    batchId: number,
-  ): number {
-    const z: number = Math.min(
-      Math.max(Math.round(zIndex) + Z_OFFSET, 0),
-      Z_MAX,
-    );
-
-    return (z * KIND_RANGE + kindOrder) * BATCH_RANGE + batchId;
-  }
 
   protected getOrCreateRenderData(node: TNode): TData {
     const cached: TData | undefined = this.renderDataCache.get(node);

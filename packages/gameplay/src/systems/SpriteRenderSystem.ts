@@ -1,6 +1,8 @@
 import { Vec2 } from "@atlasjs/math";
 import { Sprite } from "../assets";
 import { SpriteRender, WorldTransform2D } from "../components";
+import { applySortFields } from "../rendering/applySortFields";
+import type { SortingLayers } from "../rendering";
 
 import {
   Color,
@@ -27,10 +29,12 @@ export class SpriteRenderSystem implements NexusSystem {
   private readonly sampler: Sampler;
   private readonly positionScratch: Vec2;
   private readonly scaleScratch: Vec2;
+  private readonly sortingLayers: SortingLayers;
 
-  public constructor(nebula: NebulaRenderer) {
+  public constructor(nebula: NebulaRenderer, sortingLayers: SortingLayers) {
     this.mounted = new SparseSet<MountedSprite>();
     this.nebula = nebula;
+    this.sortingLayers = sortingLayers;
     this.positionScratch = new Vec2();
     this.scaleScratch = new Vec2();
     this.sampler = nebula.createSampler({
@@ -57,8 +61,15 @@ export class SpriteRenderSystem implements NexusSystem {
         .setRotation(rotation)
         .setScale(scaleX, scaleY)
         .setTint(color.r, color.g, color.b, color.a)
-        .setVisible(spriteRender.visible)
-        .setZIndex(spriteRender.sortingOrder);
+        .setVisible(spriteRender.visible);
+
+      applySortFields(
+        node,
+        this.sortingLayers,
+        spriteRender.sortingLayer,
+        spriteRender.sortingOrder,
+        position.y,
+      );
     });
   }
 

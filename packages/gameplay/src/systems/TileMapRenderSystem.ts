@@ -5,6 +5,8 @@ import type { NebulaRenderer, TileInstance } from "@atlasjs/nebula";
 
 import type { Tile } from "../assets/Tile";
 import type { CellOrigin, CellRange } from "./utils";
+import { applySortFields } from "../rendering/applySortFields";
+import type { SortingLayers } from "../rendering";
 
 import { Grid } from "../components/Grid";
 import { TileMap } from "../components/TileMap";
@@ -29,9 +31,11 @@ export class TileMapRenderSystem implements NexusSystem {
   private readonly nodes: Map<Entity, TileMapNode>;
   private readonly positionScratch: Vec2;
   private readonly scaleScratch: Vec2;
+  private readonly sortingLayers: SortingLayers;
 
-  public constructor(nebula: NebulaRenderer) {
+  public constructor(nebula: NebulaRenderer, sortingLayers: SortingLayers) {
     this.nebula = nebula;
+    this.sortingLayers = sortingLayers;
     this.nodes = new Map<Entity, TileMapNode>();
     this.positionScratch = new Vec2();
     this.scaleScratch = new Vec2();
@@ -95,7 +99,15 @@ export class TileMapRenderSystem implements NexusSystem {
     node.setScale(scale.x, scale.y);
 
     node.texture = tileMap.tileset.texture;
-    node.zIndex = renderer.sortingOrder;
+
+    applySortFields(
+      node,
+      this.sortingLayers,
+      renderer.sortingLayer,
+      renderer.sortingOrder,
+      position.y,
+    );
+
     node.visible = renderer.visible;
     node.tint.set(
       renderer.color.r,

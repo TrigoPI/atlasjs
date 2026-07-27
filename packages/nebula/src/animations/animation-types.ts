@@ -1,3 +1,4 @@
+import { Vec2 } from "@atlasjs/math";
 import { Texture2D } from "../core";
 import { Frame } from "./Frame";
 
@@ -8,6 +9,7 @@ export type FromGridOptions = {
   frameHeight: number;
   spacing?: number;
   margin?: number;
+  pivot?: Vec2;
 };
 
 export type FromAutoGridOptions = {
@@ -15,6 +17,7 @@ export type FromAutoGridOptions = {
   texture: Texture2D;
   rows: number;
   columns: number;
+  pivot?: Vec2;
 };
 
 export type SpriteAnimationOptions = {

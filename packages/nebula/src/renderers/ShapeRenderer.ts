@@ -76,16 +76,15 @@ export class ShapeRenderer
 
     return {
       kind: "shape",
+      sortingLayer: shape.sortingLayer,
+      sortPrimary: shape.sortPrimary,
+      sortSecondary: shape.sortSecondary,
+      kindOrder: KIND_ORDER.shape,
       batchKey: BATCH_IDS[shape.blend],
       renderState: NodeRendererBase.RENDER_STATES[shape.blend],
       model: data.model,
       color: data.color,
       params: data.params,
-      sortKey: this.computeSortKey(
-        shape.zIndex,
-        KIND_ORDER.shape,
-        BATCH_IDS[shape.blend],
-      ),
     };
   }
 

@@ -77,10 +77,13 @@ export class SpriteRenderer
 
     return {
       kind: "sprite",
-      sortKey: this.computeSortKey(sprite.zIndex, KIND_ORDER.sprite, batchId),
+      sortingLayer: sprite.sortingLayer,
+      sortPrimary: sprite.sortPrimary,
+      sortSecondary: sprite.sortSecondary,
+      kindOrder: KIND_ORDER.sprite,
+      batchKey: batchId,
       renderState: NodeRendererBase.RENDER_STATES[sprite.blend],
       texture: sprite.texture,
-      batchKey: batchId,
       model: data.model,
       uvRect: data.uvRect,
       tint: sprite.tint,

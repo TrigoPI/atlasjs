@@ -11,6 +11,7 @@ import { Entity, NexusWorld } from "@atlasjs/nexus";
 import { Sprite } from "../src/assets";
 import { SpriteRender, WorldTransform2D } from "../src/components";
 import { SpriteRenderSystem } from "../src/systems";
+import { SortingLayers } from "../src/rendering";
 import { fakeTexture } from "./helpers/fakes";
 
 function setup(): {
@@ -27,7 +28,7 @@ function setup(): {
     createSampler: (): Sampler => ({}) as Sampler,
   } as unknown as NebulaRenderer;
 
-  return { world, scene, system: new SpriteRenderSystem(nebula) };
+  return { world, scene, system: new SpriteRenderSystem(nebula, new SortingLayers()) };
 }
 
 function mount(
@@ -97,7 +98,7 @@ describe("SpriteRenderSystem", () => {
     expect(node.tint.x).toBe(1);
     expect(node.tint.y).toBe(0);
     expect(node.visible).toBe(false);
-    expect(node.zIndex).toBe(4);
+    expect(node.sortPrimary).toBe(4);
   });
 
   it("reuses the node on a same-texture rect swap", () => {

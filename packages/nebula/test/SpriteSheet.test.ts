@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { Vec2 } from "@atlasjs/math";
 
 import { Texture2D } from "../src/core";
 import { Frame, SpriteSheet } from "../src/animations";
@@ -40,5 +41,32 @@ describe("SpriteSheet.fromGrid", () => {
         texture.height,
       );
     }
+  });
+});
+
+describe("SpriteSheet pivot", () => {
+  it("stamps the sheet pivot onto every defined frame", () => {
+    const sheet: SpriteSheet = new SpriteSheet(fakeTexture(64, 64), new Vec2(0.5, 1));
+    sheet.define("a", 0, 0, 16, 16);
+    expect(sheet.get("a").pivot.x).toBe(0.5);
+    expect(sheet.get("a").pivot.y).toBe(1);
+  });
+
+  it("propagates the pivot through fromAutoGrid", () => {
+    const sheet: SpriteSheet = SpriteSheet.fromAutoGrid({
+      name: "f",
+      texture: fakeTexture(64, 64),
+      rows: 1,
+      columns: 2,
+      pivot: new Vec2(0.5, 1),
+    });
+    expect(sheet.get("f_0").pivot.y).toBe(1);
+  });
+
+  it("defaults a frame pivot to center when unspecified", () => {
+    const sheet: SpriteSheet = new SpriteSheet(fakeTexture(64, 64));
+    sheet.define("a", 0, 0, 16, 16);
+    expect(sheet.get("a").pivot.x).toBe(0.5);
+    expect(sheet.get("a").pivot.y).toBe(0.5);
   });
 });

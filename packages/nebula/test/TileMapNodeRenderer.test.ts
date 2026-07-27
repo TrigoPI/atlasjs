@@ -58,21 +58,21 @@ describe("TileMapNodeRenderer.collect", () => {
     const low: TileMapNode = new TileMapNode();
     low.texture = fakeTexture();
     low.sampler = { id: "smp" } as Sampler;
-    low.zIndex = 0;
+    low.sortPrimary = 0;
     low.instances = [{ x: 0, y: 0, width: 16, height: 16, uvRect: new Vec4(0, 0, 1, 1) }];
     low.updateWorldMatrix();
 
     const high: TileMapNode = new TileMapNode();
     high.texture = fakeTexture();
     high.sampler = { id: "smp" } as Sampler;
-    high.zIndex = 5;
+    high.sortPrimary = 5;
     high.instances = [{ x: 0, y: 0, width: 16, height: 16, uvRect: new Vec4(0, 0, 1, 1) }];
     high.updateWorldMatrix();
 
     const lowCmd: TileMapDrawCommand = renderer.collect(low, new Bound(), new Bound()) as TileMapDrawCommand;
     const highCmd: TileMapDrawCommand = renderer.collect(high, new Bound(), new Bound()) as TileMapDrawCommand;
 
-    expect(highCmd.sortKey).toBeGreaterThan(lowCmd.sortKey);
+    expect(highCmd.sortPrimary).toBeGreaterThan(lowCmd.sortPrimary);
   });
 });
 
@@ -91,7 +91,10 @@ describe("TileMapBatcher", () => {
     const batcher: TileMapBatcher = new TileMapBatcher(batch);
     const command: TileMapDrawCommand = {
       kind: "tilemap",
-      sortKey: 0,
+      sortingLayer: 0,
+      sortPrimary: 0,
+      sortSecondary: 0,
+      kindOrder: 2,
       batchKey: 0,
       renderState: { blend: "alpha", depthTest: false, cull: "none" },
       texture: fakeTexture(),

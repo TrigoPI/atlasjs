@@ -8,6 +8,7 @@ export class SpriteRender {
   public flipY: boolean;
   public visible: boolean;
   public sortingOrder: number;
+  public sortingLayer: string;
 
   public constructor(
     sprite: Sprite,
@@ -16,6 +17,7 @@ export class SpriteRender {
     flipY: boolean = false,
     visible: boolean = true,
     sortingOrder: number = 0,
+    sortingLayer: string = "Default",
   ) {
     this.sprite = sprite;
     this.color = color;
@@ -23,5 +25,6 @@ export class SpriteRender {
     this.flipY = flipY;
     this.visible = visible;
     this.sortingOrder = sortingOrder;
+    this.sortingLayer = sortingLayer;
   }
 }

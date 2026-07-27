@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 import { RenderQueue } from "../src/renderers/RenderQueue";
-import { Batcher } from "../src/renderers/NodeRenderer";
+import { Batcher, KIND_ORDER } from "../src/renderers/NodeRenderer";
 import { DrawCommand } from "../src/renderers/DrawCommand";
 
 type Ev = string;
@@ -14,8 +14,32 @@ function recorder(tag: string, log: Ev[]): Batcher {
   };
 }
 
-function cmd(kind: string, sortKey: number, batchKey: number): DrawCommand {
-  return { kind, sortKey, batchKey } as unknown as DrawCommand;
+function cmd(kind: string, sortPrimary: number, batchKey: number): DrawCommand {
+  return {
+    kind,
+    sortingLayer: 0,
+    sortPrimary,
+    sortSecondary: 0,
+    kindOrder: (KIND_ORDER as Record<string, number>)[kind] ?? 0,
+    batchKey,
+  } as unknown as DrawCommand;
+}
+
+function full(
+  kind: string,
+  sortingLayer: number,
+  sortPrimary: number,
+  sortSecondary: number,
+  batchKey: number,
+): DrawCommand {
+  return {
+    kind,
+    sortingLayer,
+    sortPrimary,
+    sortSecondary,
+    kindOrder: (KIND_ORDER as Record<string, number>)[kind] ?? 0,
+    batchKey,
+  } as unknown as DrawCommand;
 }
 
 describe("RenderQueue registry dispatch", () => {
@@ -57,5 +81,45 @@ describe("RenderQueue registry dispatch", () => {
     q.flush({} as never);
 
     expect(log).toEqual(["sprite.begin:5", "sprite.add:5", "sprite.draw"]);
+  });
+
+  it("orders by sortingLayer before the within-layer value", () => {
+    const log: Ev[] = [];
+    const q: RenderQueue = new RenderQueue();
+    q.register("sprite", recorder("sprite", log));
+
+    q.submit(full("sprite", 1, 0, 0, 11));
+    q.submit(full("sprite", 0, 999, 0, 22));
+    q.sort();
+    q.flush({} as never);
+
+    expect(log).toEqual([
+      "sprite.begin:22",
+      "sprite.add:22",
+      "sprite.draw",
+      "sprite.begin:11",
+      "sprite.add:11",
+      "sprite.draw",
+    ]);
+  });
+
+  it("breaks ties within a layer by sortSecondary", () => {
+    const log: Ev[] = [];
+    const q: RenderQueue = new RenderQueue();
+    q.register("sprite", recorder("sprite", log));
+
+    q.submit(full("sprite", 0, 42, 5, 33));
+    q.submit(full("sprite", 0, 42, 1, 44));
+    q.sort();
+    q.flush({} as never);
+
+    expect(log).toEqual([
+      "sprite.begin:44",
+      "sprite.add:44",
+      "sprite.draw",
+      "sprite.begin:33",
+      "sprite.add:33",
+      "sprite.draw",
+    ]);
   });
 });
