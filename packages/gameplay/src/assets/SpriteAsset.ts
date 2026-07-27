@@ -35,8 +35,8 @@ export class SpriteAsset implements Asset {
     this.id = options?.id ?? `sprite:${texture.id}:${rectKey}:${pivotKey}`;
   }
 
-  public static fromPath(path: string): SpriteAsset {
+  public static fromPath(path: string, options?: SpriteAssetOptions): SpriteAsset {
     const texture: TextureAsset = new TextureAsset(path);
-    return new SpriteAsset(texture);
+    return new SpriteAsset(texture, options);
   }
 }

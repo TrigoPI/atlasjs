@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Bound, Vec2 } from "@atlasjs/math";
 import { Sprite } from "../src/assets";
+import { SpriteAsset } from "../src/assets/SpriteAsset";
 import { fakeTexture } from "./helpers/fakes";
 
 describe("Sprite asset", () => {
@@ -32,5 +33,26 @@ describe("Sprite asset", () => {
 
     expect(sprite.id).toBe("hero");
     expect(() => sprite.destroy()).not.toThrow();
+  });
+});
+
+describe("SpriteAsset.fromPath", () => {
+  it("forwards rect and pivot into the asset", () => {
+    const asset: SpriteAsset = SpriteAsset.fromPath("tree.png", {
+      rect: new Bound(0, 0, 96, 160),
+      pivot: new Vec2(0.5, 1),
+    });
+
+    expect(asset.rect?.width).toBe(96);
+    expect(asset.rect?.height).toBe(160);
+    expect(asset.pivot?.x).toBe(0.5);
+    expect(asset.pivot?.y).toBe(1);
+  });
+
+  it("leaves rect and pivot undefined when no options are given", () => {
+    const asset: SpriteAsset = SpriteAsset.fromPath("tree.png");
+
+    expect(asset.rect).toBeUndefined();
+    expect(asset.pivot).toBeUndefined();
   });
 });
