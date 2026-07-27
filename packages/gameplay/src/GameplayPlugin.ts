@@ -9,6 +9,7 @@ import { SCRIPT_MANAGER } from "./tokens";
 import { CameraManager, CAMERA_MANAGER } from "./camera";
 import { registerSystem } from "./registerSystem";
 import { SpriteLoader, TileSetLoader } from "./assets";
+import { SortingLayers, SORTING_LAYERS } from "./rendering";
 
 import { ScriptManager } from "./scripting";
 
@@ -47,7 +48,7 @@ export class GameplayPlugin extends Plugin {
   public constructor() {
     super("gameplay-plugin", {
       requires: [NEXUS, NEBULA_RENDERER, INERTIAL_ENGINE, ASSET_MANAGER],
-      provides: [SCRIPT_MANAGER, CAMERA_MANAGER],
+      provides: [SCRIPT_MANAGER, CAMERA_MANAGER, SORTING_LAYERS],
     });
     this.logger = createLogger(GameplayPlugin.name);
     this.handles = [];
@@ -68,8 +69,9 @@ export class GameplayPlugin extends Plugin {
 
     const physicsPushSystem: PhysicsPushSystem = new PhysicsPushSystem(inertia);
     const physicsPullSystem: PhysicsPullSystem = new PhysicsPullSystem();
-    const spriteRenderSystem: SpriteRenderSystem = new SpriteRenderSystem(nebula);
-    const tileMapRenderSystem: TileMapRenderSystem = new TileMapRenderSystem(nebula);
+    const sortingLayers: SortingLayers = new SortingLayers();
+    const spriteRenderSystem: SpriteRenderSystem = new SpriteRenderSystem(nebula, sortingLayers);
+    const tileMapRenderSystem: TileMapRenderSystem = new TileMapRenderSystem(nebula, sortingLayers);
     const playerInputSystem: PlayerInputSystem = new PlayerInputSystem(engine.services);
     const animatorSystem: AnimatorSystem = new AnimatorSystem();
     const cameraManager: CameraManager = new CameraManager(nebula);
@@ -196,6 +198,7 @@ export class GameplayPlugin extends Plugin {
     this.logger.log("GameplayPlugin installed.");
     engine.services.provide(SCRIPT_MANAGER, this.scriptManager);
     engine.services.provide(CAMERA_MANAGER, cameraManager);
+    engine.services.provide(SORTING_LAYERS, sortingLayers);
 
     this.deferred.resolve();
   }

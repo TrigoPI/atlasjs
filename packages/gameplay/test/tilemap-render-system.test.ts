@@ -5,6 +5,7 @@ import { Entity, NexusWorld } from "@atlasjs/nexus";
 import { TileSet } from "../src/assets/TileSet";
 import { Grid, TileMap, TileMapRenderer, WorldTransform2D } from "../src/components";
 import { TileMapRenderSystem } from "../src/systems";
+import { SortingLayers } from "../src/rendering";
 import { fakeTexture } from "./helpers/fakes";
 
 function setup(viewport: Bound = new Bound(-100000, -100000, 200000, 200000)): {
@@ -25,7 +26,7 @@ function setup(viewport: Bound = new Bound(-100000, -100000, 200000, 200000)): {
     getCameraViewport: (): Bound => viewport,
   } as unknown as NebulaRenderer;
 
-  return { world, scene, system: new TileMapRenderSystem(nebula) };
+  return { world, scene, system: new TileMapRenderSystem(nebula, new SortingLayers()) };
 }
 
 function makeTileSet(): TileSet {
