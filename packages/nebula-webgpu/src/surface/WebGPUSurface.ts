@@ -24,6 +24,10 @@ export class WebGPUSurface {
     return this.height;
   }
 
+  public get pixelRatio(): number {
+    return this.width > 0 ? this.canvasElement.width / this.width : 1;
+  }
+
   public startObserving(): void {
     if (!this.autoResize) {
       return;

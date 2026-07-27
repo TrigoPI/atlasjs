@@ -10,6 +10,7 @@ export class Camera2D implements Camera {
 
   public readonly position: Vec2;
   public zoom: number;
+  public pixelSnap: boolean;
 
   public constructor() {
     this.view = Mat4.identity();
@@ -17,6 +18,7 @@ export class Camera2D implements Camera {
     this.viewProjection = Mat4.identity();
     this.position = Vec2.create();
     this.zoom = 1;
+    this.pixelSnap = true;
   }
 
   public setPosition(x: number, y: number): Camera2D {
@@ -35,15 +37,25 @@ export class Camera2D implements Camera {
     return this;
   }
 
-  public update(width: number, height: number): void {
+  public update(width: number, height: number, pixelRatio: number = 1): void {
     this.projection
       .identity()
       .orthographic(0, width, height, 0, -1, 1);
 
+    const scale: number = this.zoom * pixelRatio;
+
+    let translateX: number = -this.position.x;
+    let translateY: number = -this.position.y;
+
+    if (this.pixelSnap && scale > 0) {
+      translateX = Math.round(translateX * scale) / scale;
+      translateY = Math.round(translateY * scale) / scale;
+    }
+
     this.view
       .identity()
       .scale(this.zoom, this.zoom, 1)
-      .translate(-this.position.x, -this.position.y, 0);
+      .translate(translateX, translateY, 0);
 
     this.viewProjection
       .copy(this.projection)

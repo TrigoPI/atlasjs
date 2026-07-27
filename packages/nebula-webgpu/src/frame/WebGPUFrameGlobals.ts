@@ -16,8 +16,13 @@ export class WebGPUFrameGlobals {
     return this.globalBindings;
   }
 
-  public update(camera: Camera2D, width: number, height: number): void {
-    camera.update(width, height);
+  public update(
+    camera: Camera2D,
+    width: number,
+    height: number,
+    pixelRatio: number,
+  ): void {
+    camera.update(width, height, pixelRatio);
     this.globalBindings.set("viewProjection", camera.viewProjection);
     this.globalBindings.set("time", this.clock.getTimeSecond());
   }

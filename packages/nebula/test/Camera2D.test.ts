@@ -82,3 +82,41 @@ describe("Camera2D.screenToWorld / worldToScreen", () => {
     expect(out.y).toBeCloseTo(9);
   });
 });
+
+describe("Camera2D pixel snapping", () => {
+  it("defaults pixelSnap to true", () => {
+    const camera: Camera2D = new Camera2D();
+
+    expect(camera.pixelSnap).toBe(true);
+  });
+
+  it("snaps the view translation to the device-pixel grid at zoom 1, dpr 1", () => {
+    const camera: Camera2D = new Camera2D();
+    camera.position.set(100.3, 50.7);
+    camera.zoom = 1;
+    camera.update(800, 600, 1);
+
+    expect(camera.view.buffer[12]).toBe(-100);
+    expect(camera.view.buffer[13]).toBe(-51);
+  });
+
+  it("snaps to the finer device-pixel grid at dpr 2", () => {
+    const camera: Camera2D = new Camera2D();
+    camera.position.set(100.3, 50.7);
+    camera.zoom = 1;
+    camera.update(800, 600, 2);
+
+    expect(camera.view.buffer[12]).toBeCloseTo(-100.5);
+    expect(camera.view.buffer[13]).toBeCloseTo(-50.5);
+  });
+
+  it("leaves the translation unsnapped when pixelSnap is false", () => {
+    const camera: Camera2D = new Camera2D();
+    camera.pixelSnap = false;
+    camera.position.set(100.3, 50.7);
+    camera.zoom = 1;
+    camera.update(800, 600, 1);
+
+    expect(camera.view.buffer[12]).toBeCloseTo(-100.3, 2);
+  });
+});

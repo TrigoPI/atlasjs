@@ -329,6 +329,7 @@ export class WebGPURenderer implements Renderer {
       this.camera,
       this.surface.logicalWidth,
       this.surface.logicalHeight,
+      this.surface.pixelRatio,
     );
   }
 
