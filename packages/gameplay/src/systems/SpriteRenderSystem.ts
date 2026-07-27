@@ -1,8 +1,8 @@
 import { Vec2 } from "@atlasjs/math";
 import { Sprite } from "../assets";
 import { SpriteRender, WorldTransform2D } from "../components";
-import { resolveSortFields } from "../rendering";
-import type { SortFields, SortingLayers } from "../rendering";
+import { applySortFields } from "../rendering/applySortFields";
+import type { SortingLayers } from "../rendering";
 
 import {
   Color,
@@ -63,15 +63,13 @@ export class SpriteRenderSystem implements NexusSystem {
         .setTint(color.r, color.g, color.b, color.a)
         .setVisible(spriteRender.visible);
 
-      const sort: SortFields = resolveSortFields(
+      applySortFields(
+        node,
         this.sortingLayers,
         spriteRender.sortingLayer,
         spriteRender.sortingOrder,
         position.y,
       );
-      node.sortingLayer = sort.layer;
-      node.sortPrimary = sort.primary;
-      node.sortSecondary = sort.secondary;
     });
   }
 

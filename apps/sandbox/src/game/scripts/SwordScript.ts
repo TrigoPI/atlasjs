@@ -80,12 +80,16 @@ export class SwordScript extends AtlasScript<{
   }
 
   public onUpdate(dt: number): void {
+    const translate: Vec2 = new Vec2(-0.5, 0);
     const ownerTransform: Transform = this.owner.requireComponent(Transform);
+    const ownerPosition: Vec2 = ownerTransform.worldPosition
+      .clone()
+      .add(translate);
 
     if (this.state === "orbit") {
-      this.tickOrbit(dt, ownerTransform.worldPosition);
+      this.tickOrbit(dt, ownerPosition);
     } else {
-      this.tickThrown(dt, ownerTransform.worldPosition);
+      this.tickThrown(dt, ownerPosition);
     }
   }
 
