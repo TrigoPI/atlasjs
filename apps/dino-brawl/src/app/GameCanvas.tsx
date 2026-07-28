@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useRef, useState } from "react";
+import { type RefObject, useEffect, useRef } from "react";
 
 import { Engine } from "@atlasjs/core";
 import { AssetPlugin } from "@atlasjs/assets";
@@ -10,11 +10,10 @@ import { GameplayPlugin } from "@atlasjs/gameplay";
 import { NebulaPlugin } from "@atlasjs/nebula";
 import { WebGPURenderer } from "@atlasjs/nebula-webgpu";
 
-import { EcsScene } from "./game";
-import { throttle } from "./utils";
+import { EcsScene } from "../game";
+import { throttle } from "../utils";
 
-export function App() {
-  const [fps, setFps] = useState<number>(0);
+export function GameCanvas({ onFps }: { onFps: (fps: number) => void }): React.ReactNode {
   const mountRef: RefObject<HTMLCanvasElement | null> =
     useRef<HTMLCanvasElement | null>(null);
 
@@ -32,7 +31,6 @@ export function App() {
     const nexusPlugin: NexusPlugin = new NexusPlugin();
     const gameplayPlugin: GameplayPlugin = new GameplayPlugin();
 
-    // prettier-ignore
     const rapierWorld: RapierPhysicsWorld = new RapierPhysicsWorld({ unitsPerMeter: 100 });
     const inertiaPlugin: InertialPlugin = new InertialPlugin(rapierWorld);
 
@@ -40,7 +38,6 @@ export function App() {
       target: mountRef.current || document.body,
     });
 
-    // prettier-ignore
     engine
       .use(assetPlugin)
       .use(inputPlugin)
@@ -51,30 +48,14 @@ export function App() {
 
     engine.start().then(() => {
       const cb = throttle((frame: number) => {
-        setFps(Math.round(frame));
+        onFps(Math.round(frame));
       }, 250);
 
       engine.scene.set(new EcsScene(cb));
     });
 
     return () => engine.stop();
-  }, []);
+  }, [onFps]);
 
-  return (
-    <div>
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          zIndex: 1,
-          color: "white",
-          padding: "10px",
-        }}
-      >
-        <span>{fps} fps</span>
-      </div>
-      <canvas ref={mountRef} style={{ width: "100vw", height: "100vh" }} />;
-    </div>
-  );
+  return <canvas ref={mountRef} style={{ width: "100vw", height: "100vh" }} />;
 }
