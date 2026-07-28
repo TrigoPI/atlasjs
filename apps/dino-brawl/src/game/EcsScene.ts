@@ -11,8 +11,8 @@ import {
   SwordScript,
   PlayerScript,
   PlayerMovementScript,
-  CameraScript,
-  MapBuilderScript,
+  CameraFollowScript,
+  TileMapBuilderScript,
   CameraZoomScript,
 } from "./scripts";
 
@@ -115,14 +115,14 @@ export class EcsScene extends Scene {
     nexus.setParent(ground, gridEntity);
     nexus.setParent(props, gridEntity);
 
-    scriptManager.attach(ground, MapBuilderScript, {
+    scriptManager.attach(ground, TileMapBuilderScript, {
       tilesetName: "ground_layer",
       grid: gridEntity,
       scale: MAP_SCALE,
       loader: mapLoader,
     });
 
-    scriptManager.attach(props, MapBuilderScript, {
+    scriptManager.attach(props, TileMapBuilderScript, {
       tilesetName: "props_layer",
       grid: gridEntity,
       scale: MAP_SCALE,
@@ -242,7 +242,6 @@ export class EcsScene extends Scene {
     scriptManager.attach(sword, SwordScript, {
       scale: 1.7,
       owner: player,
-      sprite: swordSprite,
       maxPower: 500,
       orbitRadius: 45,
       throwDuration: 1,
@@ -265,7 +264,7 @@ export class EcsScene extends Scene {
       speed: 250,
     });
 
-    scriptManager.attach(cameraEntity, CameraScript, {
+    scriptManager.attach(cameraEntity, CameraFollowScript, {
       target: player,
     });
 

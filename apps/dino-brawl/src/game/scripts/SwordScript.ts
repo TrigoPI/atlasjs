@@ -2,7 +2,6 @@ import { Vec2 } from "@atlasjs/math";
 
 import {
   Key,
-  Sprite,
   InputApi,
   CameraApi,
   Transform,
@@ -27,7 +26,6 @@ const THROW_THRESHOLD: number = 0.05;
 export class SwordScript extends AtlasScript<{
   owner: GameEntity;
   scale: number;
-  sprite: Sprite;
   maxPower: number;
   rotationSpeed: MinMax;
   orbitRadius: number;
@@ -186,7 +184,6 @@ export class SwordScript extends AtlasScript<{
 registerScriptMetadata(SwordScript, {
   exposed: {
     owner: ScriptMetadata.entity({ required: true }),
-    sprite: ScriptMetadata.field({ required: true }),
     scale: ScriptMetadata.field({ required: true }),
     maxPower: ScriptMetadata.field({ required: true }),
     rotationSpeed: ScriptMetadata.field({ required: true }),

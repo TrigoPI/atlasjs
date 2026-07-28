@@ -9,7 +9,7 @@ import {
   type GameEntity,
 } from "@atlasjs/gameplay";
 
-export class MapBuilderScript extends AtlasScript<{
+export class TileMapBuilderScript extends AtlasScript<{
   loader: MapLoader;
   scale: number;
   grid: GameEntity;
@@ -35,7 +35,7 @@ export class MapBuilderScript extends AtlasScript<{
   }
 }
 
-registerScriptMetadata(MapBuilderScript, {
+registerScriptMetadata(TileMapBuilderScript, {
   exposed: {
     tilesetName: ScriptMetadata.field({ required: true }),
     loader: ScriptMetadata.field({ required: true }),

@@ -8,7 +8,7 @@ import {
   Transform,
 } from "@atlasjs/gameplay";
 
-export class CameraScript extends AtlasScript<{ target: GameEntity }> {
+export class CameraFollowScript extends AtlasScript<{ target: GameEntity }> {
   private readonly target: GameEntity;
 
   private transform: Transform;
@@ -35,7 +35,7 @@ export class CameraScript extends AtlasScript<{ target: GameEntity }> {
   }
 }
 
-registerScriptMetadata(CameraScript, {
+registerScriptMetadata(CameraFollowScript, {
   exposed: {
     target: ScriptMetadata.entity({ required: true }),
   },
