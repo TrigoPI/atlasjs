@@ -79,7 +79,8 @@ export async function spawnPlayer(
 
   const player: Entity = nexus.createEntity();
   const playerTransform: Transform2D = nexus.addComponent(player, Transform2D);
-  nexus.addComponent(player, RigidBody);
+  const playerBody: RigidBody = nexus.addComponent(player, RigidBody);
+  playerBody.type = "kinematic";
   nexus.addComponent(player, Animator, clips, "idle");
   const playerRender: SpriteRenderer = nexus.addComponent(player, SpriteRenderer, dinoSprite);
   nexus.addComponent(player, PlayerInput, dinoControls);

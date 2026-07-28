@@ -1,4 +1,4 @@
-import { type RefObject, useEffect, useRef } from "react";
+import { type ReactNode, type RefObject, useEffect, useRef } from "react";
 
 import { Engine } from "@atlasjs/core";
 import { AssetPlugin } from "@atlasjs/assets";
@@ -13,7 +13,7 @@ import { WebGPURenderer } from "@atlasjs/nebula-webgpu";
 import { ArenaScene } from "../game";
 import { throttle } from "../utils";
 
-export function GameCanvas({ onFps }: { onFps: (fps: number) => void }): React.ReactNode {
+export function GameCanvas({ onFps }: { onFps: (fps: number) => void }): ReactNode {
   const mountRef: RefObject<HTMLCanvasElement | null> =
     useRef<HTMLCanvasElement | null>(null);
 

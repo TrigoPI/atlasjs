@@ -9,7 +9,7 @@ import {
   SCRIPT_MANAGER,
   TileMap,
   TileMapRenderer,
-  TileSet,
+  type TileSet,
   TileSetAsset,
   Transform2D,
 } from "@atlasjs/gameplay";

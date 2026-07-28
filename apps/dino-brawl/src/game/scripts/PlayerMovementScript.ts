@@ -7,7 +7,6 @@ import {
   ButtonAction,
   PlayerInput,
   registerScriptMetadata,
-  RigidBody,
   ScriptMetadata,
   Transform,
   Vector2Action,
@@ -19,7 +18,6 @@ export class PlayerMovementScript extends AtlasScript<{
   private readonly speed: number;
 
   private transform: Transform;
-  private rigidbody: RigidBody;
 
   private move: Vector2Action;
   private boost: ButtonAction;
@@ -29,12 +27,9 @@ export class PlayerMovementScript extends AtlasScript<{
     const actions: PlayerInput<DinoControls> = this.requireComponent(PlayerInput);
 
     this.transform = this.requireComponent(Transform);
-    this.rigidbody = this.requireComponent(RigidBody);
 
     this.move = actions.get("move");
     this.boost = actions.get("boost");
-
-    this.rigidbody.type = "kinematic";
   }
 
   public onUpdate(dt: number): void {

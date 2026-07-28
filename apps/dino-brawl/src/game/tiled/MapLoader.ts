@@ -5,7 +5,7 @@ import type { Layer } from "./Layer";
 import { LayerManager } from "./LayerManager";
 import type { MapObject } from "./MapObject";
 import { MapObjectManager } from "./MapObjectManager";
-import { TileSet } from "./TileSet";
+import type { TileSet } from "./TileSet";
 import { TileSetManager } from "./TileSetManager";
 
 export class MapLoader {

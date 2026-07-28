@@ -6,8 +6,6 @@ export const SortingLayer = {
   Overhead: "Overhead",
 } as const;
 
-export type SortingLayerName = (typeof SortingLayer)[keyof typeof SortingLayer];
-
 export const SortingOrder = {
   Shadow: 8,
   Player: 10,
