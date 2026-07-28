@@ -21,15 +21,10 @@ import {
   type ScriptManager,
   type SortingLayers,
   type ColliderShapeDesc,
-  Key,
-  button,
   Camera,
   Grid,
   Sprite,
-  vector2,
   CAMERA_MANAGER,
-  defineActions,
-  defineCollisionLayers,
   SCRIPT_MANAGER,
   SORTING_LAYERS,
   SpriteAsset,
@@ -52,9 +47,8 @@ import {
   TextureAsset,
 } from "@atlasjs/nebula";
 
-const MAP_SCALE: number = 2;
-
-const Layers = defineCollisionLayers("Player", "Occluder");
+import { SortingLayer, SortingOrder, CollisionLayers, MAP_SCALE } from "./config";
+import { dinoControls } from "./controls";
 
 export class EcsScene extends Scene {
   private fpsCallback: (fps: number) => void;
@@ -70,9 +64,9 @@ export class EcsScene extends Scene {
 
     const sortingLayers: SortingLayers = ctx.services.get(SORTING_LAYERS);
     sortingLayers.define([
-      { name: "Ground", mode: "manual" },
-      { name: "Entities", mode: "ySorted" },
-      { name: "Overhead", mode: "manual" },
+      { name: SortingLayer.Ground, mode: "manual" },
+      { name: SortingLayer.Entities, mode: "ySorted" },
+      { name: SortingLayer.Overhead, mode: "manual" },
     ]);
 
     await this.loadMap(mapLoader, ctx);
@@ -110,12 +104,12 @@ export class EcsScene extends Scene {
 
     const ground: Entity = nexus.createEntity();
     nexus.addComponent(ground, Transform2D);
-    nexus.addComponent(ground, TileMapRenderer).sortingLayer = "Ground";
+    nexus.addComponent(ground, TileMapRenderer).sortingLayer = SortingLayer.Ground;
     nexus.addComponent(ground, TileMap, groundTileSet);
 
     const props: Entity = nexus.createEntity();
     nexus.addComponent(props, Transform2D);
-    nexus.addComponent(props, TileMapRenderer).sortingLayer = "Ground";
+    nexus.addComponent(props, TileMapRenderer).sortingLayer = SortingLayer.Ground;
     nexus.addComponent(props, TileMap, propsTileSet);
 
     nexus.setParent(ground, gridEntity);
@@ -163,12 +157,6 @@ export class EcsScene extends Scene {
       pivot: new Vec2(0.5, 1),
     });
 
-    const controls = defineActions({
-      move: vector2().wasd(),
-      boost: button().keys(Key.Space),
-      hello: button().keys(Key.MouseLeft),
-    });
-
     const clips: Record<string, SpriteAnimation> = {
       idle: new SpriteAnimation({
         frames: playerSheet.getManyInRange("blue_dino_", 0, 3),
@@ -194,19 +182,19 @@ export class EcsScene extends Scene {
     nexus.addComponent(player, Transform2D);
     nexus.addComponent(player, RigidBody);
     nexus.addComponent(player, Animator, clips, "idle");
-    nexus.addComponent(player, SpriteRenderer, blueDinoSprite).sortingLayer = "Entities";
-    nexus.addComponent(player, PlayerInput, controls);
+    nexus.addComponent(player, SpriteRenderer, blueDinoSprite).sortingLayer = SortingLayer.Entities;
+    nexus.addComponent(player, PlayerInput, dinoControls);
 
     const playerCollider: Collider2D = nexus.addComponent(player, Collider2D, {
       type: "circle",
       radius: 10,
     } as ColliderShapeDesc);
-    playerCollider.layer = Layers.Player;
-    playerCollider.collidesWith = Layers.Occluder;
+    playerCollider.layer = CollisionLayers.Player;
+    playerCollider.collidesWith = CollisionLayers.Occluder;
 
     const sword: Entity = nexus.createEntity();
     nexus.addComponent(sword, Transform2D);
-    nexus.addComponent(sword, SpriteRenderer, swordSprite).sortingLayer = "Entities";
+    nexus.addComponent(sword, SpriteRenderer, swordSprite).sortingLayer = SortingLayer.Entities;
 
     const cameraEntity: Entity = nexus.createEntity();
     nexus.addComponent(cameraEntity, Camera);
@@ -215,8 +203,8 @@ export class EcsScene extends Scene {
     const shadow: Entity = nexus.createEntity();
     nexus.addComponent(shadow, Transform2D);
     const shadowRender: SpriteRenderer = nexus.addComponent(shadow, SpriteRenderer, shadowSprite);
-    shadowRender.sortingLayer = "Entities";
-    shadowRender.sortingOrder = -1;
+    shadowRender.sortingLayer = SortingLayer.Entities;
+    shadowRender.sortingOrder = SortingOrder.Shadow;
 
     const spawn: PinObject | undefined = mapLoader.getObject<PinObject>("spawn_point");
     const spawnPosition: Vec2 = spawn ?
@@ -238,15 +226,15 @@ export class EcsScene extends Scene {
       const tree: Entity = nexus.createEntity();
       const treeTransform: Transform2D = nexus.addComponent(tree, Transform2D);
       treeTransform.position = treePosition;
-      nexus.addComponent(tree, SpriteRenderer, treeSprite).sortingLayer = "Entities";
+      nexus.addComponent(tree, SpriteRenderer, treeSprite).sortingLayer = SortingLayer.Entities;
 
       const treeCollider: Collider2D = nexus.addComponent(tree, Collider2D, {
         type: "box",
         width: 24,
         height: 24,
       } as ColliderShapeDesc);
-      treeCollider.layer = Layers.Occluder;
-      treeCollider.collidesWith = Layers.Player;
+      treeCollider.layer = CollisionLayers.Occluder;
+      treeCollider.collidesWith = CollisionLayers.Player;
     }
 
     nexus.setParent(shadow, player);

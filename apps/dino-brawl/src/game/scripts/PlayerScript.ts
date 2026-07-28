@@ -1,9 +1,7 @@
 import { Vec2 } from "@atlasjs/math";
 
 import {
-  type ButtonActionSpec,
   type GameEntity,
-  type Vector2ActionSpec,
   Animator,
   AtlasScript,
   ButtonAction,
@@ -16,11 +14,7 @@ import {
   registerScriptMetadata,
 } from "@atlasjs/gameplay";
 
-type Inputs = {
-  move: Vector2ActionSpec;
-  boost: ButtonActionSpec;
-  hello: ButtonActionSpec;
-};
+import type { DinoControls } from "../controls";
 
 export class PlayerScript extends AtlasScript<{
   spawn: Vec2;
@@ -38,7 +32,7 @@ export class PlayerScript extends AtlasScript<{
 
   // prettier-ignore
   public onCreate(): void {
-    const actions: PlayerInput<Inputs> = this.requireComponent(PlayerInput);
+    const actions: PlayerInput<DinoControls> = this.requireComponent(PlayerInput);
   
     const spriteRendererShadow: SpriteRenderer = this.shadow.requireComponent(SpriteRenderer);
     const transformShadow: Transform = this.shadow.requireComponent(Transform);
