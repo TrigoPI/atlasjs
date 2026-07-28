@@ -2,6 +2,7 @@ import RAPIER from "@dimforge/rapier2d-compat";
 import { Vec2 } from "@atlasjs/math";
 
 import { PhysicsUnitConverter } from "../PhysicsUnitConverter";
+import { packCollisionGroups } from "./collision-groups";
 
 import {
   BoxColliderShapeDesc,
@@ -151,6 +152,20 @@ export function mapColliderDesc(
 
   if (descCpy.enabled !== undefined) {
     collider.setEnabled(descCpy.enabled);
+  }
+
+  if (
+    descCpy.collisionGroup !== undefined ||
+    descCpy.collisionMask !== undefined
+  ) {
+    const membership: number = descCpy.collisionGroup ?? 0xffff;
+    const filter: number = descCpy.collisionMask ?? 0xffff;
+    collider.setCollisionGroups(packCollisionGroups(membership, filter));
+  }
+
+  if (descCpy.events === true) {
+    collider.setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS);
+    collider.setActiveCollisionTypes(RAPIER.ActiveCollisionTypes.ALL);
   }
 
   return collider;

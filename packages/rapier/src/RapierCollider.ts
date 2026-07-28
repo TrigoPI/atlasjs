@@ -1,14 +1,17 @@
 import RAPIER from "@dimforge/rapier2d-compat";
 import { Collider, RigidBody } from "@atlasjs/inertia";
+import { Vec2 } from "@atlasjs/math";
 import { RapierColliderOption } from "./rapier-types";
 import { PhysicsUnitConverter } from "./PhysicsUnitConverter";
+import { packCollisionGroups } from "./mappers/collision-groups";
 
 export class RapierCollider implements Collider {
   public readonly id: string;
   public readonly rapierCollider: RAPIER.Collider;
 
   private readonly body: RigidBody | null;
-  private readonly converter: PhysicsUnitConverter; // not used for now
+  private readonly converter: PhysicsUnitConverter;
+  private userData: unknown;
 
   public constructor(
     rapierCollider: RAPIER.Collider,
@@ -17,7 +20,8 @@ export class RapierCollider implements Collider {
     this.body = options.body;
     this.id = options.id;
     this.rapierCollider = rapierCollider;
-    this.converter = new PhysicsUnitConverter(options.unitScale);
+    this.userData = options.userData;
+    this.converter = options.converter;
   }
 
   public isSensor(): boolean {
@@ -34,7 +38,8 @@ export class RapierCollider implements Collider {
   }
 
   public setCollisionGroup(group: number): this {
-    this.rapierCollider.setCollisionGroups(group);
+    const filter: number = this.rapierCollider.collisionGroups() & 0xffff;
+    this.rapierCollider.setCollisionGroups(packCollisionGroups(group, filter));
     return this;
   }
 
@@ -44,7 +49,11 @@ export class RapierCollider implements Collider {
   }
 
   public setCollisionMask(mask: number): this {
-    this.rapierCollider.setSolverGroups(mask);
+    const membership: number =
+      (this.rapierCollider.collisionGroups() >>> 16) & 0xffff;
+    this.rapierCollider.setCollisionGroups(
+      packCollisionGroups(membership, mask),
+    );
     return this;
   }
 
@@ -64,11 +73,11 @@ export class RapierCollider implements Collider {
   }
 
   public getCollisionGroup(): number {
-    return this.rapierCollider.collisionGroups();
+    return (this.rapierCollider.collisionGroups() >>> 16) & 0xffff;
   }
 
   public getCollisionMask(): number {
-    return this.rapierCollider.solverGroups();
+    return this.rapierCollider.collisionGroups() & 0xffff;
   }
 
   public getRestitution(): number {
@@ -81,6 +90,24 @@ export class RapierCollider implements Collider {
 
   public getDensity(): number {
     return this.rapierCollider.density();
+  }
+
+  public getUserData<T = unknown>(): T | undefined {
+    return this.userData as T | undefined;
+  }
+
+  public setUserData(data: unknown): this {
+    this.userData = data;
+    return this;
+  }
+
+  public getTranslation(): Vec2 {
+    const t: RAPIER.Vector = this.rapierCollider.translation();
+    return new Vec2(this.converter.toWorld(t.x), this.converter.toWorld(t.y));
+  }
+
+  public getRotation(): number {
+    return this.rapierCollider.rotation();
   }
 
   public getRigidBody(): RigidBody | null {

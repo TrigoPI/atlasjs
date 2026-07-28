@@ -1,6 +1,8 @@
 export { Key } from "@atlasjs/input";
 export { Color } from "@atlasjs/nebula";
 
+export { defineCollisionLayers, ALL_LAYERS, NO_LAYERS } from "@atlasjs/inertia";
+
 export * from "./tokens";
 export * from "./components";
 export * from "./camera";
@@ -9,6 +11,16 @@ export * from "./assets";
 export * from "./scripting";
 export * from "./registerSystem";
 export * from "./GameplayPlugin";
+
+export type {
+  CollisionLayer,
+  CollisionMask,
+  CollisionLayers,
+  ColliderShapeDesc,
+  BoxColliderShapeDesc,
+  CircleColliderShapeDesc,
+  CapsuleColliderShapeDesc,
+} from "@atlasjs/inertia";
 
 export {
   defineActions,

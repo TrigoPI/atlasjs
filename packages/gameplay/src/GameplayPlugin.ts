@@ -16,6 +16,7 @@ import { ScriptManager } from "./scripting";
 import {
   AnimatorSystem,
   CameraSyncSystem,
+  PhysicsCollisionSystem,
   PhysicsPullSystem,
   PhysicsPushSystem,
   PlayerInputSystem,
@@ -27,8 +28,10 @@ import {
 import {
   Animator,
   Camera,
+  Collider2D,
   Grid,
   PhysicsBodyRef,
+  PhysicsColliderRef,
   PlayerInput,
   RigidBody2D,
   SpriteRender,
@@ -69,6 +72,7 @@ export class GameplayPlugin extends Plugin {
 
     const physicsPushSystem: PhysicsPushSystem = new PhysicsPushSystem(inertia);
     const physicsPullSystem: PhysicsPullSystem = new PhysicsPullSystem();
+    const physicsCollisionSystem: PhysicsCollisionSystem = new PhysicsCollisionSystem(inertia, this.scriptManager);
     const sortingLayers: SortingLayers = new SortingLayers();
     const spriteRenderSystem: SpriteRenderSystem = new SpriteRenderSystem(nebula, sortingLayers);
     const tileMapRenderSystem: TileMapRenderSystem = new TileMapRenderSystem(nebula, sortingLayers);
@@ -84,6 +88,8 @@ export class GameplayPlugin extends Plugin {
       .defineComponent(WorldTransform2D)
       .defineComponent(SpriteRender)
       .defineComponent(PhysicsBodyRef)
+      .defineComponent(Collider2D)
+      .defineComponent(PhysicsColliderRef)
       .defineComponent(PlayerInput)
       .defineComponent(Animator)
       .defineComponent(Camera)
@@ -99,6 +105,16 @@ export class GameplayPlugin extends Plugin {
       world.onRemove(RigidBody2D, (entity: Entity) => {
         if (world.hasComponent(entity, PhysicsBodyRef)) {
           world.removeComponent(entity, PhysicsBodyRef);
+        }
+      }),
+
+      world.onRemove(PhysicsColliderRef, (_entity: Entity, ref: PhysicsColliderRef) => {
+        inertia.destroyCollider(ref.collider);
+      }),
+
+      world.onRemove(Collider2D, (entity: Entity) => {
+        if (world.hasComponent(entity, PhysicsColliderRef)) {
+          world.removeComponent(entity, PhysicsColliderRef);
         }
       }),
 
@@ -169,6 +185,11 @@ export class GameplayPlugin extends Plugin {
       registerSystem(fixed, world, physicsPullSystem, {
         name: "gameplay:physics-pull",
         stage: "PhysicsWriteback",
+      }),
+      registerSystem(fixed, world, physicsCollisionSystem, {
+        name: "gameplay:physics-collision",
+        stage: "PhysicsWriteback",
+        after: "gameplay:physics-pull",
       }),
     );
 
