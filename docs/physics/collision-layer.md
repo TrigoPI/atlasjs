@@ -40,9 +40,9 @@ Executed sub-agent-driven (fresh implementer + reviewer per task; the user commi
 | 9 — `PhysicsColliderRef` component | ✅ done | `aa491cb` |
 | 10 — Extend `FakePhysicsWorld` (test infra) | ✅ done | `b8521f7` |
 | 11 — Collider-creation pass in `PhysicsPushSystem` | ✅ done | `e06f553` |
-| 11b — Collider placement getters + tests (inserted follow-up) | ✅ done | pending commit |
-| 12 — Collision lifecycle callbacks on scripts | 🔨 in progress | — |
-| 13 — `PhysicsCollisionSystem` dispatch | ⏳ pending | — |
+| 11b — Collider placement getters + tests (inserted follow-up) | ✅ done | `19158fd` |
+| 12 — Collision lifecycle callbacks on scripts | ✅ done | pending commit |
+| 13 — `PhysicsCollisionSystem` dispatch | 🔨 in progress | — |
 | 14 — Sandbox demo + browser-verify | ⏳ pending | — |
 
 ---
