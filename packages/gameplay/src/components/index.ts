@@ -3,6 +3,7 @@ export * from "./Camera";
 export * from "./Collider2D";
 export * from "./Grid";
 export * from "./PhysicsBodyRef";
+export * from "./PhysicsColliderRef";
 export * from "./PlayerInput";
 export * from "./RigidBody2D";
 export * from "./SpriteRender";
