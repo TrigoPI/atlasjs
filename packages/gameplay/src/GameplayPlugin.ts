@@ -27,8 +27,10 @@ import {
 import {
   Animator,
   Camera,
+  Collider2D,
   Grid,
   PhysicsBodyRef,
+  PhysicsColliderRef,
   PlayerInput,
   RigidBody2D,
   SpriteRender,
@@ -84,6 +86,8 @@ export class GameplayPlugin extends Plugin {
       .defineComponent(WorldTransform2D)
       .defineComponent(SpriteRender)
       .defineComponent(PhysicsBodyRef)
+      .defineComponent(Collider2D)
+      .defineComponent(PhysicsColliderRef)
       .defineComponent(PlayerInput)
       .defineComponent(Animator)
       .defineComponent(Camera)
@@ -99,6 +103,16 @@ export class GameplayPlugin extends Plugin {
       world.onRemove(RigidBody2D, (entity: Entity) => {
         if (world.hasComponent(entity, PhysicsBodyRef)) {
           world.removeComponent(entity, PhysicsBodyRef);
+        }
+      }),
+
+      world.onRemove(PhysicsColliderRef, (_entity: Entity, ref: PhysicsColliderRef) => {
+        inertia.destroyCollider(ref.collider);
+      }),
+
+      world.onRemove(Collider2D, (entity: Entity) => {
+        if (world.hasComponent(entity, PhysicsColliderRef)) {
+          world.removeComponent(entity, PhysicsColliderRef);
         }
       }),
 

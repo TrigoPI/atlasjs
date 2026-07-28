@@ -1,4 +1,4 @@
-import { PhysicsWorld, RigidBody } from "@atlasjs/inertia";
+import { Collider, ColliderDesc, PhysicsWorld, RigidBody } from "@atlasjs/inertia";
 import { Vec2 } from "@atlasjs/math";
 
 import {
@@ -9,7 +9,9 @@ import {
 } from "@atlasjs/nexus";
 
 import {
+  Collider2D,
   PhysicsBodyRef,
+  PhysicsColliderRef,
   RigidBody2D,
   Transform2D,
   WorldTransform2D,
@@ -24,11 +26,13 @@ type ResolvedPlacement = {
 export class PhysicsPushSystem implements NexusSystem {
   private readonly inertia: PhysicsWorld;
   private readonly pending: Entity[];
+  private readonly pendingColliders: Entity[];
   private readonly positionScratch: Vec2;
 
   public constructor(inertia: PhysicsWorld) {
     this.inertia = inertia;
     this.pending = [];
+    this.pendingColliders = [];
     this.positionScratch = new Vec2();
   }
 
@@ -69,6 +73,21 @@ export class PhysicsPushSystem implements NexusSystem {
         body.setRotation(place.rotation);
       }
     });
+
+    world.query(Collider2D).without(PhysicsColliderRef).each((entity) => {
+      this.pendingColliders.push(entity);
+    });
+
+    for (const entity of this.pendingColliders) {
+      const col: Collider2D = world.requireComponent(entity, Collider2D);
+      const bodyRef: PhysicsBodyRef | undefined = world.getComponent(entity, PhysicsBodyRef);
+      const transform: Transform2D | undefined = world.getComponent(entity, Transform2D);
+      const desc: ColliderDesc = this.buildColliderDesc(world, entity, col, bodyRef, transform);
+      const collider: Collider = this.inertia.createCollider(desc, bodyRef?.body);
+      world.addComponent(entity, PhysicsColliderRef, collider);
+    }
+
+    this.pendingColliders.length = 0;
   }
 
   // prettier-ignore
@@ -90,6 +109,40 @@ export class PhysicsPushSystem implements NexusSystem {
       x: transform.position.x,
       y: transform.position.y,
       rotation: transform.rotation,
+    };
+  }
+
+  // prettier-ignore
+  private buildColliderDesc(
+    world: NexusWorld,
+    entity: Entity,
+    col: Collider2D,
+    bodyRef: PhysicsBodyRef | undefined,
+    transform: Transform2D | undefined,
+  ): ColliderDesc {
+    let tx: number = col.offset.x;
+    let ty: number = col.offset.y;
+    let rot: number = col.rotation;
+
+    if (bodyRef === undefined && transform !== undefined) {
+      const place: ResolvedPlacement = this.resolvePlacement(world, entity, transform);
+      tx = place.x + col.offset.x;
+      ty = place.y + col.offset.y;
+      rot = place.rotation + col.rotation;
+    }
+
+    return {
+      shape: col.shape,
+      translation: new Vec2(tx, ty),
+      rotation: rot,
+      sensor: col.isSensor,
+      friction: col.friction,
+      restitution: col.restitution,
+      density: col.density,
+      collisionGroup: col.layer,
+      collisionMask: col.collidesWith,
+      events: true,
+      userData: entity,
     };
   }
 }
