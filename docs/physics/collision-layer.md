@@ -42,8 +42,9 @@ Executed sub-agent-driven (fresh implementer + reviewer per task; the user commi
 | 11 — Collider-creation pass in `PhysicsPushSystem` | ✅ done | `e06f553` |
 | 11b — Collider placement getters + tests (inserted follow-up) | ✅ done | `19158fd` |
 | 12 — Collision lifecycle callbacks on scripts | ✅ done | `82dac2c` |
-| 13 — `PhysicsCollisionSystem` dispatch | ✅ done | pending commit |
-| 14 — Sandbox demo + browser-verify | 🔨 in progress | — |
+| 13 — `PhysicsCollisionSystem` dispatch | ✅ done | `11adf87` |
+| 14 — Sandbox demo + browser-verify | ✅ done | pending commit |
+| 14-fix — `ActiveCollisionTypes.ALL` (kinematic↔fixed events) | ✅ done | pending commit |
 
 ---
 
@@ -60,6 +61,10 @@ Design decisions locked in brainstorming: **named layers per collider** (numbers
 **Out of scope** (deferred): sleeping/dirty-flag & the sync-by-intention command buffer (perf), compound/merged tilemap colliders (world-solidity feature), joints. A separate **Phase 0 hygiene cleanup** (remove dead `CharacterController`, fix `ensure-rapier-init`, drop unused deps, `dispose()`/`world.free()`, rename `RapierPhyicsQuery` file, trim barrels) is **not** in this plan; this plan only absorbs the strictly-necessary fixes (collider leak on body destroy, dead `converter` field on `RapierCollider`).
 
 **Known Phase 1 limitations** (documented, accepted): body-less (static) colliders are placed at creation and do not follow a moving `Transform2D`; removing `RigidBody2D` while keeping `Collider2D` leaves a stale `PhysicsColliderRef` (remove/re-add `Collider2D` to recreate); kinematic bodies detect collisions (events fire) but are not physically blocked (solid response for a script-driven player is a future character-controller concern) — the demo proves detection + filtering, not blocking.
+
+**Verification finding (Task 14 browser-verify, real rapier).** rapier's default `ActiveCollisionTypes` (`DEFAULT = 15`) enables only `DYNAMIC_*` pairs — **kinematic↔fixed events are OFF by default**. Our primary case (a kinematic script-driven player vs static/body-less world colliders) therefore produced NO events until fixed. Fix: `mapColliderDesc` now sets `collider.setActiveCollisionTypes(RAPIER.ActiveCollisionTypes.ALL)` alongside `setActiveEvents` (`14-fix`). This is exactly the class of bug the fake-based unit tests cannot catch (the fake bypasses rapier), and the browser-verify is what surfaced it. **Phase-3 follow-up:** `ALL` also enables `FIXED_FIXED`; for a large static tilemap this is wasteful/noisy — narrow the active types to exclude `FIXED_FIXED` (e.g. `DEFAULT | KINEMATIC_FIXED | KINEMATIC_KINEMATIC`) when the tilemap-collider work lands.
+
+**Browser-verify result:** sandbox loads and runs at 60 fps under real rapier (no crash, no Vite type-only black-screen); with the player collider temporarily enlarged, `onCollisionEnter` fired for both tree entities (`player entered 7`, `player entered 8`) — proving the full chain end-to-end (real rapier events → `drainCollisions` → `PhysicsCollisionSystem` → `userData`→entity → script callback with the correct `GameEntity`), including layer filtering (Player↔Occluder).
 
 ---
 
