@@ -165,16 +165,16 @@ Garder tous les `StepHandle` pour `uninstall`.
 - **rapier** : `RapierPhysicsWorld.step(dt)` (`world.timestep = dt`).
 - **nebula** : `NebulaPlugin` en `render/Main` + handle + `provides`.
 - **editor** : `StepSet` "editor", picking/gizmo en `update/Editor` (`after` au lieu de `id:1`), `uninstall → set.remove()`, `requires/provides`.
-- **apps/sandbox** : rien (le shim de compat couvre la phase 0) ; vérifier que `TestScript.onFixedUpdate` se déclenche désormais.
+- **apps/dino-brawl** : rien (le shim de compat couvre la phase 0) ; vérifier que `TestScript.onFixedUpdate` se déclenche désormais.
 
 ---
 
-## Migration par phases (sandbox verte à chaque étape)
+## Migration par phases (`dino-brawl` vert à chaque étape)
 
 On implémente **une phase à la fois** ; après validation de l'auteur, on coche la case et on commit avant de passer à la suivante.
 
-- [x] **Phase 0 — Scheduler additif** : nouveau `Scheduler` (lanes/stages/sets/handles/`StepContext`) + façade de compat (`onUpdate/…(fn,{priority,id})` mappe `priority`→stage synthétique, wrap `(dt)→(ctx)`). Rien d'autre ne bouge, sandbox inchangée. _(vitest + 15 tests verts ; core build + monorepo OK.)_
-- [x] **Phase 1 — Boucle** : réorg Engine (fixed→update→render, alpha, compteurs, step `scene:update`, `FrameClock`, seam `advanceFixed`, driver de boucle injectable). _(6 tests Engine verts ; sandbox sert proprement sous Vite après fix d'un import cassé pré-existant.)_
+- [x] **Phase 0 — Scheduler additif** : nouveau `Scheduler` (lanes/stages/sets/handles/`StepContext`) + façade de compat (`onUpdate/…(fn,{priority,id})` mappe `priority`→stage synthétique, wrap `(dt)→(ctx)`). Rien d'autre ne bouge, `dino-brawl` inchangé. _(vitest + 15 tests verts ; core build + monorepo OK.)_
+- [x] **Phase 1 — Boucle** : réorg Engine (fixed→update→render, alpha, compteurs, step `scene:update`, `FrameClock`, seam `advanceFixed`, driver de boucle injectable). _(6 tests Engine verts ; `dino-brawl` sert proprement sous Vite après fix d'un import cassé pré-existant.)_
 - [x] **Phase 2 — Boot topo** : `provides/requires` sur tous les plugins, tri topo (Kahn) + `MissingDependencyError`/`DependencyCycleError`/`DuplicateProviderError` + `BootTimeoutError`, assertion post-install, `Plugin.order`/`setOrder` supprimés. _(4 tests boot verts ; tous les packages compilent.)_
 - [ ] **Phase 3 — Physics dt** : `PhysicsWorld.step(dt)` + `world.timestep = dt`.
 - [x] **Phase 4 — Re-lanes ECS** : split `GameplayPlugin` en étapes fixed/render (adaptateur `registerSystem`) + `scriptManager.fixedUpdate` branché (bug #1) + `uninstall` retire les handles. `SpriteRenderSystem` en `render/PreRender`. _(test de déterminisme gameplay vert : `onFixedUpdate` s'exécute + pipeline reproductible.)_
@@ -193,7 +193,7 @@ Aucun test n'existe aujourd'hui (build = tsdown + Turbo). Ajouter **vitest** + u
 - `packages/core/Scheduler.test.ts` : ordre des étapes ; topo `before`/`after` ; départage par insertion ; cycle → throw ; `remove`/`setEnabled` ; `StepSet.remove/disable`.
 - `packages/core/Engine.test.ts` : driver temps injecté → ordre des lanes (fixed×N avant update avant render), valeur d'`alpha` sur les sous-steps, boot throw sur dep manquante/cyclique, pas de hang (timeout).
 - `packages/gameplay/determinism.test.ts` : `PhysicsWorld` mocké → `advanceFixed` K ticks deux fois avec le même input scripté → transforms identiques + même ordre d'exécution par tick (garde-fou déterminisme/rollback).
-- **Manuel** : `pnpm --filter sandbox dev`, vérifier rendu du sprite + feedback physique, et qu'un `onFixedUpdate` de script se déclenche (log). Vérifier qu'une dépendance retirée d'un plugin fait échouer le boot proprement.
+- **Manuel** : `pnpm --filter dino-brawl dev`, vérifier rendu du sprite + feedback physique, et qu'un `onFixedUpdate` de script se déclenche (log). Vérifier qu'une dépendance retirée d'un plugin fait échouer le boot proprement.
 
 ---
 
@@ -201,6 +201,6 @@ Aucun test n'existe aujourd'hui (build = tsdown + Turbo). Ajouter **vitest** + u
 
 1. **`StepFn` passe de `dt` à `ctx`** → touche tous les steps ; la façade phase 0 diffère la corvée, la phase 8 l'assume (un `dt` nu ne peut pas porter `alpha`/`tick`).
 2. **Étapes = enum fermé** → nouvelle étape grossière = edit core (garde-fou volontaire).
-3. **fixed-avant-update change le feel** : la logique variable/scène voit l'état post-sim dans la même frame ; à valider en sandbox (l'ordre inverse est défendable, mais celui-ci se marie au render interpolé).
+3. **fixed-avant-update change le feel** : la logique variable/scène voit l'état post-sim dans la même frame ; à valider dans `dino-brawl` (l'ordre inverse est défendable, mais celui-ci se marie au render interpolé).
 4. **`provides`/`requires` peuvent dériver** de ce que fait `install` → mitigé par l'assertion post-install.
 5. **`world.timestep` par step** n'est sûr que parce qu'on passe toujours `fixedDelta` — à enforcer au call site.

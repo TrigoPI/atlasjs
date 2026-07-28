@@ -11,7 +11,7 @@
 > - [x] §7 `CameraSyncSystem`
 > - [x] §8 `CameraApi`
 > - [x] §10 câblage `GameplayPlugin`
-> - [x] §12 démo sandbox (édit en place ; vérif visuelle navigateur en attente)
+> - [x] §12 démo `dino-brawl` (édit en place ; vérif visuelle navigateur en attente)
 
 ---
 
@@ -229,4 +229,4 @@ Rendu simultané multi-caméras (split-screen / minimap / render-to-texture = un
 5. Gameplay : `CameraApi` (façade service) + export.
 6. `GameplayPlugin` : définir composant, construire manager+système, `provide`, enregistrer système (stage/`before`, teardown), `onRemove(Camera)`.
 7. `tsc --noEmit` gameplay ; rebuild `dist`.
-8. (Démo) `apps/sandbox/EcsScene` : créer une main camera enfant du joueur + `setActive`, un script qui lit `screenToWorld(mouse)` — validation visuelle.
+8. (Démo) `apps/dino-brawl/EcsScene` : créer une main camera enfant du joueur + `setActive`, un script qui lit `screenToWorld(mouse)` — validation visuelle.

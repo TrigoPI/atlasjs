@@ -27,7 +27,7 @@
     "resolveJsonModule": true,
     "paths": {
       "@css/*": ["./css/*"],
-      "@sandbox/*": ["./src/*"],
+      "@dino-brawl/*": ["./src/*"],
       "@assets/*": ["./assets/*"],
       "@maps/*": ["./maps/*"]
     }

@@ -212,7 +212,7 @@ Barrels : réexport depuis `gameplay/src/index.ts` (comme `Sprite`/`SpriteSheet`
 
 **Note de nommage** : le composant ECS public s'appelle `TileMapRenderer` (nom Unity) ; le `NodeRenderer` nebula s'appelle **`TileMapNodeRenderer`** pour éviter la collision (nebula nomme déjà ses `NodeRenderer` `SpriteRenderer`/`ShapeRenderer`).
 
-## 9. Exemple code-first (cible sandbox)
+## 9. Exemple code-first (cible dino-brawl)
 
 ```ts
 // 1. Charger le tileset (asset complet)
@@ -238,7 +238,7 @@ groundMap.setTile(5, 5, grassTileset.indexOf(2, 0));
 // (calques "murs"/"déco" = mêmes lignes avec sortingOrder 10, 20…)
 ```
 
-Remplace la double-boucle de ~15 lignes de [`apps/sandbox/src/game/EcsScene.ts`](../../apps/sandbox/src/game/EcsScene.ts) (100 entités-tuiles).
+Remplace la double-boucle de ~15 lignes de [`apps/dino-brawl/src/game/EcsScene.ts`](../../apps/dino-brawl/src/game/EcsScene.ts) (100 entités-tuiles).
 
 ## 10. Stratégie de test
 
@@ -246,7 +246,7 @@ Remplace la double-boucle de ~15 lignes de [`apps/sandbox/src/game/EcsScene.ts`]
 - **`TileMap` (unitaire)** : `setTile`/`getTile`/`removeTile`/`hasTile`, `-1` efface, `fill` sur une plage, `clear`, `revision` incrémenté à chaque mutation, coordonnées négatives.
 - **Culling (unitaire)** : plage de cellules visibles pour un viewport donné (bords, échelle, translation du calque).
 - **`TileMapRenderSystem` (intégration ECS)** : node monté/démonté sur add/remove `TileMap` ; `sortingOrder → zIndex` ; instances reconstruites après mutation ; skip si pas de `Grid` parente.
-- **Vérif navigateur** (obligatoire) : la scène sandbox réécrite rend la grille correctement, multi-calque trié, batch en un draw call (via les outils de preview). Les fichiers d'app/scripts doivent `import type` les symboles type-only (sinon `tsc` passe mais Vite casse au runtime — écran noir).
+- **Vérif navigateur** (obligatoire) : la scène `dino-brawl` réécrite rend la grille correctement, multi-calque trié, batch en un draw call (via les outils de preview). Les fichiers d'app/scripts doivent `import type` les symboles type-only (sinon `tsc` passe mais Vite casse au runtime — écran noir).
 
 ## 11. Non-objectifs / backlog
 

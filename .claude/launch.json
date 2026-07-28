@@ -9,9 +9,9 @@
       "autoPort": true
     },
     {
-      "name": "sandbox",
+      "name": "dino-brawl",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "sandbox", "dev"],
+      "runtimeArgs": ["--filter", "dino-brawl", "dev"],
       "port": 5173,
       "autoPort": true
     }

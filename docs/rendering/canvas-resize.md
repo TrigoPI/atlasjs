@@ -1,7 +1,7 @@
 # Canvas resize — design (B3)
 
 > Statut : **validé**, prêt pour plan d'implémentation
-> Portée : `@atlasjs/nebula` (interface `Renderer`), `@atlasjs/nebula-webgpu` (`WebGPURenderer`), apps `sandbox` + `webgpu`
+> Portée : `@atlasjs/nebula` (interface `Renderer`), `@atlasjs/nebula-webgpu` (`WebGPURenderer`), apps `dino-brawl` + `webgpu`
 > Référence backlog : `docs/backlog.md` §B3
 
 ## Problème
@@ -93,9 +93,9 @@ public resize(width: number, height: number): void {
 
 ### 5. Apps
 
-Dans tous les cas on retire seulement le sizing manuel du canvas ; le content-box est déjà fourni par du CSS `100vw/100vh` (inline pour sandbox, feuille de style globale `css/index.css` pour webgpu), donc aucune règle de style à ajouter.
+Dans tous les cas on retire seulement le sizing manuel du canvas ; le content-box est déjà fourni par du CSS `100vw/100vh` (inline pour `dino-brawl`, feuille de style globale `css/index.css` pour webgpu), donc aucune règle de style à ajouter.
 
-- `apps/sandbox/src/App.tsx` : retirer `mount.width/height = window.innerWidth/Height` (auto-observe gère). CSS `100vw/100vh` déjà inline sur le `<canvas>`.
+- `apps/dino-brawl/src/App.tsx` : retirer `mount.width/height = window.innerWidth/Height` (auto-observe gère). CSS `100vw/100vh` déjà inline sur le `<canvas>`.
 - `apps/webgpu/src/material.ts` (**entry active**, référencée par `index.html`) : retirer `canvas.width/height = window.innerWidth/Height`.
 - `apps/webgpu/src/index.ts` (entry alternative) : idem, retirer le sizing manuel.
 

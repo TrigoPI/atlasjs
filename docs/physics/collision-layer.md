@@ -16,8 +16,8 @@ Copied verbatim from the project conventions — every task's requirements impli
 - **Type everything**, even trivially (function params, variables, class fields).
 - **No circular dependencies** between packages. Dependency direction stays `rapier → inertia`, `gameplay → inertia`; `inertia` never imports `rapier` or `gameplay`.
 - **Typecheck with `tsc --noEmit`** — never `tsc -b` (it emits artifacts next to sources). `gameplay` typecheck is `pnpm --filter @atlasjs/gameplay typecheck`.
-- **Rebuild a dependency's `dist` after changing its public API** so downstream typecheck and the sandbox's Vite preview resolve it: `pnpm --filter @atlasjs/inertia build`, then `pnpm --filter @atlasjs/rapier build`.
-- **In app/script files (`apps/sandbox`), import type-only symbols with `import type`** (e.g. `GameEntity`) — a value import typechecks but breaks the Vite runtime (black screen).
+- **Rebuild a dependency's `dist` after changing its public API** so downstream typecheck and the `dino-brawl` app's Vite preview resolve it: `pnpm --filter @atlasjs/inertia build`, then `pnpm --filter @atlasjs/rapier build`.
+- **In app/script files (`apps/dino-brawl`), import type-only symbols with `import type`** (e.g. `GameEntity`) — a value import typechecks but breaks the Vite runtime (black screen).
 - **Do NOT commit automatically.** Each task ends green and is handed off for the user to review and commit. The "Hand off" step is the user's checkpoint, not an agent `git commit`.
 - **Two component levels (gameplay):** system-driven Nexus data → `components/` (no suffix, e.g. `Collider2D`). Curated script names → `scripting/components/` as identity tokens (`defineScriptComponent(engine)`) unless there is real behavior to hide. `Collider2D` is data-pure → identity token alias `Collider`, no factory.
 
@@ -43,7 +43,7 @@ Executed sub-agent-driven (fresh implementer + reviewer per task; the user commi
 | 11b — Collider placement getters + tests (inserted follow-up) | ✅ done | `19158fd` |
 | 12 — Collision lifecycle callbacks on scripts | ✅ done | `82dac2c` |
 | 13 — `PhysicsCollisionSystem` dispatch | ✅ done | `11adf87` |
-| 14 — Sandbox demo + browser-verify | ✅ done | pending commit |
+| 14 — Dino Brawl demo + browser-verify | ✅ done | pending commit |
 | 14-fix — `ActiveCollisionTypes.ALL` (kinematic↔fixed events) | ✅ done | pending commit |
 
 ---
@@ -53,7 +53,7 @@ Executed sub-agent-driven (fresh implementer + reviewer per task; the user commi
 An audit of `@atlasjs/inertia` + `@atlasjs/rapier` found the rigid-body path is sound but the **collision half is a skeleton that was never wired or exercised**, with three latent bugs sitting exactly on the path of the next feature (world solidity):
 
 1. **Filtering is wrong.** `RapierCollider.setCollisionMask` routes to `setSolverGroups` (a different axis than detection filtering), and `mapColliderDesc` never applies `collisionGroup`/`collisionMask`/`userData` at all — so layer filtering does nothing.
-2. **Raycast ignores unit conversion** — wrong by a factor of `unitsPerMeter` (100 in the sandbox); `intersectPoint`/`intersectAABB` are silent `[]` stubs.
+2. **Raycast ignores unit conversion** — wrong by a factor of `unitsPerMeter` (100 in `dino-brawl`); `intersectPoint`/`intersectAABB` are silent `[]` stubs.
 3. **No collision events, no `Collider.userData`, no gameplay `Collider2D`** — bodies exist but nothing collides, and nothing can map a contact back to an `Entity`.
 
 Design decisions locked in brainstorming: **named layers per collider** (numbers under the hood, names via a helper), **Unity-style script callbacks** for events, `Collider2D` without a body = **static world geometry**, events **on by default** on bridge colliders, `defineCollisionLayers` lives in **`inertia`**.
@@ -64,7 +64,7 @@ Design decisions locked in brainstorming: **named layers per collider** (numbers
 
 **Verification finding (Task 14 browser-verify, real rapier).** rapier's default `ActiveCollisionTypes` (`DEFAULT = 15`) enables only `DYNAMIC_*` pairs — **kinematic↔fixed events are OFF by default**. Our primary case (a kinematic script-driven player vs static/body-less world colliders) therefore produced NO events until fixed. Fix: `mapColliderDesc` now sets `collider.setActiveCollisionTypes(RAPIER.ActiveCollisionTypes.ALL)` alongside `setActiveEvents` (`14-fix`). This is exactly the class of bug the fake-based unit tests cannot catch (the fake bypasses rapier), and the browser-verify is what surfaced it. **Phase-3 follow-up:** `ALL` also enables `FIXED_FIXED`; for a large static tilemap this is wasteful/noisy — narrow the active types to exclude `FIXED_FIXED` (e.g. `DEFAULT | KINEMATIC_FIXED | KINEMATIC_KINEMATIC`) when the tilemap-collider work lands.
 
-**Browser-verify result:** sandbox loads and runs at 60 fps under real rapier (no crash, no Vite type-only black-screen); with the player collider temporarily enlarged, `onCollisionEnter` fired for both tree entities (`player entered 7`, `player entered 8`) — proving the full chain end-to-end (real rapier events → `drainCollisions` → `PhysicsCollisionSystem` → `userData`→entity → script callback with the correct `GameEntity`), including layer filtering (Player↔Occluder).
+**Browser-verify result:** `dino-brawl` loads and runs at 60 fps under real rapier (no crash, no Vite type-only black-screen); with the player collider temporarily enlarged, `onCollisionEnter` fired for both tree entities (`player entered 7`, `player entered 8`) — proving the full chain end-to-end (real rapier events → `drainCollisions` → `PhysicsCollisionSystem` → `userData`→entity → script callback with the correct `GameEntity`), including layer filtering (Player↔Occluder).
 
 ---
 
@@ -101,9 +101,9 @@ Design decisions locked in brainstorming: **named layers per collider** (numbers
 - Modify `packages/gameplay/test/helpers/fake-physics.ts` — `FakeCollider`, collider support, `drainCollisions`, `emitCollision`.
 - Create `packages/gameplay/test/collision-bridge.test.ts`.
 
-**`apps/sandbox`** (demo)
-- Modify `apps/sandbox/src/game/EcsScene.ts` — layers + colliders on trees & player.
-- Modify `apps/sandbox/src/game/scripts/PlayerMovementScript.ts` — `onCollisionEnter` logging.
+**`apps/dino-brawl`** (demo)
+- Modify `apps/dino-brawl/src/game/EcsScene.ts` — layers + colliders on trees & player.
+- Modify `apps/dino-brawl/src/game/scripts/PlayerMovementScript.ts` — `onCollisionEnter` logging.
 
 ---
 
@@ -416,7 +416,7 @@ Expected: PASS (existing suites still green).
 
 # Phase 2 — Correct backend behavior (`rapier`)
 
-Rapier's WASM behavior is not unit-tested here (no WASM test harness exists — a follow-up); the pure packing helper **is** unit-tested, and the real filtering/events/queries are validated by build + the Phase 4 sandbox browser-verify.
+Rapier's WASM behavior is not unit-tested here (no WASM test harness exists — a follow-up); the pure packing helper **is** unit-tested, and the real filtering/events/queries are validated by build + the Phase 4 `dino-brawl` browser-verify.
 
 ### Task 3: `packCollisionGroups` pure helper (`rapier`, TDD)
 
@@ -1704,20 +1704,20 @@ Expected: PASS (collision-bridge now 7 tests; all other suites green).
 
 ---
 
-# Phase 4 — Sandbox demo & browser verification
+# Phase 4 — Dino Brawl demo & browser verification
 
-### Task 14: Colliders + collision logging in the sandbox, browser-verify
+### Task 14: Colliders + collision logging in `dino-brawl`, browser-verify
 
 **Files:**
-- Modify: `apps/sandbox/src/game/EcsScene.ts`
-- Modify: `apps/sandbox/src/game/scripts/PlayerMovementScript.ts`
+- Modify: `apps/dino-brawl/src/game/EcsScene.ts`
+- Modify: `apps/dino-brawl/src/game/scripts/PlayerMovementScript.ts`
 
 **Interfaces:**
 - Consumes: `Collider2D` (as script alias `Collider` or the component), `defineCollisionLayers`, `ColliderShapeDesc` (all from `@atlasjs/gameplay`); the `onCollisionEnter` hook (Task 12).
 
 - [ ] **Step 1: Define layers + give the trees static box colliders**
 
-In `apps/sandbox/src/game/EcsScene.ts`, add `Collider2D`, `defineCollisionLayers`, and `ColliderShapeDesc` to the `@atlasjs/gameplay` import block (lines 19-43):
+In `apps/dino-brawl/src/game/EcsScene.ts`, add `Collider2D`, `defineCollisionLayers`, and `ColliderShapeDesc` to the `@atlasjs/gameplay` import block (lines 19-43):
 
 ```ts
   Collider2D,
@@ -1763,7 +1763,7 @@ In `initializePlayer`, after `nexus.addComponent(player, PlayerInput, controls);
 
 - [ ] **Step 3: Log collisions from the player script**
 
-In `apps/sandbox/src/game/scripts/PlayerMovementScript.ts`, add the type-only import (per the Vite type-only rule):
+In `apps/dino-brawl/src/game/scripts/PlayerMovementScript.ts`, add the type-only import (per the Vite type-only rule):
 
 ```ts
 import type { GameEntity } from "@atlasjs/gameplay";
@@ -1784,13 +1784,13 @@ Expected: all PASS.
 
 - [ ] **Step 5: Browser-verify (do not ask the user to check manually)**
 
-Start the sandbox dev server via `preview_start` (name from `.claude/launch.json`; **restart it** rather than reusing a stale HMR session — the sandbox serves stale scenes over HMR). Then:
+Start the `dino-brawl` dev server via `preview_start` (name from `.claude/launch.json`; **restart it** rather than reusing a stale HMR session — the app serves stale scenes over HMR). Then:
 - `read_console_messages` while driving the player (WASD) into a tree.
 - Expected: a `[collision] player entered <id>` line appears when the player's circle overlaps a tree's box, and does NOT appear elsewhere (filtering: Player↔Occluder only).
 - If the scene looks stale, inspect via a `window.__scene` stash or reload with `javascript_tool: window.location.reload()`.
 - Take a screenshot as proof.
 
-- [ ] **Step 6: Hand off** — Suggested: `feat(sandbox): demo collider layer + collision logging`.
+- [ ] **Step 6: Hand off** — Suggested: `feat(dino-brawl): demo collider layer + collision logging`.
 
 ---
 
@@ -1798,7 +1798,7 @@ Start the sandbox dev server via `preview_start` (name from `.claude/launch.json
 
 **Spec coverage** (design §A–§F → tasks):
 - §B.1 filtering fix → Tasks 3, 4, 5. §B.2 `userData` → Task 2 (+5, 10). §B.3 collider leak → Task 6. §B.4 raycast units + overlaps → Task 7. §B.5 events (queue + drain + `ColliderDesc.events`) → Tasks 2, 5, 6. Dead `converter` removed → Task 2. 
-- §C named layers → Task 1 (+ re-export Task 8). §D `Collider2D`/`PhysicsColliderRef` + create/cleanup → Tasks 8, 9, 11. §E lifecycle + dispatch system → Tasks 12, 13. §F sandbox + tests → Tasks 10 (infra), 11 & 13 (harness tests), 14 (browser).
+- §C named layers → Task 1 (+ re-export Task 8). §D `Collider2D`/`PhysicsColliderRef` + create/cleanup → Tasks 8, 9, 11. §E lifecycle + dispatch system → Tasks 12, 13. §F `dino-brawl` + tests → Tasks 10 (infra), 11 & 13 (harness tests), 14 (browser).
 
 **Placeholder scan:** none — every code step is complete. WASM behavior (real filtering/events/queries) has no unit test by design (no WASM harness); this is stated explicitly and covered by build + the Task 14 browser-verify.
 

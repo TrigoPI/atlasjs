@@ -236,7 +236,7 @@ class Frame {
 
 **Requis** parce qu'un joueur animé, sans ce fix, perd ses pieds au démarrage de l'anim → il « saute » **et** son point de tri passe au centre pendant que les arbres trient par les pieds → occlusion incohérente. Ferme aussi le bug backlog *« le perso saute au démarrage de l'anim »*.
 
-## 7. Authoring des occulteurs (cible sandbox)
+## 7. Authoring des occulteurs (cible dino-brawl)
 
 ```ts
 // registry au boot
@@ -287,7 +287,7 @@ Barrels : réexport `SortingLayers` depuis `gameplay/src/index.ts`.
 - **Unit gameplay** — `SortingLayers` : `define`/`indexOf`/`modeOf`, `"Default"` seedé à 0, nom inconnu → warn + fallback 0. Render systems : `manual` pose `sortPrimary=sortingOrder, sortSecondary=0` ; `ySorted` pose `sortPrimary=worldY, sortSecondary=sortingOrder`.
 - **Unit pivot** — `SpriteAsset.fromPath(path, { rect, pivot })` forwarde pivot + rect ; `Frame` porte pivot (défaut centre) ; `AnimatorSystem.spriteFor` forwarde le pivot (frame animée garde ses pieds, ne retombe pas à `(0.5,0.5)`).
 - **Intégration ECS** — joueur + 2 arbres dans `"Entities"` (ySorted) : joueur **derrière** quand au nord (Y plus petit), **devant** quand au sud (Y plus grand) ; tiebreak `sortingOrder` respecté à Y égal.
-- **Vérif navigateur (obligatoire)** — scène sandbox : sol tilemap `"Ground"` + `"Entities"` avec joueur animé + arbres de `plant.png`. On déplace le joueur haut/bas → l'occlusion bascule à la **ligne des pieds** ; le joueur animé garde ses pieds (pas de saut) ; nombre de draw calls sain (les arbres même-sheet batchent quand ils sont adjacents dans l'ordre trié). **`import type`** pour les symboles type-only (piège Vite : `tsc` passe mais Vite casse au runtime → écran noir).
+- **Vérif navigateur (obligatoire)** — scène `dino-brawl` : sol tilemap `"Ground"` + `"Entities"` avec joueur animé + arbres de `plant.png`. On déplace le joueur haut/bas → l'occlusion bascule à la **ligne des pieds** ; le joueur animé garde ses pieds (pas de saut) ; nombre de draw calls sain (les arbres même-sheet batchent quand ils sont adjacents dans l'ordre trié). **`import type`** pour les symboles type-only (piège Vite : `tsc` passe mais Vite casse au runtime → écran noir).
 
 ## 10. Non-objectifs / backlog
 

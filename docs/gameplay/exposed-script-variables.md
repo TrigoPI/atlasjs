@@ -12,7 +12,7 @@ La règle de couche est respectée : un script n'importe que `@atlasjs/gameplay`
 
 1. **`SpriteRender` exige un `Sprite`** à la construction, et **`Sprite` exige un `Texture2D`** (`packages/gameplay/src/assets/Sprite.ts`). Or `Texture2D` est une **ressource GPU** créée par le renderer (`nebula.createTexture2D`). Un script ne peut donc pas construire un `Sprite`, ni faire `addComponent(SpriteRender, ...)`.
 2. **`Animator` exige des clips `Record<string, SpriteAnimation>`**, eux-mêmes construits depuis un `SpriteSheet` → `Texture2D`. Même blocage.
-3. Aujourd'hui c'est la **scène** qui pose `SpriteRender` et `Animator` (`apps/sandbox/src/game/EcsScene.ts`), et le script fait `requireComponent`. Ça marche mais le script ne maîtrise pas son propre assemblage, et rien ne prépare un futur éditeur.
+3. Aujourd'hui c'est la **scène** qui pose `SpriteRender` et `Animator` (`apps/dino-brawl/src/game/EcsScene.ts`), et le script fait `requireComponent`. Ça marche mais le script ne maîtrise pas son propre assemblage, et rien ne prépare un futur éditeur.
 4. Un script opère **exclusivement sur sa propre entité** : il n'a aucun moyen ergonomique de recevoir une autre entité en paramètre, ni de lire/muter ses composants (`sword.getComponent(Transform)`), ni de récupérer un script attaché ailleurs (`sword.getScript(SwordScript)`). Dès qu'un comportement coordonne deux entités (un joueur qui pilote son épée), il faut tout mettre dans un seul script ou passer par des singletons/services.
 
 ### Insight central — la frontière GPU
@@ -408,16 +408,16 @@ Le prédécesseur de ce système était `@Expose()` — un décorateur de champ 
 
 État final : **aucun décorateur nulle part**, donc **aucune chaîne Babel**.
 
-- `packages/gameplay/vitest.config.ts` / `apps/sandbox/vite.config.ts` : plus de plugin `@rolldown/plugin-babel` ; `react()` reste côté sandbox.
-- `package.json` (gameplay & sandbox) : plus de devdeps `@babel/plugin-proposal-decorators` / `@rolldown/plugin-babel`.
-- `tsconfig.base.json` & `apps/sandbox/tsconfig.app.json` : `"ESNext.Decorators"` dans `lib` est devenu inutile mais **laissé en place, inerte** (inoffensif, `Symbol.metadata` peut rester référencé par d'autres libs ; retrait optionnel, non bloquant). `erasableSyntaxOnly` (sandbox) est conservé.
+- `packages/gameplay/vitest.config.ts` / `apps/dino-brawl/vite.config.ts` : plus de plugin `@rolldown/plugin-babel` ; `react()` reste côté `dino-brawl`.
+- `package.json` (gameplay & `dino-brawl`) : plus de devdeps `@babel/plugin-proposal-decorators` / `@rolldown/plugin-babel`.
+- `tsconfig.base.json` & `apps/dino-brawl/tsconfig.app.json` : `"ESNext.Decorators"` dans `lib` est devenu inutile mais **laissé en place, inerte** (inoffensif, `Symbol.metadata` peut rester référencé par d'autres libs ; retrait optionnel, non bloquant). `erasableSyntaxOnly` (`dino-brawl`) est conservé.
 - Le `dist` de gameplay (tsdown) ne change pas de nature : gameplay n'appliquait déjà aucun décorateur dans son source — la seule différence est qu'il n'y a plus de décorateur du tout.
 
 ---
 
-## 9. Exemple complet (sandbox)
+## 9. Exemple complet (dino-brawl)
 
-**`apps/sandbox/src/game/scripts/TestScript.ts`** — reçoit ses assets **et** l'entité `sword`, et la pilote :
+**`apps/dino-brawl/src/game/scripts/TestScript.ts`** — reçoit ses assets **et** l'entité `sword`, et la pilote :
 
 ```ts
 export class TestScript extends AtlasScript<{
@@ -462,7 +462,7 @@ registerScriptMetadata(TestScript, {
 });
 ```
 
-**`apps/sandbox/src/game/EcsScene.ts`** — fabrique les assets, ne pose plus `SpriteRender`/`Animator`, et passe l'entité `sword` **brute** :
+**`apps/dino-brawl/src/game/EcsScene.ts`** — fabrique les assets, ne pose plus `SpriteRender`/`Animator`, et passe l'entité `sword` **brute** :
 
 ```ts
 const blueDinoSprite: Sprite = new Sprite(blueDinoTexture);
