@@ -20,6 +20,7 @@ import {
   type CameraManager,
   type ScriptManager,
   type SortingLayers,
+  type ColliderShapeDesc,
   Key,
   button,
   Camera,
@@ -28,11 +29,13 @@ import {
   vector2,
   CAMERA_MANAGER,
   defineActions,
+  defineCollisionLayers,
   SCRIPT_MANAGER,
   SORTING_LAYERS,
   SpriteAsset,
   SpriteRenderer,
   Animator,
+  Collider2D,
   RigidBody,
   PlayerInput,
   Transform2D,
@@ -50,6 +53,8 @@ import {
 } from "@atlasjs/nebula";
 
 const MAP_SCALE: number = 2;
+
+const Layers = defineCollisionLayers("Player", "Occluder");
 
 export class EcsScene extends Scene {
   private fpsCallback: (fps: number) => void;
@@ -192,6 +197,13 @@ export class EcsScene extends Scene {
     nexus.addComponent(player, SpriteRenderer, blueDinoSprite).sortingLayer = "Entities";
     nexus.addComponent(player, PlayerInput, controls);
 
+    const playerCollider: Collider2D = nexus.addComponent(player, Collider2D, {
+      type: "circle",
+      radius: 10,
+    } as ColliderShapeDesc);
+    playerCollider.layer = Layers.Player;
+    playerCollider.collidesWith = Layers.Occluder;
+
     const sword: Entity = nexus.createEntity();
     nexus.addComponent(sword, Transform2D);
     nexus.addComponent(sword, SpriteRenderer, swordSprite).sortingLayer = "Entities";
@@ -227,6 +239,14 @@ export class EcsScene extends Scene {
       const treeTransform: Transform2D = nexus.addComponent(tree, Transform2D);
       treeTransform.position = treePosition;
       nexus.addComponent(tree, SpriteRenderer, treeSprite).sortingLayer = "Entities";
+
+      const treeCollider: Collider2D = nexus.addComponent(tree, Collider2D, {
+        type: "box",
+        width: 24,
+        height: 24,
+      } as ColliderShapeDesc);
+      treeCollider.layer = Layers.Occluder;
+      treeCollider.collidesWith = Layers.Player;
     }
 
     nexus.setParent(shadow, player);

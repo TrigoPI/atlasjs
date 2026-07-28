@@ -1,4 +1,5 @@
 import type { Vec2 } from "@atlasjs/math";
+import type { GameEntity } from "@atlasjs/gameplay";
 
 import {
   type ButtonActionSpec,
@@ -50,6 +51,10 @@ export class PlayerMovementScript extends AtlasScript<{
     if (v.x !== 0 || v.y !== 0) {
       this.transform.translate(v.x * speed * dt, v.y * speed * dt);
     }
+  }
+
+  public onCollisionEnter(other: GameEntity): void {
+    console.log("[collision] player entered", other.id);
   }
 }
 
