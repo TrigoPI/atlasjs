@@ -1,6 +1,7 @@
 import RAPIER from "@dimforge/rapier2d-compat";
 import { Collider, RigidBody } from "@atlasjs/inertia";
 import { RapierColliderOption } from "./rapier-types";
+import { packCollisionGroups } from "./mappers/collision-groups";
 
 export class RapierCollider implements Collider {
   public readonly id: string;
@@ -33,7 +34,8 @@ export class RapierCollider implements Collider {
   }
 
   public setCollisionGroup(group: number): this {
-    this.rapierCollider.setCollisionGroups(group);
+    const filter: number = this.rapierCollider.collisionGroups() & 0xffff;
+    this.rapierCollider.setCollisionGroups(packCollisionGroups(group, filter));
     return this;
   }
 
@@ -43,7 +45,11 @@ export class RapierCollider implements Collider {
   }
 
   public setCollisionMask(mask: number): this {
-    this.rapierCollider.setSolverGroups(mask);
+    const membership: number =
+      (this.rapierCollider.collisionGroups() >>> 16) & 0xffff;
+    this.rapierCollider.setCollisionGroups(
+      packCollisionGroups(membership, mask),
+    );
     return this;
   }
 
@@ -63,11 +69,11 @@ export class RapierCollider implements Collider {
   }
 
   public getCollisionGroup(): number {
-    return this.rapierCollider.collisionGroups();
+    return (this.rapierCollider.collisionGroups() >>> 16) & 0xffff;
   }
 
   public getCollisionMask(): number {
-    return this.rapierCollider.solverGroups();
+    return this.rapierCollider.collisionGroups() & 0xffff;
   }
 
   public getRestitution(): number {
