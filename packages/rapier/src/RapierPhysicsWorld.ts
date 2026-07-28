@@ -32,6 +32,7 @@ export class RapierPhysicsWorld implements PhysicsWorld {
 
   private queryApi!: PhysicsQuery;
   private world!: RAPIER.World;
+  private eventQueue!: RAPIER.EventQueue;
 
   public constructor(options: PhysicsWorldOptions = {}) {
     this.options = { ...options };
@@ -51,8 +52,10 @@ export class RapierPhysicsWorld implements PhysicsWorld {
     };
 
     this.world = new RAPIER.World(gravity);
+    this.eventQueue = new RAPIER.EventQueue(true);
     this.queryApi = new RapierPhysicsQuery(
       this.world,
+      this.converter,
       (handle: number) => this.colliders.get(handle) ?? null,
       (handle: number) => this.bodies.get(handle) ?? null,
     );
@@ -60,10 +63,23 @@ export class RapierPhysicsWorld implements PhysicsWorld {
 
   public step(dt: number): void {
     this.world.timestep = dt;
-    this.world.step();
+    this.world.step(this.eventQueue);
   }
 
-  public drainCollisions(_handler: CollisionHandler): void {}
+  public drainCollisions(handler: CollisionHandler): void {
+    this.eventQueue.drainCollisionEvents(
+      (h1: number, h2: number, started: boolean) => {
+        const a: RapierCollider | undefined = this.colliders.get(h1);
+        const b: RapierCollider | undefined = this.colliders.get(h2);
+
+        if (a === undefined || b === undefined) {
+          return;
+        }
+
+        handler(a, b, started);
+      },
+    );
+  }
 
   public setGravity(x: number, y: number): void {
     this.world.gravity = { x, y };
@@ -96,8 +112,15 @@ export class RapierPhysicsWorld implements PhysicsWorld {
 
   public destroyRigidBody(body: RigidBody): void {
     this.assertRapierBody(body);
-    this.bodies.delete(body.rapierBody.handle);
-    this.world.removeRigidBody(body.rapierBody);
+    const rb: RAPIER.RigidBody = body.rapierBody;
+    const count: number = rb.numColliders();
+
+    for (let i: number = 0; i < count; i++) {
+      this.colliders.delete(rb.collider(i).handle);
+    }
+
+    this.bodies.delete(rb.handle);
+    this.world.removeRigidBody(rb);
   }
 
   public createCollider(descriptor: ColliderDesc, body?: RigidBody): Collider {
@@ -130,7 +153,13 @@ export class RapierPhysicsWorld implements PhysicsWorld {
 
   public destroyCollider(collider: Collider): void {
     this.assertRapierCollider(collider);
-    this.colliders.delete(collider.rapierCollider.handle);
+    const handle: number = collider.rapierCollider.handle;
+
+    if (!this.colliders.has(handle)) {
+      return;
+    }
+
+    this.colliders.delete(handle);
     this.world.removeCollider(collider.rapierCollider, true);
   }
 
