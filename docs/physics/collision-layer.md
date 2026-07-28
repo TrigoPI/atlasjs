@@ -38,9 +38,9 @@ Executed sub-agent-driven (fresh implementer + reviewer per task; the user commi
 | 7 — `RapierPhysicsQuery` unit-aware raycast + overlaps | ✅ done | `e2a3ebe` |
 | 8 — `Collider2D` component + `Collider` alias + exports | ✅ done | `b996e05` |
 | 9 — `PhysicsColliderRef` component | ✅ done | `aa491cb` |
-| 10 — Extend `FakePhysicsWorld` (test infra) | ✅ done | pending commit |
-| 11 — Collider-creation pass in `PhysicsPushSystem` | 🔨 in progress | — |
-| 12 — Collision lifecycle callbacks on scripts | ⏳ pending | — |
+| 10 — Extend `FakePhysicsWorld` (test infra) | ✅ done | `b8521f7` |
+| 11 — Collider-creation pass in `PhysicsPushSystem` | ✅ done | pending commit |
+| 12 — Collision lifecycle callbacks on scripts | 🔨 in progress | — |
 | 13 — `PhysicsCollisionSystem` dispatch | ⏳ pending | — |
 | 14 — Sandbox demo + browser-verify | ⏳ pending | — |
 
