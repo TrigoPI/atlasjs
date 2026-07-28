@@ -41,9 +41,9 @@ Executed sub-agent-driven (fresh implementer + reviewer per task; the user commi
 | 10 — Extend `FakePhysicsWorld` (test infra) | ✅ done | `b8521f7` |
 | 11 — Collider-creation pass in `PhysicsPushSystem` | ✅ done | `e06f553` |
 | 11b — Collider placement getters + tests (inserted follow-up) | ✅ done | `19158fd` |
-| 12 — Collision lifecycle callbacks on scripts | ✅ done | pending commit |
-| 13 — `PhysicsCollisionSystem` dispatch | 🔨 in progress | — |
-| 14 — Sandbox demo + browser-verify | ⏳ pending | — |
+| 12 — Collision lifecycle callbacks on scripts | ✅ done | `82dac2c` |
+| 13 — `PhysicsCollisionSystem` dispatch | ✅ done | pending commit |
+| 14 — Sandbox demo + browser-verify | 🔨 in progress | — |
 
 ---
 
