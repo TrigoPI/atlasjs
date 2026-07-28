@@ -23,6 +23,29 @@ Copied verbatim from the project conventions — every task's requirements impli
 
 ---
 
+## Implementation Progress
+
+Executed sub-agent-driven (fresh implementer + reviewer per task; the user commits each task). Updated as tasks land.
+
+| Task | Status | Commit |
+|---|---|---|
+| 1 — CollisionLayers primitive (`inertia`) | ✅ done | `11e5bd5` |
+| 2 — Extend collision contract + backend stubs | ✅ done | `0fbd73a` |
+| 3 — `packCollisionGroups` helper (`rapier`) | ✅ done | `0b07d20` |
+| 4 — Fix filtering on `RapierCollider` | ✅ done | `be563c0` |
+| 5 — Apply groups + active events in `mapColliderDesc` | 🔨 in progress | — |
+| 6 — `RapierPhysicsWorld` event queue + collider cleanup | ⏳ pending | — |
+| 7 — `RapierPhysicsQuery` unit-aware raycast + overlaps | ⏳ pending | — |
+| 8 — `Collider2D` component + `Collider` alias + exports | ⏳ pending | — |
+| 9 — `PhysicsColliderRef` component | ⏳ pending | — |
+| 10 — Extend `FakePhysicsWorld` (test infra) | ⏳ pending | — |
+| 11 — Collider-creation pass in `PhysicsPushSystem` | ⏳ pending | — |
+| 12 — Collision lifecycle callbacks on scripts | ⏳ pending | — |
+| 13 — `PhysicsCollisionSystem` dispatch | ⏳ pending | — |
+| 14 — Sandbox demo + browser-verify | ⏳ pending | — |
+
+---
+
 ## Context (why this plan exists)
 
 An audit of `@atlasjs/inertia` + `@atlasjs/rapier` found the rigid-body path is sound but the **collision half is a skeleton that was never wired or exercised**, with three latent bugs sitting exactly on the path of the next feature (world solidity):
