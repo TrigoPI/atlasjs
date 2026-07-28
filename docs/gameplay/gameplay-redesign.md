@@ -216,7 +216,7 @@ Bilan : **~7 systèmes + 3 storages + 3 types → 2 systèmes + 1 composant + de
 
 ---
 
-## Exemple de migration (`apps/sandbox`)
+## Exemple de migration (`apps/dino-brawl`)
 
 Avant (`TestScript`, couche fantôme) :
 
@@ -255,7 +255,7 @@ L'ergonomie côté utilisateur est quasi identique — mais il n'y a plus de cop
 - **Phase 3 — `ScriptContext` sur le vrai world.** Réécrire `RuntimeScriptContext` ; `AtlasScript.transform`/`.rigidbody` → handles ; `getComponent` → composants réels. Brancher `release(entity)` dans `ScriptManager`.
 - **Phase 4 — Suppression de la couche fantôme.** Retirer `ScriptComponentStorage`, `ScriptComponentRuntimeStorage`, `Transform2DComponent`, `RigidBody2DComponent`, `Transform2DSyncState`, `TransformWriteRequest` + les 5 systèmes de pont fantôme. Nettoyer `GameplayPlugin`.
 - **Phase 5 — `Vec2` partout.** Supprimer `Vector2D`, migrer les usages.
-- **Phase 6 — Migration `apps/sandbox`.** `TestScript` (+ autres) sur la nouvelle API.
+- **Phase 6 — Migration `apps/dino-brawl`.** `TestScript` (+ autres) sur la nouvelle API.
 
 > **Piste future (hors scope, à documenter séparément si besoin) :** un primitif de **détection de changement par ticks** dans Nexus (façon Bevy `Changed<T>`) remplacerait tout diffing manuel résiduel et servirait à synchroniser *n'importe quelle* paire de composants, pas seulement le cas physique. Non requis par cette refonte (la façade + l'autorité par type de corps suffisent), mais c'est la brique générale si le besoin réapparaît.
 
@@ -264,10 +264,10 @@ L'ergonomie côté utilisateur est quasi identique — mais il n'y a plus de cop
 - [x] Phase 0 — tests de pont (double `FakePhysicsWorld`, autorité dynamic/kinematic, cycle de vie du body). 4 tests verrouillent le comportement à préserver ; 2 `it.fails` (clobber kinematic) sont des tripwires qui basculeront en `it` en Phase 1.
 - [x] Phase 1 — `PhysicsBodyRef` + `PhysicsPushSystem`/`PhysicsPullSystem` + `onRemove` (retire `SparseSet` + hook manuel + `RigidBody2DSystem`/`RigidBodyWriteBackSystem`). `TransformRequestResolveSystem` repointé sur `PhysicsBodyRef` (fantôme intact). Élargissement Nexus : `onAdd`/`onRemove`/`hasComponent`/`removeComponent`/`requireComponent` acceptent désormais des composants à args (`Component<T, any[]>`), permettant à un composant porteur de handle (`PhysicsBodyRef`) de passer par le cycle de vie. Les 2 tripwires kinematic sont verts.
 - [x] Phase 2 — handles `Transform2DComponent`/`RigidBody2DComponent` + `ScriptComponentRegistry` (cache + invalidation via `onRemove`) + routage d'autorité dans les setters (dynamic → téléport body ; kinematic/static → `Transform2D`). Construits et testés en isolation (9 tests : source unique, invalidation, autorité, escape-hatch du getter live). Pas encore branchés aux scripts (Phase 3).
-- [x] Phase 3 — `ScriptContext`/`RuntimeScriptContext` sur le vrai world ; `AtlasScript.transform`/`.rigidbody` → handles, `getComponent`/`addComponent` → composants réels ; `ScriptManager(world, handleRegistry)` + `release(entity)` au dernier script détruit ; `GameplayPlugin` crée/dispose le registre. `MoveScript` (test détermin.) et `TestScript` (sandbox) migrés sur la façade. Fantôme laissé en no-op (supprimé Phase 4). Test d'intégration bout-en-bout ajouté (script → handle → pont → physique). 20 tests verts, tsc gameplay + sandbox OK.
-- [x] Phase 4 — suppression couche fantôme (`ScriptComponentStorage`, `ScriptComponentRuntimeStorage`, `Transform2DSyncState`, `TransformWriteRequest`, les 5 systèmes de pont fantôme, `ScriptComponentConstructor`) + nettoyage `GameplayPlugin` (pont réduit à `physics-push`/`physics-pull`). **Renommage `Handle → Component`** : `Transform2DComponent`/`RigidBody2DComponent` (façades), `ScriptComponentRegistry`, `EntityScriptComponents` — plus aucun vocabulaire « Handle ». Build gameplay : 119 → 78 fichiers. 20 tests verts, sandbox tsc OK.
+- [x] Phase 3 — `ScriptContext`/`RuntimeScriptContext` sur le vrai world ; `AtlasScript.transform`/`.rigidbody` → handles, `getComponent`/`addComponent` → composants réels ; `ScriptManager(world, handleRegistry)` + `release(entity)` au dernier script détruit ; `GameplayPlugin` crée/dispose le registre. `MoveScript` (test détermin.) et `TestScript` (`dino-brawl`) migrés sur la façade. Fantôme laissé en no-op (supprimé Phase 4). Test d'intégration bout-en-bout ajouté (script → handle → pont → physique). 20 tests verts, tsc gameplay + dino-brawl OK.
+- [x] Phase 4 — suppression couche fantôme (`ScriptComponentStorage`, `ScriptComponentRuntimeStorage`, `Transform2DSyncState`, `TransformWriteRequest`, les 5 systèmes de pont fantôme, `ScriptComponentConstructor`) + nettoyage `GameplayPlugin` (pont réduit à `physics-push`/`physics-pull`). **Renommage `Handle → Component`** : `Transform2DComponent`/`RigidBody2DComponent` (façades), `ScriptComponentRegistry`, `EntityScriptComponents` — plus aucun vocabulaire « Handle ». Build gameplay : 119 → 78 fichiers. 20 tests verts, `dino-brawl` tsc OK.
 - [x] Phase 5 — `Vec2` partout : `Vector2D` supprimé (n'était utilisé que par la couche fantôme ; le reste du code était déjà en `Vec2`). Réalisé en même temps que la Phase 4.
-- [x] Phase 6 — migration `apps/sandbox` : `TestScript` (seule entité scriptée) migré sur la façade dès la Phase 3.
+- [x] Phase 6 — migration `apps/dino-brawl` : `TestScript` (seule entité scriptée) migré sur la façade dès la Phase 3.
 
 ## Points ouverts / risques
 

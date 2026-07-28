@@ -202,7 +202,7 @@ Mené en deux temps (décidé au grill) : **3a découplage in-place**, puis **3b
 - `nebula` : barrel sans `./webgpu`, plus aucune dépendance WebGPU, tsconfig sans `types: ["@webgpu/types"]`. Le core est désormais un package d'interfaces + logique agnostique.
 - `apps/webgpu` : `WebGPURenderer`/`defineMaterial` importés depuis `@atlasjs/nebula-webgpu`, les interfaces depuis `@atlasjs/nebula`.
 
-> Validé : `tsc` 0 erreur sur `nebula` ET `nebula-webgpu`, `turbo build` (ordre `nebula` → `nebula-webgpu`) OK, **app WebGPU réelle** → sprite rendu identique, 0 validation error. Blast radius confirmé minimal : seul `apps/webgpu` consommait un symbole WebGPU depuis `nebula` ; `sandbox`/`gameplay`/`editor` n'utilisent que les interfaces.
+> Validé : `tsc` 0 erreur sur `nebula` ET `nebula-webgpu`, `turbo build` (ordre `nebula` → `nebula-webgpu`) OK, **app WebGPU réelle** → sprite rendu identique, 0 validation error. Blast radius confirmé minimal : seul `apps/webgpu` consommait un symbole WebGPU depuis `nebula` ; `dino-brawl`/`gameplay`/`editor` n'utilisent que les interfaces.
 
 ---
 

@@ -61,7 +61,7 @@ export class SpriteAnimation {
 ```
 
 - `tick(deltaMs)` : si `!playing`, no-op. Sinon `elapsedMs += deltaMs`, recalcule l'index (`floor(elapsedMs / frameDuration)`, `min(index, len-1)` si `!loop`, `index % len` sinon) ; si `!loop` et index au dernier → `playing = false`.
-- **Migration `updateAndApply` + `Clock`** : `updateAndApply(spriteNode)` devient `updateAndApply(spriteNode, deltaMs)` (= `tick(deltaMs)` puis `spriteNode.setFrame(getCurrentFrame())`). L'import `Clock` de `@atlasjs/utils` disparaît. Appelants à migrer (confirmés par grep) : `AnimationPlayer.updateAndApply` (nebula) et `apps/sandbox/src/game/Player.ts:75` (voie non-ECS, passe `dt * 1000`).
+- **Migration `updateAndApply` + `Clock`** : `updateAndApply(spriteNode)` devient `updateAndApply(spriteNode, deltaMs)` (= `tick(deltaMs)` puis `spriteNode.setFrame(getCurrentFrame())`). L'import `Clock` de `@atlasjs/utils` disparaît. Appelants à migrer (confirmés par grep) : `AnimationPlayer.updateAndApply` (nebula) et `apps/dino-brawl/src/game/Player.ts:75` (voie non-ECS, passe `dt * 1000`).
 - Le stub `// event / callback plus tard` (changement d'index) reste un point d'accroche V2.
 
 ### 4bis. `AnimationPlayer` (nebula) — réutilisé, rendu dt-driven
@@ -158,9 +158,9 @@ State machine / transitions, blend trees, **events de frame** (le stub existe), 
 
 ## 11. Ordre d'implémentation suggéré
 
-1. Nebula : `SpriteAnimation` dt-driven (`tick`, accumulateur, retrait `Clock`) + `updateAndApply(node, deltaMs)` + tests. Puis `AnimationPlayer` (`tick`, `getCurrentFrame`, `updateAndApply(node, deltaMs)`). Migrer `apps/sandbox/Player.ts`. Rebuild `dist`.
+1. Nebula : `SpriteAnimation` dt-driven (`tick`, accumulateur, retrait `Clock`) + `updateAndApply(node, deltaMs)` + tests. Puis `AnimationPlayer` (`tick`, `getCurrentFrame`, `updateAndApply(node, deltaMs)`). Migrer `apps/dino-brawl/Player.ts`. Rebuild `dist`.
 2. Gameplay : `Animator` (LEVEL 1, enveloppe `AnimationPlayer`) + tests.
 3. Gameplay : `AnimatorSystem` + cache `Map<Frame, Sprite>` + tests.
 4. `GameplayPlugin` : définir composant + enregistrer système (stage/`after`, teardown).
 5. Exports gameplay (+ re-export authoring) ; `tsc --noEmit`.
-6. (Optionnel) démo `apps/sandbox/EcsScene` : sheet + `Animator` sur une entité, validation visuelle.
+6. (Optionnel) démo `apps/dino-brawl/EcsScene` : sheet + `Animator` sur une entité, validation visuelle.

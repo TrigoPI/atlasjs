@@ -236,7 +236,7 @@ Ordre choisi = valeur décroissante, chaque phase livrable seule.
 - [x] Câbler `WebGPUPipelineCache` (keyé par `createPipelineId`).
 - [x] `createPipeline` respecte `renderState` (blend/depth/cull), plus de `alphaBlend` hardcodé.
 - [x] Nouvelle signature `draw(geometry, material, bindings)` ; supprimer le guard de compat.
-- [x] Migrer `SpriteRenderer` + apps (`apps/webgpu`, `apps/sandbox`).
+- [x] Migrer `SpriteRenderer` + apps (`apps/webgpu`, `apps/dino-brawl`).
 
 > Note Phase 1 : `depthTest` est porté par `RenderState` mais **inerte** tant que la passe n'a pas de depth attachment (Phase 4). `createPipeline` a quitté le `ResourceFactory` public (pipeline = artefact interne, résolu par `getOrCreatePipeline`). La clé du `WebGPUPipelineCache` inclut `shader.id | vertexLayout | format | topology | blend | cull | depth`.
 

@@ -2,7 +2,7 @@
 
 > **Statut : implémenté** (les deux phases livrées).
 > - **Phase 1** — accès aux services depuis les scripts : `ScriptService<TService>` générique + façade `InputApi` (polling clavier/souris global). Voir `packages/gameplay/src/scripting/core/ScriptService.ts`, `packages/gameplay/src/scripting/services/InputApi.ts` + tests `script-service*.test.ts`, `input-api.test.ts`.
-> - **Phase 2** — actions nommées façon [Unity Input System](https://docs.unity3d.com/Packages/com.unity.inputsystem@1.19/manual/QuickStartGuide.html) : `defineActions`/`button()`/`vector2()`/`InputActionMap` (`@atlasjs/input`) + intégration ECS `PlayerInput` + `PlayerInputSystem` (`@atlasjs/gameplay`). Voir `packages/input/src/public/actions/`, `packages/gameplay/src/components/PlayerInput.ts`, `packages/gameplay/src/systems/PlayerInputSystem.ts` + tests `actions.test.ts`, `action-runtime.test.ts`, `player-input.test.ts` ; utilisé dans `apps/sandbox` (`TestScript.ts`).
+> - **Phase 2** — actions nommées façon [Unity Input System](https://docs.unity3d.com/Packages/com.unity.inputsystem@1.19/manual/QuickStartGuide.html) : `defineActions`/`button()`/`vector2()`/`InputActionMap` (`@atlasjs/input`) + intégration ECS `PlayerInput` + `PlayerInputSystem` (`@atlasjs/gameplay`). Voir `packages/input/src/public/actions/`, `packages/gameplay/src/components/PlayerInput.ts`, `packages/gameplay/src/systems/PlayerInputSystem.ts` + tests `actions.test.ts`, `action-runtime.test.ts`, `player-input.test.ts` ; utilisé dans `apps/dino-brawl` (`TestScript.ts`).
 >
 > Suite de `docs/gameplay/scripting-components.md` (accès aux composants depuis les scripts).
 
@@ -140,7 +140,7 @@ Reste inchangé : `getComponent`/`addComponent`/`requireComponent`/`removeCompon
 - `ScriptManager` : stocke `services`, le passe à `new RuntimeScriptContext(entityId, world, services)` dans `attach`.
 - Aucun nouveau step scheduler, aucune nouvelle dépendance de plugin déclarée (le service `INPUT` est résolu paresseusement à l'exécution du script, pas au boot du plugin ; `getService` throw proprement si `InputPlugin` est absent).
 
-#### Exemple d'usage (sandbox)
+#### Exemple d'usage (dino-brawl)
 
 ```ts
 import { AtlasScript, InputApi, Key, Transform2DComponent } from "@atlasjs/gameplay";
@@ -272,7 +272,7 @@ export class PlayerInputSystem implements NexusSystem {
 
 `GameplayPlugin` : `world.defineComponent(PlayerInput)` + `registerSystem(update, world, new PlayerInputSystem(engine.services), { name: "gameplay:player-input", stage: "Early" })`.
 
-#### Usage script (sandbox — `TestScript`)
+#### Usage script (dino-brawl — `TestScript`)
 
 ```ts
 import { AtlasScript, PlayerInput, Transform2DComponent } from "@atlasjs/gameplay";

@@ -8,7 +8,7 @@ Le système d'asset actuel est bancal et repose sur une seule tranche minimale p
 
 - `@atlasjs/assets` expose un unique contrat `Asset = { id, kind, dispose() }`.
 - `Sprite` (gameplay) implémente ce contrat **mais encapsule une `Texture2D` déjà chargée** (une ressource GPU vivante). Ce n'est donc pas un objet sérialisable : il tient un handle runtime.
-- Le chargement est 100 % manuel, au niveau application : `apps/sandbox/src/game/EcsScene.ts` fait `new Image()` → `decode()` → `createImageBitmap` → `nebula.createTexture2D(...)` à la main. Aucun manager, aucun cache, aucun dédoublonnage.
+- Le chargement est 100 % manuel, au niveau application : `apps/dino-brawl/src/game/EcsScene.ts` fait `new Image()` → `decode()` → `createImageBitmap` → `nebula.createTexture2D(...)` à la main. Aucun manager, aucun cache, aucun dédoublonnage.
 - `Texture2D` est une ressource GPU (`__kind`, `width`, `height`, `id`, `destroy()` via `Disposable`). Non sérialisable par nature.
 
 Deux concepts distincts sont aujourd'hui écrasés en un seul objet « asset ». Ce document les sépare proprement avant de faire grossir le système.
@@ -26,7 +26,7 @@ Le contrat `Asset` actuel (`id + kind + dispose`) décrit en réalité le **hand
 - Fournir un **`AssetManager`** : `register` / `load` (async, cache + dédup par `id`) / `get` (sync), qui délègue le `descripteur → handle` à des **loaders enregistrés par type** (point d'extension plugin).
 - Faire **composer** le chargement : charger un `SpriteAsset` charge d'abord sa dépendance `TextureAsset`.
 - Migrer les paires concrètes v1 : `TextureAsset → Texture2D` (nebula), `SpriteAsset → Sprite` (gameplay).
-- Tuer le `loadTexture` manuel de la sandbox.
+- Tuer le `loadTexture` manuel de `dino-brawl`.
 - **Compagnon** : lever la collision de nom `Sprite` en renommant les nodes du scene-graph nebula en `*Node` (voir §7).
 
 ## Non-objectifs (hors périmètre v1 → backlog)
@@ -272,7 +272,7 @@ Auteur / futur compilateur :
 - `GameplayPlugin` : `ASSET_MANAGER` dans `requires` + enregistrement du `SpriteLoader`.
 - `src/assets/index.ts` + `src/index.ts` : re-exports (`SpriteAsset`, `Sprite`…).
 
-**`apps/sandbox`**
+**`apps/dino-brawl`**
 - `src/game/EcsScene.ts` : supprimer `loadTexture` ; `const tex = await assets.load(new TextureAsset(BlueDino))` (pour le `SpriteSheet`) et/ou `assets.load(new SpriteAsset(...))`. Récupérer le manager via `ctx.services.get(ASSET_MANAGER)`.
 
 **`apps/webgpu`** (démo)
@@ -304,7 +304,7 @@ Auteur / futur compilateur :
 - [x] `@atlasjs/assets` : `AssetPlugin` + token `ASSET_MANAGER` + re-exports.
 - [x] `@atlasjs/nebula` : `TextureAsset` + `TextureLoader` ; `Texture2D extends Resource` ; `NebulaPlugin` requires + register ; dépendance `@atlasjs/assets`.
 - [x] `@atlasjs/gameplay` : `SpriteAsset` + `SpriteLoader` ; `Sprite implements Resource` (`destroy`) ; `GameplayPlugin` requires + register ; re-exports.
-- [x] `apps/sandbox` : migration `EcsScene` (mort au `loadTexture` manuel).
+- [x] `apps/dino-brawl` : migration `EcsScene` (mort au `loadTexture` manuel).
 - [x] Tests (`@atlasjs/assets` + intégration gameplay).
 - [x] `tsc --noEmit` sur les packages touchés + rebuild des `dist` dépendants (`assets`, `nebula`).
 - [x] `docs/backlog.md` + index `CLAUDE.md` : référencer ce doc.

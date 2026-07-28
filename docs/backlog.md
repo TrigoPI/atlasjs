@@ -129,7 +129,7 @@ Source : [`gameplay/entity-hierarchy.md`](gameplay/entity-hierarchy.md) (§9, ho
 
 ## Gameplay — Input scripting
 
-> **Cœur implémenté** : Phase 1 (`ScriptService`/`InputApi`) et Phase 2 (actions nommées `defineActions`/`button()`/`vector2()`/`PlayerInput`/`PlayerInputSystem`). Source unifiée : [`gameplay/input-scripting.md`](gameplay/input-scripting.md). Utilisé dans `apps/sandbox`. Ne restent que les **extensions V2** ci-dessous.
+> **Cœur implémenté** : Phase 1 (`ScriptService`/`InputApi`) et Phase 2 (actions nommées `defineActions`/`button()`/`vector2()`/`PlayerInput`/`PlayerInputSystem`). Source unifiée : [`gameplay/input-scripting.md`](gameplay/input-scripting.md). Utilisé dans `apps/dino-brawl`. Ne restent que les **extensions V2** ci-dessous.
 
 - 📋 Events / callbacks (aujourd'hui polling seulement).
 - 📋 Interactions (hold / tap / multi-tap).
@@ -203,13 +203,13 @@ Source : [`gameplay/entity-hierarchy.md`](gameplay/entity-hierarchy.md) (§9, ho
 - 📋 **Util de slicing en grille partagé** : `TileSet` refait sa propre boucle (décision A) ; extraire un util commun avec `SpriteSheet.fromGrid`/`fromAutoGrid` (nebula), et/ou exposer un accès `(row,col)`/index dans `SpriteSheet`.
 - 📋 **Tile Anchor configurable + scaling *fit-to-cell*** : la v1 ancre la tuile au coin d'origine de la cellule et la dessine à sa taille native ; permettre un ancrage centré (défaut Unity) et un redimensionnement à `cellSize`. (C'est ce qui lèverait la contrainte « `cellSize` = taille native » — sinon trous entre tuiles.)
 - 📋 **Durcissements notés à la review finale** (tous Minor, acceptés en v1) : `TileSet` ne valide pas des `columns`/`rows` explicites surdimensionnés vs la texture (uvRect > 1, clampé par `clamp-to-edge` — dégrade sans crash) → warn dev optionnel ; `TileMap.setTile` bumpe `revision` même sur réécriture identique (inoffensif tant que `revision` ne gate pas un cache) ; culling vs rendu peuvent diverger sous shear + scale non-uniforme + rotation (cull conservateur → sans artefact, même chemin lossy que `SpriteRenderSystem`).
-- ✅ **Vérif à faire** : le sandbox n'exerce qu'**un seul calque** — un check navigateur 2 calques (sol z=0 + déco z=10) fermerait le dernier trou de vérif (l'analyse sort-key/batch confirme la correction ; pas de changement de code attendu).
+- ✅ **Vérif à faire** : `dino-brawl` n'exerce qu'**un seul calque** — un check navigateur 2 calques (sol z=0 + déco z=10) fermerait le dernier trou de vérif (l'analyse sort-key/batch confirme la correction ; pas de changement de code attendu).
 
 ---
 
 ## Dette technique
 
-- 📋 **`tsc -b` du sandbox rouge** : 4 erreurs `noUnusedLocals`/`noUnusedParameters` pré-existantes dans `apps/sandbox/src/game/Player.ts` et `Sword.ts` (code legacy hors ECS) — cleanup séparé, sans lien avec un chantier de design.
+- 📋 **`tsc -b` de `dino-brawl` rouge** : 4 erreurs `noUnusedLocals`/`noUnusedParameters` pré-existantes dans `apps/dino-brawl/src/game/Player.ts` et `Sword.ts` (code legacy hors ECS) — cleanup séparé, sans lien avec un chantier de design.
 
 ---
 

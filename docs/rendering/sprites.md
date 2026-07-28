@@ -222,7 +222,7 @@ Le façade et le système lisent/écrivent le **même** `SpriteRender` ; le node
 **`@atlasjs/nebula`**
 - `package.json` : retirer la dépendance fantôme `@atlasjs/assets`.
 
-**`apps/sandbox`**
+**`apps/dino-brawl`**
 - `src/game/EcsScene.ts` : construire un `Sprite` asset et le passer à `SpriteRender` au lieu de la texture brute.
 
 ## Tests (harness existant `test/helpers/harness.ts`)
@@ -245,7 +245,7 @@ Le façade et le système lisent/écrivent le **même** `SpriteRender` ; le node
 - [x] `SpriteRendererComponent` L2 : façade complète.
 - [x] `SpriteRenderSystem` : réécriture + swap + `onRemove`.
 - [x] `@atlasjs/nebula` : retirer la dépendance fantôme `@atlasjs/assets`.
-- [x] Sandbox `EcsScene` : migration vers le `Sprite` asset.
+- [x] `dino-brawl` `EcsScene` : migration vers le `Sprite` asset.
 - [x] Re-exports gameplay.
 - [x] Tests (`test/sprite-render*.test.ts`, `test/sprite-renderer-facade.test.ts`).
 - [x] `tsc --noEmit` sur gameplay + build des dépendances modifiées (`assets`).
