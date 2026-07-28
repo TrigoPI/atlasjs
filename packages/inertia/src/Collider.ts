@@ -1,3 +1,5 @@
+import { Vec2 } from "@atlasjs/math";
+
 import { RigidBody } from "./RigidBody";
 
 export interface Collider {
@@ -21,6 +23,9 @@ export interface Collider {
   getFriction(): number;
   getDensity(): number;
   getUserData<T = unknown>(): T | undefined;
+
+  getTranslation(): Vec2;
+  getRotation(): number;
 
   getRigidBody(): RigidBody | null;
 }

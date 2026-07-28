@@ -154,6 +154,8 @@ export class FakeCollider implements Collider {
   private density: number;
   private userData: unknown;
   private readonly body: RigidBody | null;
+  private readonly translation: Vec2;
+  private rotation: number;
 
   public constructor(
     id: string,
@@ -170,6 +172,8 @@ export class FakeCollider implements Collider {
     this.density = descriptor.density ?? 0;
     this.userData = descriptor.userData;
     this.body = body;
+    this.translation = descriptor.translation?.clone() ?? new Vec2(0, 0);
+    this.rotation = descriptor.rotation ?? 0;
   }
 
   public isSensor(): boolean {
@@ -242,6 +246,14 @@ export class FakeCollider implements Collider {
   public setUserData(data: unknown): this {
     this.userData = data;
     return this;
+  }
+
+  public getTranslation(): Vec2 {
+    return this.translation;
+  }
+
+  public getRotation(): number {
+    return this.rotation;
   }
 
   public getRigidBody(): RigidBody | null {

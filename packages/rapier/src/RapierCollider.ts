@@ -1,6 +1,8 @@
 import RAPIER from "@dimforge/rapier2d-compat";
 import { Collider, RigidBody } from "@atlasjs/inertia";
+import { Vec2 } from "@atlasjs/math";
 import { RapierColliderOption } from "./rapier-types";
+import { PhysicsUnitConverter } from "./PhysicsUnitConverter";
 import { packCollisionGroups } from "./mappers/collision-groups";
 
 export class RapierCollider implements Collider {
@@ -8,6 +10,7 @@ export class RapierCollider implements Collider {
   public readonly rapierCollider: RAPIER.Collider;
 
   private readonly body: RigidBody | null;
+  private readonly converter: PhysicsUnitConverter;
   private userData: unknown;
 
   public constructor(
@@ -18,6 +21,7 @@ export class RapierCollider implements Collider {
     this.id = options.id;
     this.rapierCollider = rapierCollider;
     this.userData = options.userData;
+    this.converter = options.converter;
   }
 
   public isSensor(): boolean {
@@ -95,6 +99,15 @@ export class RapierCollider implements Collider {
   public setUserData(data: unknown): this {
     this.userData = data;
     return this;
+  }
+
+  public getTranslation(): Vec2 {
+    const t: RAPIER.Vector = this.rapierCollider.translation();
+    return new Vec2(this.converter.toWorld(t.x), this.converter.toWorld(t.y));
+  }
+
+  public getRotation(): number {
+    return this.rapierCollider.rotation();
   }
 
   public getRigidBody(): RigidBody | null {

@@ -1,4 +1,5 @@
 import { Collider, RigidBody, RigidBodyType } from "@atlasjs/inertia";
+import { PhysicsUnitConverter } from "./PhysicsUnitConverter";
 
 export type ColliderResolver = (handle: number) => Collider | null;
 export type RigidBodyResolver = (handle: number) => RigidBody | null;
@@ -13,4 +14,5 @@ export type RapierColliderOption = {
   id: string;
   body: RigidBody | null;
   userData?: unknown;
+  converter: PhysicsUnitConverter;
 };

@@ -145,6 +145,7 @@ export class RapierPhysicsWorld implements PhysicsWorld {
       id,
       body: parentBody,
       userData: descriptor.userData,
+      converter: this.converter,
     });
 
     this.colliders.set(rawCollider.handle, wrapper);

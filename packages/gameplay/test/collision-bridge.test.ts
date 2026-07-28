@@ -75,4 +75,33 @@ describe("Gameplay — collision bridge", () => {
     h.world.destroyEntity(e);
     expect(h.physics.colliderCount).toBe(0);
   });
+
+  it("places a body-less collider at the entity world position + offset (static)", () => {
+    const e: Entity = h.world.createEntity();
+    const t: Transform2D = h.world.addComponent(e, Transform2D);
+    t.position.set(100, 50);
+    const col: Collider2D = h.world.addComponent(e, Collider2D, BOX);
+    col.offset.set(5, -3);
+
+    h.frame();
+
+    const collider = [...h.physics.colliders][0];
+    expect(collider.getTranslation().x).toBeCloseTo(105, 5);
+    expect(collider.getTranslation().y).toBeCloseTo(47, 5);
+  });
+
+  it("places a body-attached collider at the offset relative to the body", () => {
+    const e: Entity = h.world.createEntity();
+    const t: Transform2D = h.world.addComponent(e, Transform2D);
+    t.position.set(100, 50);
+    h.world.addComponent(e, RigidBody2D);
+    const col: Collider2D = h.world.addComponent(e, Collider2D, BOX);
+    col.offset.set(5, -3);
+
+    h.frame();
+
+    const collider = [...h.physics.colliders][0];
+    expect(collider.getTranslation().x).toBeCloseTo(5, 5);
+    expect(collider.getTranslation().y).toBeCloseTo(-3, 5);
+  });
 });
