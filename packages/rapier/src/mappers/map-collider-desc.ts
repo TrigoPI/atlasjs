@@ -165,6 +165,7 @@ export function mapColliderDesc(
 
   if (descCpy.events === true) {
     collider.setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS);
+    collider.setActiveCollisionTypes(RAPIER.ActiveCollisionTypes.ALL);
   }
 
   return collider;
