@@ -36,9 +36,9 @@ Executed sub-agent-driven (fresh implementer + reviewer per task; the user commi
 | 5 — Apply groups + active events in `mapColliderDesc` | ✅ done | `190bd82` |
 | 6 — `RapierPhysicsWorld` event queue + collider cleanup | ✅ done | `e2a3ebe` |
 | 7 — `RapierPhysicsQuery` unit-aware raycast + overlaps | ✅ done | `e2a3ebe` |
-| 8 — `Collider2D` component + `Collider` alias + exports | ✅ done | pending commit |
-| 9 — `PhysicsColliderRef` component | 🔨 in progress | — |
-| 10 — Extend `FakePhysicsWorld` (test infra) | ⏳ pending | — |
+| 8 — `Collider2D` component + `Collider` alias + exports | ✅ done | `b996e05` |
+| 9 — `PhysicsColliderRef` component | ✅ done | pending commit |
+| 10 — Extend `FakePhysicsWorld` (test infra) | 🔨 in progress | — |
 | 11 — Collider-creation pass in `PhysicsPushSystem` | ⏳ pending | — |
 | 12 — Collision lifecycle callbacks on scripts | ⏳ pending | — |
 | 13 — `PhysicsCollisionSystem` dispatch | ⏳ pending | — |
