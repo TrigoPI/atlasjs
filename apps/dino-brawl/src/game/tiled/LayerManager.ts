@@ -1,15 +1,11 @@
 import { Layer } from "./Layer";
-import type { TiledLayer, TiledMap } from "./tiled.type";
+import type { TiledLayer, TiledMap } from "./tiled.types";
 
 export class LayerManager {
   private readonly layers: Record<string, Layer>;
 
   public constructor(map: TiledMap) {
     this.layers = this.getLayers(map, map.layers);
-  }
-
-  public addLayer(layer: Layer): void {
-    this.layers[layer.name] = layer;
   }
 
   public getLayer(name: string): Layer | undefined {

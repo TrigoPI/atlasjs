@@ -3,9 +3,9 @@ import { type SceneContext, Scene } from "@atlasjs/core";
 import { type Entity, type NexusWorld, NEXUS } from "@atlasjs/nexus";
 import { type AssetManager, ASSET_MANAGER } from "@atlasjs/assets";
 
-import type { PinObject } from "./map-loader/map-object";
+import type { PinObject } from "./tiled";
 import { ResourcesPath } from "./ResourcesPath";
-import { MapLoader } from "./map-loader";
+import { MapLoader } from "./tiled";
 
 import {
   SwordScript,

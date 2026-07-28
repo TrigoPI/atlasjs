@@ -1,5 +1,5 @@
 import { PinObject, type MapObject } from "./MapObject";
-import type { TiledObject, TiledPinObject } from "./tiled.type";
+import type { TiledObject, TiledPinObject } from "./tiled.types";
 
 export abstract class MapObjectEvaluatorBase {
   abstract build(input: TiledObject): MapObject;

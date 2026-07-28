@@ -1,5 +1,5 @@
 import type { MapObject } from "./MapObject";
-import type { TiledLayer, TiledMap } from "./tiled.type";
+import type { TiledLayer, TiledMap } from "./tiled.types";
 import { MapObjectBuilder, MapObjectPinEvaluator } from "./MapObjectBuilder";
 
 export class MapObjectManager {

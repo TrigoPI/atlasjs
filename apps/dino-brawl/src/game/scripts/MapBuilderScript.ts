@@ -1,5 +1,4 @@
-import type { MapLoader } from "../map-loader";
-import type { SerializedTile } from "../map-loader/map-object";
+import type { MapLoader, SerializedTile } from "../tiled";
 
 import {
   AtlasScript,

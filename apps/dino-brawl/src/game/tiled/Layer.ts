@@ -1,4 +1,4 @@
-import type { TileData } from "./map-object.types";
+import type { TileData } from "./map.types";
 
 export class Layer {
   public readonly name: string;

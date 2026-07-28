@@ -1,4 +1,4 @@
-import type { TiledMap } from "./tiled.type";
+import type { TiledMap } from "./tiled.types";
 import { TileSet } from "./TileSet";
 
 export class TileSetManager {

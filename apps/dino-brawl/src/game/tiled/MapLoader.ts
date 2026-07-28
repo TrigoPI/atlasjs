@@ -1,16 +1,12 @@
-import type { TiledMap } from "./map-object/tiled.type";
+import type { TiledMap } from "./tiled.types";
+import type { SerializedTile, TileIndex, TilePosition } from "./map.types";
 
-import {
-  Layer,
-  LayerManager,
-  MapObjectManager,
-  MapObject,
-  TileSet,
-  TileSetManager,
-  type SerializedTile,
-  type TileIndex,
-  type TilePosition,
-} from "./map-object";
+import type { Layer } from "./Layer";
+import { LayerManager } from "./LayerManager";
+import type { MapObject } from "./MapObject";
+import { MapObjectManager } from "./MapObjectManager";
+import { TileSet } from "./TileSet";
+import { TileSetManager } from "./TileSetManager";
 
 export class MapLoader {
   private readonly map: TiledMap;
@@ -30,7 +26,7 @@ export class MapLoader {
     return this.objectManager.getObject(name);
   }
 
-  public getSerializedLayer(layerName: string) {
+  public getSerializedLayer(layerName: string): SerializedTile[] {
     const layer: Layer | undefined = this.layers.getLayer(layerName);
     const result: SerializedTile[] = [];
 

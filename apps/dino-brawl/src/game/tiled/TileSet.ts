@@ -1,4 +1,4 @@
-import type { TileSetConstructorData, TileIndex } from "./map-object.types";
+import type { TileSetConstructorData, TileIndex } from "./map.types";
 
 export class TileSet {
   public readonly name: string;
@@ -17,12 +17,14 @@ export class TileSet {
     this.imageHeight = data.imageHeight;
     this.imageWidth = data.imageWidth;
     this.tileCount = data.tileCount;
-    this.firstGid = data.firstGid - 1;
-    this.lastGid = this.firstGid + data.tileCount - 1;
+    this.tileWidth = data.tileWidth;
+    this.tileHeight = data.tileHeight;
+    this.firstGid = data.firstGid;
+    this.lastGid = this.firstGid + this.tileCount - 1;
   }
 
   public getId(id: number): TileIndex {
-    const localId: number = id - 1 - this.firstGid;
+    const localId: number = id - this.firstGid;
 
     if (localId < 0) {
       throw new Error(`getId: id ${id} is before firstGid ${this.firstGid}`);

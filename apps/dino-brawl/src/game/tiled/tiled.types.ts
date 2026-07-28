@@ -50,7 +50,7 @@ export type TiledTileSet = {
 export type TiledMap = {
   width: number;
   height: number;
-  tileidth: number;
+  tilewidth: number;
   tileheight: number;
   layers: TiledLayer[];
   tilesets: TiledTileSet[];

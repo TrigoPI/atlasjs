@@ -1,4 +1,4 @@
-import type { MapObjectType } from "./map-object.types";
+import type { MapObjectType } from "./map.types";
 
 export class MapObject {
   public readonly type: MapObjectType;
