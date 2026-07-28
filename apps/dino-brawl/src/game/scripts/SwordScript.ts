@@ -7,7 +7,6 @@ import {
   Transform,
   AtlasScript,
   ScriptMetadata,
-  SpriteRenderer,
   registerScriptMetadata,
   type GameEntity,
 } from "@atlasjs/gameplay";
@@ -25,7 +24,6 @@ const THROW_THRESHOLD: number = 0.05;
 
 export class SwordScript extends AtlasScript<{
   owner: GameEntity;
-  scale: number;
   maxPower: number;
   rotationSpeed: MinMax;
   orbitRadius: number;
@@ -37,13 +35,11 @@ export class SwordScript extends AtlasScript<{
   private readonly rotationSpeed: MinMax;
   private readonly orbitSpeed: MinMax;
 
-  private readonly scale: number;
   private readonly maxPower: number;
   private readonly orbitRadius: number;
   private readonly throwDuration: number;
 
   private transform: Transform;
-  private spriteRenderer: SpriteRenderer;
 
   private input: InputApi;
   private camera: CameraApi;
@@ -62,10 +58,6 @@ export class SwordScript extends AtlasScript<{
     this.camera = this.getService(CameraApi);
 
     this.transform = this.requireComponent(Transform);
-    this.spriteRenderer = this.requireComponent(SpriteRenderer);
-
-    this.transform.setScale(this.scale, this.scale);
-    this.spriteRenderer.sortingOrder = 20;
 
     this.state = "orbit";
     this.charge = 0;
@@ -184,7 +176,6 @@ export class SwordScript extends AtlasScript<{
 registerScriptMetadata(SwordScript, {
   exposed: {
     owner: ScriptMetadata.entity({ required: true }),
-    scale: ScriptMetadata.field({ required: true }),
     maxPower: ScriptMetadata.field({ required: true }),
     rotationSpeed: ScriptMetadata.field({ required: true }),
     orbitRadius: ScriptMetadata.field({ required: true }),

@@ -9,6 +9,7 @@ import {
   type Sprite,
   Animator,
   Collider2D,
+  Color,
   PlayerInput,
   RigidBody,
   SCRIPT_MANAGER,
@@ -25,9 +26,9 @@ import {
 } from "@atlasjs/nebula";
 
 import { ResourcesPath } from "../ResourcesPath";
-import { SortingLayer, CollisionLayers } from "../config";
+import { SortingLayer, SortingOrder, CollisionLayers } from "../config";
 import { dinoControls } from "../controls";
-import { PlayerScript, PlayerMovementScript } from "../scripts";
+import { PlayerAnimationScript, PlayerMovementScript } from "../scripts";
 
 export async function spawnPlayer(
   ctx: SceneContext,
@@ -77,11 +78,16 @@ export async function spawnPlayer(
   };
 
   const player: Entity = nexus.createEntity();
-  nexus.addComponent(player, Transform2D);
+  const playerTransform: Transform2D = nexus.addComponent(player, Transform2D);
   nexus.addComponent(player, RigidBody);
   nexus.addComponent(player, Animator, clips, "idle");
-  nexus.addComponent(player, SpriteRenderer, dinoSprite).sortingLayer = SortingLayer.Entities;
+  const playerRender: SpriteRenderer = nexus.addComponent(player, SpriteRenderer, dinoSprite);
   nexus.addComponent(player, PlayerInput, dinoControls);
+
+  playerRender.sortingLayer = SortingLayer.Entities;
+  playerRender.sortingOrder = SortingOrder.Player;
+  playerTransform.scale.set(3, 3);
+  playerTransform.position.copyFrom(spawnPosition);
 
   const playerCollider: Collider2D = nexus.addComponent(player, Collider2D, {
     type: "circle",
@@ -91,15 +97,17 @@ export async function spawnPlayer(
   playerCollider.collidesWith = CollisionLayers.Occluder;
 
   const shadow: Entity = nexus.createEntity();
-  nexus.addComponent(shadow, Transform2D);
-  nexus.addComponent(shadow, SpriteRenderer, shadowSprite).sortingLayer = SortingLayer.Entities;
+  const shadowTransform: Transform2D = nexus.addComponent(shadow, Transform2D);
+  const shadowRender: SpriteRenderer = nexus.addComponent(shadow, SpriteRenderer, shadowSprite);
+  shadowRender.sortingLayer = SortingLayer.Entities;
+  shadowRender.sortingOrder = SortingOrder.Shadow;
+  shadowRender.color = new Color(1, 1, 1, 0.4);
+  shadowTransform.scale.set(0.7, 0.6);
+  shadowTransform.position.set(-0.5, -3);
 
   nexus.setParent(shadow, player);
 
-  scriptManager.attach(player, PlayerScript, {
-    shadow: shadow,
-    spawn: spawnPosition,
-  });
+  scriptManager.attach(player, PlayerAnimationScript, {});
 
   scriptManager.attach(player, PlayerMovementScript, {
     speed: 250,

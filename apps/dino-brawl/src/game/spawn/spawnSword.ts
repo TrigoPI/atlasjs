@@ -12,7 +12,7 @@ import {
 } from "@atlasjs/gameplay";
 
 import { ResourcesPath } from "../ResourcesPath";
-import { SortingLayer } from "../config";
+import { SortingLayer, SortingOrder } from "../config";
 import { SwordScript } from "../scripts";
 
 export async function spawnSword(ctx: SceneContext, owner: Entity): Promise<void> {
@@ -24,11 +24,13 @@ export async function spawnSword(ctx: SceneContext, owner: Entity): Promise<void
   const swordSprite: Sprite = await assets.load<Sprite>(swordSpriteAsset);
 
   const sword: Entity = nexus.createEntity();
-  nexus.addComponent(sword, Transform2D);
-  nexus.addComponent(sword, SpriteRenderer, swordSprite).sortingLayer = SortingLayer.Entities;
+  const swordTransform: Transform2D = nexus.addComponent(sword, Transform2D);
+  const swordRender: SpriteRenderer = nexus.addComponent(sword, SpriteRenderer, swordSprite);
+  swordRender.sortingLayer = SortingLayer.Entities;
+  swordRender.sortingOrder = SortingOrder.Sword;
+  swordTransform.scale.set(1.7, 1.7);
 
   scriptManager.attach(sword, SwordScript, {
-    scale: 1.7,
     owner: owner,
     maxPower: 500,
     orbitRadius: 45,
