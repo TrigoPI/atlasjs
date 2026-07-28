@@ -16,6 +16,7 @@ import { ScriptManager } from "./scripting";
 import {
   AnimatorSystem,
   CameraSyncSystem,
+  PhysicsCollisionSystem,
   PhysicsPullSystem,
   PhysicsPushSystem,
   PlayerInputSystem,
@@ -71,6 +72,7 @@ export class GameplayPlugin extends Plugin {
 
     const physicsPushSystem: PhysicsPushSystem = new PhysicsPushSystem(inertia);
     const physicsPullSystem: PhysicsPullSystem = new PhysicsPullSystem();
+    const physicsCollisionSystem: PhysicsCollisionSystem = new PhysicsCollisionSystem(inertia, this.scriptManager);
     const sortingLayers: SortingLayers = new SortingLayers();
     const spriteRenderSystem: SpriteRenderSystem = new SpriteRenderSystem(nebula, sortingLayers);
     const tileMapRenderSystem: TileMapRenderSystem = new TileMapRenderSystem(nebula, sortingLayers);
@@ -183,6 +185,11 @@ export class GameplayPlugin extends Plugin {
       registerSystem(fixed, world, physicsPullSystem, {
         name: "gameplay:physics-pull",
         stage: "PhysicsWriteback",
+      }),
+      registerSystem(fixed, world, physicsCollisionSystem, {
+        name: "gameplay:physics-collision",
+        stage: "PhysicsWriteback",
+        after: "gameplay:physics-pull",
       }),
     );
 

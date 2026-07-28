@@ -36,8 +36,7 @@ class Provide extends Plugin {
 // The fixed lane never touches the renderer (SpriteRenderSystem runs in the
 // render lane), so a minimal stub is enough to construct the systems.
 const fakeNebula = { createSampler: () => ({}), scene: { addChild: () => {} } };
-// No RigidBody2D on the test entity => the physics world is never called.
-const fakeInertia = {};
+const fakeInertia = { drainCollisions: () => {} };
 
 class MoveScript extends AtlasScript {
   private transform!: Transform;

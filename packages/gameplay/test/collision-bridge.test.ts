@@ -4,6 +4,7 @@ import { ColliderShapeDesc } from "@atlasjs/inertia";
 import { Entity } from "@atlasjs/nexus";
 
 import { Collider2D, RigidBody2D, Transform2D } from "../src/components";
+import { AtlasScript, GameEntity } from "../src/scripting";
 import { createHarness, Harness } from "./helpers/harness";
 
 const BOX: ColliderShapeDesc = { type: "box", width: 10, height: 10 };
@@ -103,5 +104,71 @@ describe("Gameplay — collision bridge", () => {
     const collider = [...h.physics.colliders][0];
     expect(collider.getTranslation().x).toBeCloseTo(5, 5);
     expect(collider.getTranslation().y).toBeCloseTo(-3, 5);
+  });
+
+  it("dispatches onCollisionEnter to both entities with the other as GameEntity", () => {
+    const a: Entity = h.world.createEntity();
+    h.world.addComponent(a, Transform2D);
+    h.world.addComponent(a, Collider2D, BOX);
+
+    const b: Entity = h.world.createEntity();
+    h.world.addComponent(b, Transform2D);
+    h.world.addComponent(b, Collider2D, BOX);
+
+    const seenByA: Entity[] = [];
+
+    class Probe extends AtlasScript {
+      public onCollisionEnter(other: GameEntity): void {
+        seenByA.push(other.id);
+      }
+    }
+
+    h.scripts.attach(a, Probe);
+    h.frame();
+
+    const colliders = [...h.physics.colliders];
+    const ca = colliders.find((c) => c.getUserData<Entity>() === a)!;
+    const cb = colliders.find((c) => c.getUserData<Entity>() === b)!;
+
+    h.physics.emitCollision(ca, cb, true);
+    h.frame();
+
+    expect(seenByA).toContain(b);
+  });
+
+  it("routes sensor contacts to onTriggerEnter instead of onCollisionEnter", () => {
+    const a: Entity = h.world.createEntity();
+    h.world.addComponent(a, Transform2D);
+    const colA = h.world.addComponent(a, Collider2D, BOX);
+    colA.isSensor = true;
+
+    const b: Entity = h.world.createEntity();
+    h.world.addComponent(b, Transform2D);
+    h.world.addComponent(b, Collider2D, BOX);
+
+    let collisions: number = 0;
+    let triggers: number = 0;
+
+    class Probe extends AtlasScript {
+      public onCollisionEnter(): void {
+        collisions++;
+      }
+      public onTriggerEnter(): void {
+        triggers++;
+      }
+    }
+
+    h.scripts.attach(b, Probe);
+    h.frame();
+
+    const colliders = [...h.physics.colliders];
+    const ca = colliders.find((c) => c.getUserData<Entity>() === a)!;
+    const cb = colliders.find((c) => c.getUserData<Entity>() === b)!;
+
+    h.physics.emitCollision(ca, cb, true);
+    h.frame();
+
+    expect(triggers).toBe(1);
+    expect(collisions).toBe(0);
   });
 });
