@@ -10,7 +10,7 @@ import { GameplayPlugin } from "@atlasjs/gameplay";
 import { NebulaPlugin } from "@atlasjs/nebula";
 import { WebGPURenderer } from "@atlasjs/nebula-webgpu";
 
-import { EcsScene } from "../game";
+import { ArenaScene } from "../game";
 import { throttle } from "../utils";
 
 export function GameCanvas({ onFps }: { onFps: (fps: number) => void }): React.ReactNode {
@@ -51,7 +51,7 @@ export function GameCanvas({ onFps }: { onFps: (fps: number) => void }): React.R
         onFps(Math.round(frame));
       }, 250);
 
-      engine.scene.set(new EcsScene(cb));
+      engine.scene.set(new ArenaScene(cb));
     });
 
     return () => engine.stop();

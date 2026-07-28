@@ -1,1 +1,1 @@
-export * from "./EcsScene";
+export * from "./ArenaScene";
