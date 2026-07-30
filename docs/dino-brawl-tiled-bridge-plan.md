@@ -27,6 +27,7 @@
 **Créés (`apps/dino-brawl/src/game/tiled/`) :**
 - `gid.ts` — masquage flip-flags + `resolveGid` (pur).
 - `resolved.types.ts` — modèle résolu (`ResolvedTileset`, `ResolvedCell`, `ResolvedTileLayer`, objets typés).
+- `tiled.raw.types.ts` — types JSON bruts que `TiledDocument` parse, **isolés** du legacy `tiled.types.ts` (garde chaque commit vert : les fichiers legacy compilent jusqu'à leur suppression en Task 6).
 - `TiledDocument.ts` — le parser (JSON brut → modèle résolu).
 - `TiledAssetResolver.ts` — type `TiledAssetResolver` + `matchAssetByTail` (pur) + `createGlobTilesetResolver` (wrapper Vite).
 - `sorting.ts` — `groupNameSortingResolver` (pur).
@@ -34,14 +35,13 @@
 - `MapBuilder.ts` — `MapBuilder.build` (ECS) + types `MapBuilderOptions`, `BuiltMap`.
 
 **Modifiés :**
-- `tiled.types.ts` — enrichir les types JSON bruts (properties, gid/width/height sur objets, spacing/margin, noms de groupes).
 - `tiled/index.ts` — nouveau barrel.
 - `spawn/spawnWorld.ts` — réécrit autour de `MapBuilder`.
 - `game/ArenaScene.ts` — lit `builtMap.points`.
 - `scripts/index.ts` — retrait de l'export `TileMapBuilderScript`.
 
 **Supprimés :**
-- `tiled/{MapLoader,LayerManager,Layer,TileSet,TileSetManager,MapObject,MapObjectManager,MapObjectBuilder,map.types}.ts`
+- `tiled/{MapLoader,LayerManager,Layer,TileSet,TileSetManager,MapObject,MapObjectManager,MapObjectBuilder,map.types,tiled.types}.ts` (legacy `tiled.types.ts` supprimé en Task 6 avec ses consommateurs)
 - `scripts/TileMapBuilderScript.ts`
 - `test/tiled/TileSet.test.ts`
 
@@ -139,7 +139,7 @@ git commit -m "feat(dino-brawl): add Tiled gid resolution with flip-flag masking
 **Files:**
 - Create: `apps/dino-brawl/src/game/tiled/resolved.types.ts`
 - Create: `apps/dino-brawl/src/game/tiled/TiledDocument.ts`
-- Modify: `apps/dino-brawl/src/game/tiled/tiled.types.ts` (enrichir les types bruts)
+- Create: `apps/dino-brawl/src/game/tiled/tiled.raw.types.ts` (types JSON bruts ; le legacy `tiled.types.ts` reste **intact**)
 - Test: `apps/dino-brawl/test/tiled/TiledDocument.test.ts`
 
 **Interfaces:**
@@ -314,12 +314,12 @@ export interface RectObject extends ObjectBase {
 export type ResolvedObject = PointObject | TileObject | RectObject;
 ```
 
-- [ ] **Step 4 : Enrichir les types JSON bruts**
+- [ ] **Step 4 : Créer les types JSON bruts (isolés du legacy)**
 
-Remplacer le contenu de `apps/dino-brawl/src/game/tiled/tiled.types.ts` par :
+Créer `apps/dino-brawl/src/game/tiled/tiled.raw.types.ts`. Le legacy `apps/dino-brawl/src/game/tiled/tiled.types.ts` reste **intact** (les 3 fichiers legacy — `MapLoader`/`TileSetManager`/`MapObjectBuilder` — continuent de compiler jusqu'à leur suppression en Task 6, ce qui garde chaque commit vert sous `tsc`) :
 
 ```ts
-// apps/dino-brawl/src/game/tiled/tiled.types.ts
+// apps/dino-brawl/src/game/tiled/tiled.raw.types.ts
 export type TiledLayer = TiledGroupLayer | TiledTileLayer | TiledObjectGroup;
 
 export interface TiledTileLayer {
@@ -402,7 +402,7 @@ import type {
   TiledObject,
   TiledProperty,
   TiledTileSet,
-} from "./tiled.types";
+} from "./tiled.raw.types";
 
 export class TiledDocument {
   public readonly width: number;
@@ -1026,7 +1026,7 @@ Cette task assemble tout : le `MapBuilder` (glue ECS, vérifiée au navigateur �
 - Rewrite: `apps/dino-brawl/src/game/spawn/spawnWorld.ts`
 - Rewrite: `apps/dino-brawl/src/game/ArenaScene.ts`
 - Modify: `apps/dino-brawl/src/game/scripts/index.ts`
-- Delete: `apps/dino-brawl/src/game/tiled/{MapLoader,LayerManager,Layer,TileSet,TileSetManager,MapObject,MapObjectManager,MapObjectBuilder,map.types}.ts`
+- Delete: `apps/dino-brawl/src/game/tiled/{MapLoader,LayerManager,Layer,TileSet,TileSetManager,MapObject,MapObjectManager,MapObjectBuilder,map.types,tiled.types}.ts`
 - Delete: `apps/dino-brawl/src/game/scripts/TileMapBuilderScript.ts`
 - Delete: `apps/dino-brawl/test/tiled/TileSet.test.ts`
 
@@ -1227,7 +1227,7 @@ export class MapBuilder {
 // apps/dino-brawl/src/game/tiled/index.ts
 export * from "./gid";
 export * from "./resolved.types";
-export * from "./tiled.types";
+export * from "./tiled.raw.types";
 export * from "./TiledDocument";
 export * from "./TiledAssetResolver";
 export * from "./sorting";
@@ -1321,6 +1321,7 @@ git rm apps/dino-brawl/src/game/tiled/MapLoader.ts \
        apps/dino-brawl/src/game/tiled/MapObjectManager.ts \
        apps/dino-brawl/src/game/tiled/MapObjectBuilder.ts \
        apps/dino-brawl/src/game/tiled/map.types.ts \
+       apps/dino-brawl/src/game/tiled/tiled.types.ts \
        apps/dino-brawl/src/game/scripts/TileMapBuilderScript.ts \
        apps/dino-brawl/test/tiled/TileSet.test.ts
 ```
