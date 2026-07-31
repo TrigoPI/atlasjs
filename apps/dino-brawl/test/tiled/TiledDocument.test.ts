@@ -43,7 +43,7 @@ describe("TiledDocument tilesets", () => {
   it("keeps only tilesets that have an image", () => {
     const doc = new TiledDocument(fixture);
     expect(doc.tilesets.map((t) => t.name)).toEqual(["grass", "props"]);
-    expect(doc.tilesets[0]).toMatchObject({ firstGid: 1, columns: 8, tileCount: 64, spacing: 0, margin: 0 });
+    expect(doc.tilesets[0]).toMatchObject({ firstGid: 1, columns: 8, rows: 8, tileCount: 64, spacing: 0, margin: 0 });
   });
 });
 
@@ -54,15 +54,15 @@ describe("TiledDocument tile layers", () => {
     expect(doc.tileLayers[0]).toMatchObject({ name: "ground_layer", groupPath: ["ground"], order: 0 });
   });
 
-  it("resolves gids across multiple tilesets and drops empty cells", () => {
+  it("resolves gids to row-flipped Atlas indices across tilesets and drops empty cells", () => {
     const doc = new TiledDocument(fixture);
     const cells = doc.tileLayers[0].cells;
     expect(cells).toHaveLength(3);
-    expect(cells[0]).toMatchObject({ cx: 0, cy: 0, localIndex: 0, flipX: false });
+    expect(cells[0]).toMatchObject({ cx: 0, cy: 0, localIndex: 56, flipX: false });
     expect(cells[0].tileset.name).toBe("grass");
-    expect(cells[1]).toMatchObject({ cx: 1, cy: 0, localIndex: 0 });
+    expect(cells[1]).toMatchObject({ cx: 1, cy: 0, localIndex: 240 });
     expect(cells[1].tileset.name).toBe("props");
-    expect(cells[2]).toMatchObject({ cx: 1, cy: 1, localIndex: 1, flipX: true });
+    expect(cells[2]).toMatchObject({ cx: 1, cy: 1, localIndex: 57, flipX: true });
     expect(cells[2].tileset.name).toBe("grass");
   });
 });
@@ -76,7 +76,7 @@ describe("TiledDocument objects", () => {
     expect(spawn).toMatchObject({ kind: "point", x: 48, y: 32, groupPath: ["systems"] });
 
     const tree = byName["tree"] as TileObject;
-    expect(tree).toMatchObject({ kind: "tile", localIndex: 0, width: 32, height: 32, x: 64, y: 96 });
+    expect(tree).toMatchObject({ kind: "tile", localIndex: 240, width: 32, height: 32, x: 64, y: 96 });
     expect(tree.tileset.name).toBe("props");
 
     const wall = byName["wall"] as RectObject;

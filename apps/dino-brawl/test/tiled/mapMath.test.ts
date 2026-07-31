@@ -8,8 +8,8 @@ import {
 } from "../../src/game/tiled/mapMath";
 import type { PointObject, RectObject, ResolvedTileLayer, ResolvedTileset, TileObject } from "../../src/game/tiled/resolved.types";
 
-const grass: ResolvedTileset = { name: "grass", image: "g.png", firstGid: 1, columns: 8, tileCount: 64, tileWidth: 32, tileHeight: 32, spacing: 0, margin: 0 };
-const props: ResolvedTileset = { name: "props", image: "p.png", firstGid: 65, columns: 16, tileCount: 256, tileWidth: 32, tileHeight: 32, spacing: 0, margin: 0 };
+const grass: ResolvedTileset = { name: "grass", image: "g.png", firstGid: 1, columns: 8, rows: 8, tileCount: 64, tileWidth: 32, tileHeight: 32, spacing: 0, margin: 0 };
+const props: ResolvedTileset = { name: "props", image: "p.png", firstGid: 65, columns: 16, rows: 16, tileCount: 256, tileWidth: 32, tileHeight: 32, spacing: 0, margin: 0 };
 
 describe("groupCellsByTileset", () => {
   it("buckets a layer's cells by their tileset", () => {

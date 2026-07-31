@@ -64,7 +64,7 @@ Deux couches app-local + deux hooks fournis par l'app.
 | # | Décision | Choix retenu |
 | --- | --- | --- |
 | 1 | Découpage | **`TiledDocument` (parse pur) + `MapBuilder` (ECS)** ; hooks app pour assets + sorting |
-| 2 | Mapping gid | `internalIndex = (gid & GID_MASK) - firstGid`, **sans** roundtrip (col,row) — `TileSetAsset` construit avec les `columns` du JSON ⇒ index gameplay ≡ id local Tiled |
+| 2 | Mapping gid | **row-flip** Tiled→Atlas obligatoire : `localIndex = (rows-1 - tiledRow)*columns + col` (Tiled numérote top→bottom, Atlas bottom→top), `rows = tileCount/columns` |
 | 3 | Flip-flags | Masqués sur les 3 bits hauts ; `flipX/flipY` exposés (cellules **et** tile-objects) |
 | 4 | Multi-tileset / calque | Un calque Tiled est **splitté** en N enfants `TileMap` (un par tileset utilisé) |
 | 5 | Collision | **Data-only** : rects exposés dans `BuiltMap.colliders` (coords monde) ; aucun `Collider2D` spawné |
@@ -97,9 +97,13 @@ function resolveGid(raw: number): { gid: number; flipX: boolean; flipY: boolean 
 
 Le flip **diagonal** (`FLIP_D`, rotation) est masqué pour ne pas corrompre l'index, mais **non appliqué** en v1 (rare en top-down orthogonal → backlog).
 
-Puis, pour une cellule non-vide (`gid !== 0`) : trouver le tileset tel que `firstGid <= gid <= firstGid + tileCount - 1`, et `localIndex = gid - firstGid`.
+Puis, pour une cellule non-vide (`gid !== 0`) : trouver le tileset tel que `firstGid <= gid <= firstGid + tileCount - 1`, et calculer l'index Atlas **avec row-flip** (voir ci-dessous).
 
-**Pourquoi ça élimine le roundtrip (col,row) du proto :** l'id local Tiled est row-major top-left, exactement comme l'index linéaire du `TileSet` gameplay (`index = row * columns + col`). En construisant le `TileSetAsset` avec les **`columns` du JSON**, `TileSet.indexOf(col,row)` et l'id local Tiled coïncident → on passe directement `localIndex` à `TileMap.setTile`. (Le proto faisait `y = columns - 1 - floor(localId/columns)` : un flip Y erroné, masqué uniquement parce que grass est 8×8 ; cf. §10.)
+**⚠️ Le row-flip Tiled↔Atlas est OBLIGATOIRE (piège vérifié en vrai) :** Tiled numérote les tuiles d'un tileset **top→bottom** (id local 0 = coin **haut-gauche**), alors que le rendu Atlas les adresse **bottom→top** (index 0 = coin **bas-gauche**). L'id local Tiled et l'index linéaire du `TileSet` gameplay **ne coïncident donc PAS** : il faut re-flipper la ligne. Avec `local = gid - firstGid`, `col = local % columns`, `tiledRow = floor(local / columns)`, `rows = tileCount / columns` :
+
+`localIndex = (rows - 1 - tiledRow) * columns + col`
+
+Le proto d'origine faisait bien ce flip (`getId(1) → {x:0, y:7}` pour grass 8×8 → index 56) mais avec `columns` comme base au lieu de `rows` (correct seulement pour un tileset **carré**). On utilise `rows` (dérivé de `tileCount/columns`), qu'on passe aussi à `TileSetAsset.fromPath` pour que le compte du `TileSet` gameplay fasse autorité.
 
 ### 5.2 Modèle résolu (types)
 
@@ -298,7 +302,7 @@ Les **tile-objects** n'utilisent pas cette résolution : ils vont dans `objectSo
 
 | Bug proto | Correction |
 | --- | --- |
-| `TileSet.getId` fait `y = columns - 1 - floor(localId/columns)` → flip Y + confond `columns`/`rows` (masqué car grass 8×8) | Plus de roundtrip : `localIndex = gid - firstGid` passé tel quel (aligné via `columns` du JSON) |
+| `TileSet.getId` faisait le row-flip avec `columns` comme base → faux pour un tileset **non carré** | Row-flip **conservé** (il est nécessaire, cf. §5.1) mais basé sur `rows = tileCount/columns` + `rows` passé à `TileSetAsset` |
 | gid non masqué → casse dès qu'une tuile est retournée dans Tiled | Masquage des 3 bits de flip + `flipX/flipY` exposés |
 | Hypothèse « 1 tileset Tiled = 1 calque gameplay », matché par nom | Split multi-tileset par calque (§7) |
 | Câblage manuel de chaque calque dans `spawnWorld` | Walk data-driven de l'arbre JSON |
@@ -306,7 +310,7 @@ Les **tile-objects** n'utilisent pas cette résolution : ils vont dans `objectSo
 
 ## 11. Stratégie de test
 
-- **`TiledDocument` (unitaire, sans GPU)** : masquage flip-flags (`flipX/flipY`, `gid` masqué) ; `localIndex = gid - firstGid` ; sélection du bon tileset par plage `firstGid..lastGid` ; multi-tileset dans un même calque ; aplatissement des groupes + `groupPath`/`order` ; objets typés (point/tile/rect) + ancres ; **skip** d'un tileset sans image ; warn sur gid non résolu.
+- **`TiledDocument` (unitaire, sans GPU)** : masquage flip-flags (`flipX/flipY`, `gid` masqué) ; `localIndex` **row-flippé** (grass gid 1 8×8 → 56, props gid 65 16×16 → 240) ; sélection du bon tileset par plage `firstGid..lastGid` ; multi-tileset dans un même calque ; aplatissement des groupes + `groupPath`/`order` ; objets typés (point/tile/rect) + ancres ; **skip** d'un tileset sans image ; warn sur gid non résolu.
 - **`groupNameSortingResolver` (unitaire)** : override prioritaire ; match case-insensitive sur `groupPath` ; fallback + warn.
 - **`MapBuilder` (intégration ECS via la harness gameplay)** : `Grid` montée + scalée ; split multi-tileset → N `TileMap` ; `setTile` aux bonnes coords ; tile-object → entité `SpriteRenderer` en `Entities`, ancrée base ; `colliders` en coords monde scalées (ancre top-left) ; `points` en coords monde ; `sortingOrder` = `layer.order` pour les couches manual.
 - **Vérif navigateur (obligatoire)** : la map rend comme avant (ground + props), les arbres (tile-objects) s'intercalent avec le joueur (devant/derrière) selon `worldY`, un draw call par (calque × tileset). Rappels pièges : `import type` pour tout symbole type-only (sinon `tsc` passe mais Vite casse au runtime → écran noir) ; le dev server sert parfois une scène stale (restart si besoin).

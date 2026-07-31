@@ -75,6 +75,7 @@ export class MapBuilder {
         tileWidth: ts.tileWidth,
         tileHeight: ts.tileHeight,
         columns: ts.columns,
+        rows: ts.rows,
         spacing: ts.spacing,
         margin: ts.margin,
       });

@@ -10,6 +10,8 @@
 
 **Design de référence :** [`docs/dino-brawl-tiled-bridge.md`](dino-brawl-tiled-bridge.md).
 
+> **⚠️ Correction post-implémentation (row-flip Tiled↔Atlas).** Ce plan affirmait à tort que l'index local Tiled == l'index linéaire Atlas « sans flip ». **Faux** : Tiled numérote un tileset top→bottom, Atlas bottom→top → un **row-flip** est obligatoire. Le vrai mapping (appliqué dans le code final, corrigé après browser-verify) est `localIndex = (rows-1 - tiledRow)*columns + col` avec `rows = tileCount/columns`, et `rows` est passé à `TileSetAsset.fromPath`. Voir le spec §5.1 (corrigé). Les blocs de code et assertions `localIndex` ci-dessous (Task 2 / Task 5) montrent l'ancienne valeur non-flippée et sont **obsolètes** sur ce point — se référer au code committé + au spec.
+
 ## Global Constraints
 
 - **App-local uniquement.** Tout le code vit dans `apps/dino-brawl/` — aucune modification des packages `@atlasjs/*`.
@@ -1364,7 +1366,7 @@ git commit -m "feat(dino-brawl): build the scene from Tiled via MapBuilder, drop
 - §7 `MapBuilder` (grille scalée, split multi-tileset, tile-objects ySortés ancrés base, rects data-only coords monde, points monde) + `BuiltMap` → Tasks 5 & 6. ✅
 - §8 sorting par nom de groupe + override + fallback → Task 4 (+ câblage Task 6). ✅
 - §9 migration (retrait `TileMapBuilderScript`/`SerializedTile`/`MapLoader`&co, réécriture `spawnWorld`/`ArenaScene`) → Task 6. ✅
-- §10 bugs corrigés (flip masqué, `localIndex = gid-firstGid`, multi-tileset, walk data-driven, resolver) → Tasks 1/2/3/5/6. ✅
+- §10 bugs corrigés (flip-flags masqués, **row-flip Tiled↔Atlas** — voir la correction post-implémentation en tête —, multi-tileset, walk data-driven, resolver) → Tasks 1/2/3/5/6. ✅
 - §11 tests (unitaires purs + vérif navigateur) → Tasks 1-6. ✅
 - **Écart assumé vs §9** : `spawnProps` **n'est pas** supprimé (les 2 arbres restent hardcodés) pour ne pas régresser la scène ; la migration des arbres en tile-objects Tiled est un follow-up manuel dans l'éditeur. Signalé au handoff.
 

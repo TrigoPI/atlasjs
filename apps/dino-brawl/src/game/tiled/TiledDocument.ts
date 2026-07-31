@@ -66,6 +66,7 @@ export class TiledDocument {
         image: ts.image,
         firstGid: ts.firstgid,
         columns: ts.columns,
+        rows: Math.floor(ts.tilecount / ts.columns),
         tileCount: ts.tilecount,
         tileWidth: ts.tilewidth,
         tileHeight: ts.tileheight,
@@ -81,6 +82,14 @@ export class TiledDocument {
     return this.resolvedTilesets.find(
       (ts: ResolvedTileset) => gid >= ts.firstGid && gid < ts.firstGid + ts.tileCount,
     );
+  }
+
+  private atlasLocalIndex(gid: number, tileset: ResolvedTileset): number {
+    const local: number = gid - tileset.firstGid;
+    const col: number = local % tileset.columns;
+    const tiledRow: number = Math.floor(local / tileset.columns);
+    const atlasRow: number = tileset.rows - 1 - tiledRow;
+    return atlasRow * tileset.columns + col;
   }
 
   private walk(layers: TiledLayer[], groupPath: string[]): void {
@@ -125,7 +134,7 @@ export class TiledDocument {
         cx: i % this.width,
         cy: Math.floor(i / this.width),
         tileset,
-        localIndex: gid - tileset.firstGid,
+        localIndex: this.atlasLocalIndex(gid, tileset),
         flipX,
         flipY,
       });
@@ -164,7 +173,7 @@ export class TiledDocument {
         ...base,
         kind: "tile",
         tileset,
-        localIndex: gid - tileset.firstGid,
+        localIndex: this.atlasLocalIndex(gid, tileset),
         flipX,
         flipY,
         width: obj.width,

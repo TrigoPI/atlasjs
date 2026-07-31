@@ -3,6 +3,7 @@ export interface ResolvedTileset {
   readonly image: string;
   readonly firstGid: number;
   readonly columns: number;
+  readonly rows: number;
   readonly tileCount: number;
   readonly tileWidth: number;
   readonly tileHeight: number;
