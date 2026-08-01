@@ -1,57 +1,61 @@
 export type TiledLayer = TiledGroupLayer | TiledTileLayer | TiledObjectGroup;
 
-export type TiledTileLayer = {
+export interface TiledTileLayer {
   type: "tilelayer";
-  id: number;
   name: string;
   data: number[];
-};
+}
 
-export type TiledGroupLayer = {
+export interface TiledGroupLayer {
   type: "group";
-  id: number;
   name: string;
   layers: TiledLayer[];
-};
+}
 
-export type TiledObjectGroup = {
+export interface TiledObjectGroup {
   type: "objectgroup";
+  name: string;
   objects: TiledObject[];
-};
+}
 
-export type TiledPinObject = {
+export interface TiledObject {
+  id: number;
   name: string;
-  point: boolean;
-  x: number;
-  y: number;
-};
-
-export type TiledRectPointObject = {
-  name: string;
+  type?: string;
   x: number;
   y: number;
   width: number;
   height: number;
-};
+  point?: boolean;
+  gid?: number;
+  properties?: TiledProperty[];
+}
 
-export type TiledObject = TiledPinObject | TiledRectPointObject;
+export interface TiledProperty {
+  name: string;
+  type: string;
+  value: unknown;
+}
 
-export type TiledTileSet = {
+export interface TiledTileSet {
   name: string;
   columns: number;
-  imageheight: number;
-  imagewidth: number;
+  imagewidth?: number;
+  imageheight?: number;
   tilewidth: number;
   tileheight: number;
   tilecount: number;
   firstgid: number;
-};
+  spacing?: number;
+  margin?: number;
+  image?: string | null;
+}
 
-export type TiledMap = {
+export interface TiledMap {
   width: number;
   height: number;
   tilewidth: number;
   tileheight: number;
   layers: TiledLayer[];
   tilesets: TiledTileSet[];
-};
+}
