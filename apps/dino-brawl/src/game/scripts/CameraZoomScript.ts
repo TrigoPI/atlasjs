@@ -21,7 +21,7 @@ export class CameraZoomScript extends AtlasScript {
 
     const x: number = this.zoom - 1;
     const zoomPower: number = Math.min(Math.pow(Math.E, x), 1000);
-    const smoothZoom: number = (this.camera.zoom - zoomPower) * 0.2;
+    const smoothZoom: number = (this.camera.zoom - zoomPower) * 0.1;
 
     this.camera.zoom -= smoothZoom;
   }

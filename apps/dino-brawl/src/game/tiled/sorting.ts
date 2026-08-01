@@ -22,12 +22,15 @@ export function groupNameSortingResolver(
 
   return (layer: SortingLayerInput): string => {
     const overridden: string | undefined = override[layer.name];
+
     if (overridden !== undefined) {
       return overridden;
     }
 
+    // prettier-ignore
     for (let i: number = layer.groupPath.length - 1; i >= 0; i--) {
       const match: string | undefined = canonical.get(layer.groupPath[i].toLowerCase());
+
       if (match !== undefined) {
         return match;
       }

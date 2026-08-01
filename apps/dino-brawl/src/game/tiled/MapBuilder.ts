@@ -4,6 +4,10 @@ import { type Entity, type NexusWorld, NEXUS } from "@atlasjs/nexus";
 import { type AssetManager, ASSET_MANAGER } from "@atlasjs/assets";
 import { createLogger, type Logger } from "@atlasjs/utils";
 
+import type { TiledDocument } from "./TiledDocument";
+import type { TiledAssetResolver } from "./TiledAssetResolver";
+import type { SortingLayerInput } from "./sorting";
+
 import {
   type Sprite as SpriteType,
   type SpriteRender,
@@ -18,9 +22,6 @@ import {
   Transform2D,
 } from "@atlasjs/gameplay";
 
-import type { TiledDocument } from "./TiledDocument";
-import type { TiledAssetResolver } from "./TiledAssetResolver";
-import type { SortingLayerInput } from "./sorting";
 import type {
   PointObject,
   RectObject,
@@ -29,6 +30,7 @@ import type {
   ResolvedTileset,
   TileObject,
 } from "./resolved.types";
+
 import {
   type MapCollider,
   type WorldPoint,
@@ -65,12 +67,16 @@ export class MapBuilder {
     const assets: AssetManager = ctx.services.get(ASSET_MANAGER);
     const objectLayer: string = options.objectSortingLayer ?? "Entities";
 
+    // prettier-ignore
     const tilesets: Map<ResolvedTileset, TileSetType> = new Map<ResolvedTileset, TileSetType>();
+
     for (const ts of doc.tilesets) {
       const url: string | undefined = options.resolver(ts);
+
       if (url === undefined) {
         continue;
       }
+
       const asset: TileSetAsset = TileSetAsset.fromPath(url, {
         tileWidth: ts.tileWidth,
         tileHeight: ts.tileHeight,
@@ -79,16 +85,29 @@ export class MapBuilder {
         spacing: ts.spacing,
         margin: ts.margin,
       });
+
       tilesets.set(ts, await assets.load<TileSetType>(asset));
     }
 
     const grid: Entity = nexus.createEntity();
-    nexus.addComponent(grid, Transform2D).scale.set(options.scale, options.scale);
+
+    nexus
+      .addComponent(grid, Transform2D)
+      .scale.set(options.scale, options.scale);
+
     nexus.addComponent(grid, Grid, new Vec2(doc.tileWidth, doc.tileHeight));
 
     const tileLayers: Entity[] = [];
     for (const layer of doc.tileLayers) {
-      MapBuilder.buildTileLayer(nexus, grid, layer, tilesets, options, tileLayers, logger);
+      MapBuilder.buildTileLayer(
+        nexus,
+        grid,
+        layer,
+        tilesets,
+        options,
+        tileLayers,
+        logger,
+      );
     }
 
     const objectEntities: Entity[] = [];
@@ -129,12 +148,21 @@ export class MapBuilder {
     out: Entity[],
     logger: Logger,
   ): void {
-    const sortingLayer: string = options.resolveSortingLayer({ name: layer.name, groupPath: layer.groupPath });
-    const buckets: Map<ResolvedTileset, ResolvedCell[]> = groupCellsByTileset(layer);
+    const sortingLayer: string = options.resolveSortingLayer({
+      name: layer.name,
+      groupPath: layer.groupPath,
+    });
+
+    console.log(layer, sortingLayer);
+
+    const buckets: Map<ResolvedTileset, ResolvedCell[]> =
+      groupCellsByTileset(layer);
 
     for (const [resolvedTileset, cells] of buckets) {
       const tileset: TileSetType | undefined = tilesets.get(resolvedTileset);
+
       if (tileset === undefined) {
+        // prettier-ignore
         logger.warn(`Layer '${layer.name}': tileset '${resolvedTileset.name}' unresolved; ${cells.length} cells skipped.`);
         continue;
       }
@@ -142,9 +170,14 @@ export class MapBuilder {
       const entity: Entity = nexus.createEntity();
       nexus.addComponent(entity, Transform2D);
       const tileMap: TileMap = nexus.addComponent(entity, TileMap, tileset);
-      const renderer: TileMapRenderer = nexus.addComponent(entity, TileMapRenderer);
+      const renderer: TileMapRenderer = nexus.addComponent(
+        entity,
+        TileMapRenderer,
+      );
+
       renderer.sortingOrder = layer.order;
       renderer.sortingLayer = sortingLayer;
+
       nexus.setParent(entity, grid);
 
       for (const cell of cells) {
@@ -165,18 +198,25 @@ export class MapBuilder {
   ): Entity | undefined {
     const tileset: TileSetType | undefined = tilesets.get(obj.tileset);
     if (tileset === undefined) {
-      logger.warn(`Tile-object '${obj.name}': tileset '${obj.tileset.name}' unresolved; skipped.`);
+      logger.warn(
+        `Tile-object '${obj.name}': tileset '${obj.tileset.name}' unresolved; skipped.`,
+      );
       return undefined;
     }
 
     const tile: Tile | undefined = tileset.tryGetTile(obj.localIndex);
     if (tile === undefined) {
-      logger.warn(`Tile-object '${obj.name}': tile index ${obj.localIndex} out of range in tileset '${obj.tileset.name}'; skipped.`);
+      logger.warn(
+        `Tile-object '${obj.name}': tile index ${obj.localIndex} out of range in tileset '${obj.tileset.name}'; skipped.`,
+      );
       return undefined;
     }
 
     const base: SpriteType = tile.sprite;
-    const sprite: SpriteType = new Sprite(tileset.texture, { rect: base.rect, pivot: new Vec2(0.5, 1) });
+    const sprite: SpriteType = new Sprite(tileset.texture, {
+      rect: base.rect,
+      pivot: new Vec2(0.5, 1),
+    });
 
     const placement: TilePlacement = tileObjectPlacement(obj, scale);
     const entity: Entity = nexus.createEntity();
@@ -184,7 +224,11 @@ export class MapBuilder {
     transform.position.copyFrom(placement.position);
     transform.scale.copyFrom(placement.scale);
 
-    const render: SpriteRender = nexus.addComponent(entity, SpriteRenderer, sprite);
+    const render: SpriteRender = nexus.addComponent(
+      entity,
+      SpriteRenderer,
+      sprite,
+    );
     render.sortingLayer = sortingLayer;
     render.flipX = obj.flipX;
     render.flipY = obj.flipY;
