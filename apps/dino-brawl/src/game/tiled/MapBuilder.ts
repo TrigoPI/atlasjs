@@ -111,8 +111,10 @@ export class MapBuilder {
         layerEntities,
         logger,
       );
+
       tileLayers.push(...layerEntities);
-      if (layer.name.startsWith("Occluders")) {
+
+      if (layer.name.startsWith("occluders")) {
         occluderLayerEntities.push(...layerEntities);
       }
     }
@@ -127,6 +129,7 @@ export class MapBuilder {
         points[point.name] = worldPointFromObject(point, options.scale);
       } else if (obj.kind === "rect") {
         const rect: RectObject = obj;
+
         if (!isOccluderRegion(rect)) {
           colliders.push(colliderFromRect(rect, options.scale));
         }
@@ -139,6 +142,7 @@ export class MapBuilder {
           options.scale,
           logger,
         );
+
         if (entity !== undefined) {
           objectEntities.push(entity);
         }
@@ -154,6 +158,7 @@ export class MapBuilder {
       objectLayer,
       logger,
     );
+
     for (const layerEntity of occluderLayerEntities) {
       nexus.removeComponent(layerEntity, TileMapRenderer);
     }

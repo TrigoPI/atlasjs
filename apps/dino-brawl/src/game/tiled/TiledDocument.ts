@@ -80,7 +80,8 @@ export class TiledDocument {
 
   private tilesetForGid(gid: number): ResolvedTileset | undefined {
     return this.resolvedTilesets.find(
-      (ts: ResolvedTileset) => gid >= ts.firstGid && gid < ts.firstGid + ts.tileCount,
+      (ts: ResolvedTileset) =>
+        gid >= ts.firstGid && gid < ts.firstGid + ts.tileCount,
     );
   }
 
@@ -97,10 +98,16 @@ export class TiledDocument {
       if (layer.type === "group") {
         this.walk(layer.layers, [...groupPath, layer.name]);
       } else if (layer.type === "tilelayer") {
-        this.resolvedLayers.push(this.resolveTileLayer(layer.name, layer.data, groupPath));
+        this.resolvedLayers.push(
+          this.resolveTileLayer(layer.name, layer.data, groupPath),
+        );
       } else if (layer.type === "objectgroup") {
+        const objectGroupPath: string[] = [...groupPath, layer.name];
         for (const obj of layer.objects) {
-          const resolved: ResolvedObject | undefined = this.resolveObject(obj, groupPath);
+          const resolved: ResolvedObject | undefined = this.resolveObject(
+            obj,
+            objectGroupPath,
+          );
           if (resolved) {
             this.resolvedObjects.push(resolved);
           }
@@ -126,7 +133,9 @@ export class TiledDocument {
       const tileset: ResolvedTileset | undefined = this.tilesetForGid(gid);
 
       if (!tileset) {
-        this.logger.warn(`No tileset for gid ${gid} in layer '${name}'; cell skipped.`);
+        this.logger.warn(
+          `No tileset for gid ${gid} in layer '${name}'; cell skipped.`,
+        );
         continue;
       }
 
@@ -140,11 +149,21 @@ export class TiledDocument {
       });
     }
 
-    return { name, groupPath: [...groupPath], order: this.resolvedLayers.length, cells };
+    return {
+      name,
+      groupPath: [...groupPath],
+      order: this.resolvedLayers.length,
+      cells,
+    };
   }
 
-  private resolveObject(obj: TiledObject, groupPath: string[]): ResolvedObject | undefined {
-    if (obj.name.length === 0) {
+  private resolveObject(
+    obj: TiledObject,
+    groupPath: string[],
+  ): ResolvedObject | undefined {
+    const isRect: boolean = !obj.point && obj.gid === undefined;
+
+    if (obj.name.length === 0 && !isRect) {
       return undefined;
     }
 
@@ -165,7 +184,9 @@ export class TiledDocument {
       const tileset: ResolvedTileset | undefined = this.tilesetForGid(gid);
 
       if (!tileset) {
-        this.logger.warn(`No tileset for object gid ${gid} ('${obj.name}'); skipped.`);
+        this.logger.warn(
+          `No tileset for object gid ${gid} ('${obj.name}'); skipped.`,
+        );
         return undefined;
       }
 
@@ -184,7 +205,9 @@ export class TiledDocument {
     return { ...base, kind: "rect", width: obj.width, height: obj.height };
   }
 
-  private readProperties(props?: TiledProperty[]): Readonly<Record<string, unknown>> {
+  private readProperties(
+    props?: TiledProperty[],
+  ): Readonly<Record<string, unknown>> {
     const result: Record<string, unknown> = {};
     if (props) {
       for (const p of props) {

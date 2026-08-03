@@ -18,7 +18,7 @@ import {
 export function isOccluderRegion(obj: ResolvedObject): obj is RectObject {
   return (
     obj.kind === "rect" &&
-    (obj.groupPath.includes("OccluderRegions") ||
+    (obj.groupPath.includes("occluder_regions") ||
       obj.properties.occluder === true)
   );
 }
@@ -34,8 +34,8 @@ export function ingestOccluders(
 ): void {
   const cellSize: Vec2 = new Vec2(doc.tileWidth, doc.tileHeight);
   const cellGap: Vec2 = new Vec2(0, 0);
-
   const regions: OccluderRegion[] = [];
+
   for (const obj of doc.objects) {
     if (!isOccluderRegion(obj)) {
       continue;
