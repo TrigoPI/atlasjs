@@ -29,8 +29,6 @@ export class ArenaScene extends Scene {
       ? Vec2.create(spawn.x, spawn.y)
       : Vec2.zero();
 
-    console.log(builtMap);
-
     const { player } = await spawnPlayer(ctx, spawnPosition);
     await spawnSword(ctx, player);
     // await spawnProps(ctx, spawnPosition);

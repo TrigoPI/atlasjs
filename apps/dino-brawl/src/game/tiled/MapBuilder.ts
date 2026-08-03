@@ -153,8 +153,6 @@ export class MapBuilder {
       groupPath: layer.groupPath,
     });
 
-    console.log(layer, sortingLayer);
-
     const buckets: Map<ResolvedTileset, ResolvedCell[]> =
       groupCellsByTileset(layer);
 
