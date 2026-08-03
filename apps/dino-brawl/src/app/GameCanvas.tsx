@@ -13,7 +13,11 @@ import { WebGPURenderer } from "@atlasjs/nebula-webgpu";
 import { ArenaScene } from "../game";
 import { throttle } from "../utils";
 
-export function GameCanvas({ onFps }: { onFps: (fps: number) => void }): ReactNode {
+export function GameCanvas({
+  onFps,
+}: {
+  onFps: (fps: number) => void;
+}): ReactNode {
   const mountRef: RefObject<HTMLCanvasElement | null> =
     useRef<HTMLCanvasElement | null>(null);
 
@@ -31,7 +35,9 @@ export function GameCanvas({ onFps }: { onFps: (fps: number) => void }): ReactNo
     const nexusPlugin: NexusPlugin = new NexusPlugin();
     const gameplayPlugin: GameplayPlugin = new GameplayPlugin();
 
-    const rapierWorld: RapierPhysicsWorld = new RapierPhysicsWorld({ unitsPerMeter: 100 });
+    const rapierWorld: RapierPhysicsWorld = new RapierPhysicsWorld({
+      unitsPerMeter: 100,
+    });
     const inertiaPlugin: InertialPlugin = new InertialPlugin(rapierWorld);
 
     const inputPlugin: InputPlugin = new InputPlugin({
@@ -49,7 +55,7 @@ export function GameCanvas({ onFps }: { onFps: (fps: number) => void }): ReactNo
     engine.start().then(() => {
       const cb = throttle((frame: number) => {
         onFps(Math.round(frame));
-      }, 250);
+      }, 500);
 
       engine.scene.set(new ArenaScene(cb));
     });

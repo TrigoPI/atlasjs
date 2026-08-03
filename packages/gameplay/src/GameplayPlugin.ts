@@ -24,6 +24,7 @@ import {
   TileMapRenderSystem,
   TransformPropagationSystem,
 } from "./systems";
+import { OccluderRenderSystem } from "./systems/OccluderRenderSystem";
 
 import {
   Animator,
@@ -40,6 +41,7 @@ import {
   Transform2D,
   WorldTransform2D,
 } from "./components";
+import { OccluderStrip } from "./components/OccluderStrip";
 
 export class GameplayPlugin extends Plugin {
   private readonly logger: Logger;
@@ -76,6 +78,7 @@ export class GameplayPlugin extends Plugin {
     const sortingLayers: SortingLayers = new SortingLayers();
     const spriteRenderSystem: SpriteRenderSystem = new SpriteRenderSystem(nebula, sortingLayers);
     const tileMapRenderSystem: TileMapRenderSystem = new TileMapRenderSystem(nebula, sortingLayers);
+    const occluderRenderSystem: OccluderRenderSystem = new OccluderRenderSystem(nebula, sortingLayers);
     const playerInputSystem: PlayerInputSystem = new PlayerInputSystem(engine.services);
     const animatorSystem: AnimatorSystem = new AnimatorSystem();
     const cameraManager: CameraManager = new CameraManager(nebula);
@@ -95,7 +98,8 @@ export class GameplayPlugin extends Plugin {
       .defineComponent(Camera)
       .defineComponent(Grid)
       .defineComponent(TileMap)
-      .defineComponent(TileMapRenderer);
+      .defineComponent(TileMapRenderer)
+      .defineComponent(OccluderStrip);
 
     this.unsubscribers.push(
       world.onRemove(PhysicsBodyRef, (_entity: Entity, ref: PhysicsBodyRef) => {
@@ -124,6 +128,10 @@ export class GameplayPlugin extends Plugin {
 
       world.onRemove(TileMap, (entity: Entity) => {
         tileMapRenderSystem.unmount(entity);
+      }),
+
+      world.onRemove(OccluderStrip, (entity: Entity) => {
+        occluderRenderSystem.unmount(entity);
       }),
 
       world.onRemove(Transform2D, (entity: Entity) => {
@@ -213,6 +221,14 @@ export class GameplayPlugin extends Plugin {
         name: "gameplay:tilemap-render",
         stage: "PreRender",
         after: "gameplay:sprite-render",
+      }),
+    );
+
+    this.handles.push(
+      registerSystem(render, world, occluderRenderSystem, {
+        name: "gameplay:occluder-render",
+        stage: "PreRender",
+        after: "gameplay:tilemap-render",
       }),
     );
 

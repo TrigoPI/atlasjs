@@ -7,6 +7,7 @@ import { createLogger, type Logger } from "@atlasjs/utils";
 import type { TiledDocument } from "./TiledDocument";
 import type { TiledAssetResolver } from "./TiledAssetResolver";
 import type { SortingLayerInput } from "./sorting";
+import { ingestOccluders, isOccluderRegion } from "./ingestOccluders";
 
 import {
   type Sprite as SpriteType,
@@ -98,16 +99,24 @@ export class MapBuilder {
     nexus.addComponent(grid, Grid, new Vec2(doc.tileWidth, doc.tileHeight));
 
     const tileLayers: Entity[] = [];
+    const occluderLayerEntities: Entity[] = [];
     for (const layer of doc.tileLayers) {
+      const layerEntities: Entity[] = [];
       MapBuilder.buildTileLayer(
         nexus,
         grid,
         layer,
         tilesets,
         options,
-        tileLayers,
+        layerEntities,
         logger,
       );
+
+      tileLayers.push(...layerEntities);
+
+      if (layer.name.startsWith("occluders")) {
+        occluderLayerEntities.push(...layerEntities);
+      }
     }
 
     const objectEntities: Entity[] = [];
@@ -120,7 +129,10 @@ export class MapBuilder {
         points[point.name] = worldPointFromObject(point, options.scale);
       } else if (obj.kind === "rect") {
         const rect: RectObject = obj;
-        colliders.push(colliderFromRect(rect, options.scale));
+
+        if (!isOccluderRegion(rect)) {
+          colliders.push(colliderFromRect(rect, options.scale));
+        }
       } else {
         const entity: Entity | undefined = MapBuilder.buildTileObject(
           nexus,
@@ -130,10 +142,25 @@ export class MapBuilder {
           options.scale,
           logger,
         );
+
         if (entity !== undefined) {
           objectEntities.push(entity);
         }
       }
+    }
+
+    ingestOccluders(
+      nexus,
+      grid,
+      doc,
+      occluderLayerEntities,
+      options.scale,
+      objectLayer,
+      logger,
+    );
+
+    for (const layerEntity of occluderLayerEntities) {
+      nexus.removeComponent(layerEntity, TileMapRenderer);
     }
 
     return { grid, tileLayers, objectEntities, colliders, points };
