@@ -1,4 +1,4 @@
-# Occluders & Y-sort — Design (v1)
+# occluders & Y-sort — Design (v1)
 
 > **Statut : 🚧 implémenté (branche `claude/feat/occluder-ysort`, stagé non commité) — review whole-branch (opus) « merge-ready » ; vérif navigateur (§12) en attente.**
 >
@@ -47,22 +47,22 @@ Chaque strip rejoint la couche `ySorted` **comme une unité triable de plus**, �
 | 1   | Unité de tri                       | **1 strip = 1 ligne de base distincte** ; découpe par profondeur, jamais par hauteur                                                                      |
 | 2   | Représentation d'un strip au rendu | **Réutilise `TileMapNode`** (nebula), pas de nouvelle primitive                                                                                           |
 | 3   | Représentation en ECS              | **Backend 1 : 1 entité légère `OccluderStrip` par strip** (statique, bakée). Backend 2 « flyweight zéro-entité » → backlog                                |
-| 4   | Authoring                          | **Peinture tuile-par-tuile** (calque `Occluders`) + **rectangles** sur un object layer `OccluderRegions` (intention : groupe + `footY`)                   |
+| 4   | Authoring                          | **Peinture tuile-par-tuile** (calque `occluders`) + **rectangles** sur un object layer `occluder_regions` (intention : groupe + `footY`)                  |
 | 5   | `footY`                            | Bord **bas** du rectangle, en **monde** (l'artiste contrôle la ligne de pieds)                                                                            |
 | 6   | Frontière packages                 | **Composant + système + baker pur** dans `@atlasjs/gameplay` ; **ingestion Tiled** dans l'app dino-brawl (`MapBuilder`)                                   |
 | 7   | Couche de tri                      | Les strips vont sur **`Entities`** (la seule `ySorted`), `sortingOrder` en départage                                                                      |
 | 8   | Collider                           | **Seam** documenté (rectangle partagé), **création hors périmètre v1** (→ feature collisions)                                                             |
-| A   | Calque `Occluders`                 | **Input du baker**, **pas** rendu comme un calque plat (sinon double dessin)                                                                              |
+| A   | Calque `occluders`                 | **Input du baker**, **pas** rendu comme un calque plat (sinon double dessin)                                                                              |
 | B   | Espace des instances               | **Local** (cellOrigin), échelle via la `Transform2D` du Grid (comme `TileMap`) ; `footY` **monde** stocké dans le composant                               |
 | C   | Culling                            | **v1 : pas de culling** (strips peu nombreux et statiques) ; instances jamais reconstruites ; AABB-cull par strip → backlog                               |
-| D   | Multi-tileset                      | **Plusieurs calques `Occluders_*`** (1 tileset chacun, par catégorie : arbres, murs…) ; un rectangle → **1 strip par tileset contributeur**, même `footY` |
+| D   | Multi-tileset                      | **Plusieurs calques `occluders_*`** (1 tileset chacun, par catégorie : arbres, murs…) ; un rectangle → **1 strip par tileset contributeur**, même `footY` |
 
 ## 4. Authoring dans Tiled
 
 Deux calques, aucune image toute faite (le rectangle **ne référence aucun sprite** — le visuel, c'est les tuiles peintes dessous) :
 
-1. **Un ou plusieurs calques de tuiles `Occluders_*`** (un par tileset/catégorie : `Occluders_Trees`, `Occluders_Walls`… — rappel : un `TileMap` = **un** tileset, décision D) — l'artiste peint tuile par tuile. Ce sont les **pixels**. Ces calques sont **consommés par le baker**, pas rendus à plat (décision A).
-2. **Calque d'objets `OccluderRegions`** — **un rectangle par occluder** (outil _Insert Rectangle_, zéro image). C'est l'**intention** : « ce paquet de tuiles = un bloc, ancré ici ». Un rect est reconnu comme région d'occluder ssi son `groupPath` inclut `"OccluderRegions"` **ou** qu'il porte la propriété `occluder = true`. Propriétés custom :
+1. **Un ou plusieurs calques de tuiles `occluders_*`** (un par tileset/catégorie : `occluders_trees`, `occluders_walls`… — rappel : un `TileMap` = **un** tileset, décision D) — l'artiste peint tuile par tuile. Ce sont les **pixels**. Ces calques sont **consommés par le baker**, pas rendus à plat (décision A).
+2. **Calque d'objets `occluder_regions`** — **un rectangle par occluder** (outil _Insert Rectangle_, zéro image). C'est l'**intention** : « ce paquet de tuiles = un bloc, ancré ici ». Un rect est reconnu comme région d'occluder ssi son `groupPath` inclut `"occluder_regions"` **ou** qu'il porte la propriété `occluder = true`. Propriétés custom :
    - `slice`: `"single"` (défaut) — le rectangle = **1 strip**, `footY` = bord bas du rectangle. Pour murs droits, arbres, bâtiments à empreinte 1-profonde.
    - `slice`: `"perRow"` — **1 strip par rangée de cellules** (`cy`), `footY` = bas de chaque rangée. Pour les structures qui **reculent en profondeur** (barrière nord-sud, diagonale, L).
    - `sortingLayer`: nom de couche (défaut `"Entities"`).
@@ -77,8 +77,8 @@ Le [Tiled bridge existant](../../apps/dino-brawl/src/game/tiled/) fait déjà le
 
 **Extension de `MapBuilder`** (app) :
 
-1. Les calques de tuiles `Occluders_*` fournissent les cellules (`getTile(cx, cy)` → index) + leur `TileSet` (un par tileset/catégorie, décision D).
-2. Pour chaque rectangle de `OccluderRegions`, **et pour chaque calque occluder ayant ≥1 tuile sous le rectangle**, appeler le baker pur du package → **un `OccluderStrip` par (rectangle × tileset contributeur)**, tous au **même `footY`** :
+1. Les calques de tuiles `occluders_*` fournissent les cellules (`getTile(cx, cy)` → index) + leur `TileSet` (un par tileset/catégorie, décision D).
+2. Pour chaque rectangle de `occluder_regions`, **et pour chaque calque occluder ayant ≥1 tuile sous le rectangle**, appeler le baker pur du package → **un `OccluderStrip` par (rectangle × tileset contributeur)**, tous au **même `footY`** :
 
 ```ts
 // @atlasjs/gameplay — helper pur, sans dépendance Tiled
@@ -91,7 +91,7 @@ export interface OccluderRegion {
 
 export function bakeOccluderStrips(
   region: OccluderRegion,
-  layer: TileMap, // le calque "Occluders"
+  layer: TileMap, // le calque "occluders"
   cellSize: Vec2,
   cellGap: Vec2,
 ): OccluderStripData[]; // { footY, tiles: TileInstance[], sortingLayer }
@@ -132,7 +132,7 @@ for (
 
 > **Multi-tileset** : un occluder mixant deux tilesets (ex. bâtiment mur + porte) donne **2 strips au même `footY`** — ils se trient ensemble (l'ordre entre strips de même `footY` est départagé par `batchKey`, acceptable v1).
 
-**Cas de bord** : rectangle sans tuile → warn + skip ; tuile `Occluders` sous **aucun** rectangle → warn dev (non rendue) ; rectangles chevauchants → une tuile est attribuée au **premier** rectangle (le non-chevauchement est une convention d'authoring).
+**Cas de bord** : rectangle sans tuile → warn + skip ; tuile `occluders` sous **aucun** rectangle → warn dev (non rendue) ; rectangles chevauchants → une tuile est attribuée au **premier** rectangle (le non-chevauchement est une convention d'authoring).
 
 ## 6. Modèle de données
 
@@ -240,7 +240,7 @@ Le socle est déjà là et le rectangle est **conçu pour servir les deux featur
 - `Collider2D` **sans** `RigidBody2D` = **géométrie statique** : `PhysicsPushSystem.update` query `Collider2D.without(PhysicsColliderRef)` → `createCollider(desc, undefined)` ([`PhysicsPushSystem.ts:77`](../../packages/gameplay/src/systems/PhysicsPushSystem.ts)).
 - La collision layer `Occluder` est **déjà définie** (`defineCollisionLayers("Player", "Occluder")`, [`config.ts:15`](../../apps/dino-brawl/src/game/config.ts)) et le joueur `collidesWith: Occluder` ([`spawnPlayer.ts`](../../apps/dino-brawl/src/game/spawn/spawnPlayer.ts)).
 
-→ Quand on fera les collisions : ajouter un `Collider2D` (`layer = Occluder`, `shape` = le rectangle) sur l'entité occluder (ou une entité collider dédiée). **Ce doc ne crée pas ces colliders** — il garantit juste que le rectangle `OccluderRegions` est le point d'ancrage partagé.
+→ Quand on fera les collisions : ajouter un `Collider2D` (`layer = Occluder`, `shape` = le rectangle) sur l'entité occluder (ou une entité collider dédiée). **Ce doc ne crée pas ces colliders** — il garantit juste que le rectangle `occluder_regions` est le point d'ancrage partagé.
 
 ## 10. Coordonnées & échelle
 
@@ -255,7 +255,7 @@ Le socle est déjà là et le rectangle est **conçu pour servir les deux featur
 | `OccluderStrip`                                             | `gameplay/src/components/`                                   | défini dans `GameplayPlugin.install` ; token identité dans `scripting/components/`       |
 | `OccluderRenderSystem`                                      | `gameplay/src/systems/`                                      | `registerSystem(render, …, { stage: "PreRender" })` + `world.onRemove(OccluderStrip, …)` |
 | `bakeOccluderStrips` + `OccluderRegion`/`OccluderStripData` | `gameplay/src/systems/utils/` (ou `gameplay/src/occluders/`) | — (helper pur)                                                                           |
-| Ingestion `OccluderRegions` + calque `Occluders`            | `apps/dino-brawl/src/game/tiled/MapBuilder.ts`               | dans `MapBuilder.build`, après les calques de tuiles                                     |
+| Ingestion `occluder_regions` + calque `occluders`           | `apps/dino-brawl/src/game/tiled/MapBuilder.ts`               | dans `MapBuilder.build`, après les calques de tuiles                                     |
 
 Barrels : réexport de `OccluderStrip` / `OccluderRenderSystem` / `bakeOccluderStrips` depuis `gameplay/src/index.ts`.
 
@@ -270,10 +270,10 @@ Barrels : réexport de `OccluderStrip` / `OccluderRenderSystem` / `bakeOccluderS
 ## 13. Non-objectifs / backlog (v2+)
 
 - **Backend 2 — flyweight zéro-entité** : baker qui émet une sort key par strip directement dans le `RenderQueue`, strips d'une même bande de profondeur groupés en un node. À faire **uniquement** si le profiler réclame (milliers d'occluders intercalés). Même modèle mental → migration mécanique.
-- **Détection automatique** (composantes connexes du calque `Occluders`, base = cellule du bas de chaque colonne) — sans rectangle, mais arbres / structures nord-sud imprécis, et pas de colliders offerts. Mode de secours.
+- **Détection automatique** (composantes connexes du calque `occluders`, base = cellule du bas de chaque colonne) — sans rectangle, mais arbres / structures nord-sud imprécis, et pas de colliders offerts. Mode de secours.
 - **Slicing riche** : `perCol`, diagonale, per-cell ; anchor/foot configurable par tuile.
 - **Atlas / texture-array occluder partagé** : les tilesets multiples (arbres, murs…) sont supportés en v1 (1 strip par tileset), mais chaque tileset = un `batchKey` → quelques draws de plus. Les fusionner en un atlas / texture-array = optimisation batching (non nécessaire à l'échelle actuelle).
 - **Création des `Collider2D` occluder** (feature **collisions**, ce doc n'expose que le seam).
 - **Culling des strips** : AABB par strip contre le viewport (reporté v1 — peu de strips).
-- **Occluders dynamiques** (rebuild d'instances / `footY` quand l'objet bouge) — v1 suppose **statique**.
+- **occluders dynamiques** (rebuild d'instances / `footY` quand l'objet bouge) — v1 suppose **statique**.
 - **Sérialisation** : `slice`/`sortingLayer` déjà portés par les propriétés Tiled ; un `AssetRef` d'occluder → dépend du JSON tilemap (backlog tilemap).
