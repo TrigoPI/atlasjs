@@ -13,11 +13,16 @@ describe("GameplayPlugin — occluders", () => {
 
   it("définit le composant OccluderStrip (addComponent ne throw pas)", async () => {
     const h: Harness = await createHarness();
-    const texture: Texture2D = { width: 64, height: 64 } as unknown as Texture2D;
+    const texture: Texture2D = {
+      width: 64,
+      height: 64,
+    } as unknown as Texture2D;
     const tiles: TileInstance[] = [
       { x: 0, y: 0, width: 32, height: 32, uvRect: new Vec4(0, 0, 0.5, 0.5) },
     ];
     const e = h.world.createEntity();
-    expect(() => h.world.addComponent(e, OccluderStrip, 12, tiles, texture, "Entities")).not.toThrow();
+    expect(() =>
+      h.world.addComponent(e, OccluderStrip, 12, tiles, texture, "Entities"),
+    ).not.toThrow();
   });
 });

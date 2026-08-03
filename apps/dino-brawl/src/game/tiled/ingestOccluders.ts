@@ -1,5 +1,10 @@
 import { Vec2 } from "@atlasjs/math";
-import { OccluderStrip, TileMap, Transform2D, bakeOccluderStrips } from "@atlasjs/gameplay";
+import {
+  OccluderStrip,
+  TileMap,
+  Transform2D,
+  bakeOccluderStrips,
+} from "@atlasjs/gameplay";
 import type { OccluderRegion, OccluderStripData } from "@atlasjs/gameplay";
 import { colliderFromRect } from "./mapMath";
 import type { MapCollider } from "./mapMath";
@@ -11,7 +16,8 @@ import type { Entity, NexusWorld } from "@atlasjs/nexus";
 export function isOccluderRegion(obj: ResolvedObject): obj is RectObject {
   return (
     obj.kind === "rect" &&
-    (obj.groupPath.includes("OccluderRegions") || obj.properties.occluder === true)
+    (obj.groupPath.includes("OccluderRegions") ||
+      obj.properties.occluder === true)
   );
 }
 
@@ -33,7 +39,8 @@ export function ingestOccluders(
       continue;
     }
     const world: MapCollider = colliderFromRect(obj, scale);
-    const slice: "single" | "perRow" = obj.properties.slice === "perRow" ? "perRow" : "single";
+    const slice: "single" | "perRow" =
+      obj.properties.slice === "perRow" ? "perRow" : "single";
     const sortingLayer: string =
       typeof obj.properties.sortingLayer === "string"
         ? obj.properties.sortingLayer
@@ -58,7 +65,10 @@ export function ingestOccluders(
   }
 
   for (const layerEntity of occluderLayerEntities) {
-    const tileMap: TileMap | undefined = nexus.getComponent(layerEntity, TileMap);
+    const tileMap: TileMap | undefined = nexus.getComponent(
+      layerEntity,
+      TileMap,
+    );
     if (tileMap === undefined) {
       continue;
     }
@@ -69,7 +79,12 @@ export function ingestOccluders(
 
     let stripCount: number = 0;
     for (const region of regions) {
-      const strips: OccluderStripData[] = bakeOccluderStrips(region, tileMap, cellSize, cellGap);
+      const strips: OccluderStripData[] = bakeOccluderStrips(
+        region,
+        tileMap,
+        cellSize,
+        cellGap,
+      );
       if (strips.length === 0) {
         continue;
       }
@@ -95,6 +110,8 @@ export function ingestOccluders(
       );
     }
 
-    logger.info(`Occluder layer baked into strips (${regions.length} regions).`);
+    logger.info(
+      `Occluder layer baked into strips (${regions.length} regions).`,
+    );
   }
 }

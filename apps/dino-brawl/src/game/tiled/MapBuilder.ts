@@ -145,7 +145,15 @@ export class MapBuilder {
       }
     }
 
-    ingestOccluders(nexus, grid, doc, occluderLayerEntities, options.scale, objectLayer, logger);
+    ingestOccluders(
+      nexus,
+      grid,
+      doc,
+      occluderLayerEntities,
+      options.scale,
+      objectLayer,
+      logger,
+    );
     for (const layerEntity of occluderLayerEntities) {
       nexus.removeComponent(layerEntity, TileMapRenderer);
     }

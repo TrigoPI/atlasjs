@@ -9,7 +9,11 @@ import { OccluderStrip } from "../src/components/OccluderStrip";
 import { SortingLayers } from "../src/rendering/SortingLayers";
 import { OccluderRenderSystem } from "../src/systems/OccluderRenderSystem";
 
-function setup(): { world: NexusWorld; scene: SceneGraph; system: OccluderRenderSystem } {
+function setup(): {
+  world: NexusWorld;
+  scene: SceneGraph;
+  system: OccluderRenderSystem;
+} {
   const world: NexusWorld = new NexusWorld();
   world.defineComponent(WorldTransform2D).defineComponent(OccluderStrip);
 
@@ -31,7 +35,9 @@ function texture(): Texture2D {
 }
 
 function tiles(): TileInstance[] {
-  return [{ x: 0, y: 0, width: 32, height: 32, uvRect: new Vec4(0, 0, 0.25, 0.25) }];
+  return [
+    { x: 0, y: 0, width: 32, height: 32, uvRect: new Vec4(0, 0, 0.25, 0.25) },
+  ];
 }
 
 describe("OccluderRenderSystem", () => {
@@ -41,7 +47,9 @@ describe("OccluderRenderSystem", () => {
     const tex: Texture2D = texture();
 
     const e: Entity = world.createEntity();
-    world.addComponent(e, WorldTransform2D).matrix.fromTransform2D(new Transform2D());
+    world
+      .addComponent(e, WorldTransform2D)
+      .matrix.fromTransform2D(new Transform2D());
     world.addComponent(e, OccluderStrip, 160, strip, tex, "Entities");
 
     system.update({ world, dt: 0 });
@@ -72,7 +80,9 @@ describe("OccluderRenderSystem", () => {
     const strip: TileInstance[] = tiles();
 
     const e: Entity = world.createEntity();
-    world.addComponent(e, WorldTransform2D).matrix.fromTransform2D(new Transform2D());
+    world
+      .addComponent(e, WorldTransform2D)
+      .matrix.fromTransform2D(new Transform2D());
     world.addComponent(e, OccluderStrip, 5, strip, texture(), "Entities");
 
     system.update({ world, dt: 0 });
@@ -85,7 +95,9 @@ describe("OccluderRenderSystem", () => {
   it("unmount retire le node de la scène", () => {
     const { world, scene, system } = setup();
     const e: Entity = world.createEntity();
-    world.addComponent(e, WorldTransform2D).matrix.fromTransform2D(new Transform2D());
+    world
+      .addComponent(e, WorldTransform2D)
+      .matrix.fromTransform2D(new Transform2D());
     world.addComponent(e, OccluderStrip, 5, tiles(), texture(), "Entities");
 
     system.update({ world, dt: 0 });

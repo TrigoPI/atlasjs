@@ -48,7 +48,12 @@ export function bakeOccluderStrips(
       y: origin.y,
       width: rect.width,
       height: rect.height,
-      uvRect: new Vec4(rect.x / texW, rect.y / texH, rect.width / texW, rect.height / texH),
+      uvRect: new Vec4(
+        rect.x / texW,
+        rect.y / texH,
+        rect.width / texW,
+        rect.height / texH,
+      ),
     };
   };
 
@@ -71,7 +76,14 @@ export function bakeOccluderStrips(
     if (tiles.length === 0) {
       return [];
     }
-    return [{ footY: region.footYWorld, tiles, texture, sortingLayer: region.sortingLayer }];
+    return [
+      {
+        footY: region.footYWorld,
+        tiles,
+        texture,
+        sortingLayer: region.sortingLayer,
+      },
+    ];
   }
 
   const out: OccluderStripData[] = [];

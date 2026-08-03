@@ -8,8 +8,14 @@ import { bakeOccluderStrips } from "../src/occluders/bakeOccluderStrips";
 import type { OccluderRegion } from "../src/occluders/bakeOccluderStrips";
 
 function makeTileSet(): TileSet {
-  const texture: Texture2D = { width: 128, height: 128 } as unknown as Texture2D;
-  const tile: Tile = { index: 0, sprite: { rect: new Bound(0, 0, 32, 32) } } as unknown as Tile;
+  const texture: Texture2D = {
+    width: 128,
+    height: 128,
+  } as unknown as Texture2D;
+  const tile: Tile = {
+    index: 0,
+    sprite: { rect: new Bound(0, 0, 32, 32) },
+  } as unknown as Tile;
   return {
     texture,
     tryGetTile: (_index: number): Tile => tile,
@@ -33,15 +39,30 @@ describe("bakeOccluderStrips", () => {
       rowFootYWorld: (cy: number): number => (cy + 1) * 64,
     };
 
-    const strips = bakeOccluderStrips(region, layer, new Vec2(32, 32), new Vec2(0, 0));
+    const strips = bakeOccluderStrips(
+      region,
+      layer,
+      new Vec2(32, 32),
+      new Vec2(0, 0),
+    );
 
     expect(strips.length).toBe(1);
     expect(strips[0].footY).toBe(320);
     expect(strips[0].tiles.length).toBe(4);
     expect(strips[0].sortingLayer).toBe("Entities");
     expect(strips[0].texture).toBe(layer.tileset.texture);
-    expect(strips[0].tiles[0]).toMatchObject({ x: 0, y: 0, width: 32, height: 32 });
-    expect(strips[0].tiles[0].uvRect).toMatchObject({ x: 0, y: 0, z: 0.25, w: 0.25 });
+    expect(strips[0].tiles[0]).toMatchObject({
+      x: 0,
+      y: 0,
+      width: 32,
+      height: 32,
+    });
+    expect(strips[0].tiles[0].uvRect).toMatchObject({
+      x: 0,
+      y: 0,
+      z: 0.25,
+      w: 0.25,
+    });
   });
 
   it("slice 'perRow' → un strip par rangée non vide, footY = rowFootYWorld(cy)", () => {
@@ -58,7 +79,12 @@ describe("bakeOccluderStrips", () => {
       rowFootYWorld: (cy: number): number => (cy + 1) * 64,
     };
 
-    const strips = bakeOccluderStrips(region, layer, new Vec2(32, 32), new Vec2(0, 0));
+    const strips = bakeOccluderStrips(
+      region,
+      layer,
+      new Vec2(32, 32),
+      new Vec2(0, 0),
+    );
 
     expect(strips.length).toBe(2);
     expect(strips[0].footY).toBe(64);
@@ -76,6 +102,8 @@ describe("bakeOccluderStrips", () => {
       footYWorld: 10,
       rowFootYWorld: (cy: number): number => cy,
     };
-    expect(bakeOccluderStrips(region, layer, new Vec2(32, 32), new Vec2(0, 0))).toEqual([]);
+    expect(
+      bakeOccluderStrips(region, layer, new Vec2(32, 32), new Vec2(0, 0)),
+    ).toEqual([]);
   });
 });
