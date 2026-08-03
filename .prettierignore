@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+out/
+coverage/
+.turbo/
+
+# Generated / tooling scratch
+graphify-out/
+.superpowers/
+
+# Lockfiles & logs
+pnpm-lock.yaml
+*.log
