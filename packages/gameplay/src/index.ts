@@ -14,11 +14,11 @@ export * from "./GameplayPlugin";
 
 export { OccluderStrip } from "./components/OccluderStrip";
 export { OccluderRenderSystem } from "./systems/OccluderRenderSystem";
-export { bakeOccluderStrips } from "./occluders/bakeOccluderStrips";
+export { bakeOccluderStrips } from "./systems/utils/bake-occluder-strips";
 export type {
   OccluderRegion,
   OccluderStripData,
-} from "./occluders/bakeOccluderStrips";
+} from "./systems/utils/bake-occluder-strips";
 
 export type {
   CollisionLayer,

@@ -1,10 +1,10 @@
 import { Vec2, Vec4 } from "@atlasjs/math";
 import type { Bound } from "@atlasjs/math";
 import type { TileInstance, Texture2D } from "@atlasjs/nebula";
-import type { Tile } from "../assets/Tile";
-import type { TileMap } from "../components/TileMap";
-import { cellOrigin } from "../systems/utils/tilemap-geometry";
-import type { CellOrigin, CellRange } from "../systems/utils/tilemap-geometry";
+import type { Tile } from "../../assets/Tile";
+import type { TileMap } from "../../components/TileMap";
+import { cellOrigin } from "./tilemap-geometry";
+import type { CellOrigin, CellRange } from "./tilemap-geometry";
 
 export type OccluderStripData = {
   footY: number;

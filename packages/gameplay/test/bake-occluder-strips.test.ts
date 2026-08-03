@@ -4,8 +4,8 @@ import type { Texture2D } from "@atlasjs/nebula";
 import { TileMap } from "../src/components/TileMap";
 import type { TileSet } from "../src/assets/TileSet";
 import type { Tile } from "../src/assets/Tile";
-import { bakeOccluderStrips } from "../src/occluders/bakeOccluderStrips";
-import type { OccluderRegion } from "../src/occluders/bakeOccluderStrips";
+import { bakeOccluderStrips } from "../src/systems/utils/bake-occluder-strips";
+import type { OccluderRegion } from "../src/systems/utils/bake-occluder-strips";
 
 function makeTileSet(): TileSet {
   const texture: Texture2D = {
