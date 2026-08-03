@@ -1,6 +1,6 @@
 # occluders & Y-sort — Design (v1)
 
-> **Statut : 🚧 implémenté (branche `claude/feat/occluder-ysort`, stagé non commité) — review whole-branch (opus) « merge-ready » ; vérif navigateur (§12) en attente.**
+> **Statut : ✅ implémenté & vérifié navigateur (branche `claude/feat/occluder-ysort`).**
 >
 > Fait suite au Y-sort (`SortingLayers` + mode `ySorted`, cf. [`../rendering/renderer-architecture.md`](../rendering/renderer-architecture.md)) et au système TileSet/TileMap ([`tilemap.md`](tilemap.md)). Prépare la feature **collisions** : le même rectangle Tiled sert de ligne de tri _et_ de boîte de collision.
 
