@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Permettre à un occluder plus grand qu'une tuile (mur, arbre, bâtiment) de passer correctement devant *ou* derrière le joueur, en le décomposant en **strips** triés par `footY` dans la couche `ySorted`.
+**Goal:** Permettre à un occluder plus grand qu'une tuile (mur, arbre, bâtiment) de passer correctement devant _ou_ derrière le joueur, en le décomposant en **strips** triés par `footY` dans la couche `ySorted`.
 
 **Architecture :** Un occluder = N strips (bandes à une seule ligne de pieds). Chaque strip = un `TileMapNode` (sac d'instances de tuiles, 1 texture, 1 sort key = `footY`) posé dans la couche `Entities` (ySorted), à côté du joueur. Package `@atlasjs/gameplay` : composant `OccluderStrip` + `OccluderRenderSystem` + baker pur `bakeOccluderStrips`. App dino-brawl : `MapBuilder` étendu ingère le calque `Occluders_*` + les rectangles `OccluderRegions`.
 
@@ -43,10 +43,12 @@
 ### Task 1: Composant `OccluderStrip`
 
 **Files:**
+
 - Create: `packages/gameplay/src/components/OccluderStrip.ts`
 - Test: `packages/gameplay/test/occluder-strip.test.ts`
 
 **Interfaces:**
+
 - Consumes: `TileInstance`, `Texture2D` (`@atlasjs/nebula`).
 - Produces: `class OccluderStrip { footY: number; tiles: TileInstance[]; texture: Texture2D; sortingLayer: string; constructor(footY, tiles, texture, sortingLayer) }`.
 
@@ -61,11 +63,19 @@ import { OccluderStrip } from "../src/components/OccluderStrip";
 
 describe("OccluderStrip", () => {
   it("stocke footY, tiles, texture et sortingLayer", () => {
-    const texture: Texture2D = { width: 128, height: 128 } as unknown as Texture2D;
+    const texture: Texture2D = {
+      width: 128,
+      height: 128,
+    } as unknown as Texture2D;
     const tiles: TileInstance[] = [
       { x: 0, y: 0, width: 32, height: 32, uvRect: new Vec4(0, 0, 0.25, 0.25) },
     ];
-    const strip: OccluderStrip = new OccluderStrip(160, tiles, texture, "Entities");
+    const strip: OccluderStrip = new OccluderStrip(
+      160,
+      tiles,
+      texture,
+      "Entities",
+    );
     expect(strip.footY).toBe(160);
     expect(strip.tiles).toBe(tiles);
     expect(strip.texture).toBe(texture);
@@ -115,6 +125,7 @@ Expected: PASS.
 ```bash
 git add packages/gameplay/src/components/OccluderStrip.ts packages/gameplay/test/occluder-strip.test.ts
 ```
+
 → Laisse stagé. L'utilisateur review et commit.
 
 ---
@@ -122,10 +133,12 @@ git add packages/gameplay/src/components/OccluderStrip.ts packages/gameplay/test
 ### Task 2: Baker pur `bakeOccluderStrips`
 
 **Files:**
+
 - Create: `packages/gameplay/src/occluders/bakeOccluderStrips.ts`
 - Test: `packages/gameplay/test/bake-occluder-strips.test.ts`
 
 **Interfaces:**
+
 - Consumes: `TileMap` (`../components/TileMap` — `getTile(cx,cy): number` renvoie -1 si vide, `tileset.tryGetTile(index): Tile | undefined`, `tileset.texture`), `cellOrigin`/`CellRange` (`../systems/utils/tilemap-geometry`), `Vec2`/`Vec4`/`Bound` (`@atlasjs/math`), `TileInstance`/`Texture2D` (`@atlasjs/nebula`).
 - Produces:
   - `interface OccluderStripData { footY: number; tiles: TileInstance[]; texture: Texture2D; sortingLayer: string }`
@@ -146,8 +159,14 @@ import { bakeOccluderStrips } from "../src/occluders/bakeOccluderStrips";
 import type { OccluderRegion } from "../src/occluders/bakeOccluderStrips";
 
 function makeTileSet(): TileSet {
-  const texture: Texture2D = { width: 128, height: 128 } as unknown as Texture2D;
-  const tile: Tile = { index: 0, sprite: { rect: new Bound(0, 0, 32, 32) } } as unknown as Tile;
+  const texture: Texture2D = {
+    width: 128,
+    height: 128,
+  } as unknown as Texture2D;
+  const tile: Tile = {
+    index: 0,
+    sprite: { rect: new Bound(0, 0, 32, 32) },
+  } as unknown as Tile;
   return {
     texture,
     tryGetTile: (_index: number): Tile => tile,
@@ -171,14 +190,24 @@ describe("bakeOccluderStrips", () => {
       rowFootYWorld: (cy: number): number => (cy + 1) * 64,
     };
 
-    const strips = bakeOccluderStrips(region, layer, new Vec2(32, 32), new Vec2(0, 0));
+    const strips = bakeOccluderStrips(
+      region,
+      layer,
+      new Vec2(32, 32),
+      new Vec2(0, 0),
+    );
 
     expect(strips.length).toBe(1);
     expect(strips[0].footY).toBe(320);
     expect(strips[0].tiles.length).toBe(4);
     expect(strips[0].sortingLayer).toBe("Entities");
     expect(strips[0].texture).toBe(layer.tileset.texture);
-    expect(strips[0].tiles[0]).toMatchObject({ x: 0, y: 0, width: 32, height: 32 });
+    expect(strips[0].tiles[0]).toMatchObject({
+      x: 0,
+      y: 0,
+      width: 32,
+      height: 32,
+    });
   });
 
   it("slice 'perRow' → un strip par rangée non vide, footY = rowFootYWorld(cy)", () => {
@@ -195,7 +224,12 @@ describe("bakeOccluderStrips", () => {
       rowFootYWorld: (cy: number): number => (cy + 1) * 64,
     };
 
-    const strips = bakeOccluderStrips(region, layer, new Vec2(32, 32), new Vec2(0, 0));
+    const strips = bakeOccluderStrips(
+      region,
+      layer,
+      new Vec2(32, 32),
+      new Vec2(0, 0),
+    );
 
     expect(strips.length).toBe(2);
     expect(strips[0].footY).toBe(64);
@@ -213,7 +247,9 @@ describe("bakeOccluderStrips", () => {
       footYWorld: 10,
       rowFootYWorld: (cy: number): number => cy,
     };
-    expect(bakeOccluderStrips(region, layer, new Vec2(32, 32), new Vec2(0, 0))).toEqual([]);
+    expect(
+      bakeOccluderStrips(region, layer, new Vec2(32, 32), new Vec2(0, 0)),
+    ).toEqual([]);
   });
 });
 ```
@@ -277,7 +313,12 @@ export function bakeOccluderStrips(
       y: origin.y,
       width: rect.width,
       height: rect.height,
-      uvRect: new Vec4(rect.x / texW, rect.y / texH, rect.width / texW, rect.height / texH),
+      uvRect: new Vec4(
+        rect.x / texW,
+        rect.y / texH,
+        rect.width / texW,
+        rect.height / texH,
+      ),
     };
   };
 
@@ -300,7 +341,14 @@ export function bakeOccluderStrips(
     if (tiles.length === 0) {
       return [];
     }
-    return [{ footY: region.footYWorld, tiles, texture, sortingLayer: region.sortingLayer }];
+    return [
+      {
+        footY: region.footYWorld,
+        tiles,
+        texture,
+        sortingLayer: region.sortingLayer,
+      },
+    ];
   }
 
   const out: OccluderStripData[] = [];
@@ -336,10 +384,12 @@ git add packages/gameplay/src/occluders/bakeOccluderStrips.ts packages/gameplay/
 ### Task 3: `OccluderRenderSystem`
 
 **Files:**
+
 - Create: `packages/gameplay/src/systems/OccluderRenderSystem.ts`
 - Test: `packages/gameplay/test/occluder-render-system.test.ts`
 
 **Interfaces:**
+
 - Consumes: `OccluderStrip` (Task 1), `WorldTransform2D` (`../components/WorldTransform2D`), `applySortFields` (`../rendering/applySortFields`), `SortingLayers` (`../rendering`), `TileMapNode`/`NebulaRenderer` (`@atlasjs/nebula`), `Vec2` (`@atlasjs/math`), `Entity`/`NexusSystem`/`NexusSystemContext` (`@atlasjs/nexus`).
 - Produces: `class OccluderRenderSystem implements NexusSystem { constructor(nebula, sortingLayers); update(ctx); unmount(entity) }`.
 
@@ -358,7 +408,11 @@ import { OccluderStrip } from "../src/components/OccluderStrip";
 import { SortingLayers } from "../src/rendering/SortingLayers";
 import { OccluderRenderSystem } from "../src/systems/OccluderRenderSystem";
 
-function setup(): { world: NexusWorld; scene: SceneGraph; system: OccluderRenderSystem } {
+function setup(): {
+  world: NexusWorld;
+  scene: SceneGraph;
+  system: OccluderRenderSystem;
+} {
   const world: NexusWorld = new NexusWorld();
   world.defineComponent(WorldTransform2D).defineComponent(OccluderStrip);
 
@@ -380,7 +434,9 @@ function texture(): Texture2D {
 }
 
 function tiles(): TileInstance[] {
-  return [{ x: 0, y: 0, width: 32, height: 32, uvRect: new Vec4(0, 0, 0.25, 0.25) }];
+  return [
+    { x: 0, y: 0, width: 32, height: 32, uvRect: new Vec4(0, 0, 0.25, 0.25) },
+  ];
 }
 
 describe("OccluderRenderSystem", () => {
@@ -390,7 +446,9 @@ describe("OccluderRenderSystem", () => {
     const tex: Texture2D = texture();
 
     const e: Entity = world.createEntity();
-    world.addComponent(e, WorldTransform2D).matrix.fromTransform2D(new Transform2D());
+    world
+      .addComponent(e, WorldTransform2D)
+      .matrix.fromTransform2D(new Transform2D());
     world.addComponent(e, OccluderStrip, 160, strip, tex, "Entities");
 
     system.update({ world, dt: 0 });
@@ -421,7 +479,9 @@ describe("OccluderRenderSystem", () => {
     const strip: TileInstance[] = tiles();
 
     const e: Entity = world.createEntity();
-    world.addComponent(e, WorldTransform2D).matrix.fromTransform2D(new Transform2D());
+    world
+      .addComponent(e, WorldTransform2D)
+      .matrix.fromTransform2D(new Transform2D());
     world.addComponent(e, OccluderStrip, 5, strip, texture(), "Entities");
 
     system.update({ world, dt: 0 });
@@ -434,7 +494,9 @@ describe("OccluderRenderSystem", () => {
   it("unmount retire le node de la scène", () => {
     const { world, scene, system } = setup();
     const e: Entity = world.createEntity();
-    world.addComponent(e, WorldTransform2D).matrix.fromTransform2D(new Transform2D());
+    world
+      .addComponent(e, WorldTransform2D)
+      .matrix.fromTransform2D(new Transform2D());
     world.addComponent(e, OccluderStrip, 5, tiles(), texture(), "Entities");
 
     system.update({ world, dt: 0 });
@@ -462,11 +524,7 @@ import { applySortFields } from "../rendering/applySortFields";
 import type { SortingLayers } from "../rendering";
 import { OccluderStrip } from "../components/OccluderStrip";
 import { WorldTransform2D } from "../components/WorldTransform2D";
-import type {
-  Entity,
-  NexusSystem,
-  NexusSystemContext,
-} from "@atlasjs/nexus";
+import type { Entity, NexusSystem, NexusSystemContext } from "@atlasjs/nexus";
 
 export class OccluderRenderSystem implements NexusSystem {
   private readonly nebula: NebulaRenderer;
@@ -540,11 +598,13 @@ git add packages/gameplay/src/systems/OccluderRenderSystem.ts packages/gameplay/
 ### Task 4: Câblage `GameplayPlugin` + barrel
 
 **Files:**
+
 - Modify: `packages/gameplay/src/GameplayPlugin.ts`
 - Modify: `packages/gameplay/src/index.ts`
 - Test: `packages/gameplay/test/occluder-plugin.test.ts`
 
 **Interfaces:**
+
 - Consumes: `OccluderStrip` (Task 1), `OccluderRenderSystem` (Task 3), `bakeOccluderStrips`/`OccluderRegion`/`OccluderStripData` (Task 2), `createHarness` (`./helpers/harness`), `NEBULA_RENDERER` (`@atlasjs/nebula`).
 - Produces: barrel exports depuis `@atlasjs/gameplay` ; le plugin définit `OccluderStrip`, enregistre `OccluderRenderSystem` au stage `PreRender` de la lane `render`, et branche `onRemove(OccluderStrip → system.unmount)`.
 
@@ -567,12 +627,17 @@ describe("GameplayPlugin — occluders", () => {
 
   it("définit le composant OccluderStrip (addComponent ne throw pas)", async () => {
     const h: Harness = await createHarness();
-    const texture: Texture2D = { width: 64, height: 64 } as unknown as Texture2D;
+    const texture: Texture2D = {
+      width: 64,
+      height: 64,
+    } as unknown as Texture2D;
     const tiles: TileInstance[] = [
       { x: 0, y: 0, width: 32, height: 32, uvRect: new Vec4(0, 0, 0.5, 0.5) },
     ];
     const e = h.world.createEntity();
-    expect(() => h.world.addComponent(e, OccluderStrip, 12, tiles, texture, "Entities")).not.toThrow();
+    expect(() =>
+      h.world.addComponent(e, OccluderStrip, 12, tiles, texture, "Entities"),
+    ).not.toThrow();
   });
 });
 ```
@@ -590,12 +655,16 @@ Dans `packages/gameplay/src/index.ts`, à côté des exports de `TileMap`/`TileM
 export { OccluderStrip } from "./components/OccluderStrip";
 export { OccluderRenderSystem } from "./systems/OccluderRenderSystem";
 export { bakeOccluderStrips } from "./occluders/bakeOccluderStrips";
-export type { OccluderRegion, OccluderStripData } from "./occluders/bakeOccluderStrips";
+export type {
+  OccluderRegion,
+  OccluderStripData,
+} from "./occluders/bakeOccluderStrips";
 ```
 
 - [ ] **Step 4 : Câbler le plugin**
 
 Dans `packages/gameplay/src/GameplayPlugin.ts` :
+
 1. Importer `OccluderStrip` et `OccluderRenderSystem`.
 2. Repérer l'enregistrement de `TileMapRenderSystem` (cherche `new TileMapRenderSystem`). Il y a : (a) un `world.defineComponent(...)` pour les composants tilemap, (b) une construction `new TileMapRenderSystem(nebula, sortingLayers)`, (c) un `registerSystem(render, world, tileMapRenderSystem, { stage: "PreRender" })`, (d) un `world.onRemove(TileMap, (e) => tileMapRenderSystem.unmount(e))`.
 3. Ajouter les lignes **symétriques** juste après, en réutilisant les mêmes `nebula`, `sortingLayers`, `world`, `render` :
@@ -608,7 +677,9 @@ const occluderRenderSystem: OccluderRenderSystem = new OccluderRenderSystem(
   sortingLayers,
 );
 registerSystem(render, world, occluderRenderSystem, { stage: "PreRender" });
-world.onRemove(OccluderStrip, (entity: Entity): void => occluderRenderSystem.unmount(entity));
+world.onRemove(OccluderStrip, (entity: Entity): void =>
+  occluderRenderSystem.unmount(entity),
+);
 ```
 
 (Si `defineComponent` est chaîné — `world.defineComponent(A).defineComponent(B)` — ajoute `.defineComponent(OccluderStrip)` à la chaîne au lieu d'une ligne séparée.)
@@ -634,10 +705,12 @@ git add packages/gameplay/src/GameplayPlugin.ts packages/gameplay/src/index.ts p
 ### Task 5: Ingestion Tiled dans `MapBuilder` + vérif navigateur
 
 **Files:**
+
 - Create: `apps/dino-brawl/src/game/tiled/ingestOccluders.ts`
 - Modify: `apps/dino-brawl/src/game/tiled/MapBuilder.ts`
 
 **Interfaces:**
+
 - Consumes: `bakeOccluderStrips`/`OccluderRegion`/`OccluderStripData`/`OccluderStrip` (`@atlasjs/gameplay`), `Transform2D`/`Vec2` (`@atlasjs/gameplay` ou `@atlasjs/math` selon les imports existants de `MapBuilder`), `TileMap`/`TileMapRenderer`/`Grid` (`@atlasjs/gameplay`), `colliderFromRect` (`./mapMath`), `RectObject`/`ResolvedObject` (`./resolved.types`), `TiledDocument` (`./TiledDocument`), `NexusWorld`/`Entity` (`@atlasjs/nexus`).
 - Produces: `function ingestOccluders(nexus, grid, doc, occluderLayerEntities, scale, sortingLayer, logger): void`.
 
@@ -660,7 +733,8 @@ import type { Entity, NexusWorld } from "@atlasjs/nexus";
 export function isOccluderRegion(obj: ResolvedObject): obj is RectObject {
   return (
     obj.kind === "rect" &&
-    (obj.groupPath.includes("OccluderRegions") || obj.properties.occluder === true)
+    (obj.groupPath.includes("OccluderRegions") ||
+      obj.properties.occluder === true)
   );
 }
 
@@ -682,7 +756,8 @@ export function ingestOccluders(
       continue;
     }
     const world: MapCollider = colliderFromRect(obj, scale);
-    const slice: "single" | "perRow" = obj.properties.slice === "perRow" ? "perRow" : "single";
+    const slice: "single" | "perRow" =
+      obj.properties.slice === "perRow" ? "perRow" : "single";
     const sortingLayer: string =
       typeof obj.properties.sortingLayer === "string"
         ? obj.properties.sortingLayer
@@ -707,12 +782,20 @@ export function ingestOccluders(
   }
 
   for (const layerEntity of occluderLayerEntities) {
-    const tileMap: TileMap | undefined = nexus.getComponent(layerEntity, TileMap);
+    const tileMap: TileMap | undefined = nexus.getComponent(
+      layerEntity,
+      TileMap,
+    );
     if (tileMap === undefined) {
       continue;
     }
     for (const region of regions) {
-      const strips: OccluderStripData[] = bakeOccluderStrips(region, tileMap, cellSize, cellGap);
+      const strips: OccluderStripData[] = bakeOccluderStrips(
+        region,
+        tileMap,
+        cellSize,
+        cellGap,
+      );
       if (strips.length === 0) {
         continue;
       }
@@ -730,7 +813,9 @@ export function ingestOccluders(
         nexus.setParent(entity, grid);
       }
     }
-    logger.info(`Occluder layer baked into strips (${regions.length} regions).`);
+    logger.info(
+      `Occluder layer baked into strips (${regions.length} regions).`,
+    );
   }
 }
 ```
@@ -746,7 +831,15 @@ Dans `apps/dino-brawl/src/game/tiled/MapBuilder.ts` :
 ```ts
 const tileLayers: Entity[] = [];
 for (const layer of doc.tileLayers) {
-  MapBuilder.buildTileLayer(nexus, grid, layer, tilesets, options, tileLayers, logger);
+  MapBuilder.buildTileLayer(
+    nexus,
+    grid,
+    layer,
+    tilesets,
+    options,
+    tileLayers,
+    logger,
+  );
 }
 ```
 
@@ -757,7 +850,15 @@ const tileLayers: Entity[] = [];
 const occluderLayerEntities: Entity[] = [];
 for (const layer of doc.tileLayers) {
   const layerEntities: Entity[] = [];
-  MapBuilder.buildTileLayer(nexus, grid, layer, tilesets, options, layerEntities, logger);
+  MapBuilder.buildTileLayer(
+    nexus,
+    grid,
+    layer,
+    tilesets,
+    options,
+    layerEntities,
+    logger,
+  );
   tileLayers.push(...layerEntities);
   if (layer.name.startsWith("Occluders")) {
     occluderLayerEntities.push(...layerEntities);
@@ -787,7 +888,15 @@ par :
 4. **Ingérer les occluders puis retirer le rendu à plat**, juste avant le `return { grid, ... }` :
 
 ```ts
-ingestOccluders(nexus, grid, doc, occluderLayerEntities, options.scale, objectLayer, logger);
+ingestOccluders(
+  nexus,
+  grid,
+  doc,
+  occluderLayerEntities,
+  options.scale,
+  objectLayer,
+  logger,
+);
 for (const layerEntity of occluderLayerEntities) {
   nexus.removeComponent(layerEntity, TileMapRenderer);
 }
@@ -805,7 +914,7 @@ Dans la map dino-brawl (`.tmj`) : ajouter un calque de tuiles `Occluders_Walls` 
 - [ ] **Step 5 : Vérif navigateur (obligatoire)**
 
 1. Lancer le serveur dev dino-brawl via `preview_start` (config `.claude/launch.json`, créer si absente).
-2. **Redémarrer le serveur** plutôt que compter sur le HMR (le HMR sert parfois une scène périmée — cf. mémoire *sandbox browser-verify gotchas*).
+2. **Redémarrer le serveur** plutôt que compter sur le HMR (le HMR sert parfois une scène périmée — cf. mémoire _sandbox browser-verify gotchas_).
 3. Stasher la scène pour inspection : ajouter temporairement `window.__scene = nebula.scene` (ou équivalent) et vérifier via `javascript_tool` que des `TileMapNode` d'occluder sont présents avec le bon `sortPrimary` (= `footY`).
 4. Déplacer le joueur **au-dessus** de la base du mur → le joueur passe **derrière** ; **en dessous** → **devant**. Faire une capture (`computer screenshot`) des deux états.
 5. Vérifier `read_console_messages` / `preview_logs` : aucune erreur.
@@ -817,6 +926,7 @@ Expected: le joueur s'intercale correctement devant/derrière le mur ; aucun éc
 ```bash
 git add apps/dino-brawl/src/game/tiled/ingestOccluders.ts apps/dino-brawl/src/game/tiled/MapBuilder.ts
 ```
+
 (Ajouter aussi le `.tmj` modifié si la région de test doit rester.)
 
 ---
@@ -824,6 +934,7 @@ git add apps/dino-brawl/src/game/tiled/ingestOccluders.ts apps/dino-brawl/src/ga
 ## Self-Review
 
 **1. Couverture du spec :**
+
 - §2 modèle (strips par `footY`, sac = `TileMapNode`) → Task 3.
 - §3 décisions (Backend 1 entités, `single`/`perRow`, réutilise `TileMapNode`) → Tasks 1-3-5.
 - §4-5 authoring + baker Tiled → Tasks 2 + 5.

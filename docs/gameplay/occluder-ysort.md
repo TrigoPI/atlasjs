@@ -2,7 +2,7 @@
 
 > **Statut : 🚧 implémenté (branche `claude/feat/occluder-ysort`, stagé non commité) — review whole-branch (opus) « merge-ready » ; vérif navigateur (§12) en attente.**
 >
-> Fait suite au Y-sort (`SortingLayers` + mode `ySorted`, cf. [`../rendering/renderer-architecture.md`](../rendering/renderer-architecture.md)) et au système TileSet/TileMap ([`tilemap.md`](tilemap.md)). Prépare la feature **collisions** : le même rectangle Tiled sert de ligne de tri *et* de boîte de collision.
+> Fait suite au Y-sort (`SortingLayers` + mode `ySorted`, cf. [`../rendering/renderer-architecture.md`](../rendering/renderer-architecture.md)) et au système TileSet/TileMap ([`tilemap.md`](tilemap.md)). Prépare la feature **collisions** : le même rectangle Tiled sert de ligne de tri _et_ de boîte de collision.
 
 ## 1. Problème
 
@@ -15,7 +15,7 @@ Ce modèle binaire ne sait pas gérer un objet **plus grand qu'une tuile** qui d
 
 Cause racine :
 
-> **Un calque de tilemap = 1 draw = 1 seule sort key.** Un gros objet qui vit *dans* un calque ne peut pas, par construction, se trier individuellement contre le joueur.
+> **Un calque de tilemap = 1 draw = 1 seule sort key.** Un gros objet qui vit _dans_ un calque ne peut pas, par construction, se trier individuellement contre le joueur.
 
 ## 2. Modèle
 
@@ -31,43 +31,43 @@ Chaque strip rejoint la couche `ySorted` **comme une unité triable de plus**, �
 
 > **Un strip, c'est un `TileMapNode`** — la classe exacte qu'un calque de sol utilise déjà (un sac d'instances de tuiles, 1 texture, 1 sort key). La seule différence avec un calque : ses `instances` = les tuiles d'**un** rectangle, et sa sort key = **`footY`** (mode `ySorted`) au lieu de l'origine du calque.
 
-| | Calque de sol *(existant)* | Occluder strip *(nouveau)* |
-| --- | --- | --- |
-| nodes | 1 `TileMapNode` / calque | 1 `TileMapNode` / **strip** |
-| `node.instances` | toutes les cellules visibles | les tuiles **du rectangle** |
-| `worldY` du tri | origine du calque *(manual)* | **`footY`** du rectangle *(ySorted)* |
-| recalcul | chaque frame (culling) | **une fois** (statique) |
+|                  | Calque de sol _(existant)_   | Occluder strip _(nouveau)_           |
+| ---------------- | ---------------------------- | ------------------------------------ |
+| nodes            | 1 `TileMapNode` / calque     | 1 `TileMapNode` / **strip**          |
+| `node.instances` | toutes les cellules visibles | les tuiles **du rectangle**          |
+| `worldY` du tri  | origine du calque _(manual)_ | **`footY`** du rectangle _(ySorted)_ |
+| recalcul         | chaque frame (culling)       | **une fois** (statique)              |
 
-**Séparation à graver :** *nombre de tuiles affichées (instances)* ≠ *nombre de décisions de tri (sort key)*. Beaucoup d'instances, **une seule** sort key par strip.
+**Séparation à graver :** _nombre de tuiles affichées (instances)_ ≠ _nombre de décisions de tri (sort key)_. Beaucoup d'instances, **une seule** sort key par strip.
 
 ## 3. Décisions d'architecture
 
-| # | Décision | Choix retenu |
-| --- | --- | --- |
-| 1 | Unité de tri | **1 strip = 1 ligne de base distincte** ; découpe par profondeur, jamais par hauteur |
-| 2 | Représentation d'un strip au rendu | **Réutilise `TileMapNode`** (nebula), pas de nouvelle primitive |
-| 3 | Représentation en ECS | **Backend 1 : 1 entité légère `OccluderStrip` par strip** (statique, bakée). Backend 2 « flyweight zéro-entité » → backlog |
-| 4 | Authoring | **Peinture tuile-par-tuile** (calque `Occluders`) + **rectangles** sur un object layer `OccluderRegions` (intention : groupe + `footY`) |
-| 5 | `footY` | Bord **bas** du rectangle, en **monde** (l'artiste contrôle la ligne de pieds) |
-| 6 | Frontière packages | **Composant + système + baker pur** dans `@atlasjs/gameplay` ; **ingestion Tiled** dans l'app dino-brawl (`MapBuilder`) |
-| 7 | Couche de tri | Les strips vont sur **`Entities`** (la seule `ySorted`), `sortingOrder` en départage |
-| 8 | Collider | **Seam** documenté (rectangle partagé), **création hors périmètre v1** (→ feature collisions) |
-| A | Calque `Occluders` | **Input du baker**, **pas** rendu comme un calque plat (sinon double dessin) |
-| B | Espace des instances | **Local** (cellOrigin), échelle via la `Transform2D` du Grid (comme `TileMap`) ; `footY` **monde** stocké dans le composant |
-| C | Culling | **v1 : pas de culling** (strips peu nombreux et statiques) ; instances jamais reconstruites ; AABB-cull par strip → backlog |
-| D | Multi-tileset | **Plusieurs calques `Occluders_*`** (1 tileset chacun, par catégorie : arbres, murs…) ; un rectangle → **1 strip par tileset contributeur**, même `footY` |
+| #   | Décision                           | Choix retenu                                                                                                                                              |
+| --- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Unité de tri                       | **1 strip = 1 ligne de base distincte** ; découpe par profondeur, jamais par hauteur                                                                      |
+| 2   | Représentation d'un strip au rendu | **Réutilise `TileMapNode`** (nebula), pas de nouvelle primitive                                                                                           |
+| 3   | Représentation en ECS              | **Backend 1 : 1 entité légère `OccluderStrip` par strip** (statique, bakée). Backend 2 « flyweight zéro-entité » → backlog                                |
+| 4   | Authoring                          | **Peinture tuile-par-tuile** (calque `Occluders`) + **rectangles** sur un object layer `OccluderRegions` (intention : groupe + `footY`)                   |
+| 5   | `footY`                            | Bord **bas** du rectangle, en **monde** (l'artiste contrôle la ligne de pieds)                                                                            |
+| 6   | Frontière packages                 | **Composant + système + baker pur** dans `@atlasjs/gameplay` ; **ingestion Tiled** dans l'app dino-brawl (`MapBuilder`)                                   |
+| 7   | Couche de tri                      | Les strips vont sur **`Entities`** (la seule `ySorted`), `sortingOrder` en départage                                                                      |
+| 8   | Collider                           | **Seam** documenté (rectangle partagé), **création hors périmètre v1** (→ feature collisions)                                                             |
+| A   | Calque `Occluders`                 | **Input du baker**, **pas** rendu comme un calque plat (sinon double dessin)                                                                              |
+| B   | Espace des instances               | **Local** (cellOrigin), échelle via la `Transform2D` du Grid (comme `TileMap`) ; `footY` **monde** stocké dans le composant                               |
+| C   | Culling                            | **v1 : pas de culling** (strips peu nombreux et statiques) ; instances jamais reconstruites ; AABB-cull par strip → backlog                               |
+| D   | Multi-tileset                      | **Plusieurs calques `Occluders_*`** (1 tileset chacun, par catégorie : arbres, murs…) ; un rectangle → **1 strip par tileset contributeur**, même `footY` |
 
 ## 4. Authoring dans Tiled
 
 Deux calques, aucune image toute faite (le rectangle **ne référence aucun sprite** — le visuel, c'est les tuiles peintes dessous) :
 
 1. **Un ou plusieurs calques de tuiles `Occluders_*`** (un par tileset/catégorie : `Occluders_Trees`, `Occluders_Walls`… — rappel : un `TileMap` = **un** tileset, décision D) — l'artiste peint tuile par tuile. Ce sont les **pixels**. Ces calques sont **consommés par le baker**, pas rendus à plat (décision A).
-2. **Calque d'objets `OccluderRegions`** — **un rectangle par occluder** (outil *Insert Rectangle*, zéro image). C'est l'**intention** : « ce paquet de tuiles = un bloc, ancré ici ». Un rect est reconnu comme région d'occluder ssi son `groupPath` inclut `"OccluderRegions"` **ou** qu'il porte la propriété `occluder = true`. Propriétés custom :
+2. **Calque d'objets `OccluderRegions`** — **un rectangle par occluder** (outil _Insert Rectangle_, zéro image). C'est l'**intention** : « ce paquet de tuiles = un bloc, ancré ici ». Un rect est reconnu comme région d'occluder ssi son `groupPath` inclut `"OccluderRegions"` **ou** qu'il porte la propriété `occluder = true`. Propriétés custom :
    - `slice`: `"single"` (défaut) — le rectangle = **1 strip**, `footY` = bord bas du rectangle. Pour murs droits, arbres, bâtiments à empreinte 1-profonde.
    - `slice`: `"perRow"` — **1 strip par rangée de cellules** (`cy`), `footY` = bas de chaque rangée. Pour les structures qui **reculent en profondeur** (barrière nord-sud, diagonale, L).
    - `sortingLayer`: nom de couche (défaut `"Entities"`).
 
-Le rectangle porte **trois infos, zéro sprite** : (1) *quelles* tuiles vont ensemble, (2) *où* est le `footY`, (3) *(futur)* la boîte de collision.
+Le rectangle porte **trois infos, zéro sprite** : (1) _quelles_ tuiles vont ensemble, (2) _où_ est le `footY`, (3) _(futur)_ la boîte de collision.
 
 > Pourquoi pas 100 % automatique ? Un empilement vertical de tuiles peut être « un mur haut » (hauteur) **ou** « une barrière qui recule » (profondeur) — tuiles identiques, seule l'intention diffère. Le rectangle porte cette intention. La détection auto par composantes connexes → backlog (§13).
 
@@ -83,18 +83,18 @@ Le [Tiled bridge existant](../../apps/dino-brawl/src/game/tiled/) fait déjà le
 ```ts
 // @atlasjs/gameplay — helper pur, sans dépendance Tiled
 export interface OccluderRegion {
-  bounds: Bound;          // en cellules (cx0, cy0, cxSpan, cySpan)
-  footYWorld: number;     // bord bas du rectangle, en monde (= colliderFromRect(rect).y + .height)
+  bounds: Bound; // en cellules (cx0, cy0, cxSpan, cySpan)
+  footYWorld: number; // bord bas du rectangle, en monde (= colliderFromRect(rect).y + .height)
   slice: "single" | "perRow";
-  sortingLayer: string;   // défaut "Entities"
+  sortingLayer: string; // défaut "Entities"
 }
 
 export function bakeOccluderStrips(
   region: OccluderRegion,
-  layer: TileMap,          // le calque "Occluders"
+  layer: TileMap, // le calque "Occluders"
   cellSize: Vec2,
   cellGap: Vec2,
-): OccluderStripData[];    // { footY, tiles: TileInstance[], sortingLayer }
+): OccluderStripData[]; // { footY, tiles: TileInstance[], sortingLayer }
 ```
 
 3. Pour chaque `OccluderStripData`, spawn une **entité enfant du Grid** portant `OccluderStrip` + `Transform2D` (identité → hérite l'échelle du Grid via `TransformPropagationSystem`, comme un `TileMap`).
@@ -102,13 +102,27 @@ export function bakeOccluderStrips(
 **Boucle du baker** (miroir de `TileMapRenderSystem.rebuildInstances`, mais bornée au rectangle) :
 
 ```ts
-for (let cy = region.bounds.cy0; cy < region.bounds.cy0 + region.bounds.cySpan; cy++) {
-  for (let cx = region.bounds.cx0; cx < region.bounds.cx0 + region.bounds.cxSpan; cx++) {
+for (
+  let cy = region.bounds.cy0;
+  cy < region.bounds.cy0 + region.bounds.cySpan;
+  cy++
+) {
+  for (
+    let cx = region.bounds.cx0;
+    cx < region.bounds.cx0 + region.bounds.cxSpan;
+    cx++
+  ) {
     const index = layer.getTile(cx, cy);
-    if (index < 0) continue;                       // cellule vide
+    if (index < 0) continue; // cellule vide
     const rect = layer.tileset.getTile(index).sprite.rect;
-    const origin = cellOrigin(cellSize, cellGap, cx, cy);  // LOCAL
-    tiles.push({ x: origin.x, y: origin.y, width: rect.width, height: rect.height, uvRect });
+    const origin = cellOrigin(cellSize, cellGap, cx, cy); // LOCAL
+    tiles.push({
+      x: origin.x,
+      y: origin.y,
+      width: rect.width,
+      height: rect.height,
+      uvRect,
+    });
   }
 }
 ```
@@ -125,12 +139,17 @@ for (let cy = region.bounds.cy0; cy < region.bounds.cy0 + region.bounds.cySpan; 
 ```ts
 // gameplay/src/components/OccluderStrip.ts — LEVEL 1 (donnée bakée, statique)
 export class OccluderStrip {
-  public footY: number;          // ligne de pieds, en MONDE (sert le tri)
-  public tiles: TileInstance[];  // le "sac" — instances en espace LOCAL du Grid
-  public texture: Texture2D;     // le tileset
-  public sortingLayer: string;   // couche ySorted (défaut "Entities")
+  public footY: number; // ligne de pieds, en MONDE (sert le tri)
+  public tiles: TileInstance[]; // le "sac" — instances en espace LOCAL du Grid
+  public texture: Texture2D; // le tileset
+  public sortingLayer: string; // couche ySorted (défaut "Entities")
 
-  public constructor(footY: number, tiles: TileInstance[], texture: Texture2D, sortingLayer: string) {
+  public constructor(
+    footY: number,
+    tiles: TileInstance[],
+    texture: Texture2D,
+    sortingLayer: string,
+  ) {
     this.footY = footY;
     this.tiles = tiles;
     this.texture = texture;
@@ -155,33 +174,39 @@ export class OccluderRenderSystem implements NexusSystem {
   ) {}
 
   public update({ world }: NexusSystemContext): void {
-    world.query(WorldTransform2D, OccluderStrip).each((entity, worldTransform, strip) => {
-      const node = this.resolveNode(entity, strip);   // instances bakées au montage
+    world
+      .query(WorldTransform2D, OccluderStrip)
+      .each((entity, worldTransform, strip) => {
+        const node = this.resolveNode(entity, strip); // instances bakées au montage
 
-      // transform (échelle du Grid) : même décomposition lossy que TileMapRenderSystem.syncNode
-      const position = worldTransform.getPosition(this.positionScratch);
-      const scale = worldTransform.getScale(this.scaleScratch);
-      node.setPosition(position.x, position.y).setRotation(worldTransform.getRotation());
-      node.setScale(scale.x, scale.y);
+        // transform (échelle du Grid) : même décomposition lossy que TileMapRenderSystem.syncNode
+        const position = worldTransform.getPosition(this.positionScratch);
+        const scale = worldTransform.getScale(this.scaleScratch);
+        node
+          .setPosition(position.x, position.y)
+          .setRotation(worldTransform.getRotation());
+        node.setScale(scale.x, scale.y);
 
-      applySortFields(
-        node,
-        this.sortingLayers,
-        strip.sortingLayer,   // "Entities" (ySorted)
-        0,                    // sortingOrder — départage 2 strips au même footY
-        strip.footY,          // ← LA sort key : footY (monde)
-      );
-    });
+        applySortFields(
+          node,
+          this.sortingLayers,
+          strip.sortingLayer, // "Entities" (ySorted)
+          0, // sortingOrder — départage 2 strips au même footY
+          strip.footY, // ← LA sort key : footY (monde)
+        );
+      });
   }
 
-  public unmount(entity: Entity): void { /* node.removeFromParent() + nodes.delete */ }
+  public unmount(entity: Entity): void {
+    /* node.removeFromParent() + nodes.delete */
+  }
 
   private resolveNode(entity: Entity, strip: OccluderStrip): TileMapNode {
     let node = this.nodes.get(entity);
     if (node === undefined) {
       node = new TileMapNode();
       node.texture = strip.texture;
-      node.instances = strip.tiles;   // ← le sac, posé UNE fois (statique)
+      node.instances = strip.tiles; // ← le sac, posé UNE fois (statique)
       this.nebula.scene.addChild(node);
       this.nodes.set(entity, node);
     }
@@ -194,7 +219,7 @@ export class OccluderRenderSystem implements NexusSystem {
 - **Culling (décision C)** : **reporté en v1** (strips peu nombreux et statiques) — tous les strips sont soumis chaque frame ; l'AABB-cull par strip (`getCameraViewport()` → `node.visible`) est au backlog. Instances jamais reconstruites.
 - **Lifecycle** : `world.onRemove(OccluderStrip, e => system.unmount(e))` dans `GameplayPlugin` (même pattern que `SpriteRenderSystem`/`TileMapRenderSystem`).
 
-### 7.1 Batching (perf) — pourquoi ce n'est *pas* 1 draw call par strip
+### 7.1 Batching (perf) — pourquoi ce n'est _pas_ 1 draw call par strip
 
 `RenderQueue.flush()` fusionne les commandes **contiguës** partageant `kind` + `batchKey` en **un seul draw call** (`isSameRun`, [`RenderQueue.ts:63`](../../packages/nebula/src/renderers/RenderQueue.ts)). Pour les strips : `kind = "tilemap"`, `batchKey = texture|sampler|blend`.
 
@@ -225,12 +250,12 @@ Le socle est déjà là et le rectangle est **conçu pour servir les deux featur
 
 ## 11. Enregistrements & placement
 
-| Élément | Package / dossier | Enregistrement |
-| --- | --- | --- |
-| `OccluderStrip` | `gameplay/src/components/` | défini dans `GameplayPlugin.install` ; token identité dans `scripting/components/` |
-| `OccluderRenderSystem` | `gameplay/src/systems/` | `registerSystem(render, …, { stage: "PreRender" })` + `world.onRemove(OccluderStrip, …)` |
-| `bakeOccluderStrips` + `OccluderRegion`/`OccluderStripData` | `gameplay/src/systems/utils/` (ou `gameplay/src/occluders/`) | — (helper pur) |
-| Ingestion `OccluderRegions` + calque `Occluders` | `apps/dino-brawl/src/game/tiled/MapBuilder.ts` | dans `MapBuilder.build`, après les calques de tuiles |
+| Élément                                                     | Package / dossier                                            | Enregistrement                                                                           |
+| ----------------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| `OccluderStrip`                                             | `gameplay/src/components/`                                   | défini dans `GameplayPlugin.install` ; token identité dans `scripting/components/`       |
+| `OccluderRenderSystem`                                      | `gameplay/src/systems/`                                      | `registerSystem(render, …, { stage: "PreRender" })` + `world.onRemove(OccluderStrip, …)` |
+| `bakeOccluderStrips` + `OccluderRegion`/`OccluderStripData` | `gameplay/src/systems/utils/` (ou `gameplay/src/occluders/`) | — (helper pur)                                                                           |
+| Ingestion `OccluderRegions` + calque `Occluders`            | `apps/dino-brawl/src/game/tiled/MapBuilder.ts`               | dans `MapBuilder.build`, après les calques de tuiles                                     |
 
 Barrels : réexport de `OccluderStrip` / `OccluderRenderSystem` / `bakeOccluderStrips` depuis `gameplay/src/index.ts`.
 

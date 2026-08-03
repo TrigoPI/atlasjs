@@ -6,20 +6,20 @@ import type { TileMap } from "../components/TileMap";
 import { cellOrigin } from "../systems/utils/tilemap-geometry";
 import type { CellOrigin, CellRange } from "../systems/utils/tilemap-geometry";
 
-export interface OccluderStripData {
+export type OccluderStripData = {
   footY: number;
   tiles: TileInstance[];
   texture: Texture2D;
   sortingLayer: string;
-}
+};
 
-export interface OccluderRegion {
+export type OccluderRegion = {
   cellBounds: CellRange;
   slice: "single" | "perRow";
   sortingLayer: string;
   footYWorld: number;
   rowFootYWorld: (cy: number) => number;
-}
+};
 
 export function bakeOccluderStrips(
   region: OccluderRegion,
@@ -34,15 +34,20 @@ export function bakeOccluderStrips(
 
   const instanceAt = (cx: number, cy: number): TileInstance | undefined => {
     const index: number = layer.getTile(cx, cy);
+
     if (index < 0) {
       return undefined;
     }
+
     const tile: Tile | undefined = layer.tileset.tryGetTile(index);
+
     if (tile === undefined) {
       return undefined;
     }
+
     const rect: Bound = tile.sprite.rect;
     const origin: CellOrigin = cellOrigin(cellSize, cellGap, cx, cy);
+
     return {
       x: origin.x,
       y: origin.y,
@@ -65,17 +70,21 @@ export function bakeOccluderStrips(
         tiles.push(inst);
       }
     }
+
     return tiles;
   };
 
   if (region.slice === "single") {
     const tiles: TileInstance[] = [];
+
     for (let cy: number = bounds.cyMin; cy <= bounds.cyMax; cy++) {
       tiles.push(...rowTiles(cy));
     }
+
     if (tiles.length === 0) {
       return [];
     }
+
     return [
       {
         footY: region.footYWorld,
@@ -89,9 +98,11 @@ export function bakeOccluderStrips(
   const out: OccluderStripData[] = [];
   for (let cy: number = bounds.cyMin; cy <= bounds.cyMax; cy++) {
     const tiles: TileInstance[] = rowTiles(cy);
+
     if (tiles.length === 0) {
       continue;
     }
+
     out.push({
       footY: region.rowFootYWorld(cy),
       tiles,
@@ -99,5 +110,6 @@ export function bakeOccluderStrips(
       sortingLayer: region.sortingLayer,
     });
   }
+
   return out;
 }
