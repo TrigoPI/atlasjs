@@ -11,3 +11,4 @@ export const SpriteRenderer = defineScriptComponent(SpriteRender);
 export type SpriteRenderer = SpriteRender;
 
 export * from "./Transform";
+export * from "./CharacterController";
