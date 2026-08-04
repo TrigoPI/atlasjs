@@ -11,6 +11,8 @@ import { RapierPhysicsQuery } from "./RapierPhyicsQuery";
 import { PhysicsUnitConverter } from "./PhysicsUnitConverter";
 
 import {
+  CharacterController,
+  CharacterControllerOptions,
   Collider,
   ColliderDesc,
   CollisionHandler,
@@ -162,6 +164,16 @@ export class RapierPhysicsWorld implements PhysicsWorld {
 
     this.colliders.delete(handle);
     this.world.removeCollider(collider.rapierCollider, true);
+  }
+
+  public createCharacterController(
+    _options?: CharacterControllerOptions,
+  ): CharacterController {
+    throw new Error("createCharacterController not implemented yet");
+  }
+
+  public destroyCharacterController(_controller: CharacterController): void {
+    throw new Error("destroyCharacterController not implemented yet");
   }
 
   public query(): PhysicsQuery {

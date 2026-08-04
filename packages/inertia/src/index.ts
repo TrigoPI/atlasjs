@@ -1,3 +1,4 @@
+export * from "./CharacterController";
 export * from "./Collider";
 export * from "./CollisionLayers";
 export * from "./InertialPlugin";
