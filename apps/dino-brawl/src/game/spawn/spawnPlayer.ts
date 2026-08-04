@@ -13,6 +13,7 @@ import {
   type ScriptManager,
   type Sprite,
   Animator,
+  CharacterController2D,
   Collider2D,
   Color,
   PlayerInput,
@@ -101,7 +102,9 @@ export async function spawnPlayer(
   });
 
   playerCollider.layer = CollisionLayers.Player;
-  playerCollider.collidesWith = CollisionLayers.Occluder;
+  playerCollider.collidesWith = CollisionLayers.World;
+
+  nexus.addComponent(player, CharacterController2D);
 
   const shadow: Entity = nexus.createEntity();
   const shadowTransform: Transform2D = nexus.addComponent(shadow, Transform2D);
