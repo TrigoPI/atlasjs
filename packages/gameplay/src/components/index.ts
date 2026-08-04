@@ -1,5 +1,7 @@
 export * from "./Animator";
 export * from "./Camera";
+export * from "./CharacterController2D";
+export * from "./CharacterControllerRef";
 export * from "./Collider2D";
 export * from "./Grid";
 export * from "./PhysicsBodyRef";
