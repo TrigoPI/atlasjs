@@ -9,6 +9,7 @@ import { RapierCollider } from "./RapierCollider";
 import { RapierRigidBody } from "./RapierRigidBody";
 import { RapierPhysicsQuery } from "./RapierPhyicsQuery";
 import { PhysicsUnitConverter } from "./PhysicsUnitConverter";
+import { RapierCharacterController } from "./RapierCharacterController";
 
 import {
   CharacterController,
@@ -27,6 +28,7 @@ import {
 export class RapierPhysicsWorld implements PhysicsWorld {
   private readonly bodies: Map<number, RapierRigidBody>;
   private readonly colliders: Map<number, RapierCollider>;
+  private readonly controllers: Set<RapierCharacterController>;
   private readonly options: PhysicsWorldOptions;
 
   private readonly unitsPerMeter: number;
@@ -43,6 +45,7 @@ export class RapierPhysicsWorld implements PhysicsWorld {
     this.converter = new PhysicsUnitConverter(this.unitsPerMeter);
     this.bodies = new Map<number, RapierRigidBody>();
     this.colliders = new Map<number, RapierCollider>();
+    this.controllers = new Set<RapierCharacterController>();
   }
 
   public async init(): Promise<void> {
@@ -167,13 +170,28 @@ export class RapierPhysicsWorld implements PhysicsWorld {
   }
 
   public createCharacterController(
-    _options?: CharacterControllerOptions,
+    options: CharacterControllerOptions = {},
   ): CharacterController {
-    throw new Error("createCharacterController not implemented yet");
+    const raw: RAPIER.KinematicCharacterController =
+      this.world.createCharacterController(options.offset ?? 0.01);
+    raw.setSlideEnabled(options.slide ?? true);
+
+    const wrapper: RapierCharacterController = new RapierCharacterController(
+      raw,
+      this.converter,
+    );
+
+    this.controllers.add(wrapper);
+    return wrapper;
   }
 
-  public destroyCharacterController(_controller: CharacterController): void {
-    throw new Error("destroyCharacterController not implemented yet");
+  public destroyCharacterController(controller: CharacterController): void {
+    if (!(controller instanceof RapierCharacterController)) {
+      throw new Error("Invalid CharacterController");
+    }
+
+    this.world.removeCharacterController(controller.raw);
+    this.controllers.delete(controller);
   }
 
   public query(): PhysicsQuery {
@@ -181,6 +199,10 @@ export class RapierPhysicsWorld implements PhysicsWorld {
   }
 
   public clear(): void {
+    for (const controller of [...this.controllers.values()]) {
+      this.destroyCharacterController(controller);
+    }
+
     for (const collider of [...this.colliders.values()]) {
       this.destroyCollider(collider);
     }

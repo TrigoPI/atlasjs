@@ -1,4 +1,5 @@
 export * from "./PhysicsUnitConverter";
+export * from "./RapierCharacterController";
 export * from "./RapierCollider";
 export * from "./RapierPhyicsQuery";
 export * from "./RapierPhysicsWorld";
