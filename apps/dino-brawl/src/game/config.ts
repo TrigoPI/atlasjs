@@ -12,6 +12,10 @@ export const SortingOrder = {
   Sword: 20,
 } as const;
 
-export const CollisionLayers = defineCollisionLayers("Player", "Occluder");
+export const CollisionLayers = defineCollisionLayers(
+  "Player",
+  "Occluder",
+  "World",
+);
 
 export const MAP_SCALE: number = 2;
