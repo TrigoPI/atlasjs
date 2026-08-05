@@ -12,6 +12,7 @@ import { SpriteLoader, TileSetLoader } from "./assets";
 import { SortingLayers, SORTING_LAYERS } from "./rendering";
 
 import { ScriptManager } from "./scripting";
+import { OccluderRenderSystem } from "./systems/OccluderRenderSystem";
 
 import {
   AnimatorSystem,
@@ -24,11 +25,12 @@ import {
   TileMapRenderSystem,
   TransformPropagationSystem,
 } from "./systems";
-import { OccluderRenderSystem } from "./systems/OccluderRenderSystem";
 
 import {
   Animator,
   Camera,
+  CharacterController2D,
+  CharacterControllerRef,
   Collider2D,
   Grid,
   PhysicsBodyRef,
@@ -93,6 +95,8 @@ export class GameplayPlugin extends Plugin {
       .defineComponent(PhysicsBodyRef)
       .defineComponent(Collider2D)
       .defineComponent(PhysicsColliderRef)
+      .defineComponent(CharacterController2D)
+      .defineComponent(CharacterControllerRef)
       .defineComponent(PlayerInput)
       .defineComponent(Animator)
       .defineComponent(Camera)
@@ -119,6 +123,16 @@ export class GameplayPlugin extends Plugin {
       world.onRemove(Collider2D, (entity: Entity) => {
         if (world.hasComponent(entity, PhysicsColliderRef)) {
           world.removeComponent(entity, PhysicsColliderRef);
+        }
+      }),
+
+      world.onRemove(CharacterControllerRef, (_entity: Entity, ref: CharacterControllerRef) => {
+        inertia.destroyCharacterController(ref.controller);
+      }),
+
+      world.onRemove(CharacterController2D, (entity: Entity) => {
+        if (world.hasComponent(entity, CharacterControllerRef)) {
+          world.removeComponent(entity, CharacterControllerRef);
         }
       }),
 

@@ -8,6 +8,8 @@ import type { TiledDocument } from "./TiledDocument";
 import type { TiledAssetResolver } from "./TiledAssetResolver";
 import type { SortingLayerInput } from "./sorting";
 import { ingestOccluders, isOccluderRegion } from "./ingestOccluders";
+import { ingestColliders } from "./ingestColliders";
+import { CollisionLayers } from "../config";
 
 import {
   type Sprite as SpriteType,
@@ -158,6 +160,8 @@ export class MapBuilder {
       objectLayer,
       logger,
     );
+
+    ingestColliders(nexus, doc, options.scale, CollisionLayers.World, logger);
 
     for (const layerEntity of occluderLayerEntities) {
       nexus.removeComponent(layerEntity, TileMapRenderer);

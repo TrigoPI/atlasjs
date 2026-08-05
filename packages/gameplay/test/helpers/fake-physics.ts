@@ -1,6 +1,8 @@
 import { Vec2 } from "@atlasjs/math";
 
 import {
+  CharacterController,
+  CharacterControllerOptions,
   Collider,
   ColliderDesc,
   CollisionHandler,
@@ -261,9 +263,28 @@ export class FakeCollider implements Collider {
   }
 }
 
+export class FakeCharacterController implements CharacterController {
+  public factor: number;
+  public lastCollider: Collider | null;
+  public lastDesired: Vec2 | null;
+
+  public constructor() {
+    this.factor = 1;
+    this.lastCollider = null;
+    this.lastDesired = null;
+  }
+
+  public computeMovement(collider: Collider, desired: Vec2): Vec2 {
+    this.lastCollider = collider;
+    this.lastDesired = desired.clone();
+    return new Vec2(desired.x * this.factor, desired.y * this.factor);
+  }
+}
+
 export class FakePhysicsWorld implements PhysicsWorld {
   public readonly bodies: Set<FakeRigidBody>;
   public readonly colliders: Set<FakeCollider>;
+  public readonly characterControllers: Set<FakeCharacterController>;
   public stepCount: number;
 
   private readonly gravity: Vec2;
@@ -277,6 +298,7 @@ export class FakePhysicsWorld implements PhysicsWorld {
   public constructor() {
     this.bodies = new Set();
     this.colliders = new Set();
+    this.characterControllers = new Set();
     this.stepCount = 0;
     this.gravity = new Vec2(0, 0);
     this.events = [];
@@ -348,6 +370,22 @@ export class FakePhysicsWorld implements PhysicsWorld {
     this.colliders.delete(collider as FakeCollider);
   }
 
+  public get characterControllerCount(): number {
+    return this.characterControllers.size;
+  }
+
+  public createCharacterController(
+    _options?: CharacterControllerOptions,
+  ): CharacterController {
+    const controller: FakeCharacterController = new FakeCharacterController();
+    this.characterControllers.add(controller);
+    return controller;
+  }
+
+  public destroyCharacterController(controller: CharacterController): void {
+    this.characterControllers.delete(controller as FakeCharacterController);
+  }
+
   public query(): PhysicsQuery {
     throw new Error("FakePhysicsWorld.query is not supported in tests.");
   }
@@ -355,6 +393,7 @@ export class FakePhysicsWorld implements PhysicsWorld {
   public clear(): void {
     this.bodies.clear();
     this.colliders.clear();
+    this.characterControllers.clear();
     this.events.length = 0;
     this.stepCount = 0;
   }

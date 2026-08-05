@@ -13,6 +13,7 @@ import {
   type ScriptManager,
   type Sprite,
   Animator,
+  CharacterController2D,
   Collider2D,
   Color,
   PlayerInput,
@@ -68,8 +69,14 @@ export async function spawnPlayer(
       loop: true,
       autoPlay: true,
     }),
+    pre_sprint: new SpriteAnimation({
+      frames: playerSheet.getManyInRange("player_dino_", 17, 17),
+      fps: 1,
+      loop: false,
+      autoPlay: true,
+    }),
     sprint: new SpriteAnimation({
-      frames: playerSheet.getManyInRange("player_dino_", 17, 23),
+      frames: playerSheet.getManyInRange("player_dino_", 18, 23),
       fps: 12,
       loop: true,
       autoPlay: true,
@@ -96,12 +103,16 @@ export async function spawnPlayer(
   playerTransform.position.copyFrom(spawnPosition);
 
   const playerCollider: Collider2D = nexus.addComponent(player, Collider2D, {
-    type: "circle",
-    radius: 10,
+    type: "box",
+    width: 32,
+    height: 16,
   });
 
+  playerCollider.offset.set(0, -15);
   playerCollider.layer = CollisionLayers.Player;
-  playerCollider.collidesWith = CollisionLayers.Occluder;
+  playerCollider.collidesWith = CollisionLayers.World;
+
+  nexus.addComponent(player, CharacterController2D);
 
   const shadow: Entity = nexus.createEntity();
   const shadowTransform: Transform2D = nexus.addComponent(shadow, Transform2D);
@@ -120,9 +131,8 @@ export async function spawnPlayer(
   nexus.setParent(shadow, player);
 
   scriptManager.attach(player, PlayerAnimationScript, {});
-
   scriptManager.attach(player, PlayerMovementScript, {
-    speed: 250,
+    speed: 150,
   });
 
   return { player, shadow };

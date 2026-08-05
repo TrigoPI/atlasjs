@@ -88,18 +88,8 @@ export type ColliderShapeDesc =
   | PolygonColliderShapeDesc;
 
 export type CharacterControllerOptions = {
-  readonly maxSpeed?: number;
-  readonly acceleration?: number;
-  readonly deceleration?: number;
-  readonly airAcceleration?: number;
-  readonly airDeceleration?: number;
-  readonly jumpSpeed?: number;
-};
-
-export type CharacterControllerState = {
-  readonly moveInput: number;
-  readonly grounded: boolean;
-  readonly jumpQueued: boolean;
+  readonly offset?: number;
+  readonly slide?: boolean;
 };
 
 export type CollisionHandler = (

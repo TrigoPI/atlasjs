@@ -9,8 +9,11 @@ import { RapierCollider } from "./RapierCollider";
 import { RapierRigidBody } from "./RapierRigidBody";
 import { RapierPhysicsQuery } from "./RapierPhyicsQuery";
 import { PhysicsUnitConverter } from "./PhysicsUnitConverter";
+import { RapierCharacterController } from "./RapierCharacterController";
 
 import {
+  CharacterController,
+  CharacterControllerOptions,
   Collider,
   ColliderDesc,
   CollisionHandler,
@@ -25,6 +28,7 @@ import {
 export class RapierPhysicsWorld implements PhysicsWorld {
   private readonly bodies: Map<number, RapierRigidBody>;
   private readonly colliders: Map<number, RapierCollider>;
+  private readonly controllers: Set<RapierCharacterController>;
   private readonly options: PhysicsWorldOptions;
 
   private readonly unitsPerMeter: number;
@@ -41,6 +45,7 @@ export class RapierPhysicsWorld implements PhysicsWorld {
     this.converter = new PhysicsUnitConverter(this.unitsPerMeter);
     this.bodies = new Map<number, RapierRigidBody>();
     this.colliders = new Map<number, RapierCollider>();
+    this.controllers = new Set<RapierCharacterController>();
   }
 
   public async init(): Promise<void> {
@@ -164,11 +169,40 @@ export class RapierPhysicsWorld implements PhysicsWorld {
     this.world.removeCollider(collider.rapierCollider, true);
   }
 
+  public createCharacterController(
+    options: CharacterControllerOptions = {},
+  ): CharacterController {
+    const raw: RAPIER.KinematicCharacterController =
+      this.world.createCharacterController(options.offset ?? 0.01);
+    raw.setSlideEnabled(options.slide ?? true);
+
+    const wrapper: RapierCharacterController = new RapierCharacterController(
+      raw,
+      this.converter,
+    );
+
+    this.controllers.add(wrapper);
+    return wrapper;
+  }
+
+  public destroyCharacterController(controller: CharacterController): void {
+    if (!(controller instanceof RapierCharacterController)) {
+      throw new Error("Invalid CharacterController");
+    }
+
+    this.world.removeCharacterController(controller.raw);
+    this.controllers.delete(controller);
+  }
+
   public query(): PhysicsQuery {
     return this.queryApi;
   }
 
   public clear(): void {
+    for (const controller of [...this.controllers.values()]) {
+      this.destroyCharacterController(controller);
+    }
+
     for (const collider of [...this.colliders.values()]) {
       this.destroyCollider(collider);
     }

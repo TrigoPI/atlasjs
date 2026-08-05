@@ -1,4 +1,10 @@
-import { Collider, ColliderDesc, PhysicsWorld, RigidBody } from "@atlasjs/inertia";
+import {
+  CharacterController,
+  Collider,
+  ColliderDesc,
+  PhysicsWorld,
+  RigidBody,
+} from "@atlasjs/inertia";
 import { Vec2 } from "@atlasjs/math";
 
 import {
@@ -9,6 +15,8 @@ import {
 } from "@atlasjs/nexus";
 
 import {
+  CharacterController2D,
+  CharacterControllerRef,
   Collider2D,
   PhysicsBodyRef,
   PhysicsColliderRef,
@@ -27,12 +35,14 @@ export class PhysicsPushSystem implements NexusSystem {
   private readonly inertia: PhysicsWorld;
   private readonly pending: Entity[];
   private readonly pendingColliders: Entity[];
+  private readonly pendingControllers: Entity[];
   private readonly positionScratch: Vec2;
 
   public constructor(inertia: PhysicsWorld) {
     this.inertia = inertia;
     this.pending = [];
     this.pendingColliders = [];
+    this.pendingControllers = [];
     this.positionScratch = new Vec2();
   }
 
@@ -88,6 +98,21 @@ export class PhysicsPushSystem implements NexusSystem {
     }
 
     this.pendingColliders.length = 0;
+
+    world.query(CharacterController2D).without(CharacterControllerRef).each((entity) => {
+      this.pendingControllers.push(entity);
+    });
+
+    for (const entity of this.pendingControllers) {
+      const cfg: CharacterController2D = world.requireComponent(entity, CharacterController2D);
+      const controller: CharacterController = this.inertia.createCharacterController({
+        offset: cfg.offset,
+        slide: cfg.slide,
+      });
+      world.addComponent(entity, CharacterControllerRef, controller);
+    }
+
+    this.pendingControllers.length = 0;
   }
 
   // prettier-ignore
