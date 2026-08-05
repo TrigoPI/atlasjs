@@ -186,10 +186,7 @@ export class RapierPhysicsWorld implements PhysicsWorld {
   }
 
   public destroyCharacterController(controller: CharacterController): void {
-    if (!(controller instanceof RapierCharacterController)) {
-      throw new Error("Invalid CharacterController");
-    }
-
+    this.assertRapierCharacterController(controller);
     this.world.removeCharacterController(controller.raw);
     this.controllers.delete(controller);
   }
@@ -223,6 +220,14 @@ export class RapierPhysicsWorld implements PhysicsWorld {
   ): asserts collider is RapierCollider {
     if (!(collider instanceof RapierCollider)) {
       throw new Error("Invalid Collider");
+    }
+  }
+
+  private assertRapierCharacterController(
+    controller: CharacterController,
+  ): asserts controller is RapierCharacterController {
+    if (!(controller instanceof RapierCharacterController)) {
+      throw new Error("Invalid CharacterController");
     }
   }
 }

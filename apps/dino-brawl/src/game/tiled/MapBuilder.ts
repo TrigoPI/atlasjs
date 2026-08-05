@@ -7,7 +7,7 @@ import { createLogger, type Logger } from "@atlasjs/utils";
 import type { TiledDocument } from "./TiledDocument";
 import type { TiledAssetResolver } from "./TiledAssetResolver";
 import type { SortingLayerInput } from "./sorting";
-import { ingestOccluders, isOccluderRegion } from "./ingestOccluders";
+import { ingestOccluders } from "./ingestOccluders";
 import { ingestColliders } from "./ingestColliders";
 import { CollisionLayers } from "../config";
 
@@ -27,7 +27,6 @@ import {
 
 import type {
   PointObject,
-  RectObject,
   ResolvedCell,
   ResolvedTileLayer,
   ResolvedTileset,
@@ -35,10 +34,8 @@ import type {
 } from "./resolved.types";
 
 import {
-  type MapCollider,
   type WorldPoint,
   type TilePlacement,
-  colliderFromRect,
   groupCellsByTileset,
   tileObjectPlacement,
   worldPointFromObject,
@@ -55,7 +52,6 @@ export interface BuiltMap {
   readonly grid: Entity;
   readonly tileLayers: readonly Entity[];
   readonly objectEntities: readonly Entity[];
-  readonly colliders: readonly MapCollider[];
   readonly points: Readonly<Record<string, WorldPoint>>;
 }
 
@@ -122,20 +118,13 @@ export class MapBuilder {
     }
 
     const objectEntities: Entity[] = [];
-    const colliders: MapCollider[] = [];
     const points: Record<string, WorldPoint> = {};
 
     for (const obj of doc.objects) {
       if (obj.kind === "point") {
         const point: PointObject = obj;
         points[point.name] = worldPointFromObject(point, options.scale);
-      } else if (obj.kind === "rect") {
-        const rect: RectObject = obj;
-
-        if (!isOccluderRegion(rect)) {
-          colliders.push(colliderFromRect(rect, options.scale));
-        }
-      } else {
+      } else if (obj.kind === "tile") {
         const entity: Entity | undefined = MapBuilder.buildTileObject(
           nexus,
           obj,
@@ -167,7 +156,7 @@ export class MapBuilder {
       nexus.removeComponent(layerEntity, TileMapRenderer);
     }
 
-    return { grid, tileLayers, objectEntities, colliders, points };
+    return { grid, tileLayers, objectEntities, points };
   }
 
   private static buildTileLayer(
