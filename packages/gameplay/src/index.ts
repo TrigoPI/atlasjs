@@ -9,6 +9,7 @@ export * from "./camera";
 export * from "./rendering";
 export * from "./assets";
 export * from "./scripting";
+export * from "./prefab";
 export * from "./registerSystem";
 export * from "./GameplayPlugin";
 
