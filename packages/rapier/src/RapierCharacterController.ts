@@ -7,10 +7,15 @@ import { RapierCollider } from "./RapierCollider";
 export class RapierCharacterController implements CharacterController {
   public readonly raw: RAPIER.KinematicCharacterController;
   private readonly converter: PhysicsUnitConverter;
+  private readonly scratch: Vec2;
 
-  public constructor(raw: RAPIER.KinematicCharacterController, converter: PhysicsUnitConverter) {
+  public constructor(
+    raw: RAPIER.KinematicCharacterController,
+    converter: PhysicsUnitConverter,
+  ) {
     this.raw = raw;
     this.converter = converter;
+    this.scratch = new Vec2();
   }
 
   public computeMovement(collider: Collider, desired: Vec2): Vec2 {
@@ -18,16 +23,18 @@ export class RapierCharacterController implements CharacterController {
       throw new Error("RapierCharacterController requires a RapierCollider.");
     }
 
-    const desiredPhysics: Vec2 = this.converter.vecToPhysics(desired);
+    this.scratch.set(desired.x, desired.y);
+    this.converter.vecToPhysicsInto(this.scratch);
 
     this.raw.computeColliderMovement(
       collider.rapierCollider,
-      { x: desiredPhysics.x, y: desiredPhysics.y },
+      this.scratch,
       undefined,
       collider.rapierCollider.collisionGroups(),
     );
 
     const moved: RAPIER.Vector = this.raw.computedMovement();
-    return this.converter.vecToWorld(new Vec2(moved.x, moved.y));
+    this.scratch.set(moved.x, moved.y);
+    return this.converter.vecToWorldInto(this.scratch);
   }
 }

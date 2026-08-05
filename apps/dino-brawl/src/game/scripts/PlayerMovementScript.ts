@@ -20,6 +20,8 @@ export class PlayerMovementScript extends AtlasScript<{ speed: number }> {
   private move: Vector2Action;
   private boost: ButtonAction;
 
+  private readonly moveDelta: Vec2 = new Vec2();
+
   // prettier-ignore
   public onCreate(): void {
     const actions: PlayerInput<DinoControls> = this.requireComponent(PlayerInput);
@@ -35,7 +37,8 @@ export class PlayerMovementScript extends AtlasScript<{ speed: number }> {
     const speed: number = this.boost.isDown() ? this.speed * 2 : this.speed;
 
     if (v.x !== 0 || v.y !== 0) {
-      this.character.move(new Vec2(v.x * speed * dt, v.y * speed * dt));
+      this.moveDelta.set(v.x * speed * dt, v.y * speed * dt);
+      this.character.move(this.moveDelta);
     }
   }
 
