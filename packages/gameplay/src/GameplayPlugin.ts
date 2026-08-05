@@ -5,13 +5,14 @@ import { INERTIAL_ENGINE, PhysicsWorld } from "@atlasjs/inertia";
 import { Entity, NEXUS, NexusWorld, Unsubscribe } from "@atlasjs/nexus";
 import { ASSET_MANAGER, AssetManager } from "@atlasjs/assets";
 
-import { SCRIPT_MANAGER } from "./tokens";
+import { SCRIPT_MANAGER, INSTANTIATOR } from "./tokens";
 import { CameraManager, CAMERA_MANAGER } from "./camera";
 import { registerSystem } from "./registerSystem";
 import { SpriteLoader, TileSetLoader } from "./assets";
 import { SortingLayers, SORTING_LAYERS } from "./rendering";
 
 import { ScriptManager } from "./scripting";
+import { Instantiator } from "./prefab";
 import { OccluderRenderSystem } from "./systems/OccluderRenderSystem";
 
 import {
@@ -55,7 +56,7 @@ export class GameplayPlugin extends Plugin {
   public constructor() {
     super("gameplay-plugin", {
       requires: [NEXUS, NEBULA_RENDERER, INERTIAL_ENGINE, ASSET_MANAGER],
-      provides: [SCRIPT_MANAGER, CAMERA_MANAGER, SORTING_LAYERS],
+      provides: [SCRIPT_MANAGER, INSTANTIATOR, CAMERA_MANAGER, SORTING_LAYERS],
     });
     this.logger = createLogger(GameplayPlugin.name);
     this.handles = [];
@@ -73,6 +74,7 @@ export class GameplayPlugin extends Plugin {
     assets.register(new TileSetLoader());
 
     this.scriptManager = new ScriptManager(world, engine.services);
+    const instantiator: Instantiator = new Instantiator(world, this.scriptManager);
 
     const physicsPushSystem: PhysicsPushSystem = new PhysicsPushSystem(inertia);
     const physicsPullSystem: PhysicsPullSystem = new PhysicsPullSystem();
@@ -248,6 +250,7 @@ export class GameplayPlugin extends Plugin {
 
     this.logger.log("GameplayPlugin installed.");
     engine.services.provide(SCRIPT_MANAGER, this.scriptManager);
+    engine.services.provide(INSTANTIATOR, instantiator);
     engine.services.provide(CAMERA_MANAGER, cameraManager);
     engine.services.provide(SORTING_LAYERS, sortingLayers);
 
