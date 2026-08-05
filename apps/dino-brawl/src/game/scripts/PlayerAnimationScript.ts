@@ -19,7 +19,8 @@ export class PlayerAnimationScript extends AtlasScript {
   private boost: ButtonAction;
 
   public onCreate(): void {
-    const actions: PlayerInput<DinoControls> = this.requireComponent(PlayerInput);
+    const actions: PlayerInput<DinoControls> =
+      this.requireComponent(PlayerInput);
 
     this.animator = this.requireComponent(Animator);
     this.spriteRenderer = this.requireComponent(SpriteRenderer);
@@ -36,6 +37,10 @@ export class PlayerAnimationScript extends AtlasScript {
       this.animator.play(animation);
     } else {
       this.animator.play("idle");
+    }
+
+    if (this.boost.isDown() && v.mag() === 0) {
+      this.animator.play("pre_sprint");
     }
 
     if (v.x !== 0) {

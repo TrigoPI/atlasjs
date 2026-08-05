@@ -69,8 +69,14 @@ export async function spawnPlayer(
       loop: true,
       autoPlay: true,
     }),
+    pre_sprint: new SpriteAnimation({
+      frames: playerSheet.getManyInRange("player_dino_", 17, 17),
+      fps: 1,
+      loop: false,
+      autoPlay: true,
+    }),
     sprint: new SpriteAnimation({
-      frames: playerSheet.getManyInRange("player_dino_", 17, 23),
+      frames: playerSheet.getManyInRange("player_dino_", 18, 23),
       fps: 12,
       loop: true,
       autoPlay: true,
@@ -97,10 +103,12 @@ export async function spawnPlayer(
   playerTransform.position.copyFrom(spawnPosition);
 
   const playerCollider: Collider2D = nexus.addComponent(player, Collider2D, {
-    type: "circle",
-    radius: 10,
+    type: "box",
+    width: 32,
+    height: 16,
   });
 
+  playerCollider.offset.set(0, -15);
   playerCollider.layer = CollisionLayers.Player;
   playerCollider.collidesWith = CollisionLayers.World;
 
@@ -123,9 +131,8 @@ export async function spawnPlayer(
   nexus.setParent(shadow, player);
 
   scriptManager.attach(player, PlayerAnimationScript, {});
-
   scriptManager.attach(player, PlayerMovementScript, {
-    speed: 250,
+    speed: 150,
   });
 
   return { player, shadow };
