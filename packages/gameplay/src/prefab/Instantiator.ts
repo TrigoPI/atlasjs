@@ -38,4 +38,8 @@ export class Instantiator {
 
     return createGameEntity(root, this.world, this.scripts);
   }
+
+  public destroy(entity: Entity): void {
+    createGameEntity(entity, this.world, this.scripts).destroy();
+  }
 }

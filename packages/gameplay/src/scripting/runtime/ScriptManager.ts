@@ -185,6 +185,10 @@ export class ScriptManager implements ScriptResolver {
     return scripts;
   }
 
+  public destroyEntityScripts(entityId: Entity): void {
+    this.destroyAllByEntity(entityId);
+  }
+
   public getScript<T extends AtlasScript>(
     entityId: Entity,
     type: ScriptConstructor<T>,
