@@ -4,6 +4,8 @@ import { ScriptServiceCtor } from "./ScriptService";
 import { ScriptContext } from "./ScriptContext";
 import { ScriptLifecycle } from "./ScriptLifeCycle";
 import type { GameEntity } from "./GameEntity";
+import type { Prefab } from "../../prefab/Prefab";
+import type { InstantiateArgs } from "../../prefab/Instantiator";
 
 import {
   ScriptComponentToken,
@@ -49,6 +51,14 @@ export abstract class AtlasScript<TProps extends object = {}> implements ScriptL
 
   public getEntity(entity: Entity): GameEntity {
     return this.context.getEntity(entity);
+  }
+
+  public instantiate<TParams>(prefab: Prefab<TParams>, ...rest: InstantiateArgs<TParams>): GameEntity {
+    return this.context.instantiate(prefab, ...rest);
+  }
+
+  public destroy(): void {
+    this.context.destroy();
   }
 
   public getService<TFacade, TService>(

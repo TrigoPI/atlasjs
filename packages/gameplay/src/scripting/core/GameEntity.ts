@@ -25,11 +25,14 @@ export interface GameEntity {
   requireComponent<TComponent extends object>(type: Component<TComponent, any[]>): TComponent;
 
   getScript<T extends AtlasScript>(type: ScriptConstructor<T>): T | undefined;
+
+  destroy(): void;
 }
 
 // prettier-ignore
 export interface ScriptResolver {
   getScript<T extends AtlasScript>(entityId: Entity, type: ScriptConstructor<T>): T | undefined;
+  destroyEntityScripts(entityId: Entity): void;
 }
 
 // prettier-ignore
@@ -91,6 +94,19 @@ class GameEntityHandle implements GameEntity {
 
   public getScript<T extends AtlasScript>(type: ScriptConstructor<T>): T | undefined {
     return this.scripts.getScript(this.entity, type);
+  }
+
+  public destroy(): void {
+    this.destroySubtreeScripts(this.entity);
+    this.world.commands.destroy(this.entity);
+  }
+
+  private destroySubtreeScripts(entity: Entity): void {
+    const children: ReadonlyArray<Entity> = this.world.getChildren(entity);
+    for (let i: number = 0; i < children.length; i++) {
+      this.destroySubtreeScripts(children[i]);
+    }
+    this.scripts.destroyEntityScripts(entity);
   }
 }
 

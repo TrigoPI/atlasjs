@@ -19,10 +19,12 @@ import {
 } from "../core";
 
 type PropsOf<T> = T extends AtlasScript<infer P> ? P : {};
-type AttachProps<P> = {
+
+export type AttachProps<P> = {
   [K in keyof P]: P[K] extends GameEntity ? Entity : P[K];
 };
-type PropsOfArgs<T> =
+
+export type AttachArgs<T> =
   {} extends AttachProps<PropsOf<T>>
     ? [props?: AttachProps<PropsOf<T>>]
     : [props: AttachProps<PropsOf<T>>];
@@ -58,7 +60,7 @@ export class ScriptManager implements ScriptResolver {
   public attach<TScript extends AtlasScript>(
     entityId: Entity,
     ScriptType: ScriptConstructor<TScript>,
-    ...rest: PropsOfArgs<TScript>
+    ...rest: AttachArgs<TScript>
   ): TScript {
     const instance: TScript = new ScriptType();
     const context: RuntimeScriptContext = new RuntimeScriptContext(
@@ -181,6 +183,10 @@ export class ScriptManager implements ScriptResolver {
     }
 
     return scripts;
+  }
+
+  public destroyEntityScripts(entityId: Entity): void {
+    this.destroyAllByEntity(entityId);
   }
 
   public getScript<T extends AtlasScript>(

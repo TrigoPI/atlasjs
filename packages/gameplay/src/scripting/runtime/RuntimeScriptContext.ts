@@ -1,6 +1,10 @@
 import { ServiceRegistry } from "@atlasjs/core";
 import { Component, Entity, NexusWorld } from "@atlasjs/nexus";
 
+import { INSTANTIATOR } from "../../tokens";
+import type { Prefab } from "../../prefab/Prefab";
+import type { InstantiateArgs } from "../../prefab/Instantiator";
+
 import {
   GameEntity,
   ScriptComponentToken,
@@ -56,5 +60,13 @@ export class RuntimeScriptContext implements ScriptContext {
 
   public removeComponent(type: Component<object, any[]> | ScriptComponentToken<unknown, object, any[]>): void {
     this.self.removeComponent(type);
+  }
+
+  public instantiate<TParams>(prefab: Prefab<TParams>, ...rest: InstantiateArgs<TParams>): GameEntity {
+    return this.services.get(INSTANTIATOR).instantiate(prefab, ...rest);
+  }
+
+  public destroy(): void {
+    this.self.destroy();
   }
 }
