@@ -1,6 +1,6 @@
 # TileSet & TileMap — Design (v1)
 
-> **Statut : ✅ implémenté** (branche `claude/feat/tileset`, commits `53cc7ee`→`b11711d`, 10 tasks TDD + review whole-branch opus « ready to merge »). Extensions reportées : [`../backlog.md`](../backlog.md) § *Gameplay — TileSet & TileMap*.
+> **Statut : ✅ implémenté** (mergé sur `dev`). Extensions reportées : [`../backlog.md`](../backlog.md) § *Gameplay — TileSet & TileMap*.
 >
 > **Note de rendu (piège vérifié en vrai)** : une tuile est dessinée à la **taille native** de son sprite, positionnée à l'origine de sa cellule. Pour un tiling **sans trou**, `Grid.cellSize` doit **égaler la taille native de la tuile** (ex. `128`) ; pour agrandir le rendu, on **scale l'entité `Grid`** (son `Transform2D`), ce qui se propage au calque — on ne gonfle **pas** `cellSize`. Mettre `cellSize` = taille × facteur tout en dessinant à taille native laisse des trous (le *fit-to-cell scaling* qui lèverait cette contrainte est au backlog).
 
@@ -119,7 +119,7 @@ Les `Sprite` ont un `id` dérivé déterministe (`sprite:${texture.id}:${rect}`)
 
 ## 6. Couche 2 — composants ECS
 
-Placement : `packages/gameplay/src/components/`. Exposés aux scripts comme **tokens identité** (comme `SpriteRenderer`) via `defineScriptComponent(...)` sans `create` — pas de comportement moteur à cacher en v1.
+Placement : `packages/gameplay/src/components/`. Composants **LEVEL 1** (données pures Nexus), utilisés **bruts** par les scripts et réexportés depuis `packages/gameplay/src/index.ts` — pas de token scripting dédié ni de comportement moteur à cacher en v1.
 
 ```ts
 // Grid.ts — géométrie des cellules (le parent = système de coordonnées)
@@ -203,7 +203,7 @@ Par frame, `query(WorldTransform2D, TileMap, TileMapRenderer).each((layer, world
 | Élément | Package / dossier | Enregistrement |
 | --- | --- | --- |
 | `Tile`, `TileSetAsset`, `TileSet`, `TileSetLoader` | `gameplay/src/assets/` | loader dans `GameplayPlugin.install` |
-| `Grid`, `TileMap`, `TileMapRenderer` | `gameplay/src/components/` | tokens identité dans `gameplay/src/scripting/components/` |
+| `Grid`, `TileMap`, `TileMapRenderer` | `gameplay/src/components/` | composants LEVEL 1, réexportés bruts via `gameplay/src/index.ts` |
 | `TileMapRenderSystem` | `gameplay/src/systems/` | `registerSystem(render, …, { stage: "PreRender" })` + `world.onRemove(TileMap, …)` |
 | `TileMapNode` | `nebula/src/graphics/` | — |
 | `TileMapNodeRenderer`, `TileMapBatcher`, `TileMapDrawCommand`, `kind "tilemap"` | `nebula/src/renderers/` | dans `SceneRenderer.nodeRenderers` + `RenderQueue` |

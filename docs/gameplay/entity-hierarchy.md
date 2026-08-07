@@ -173,19 +173,19 @@ Rendre le shear exactement demanderait un seam « matrice monde » sur le `Node`
 
 ---
 
-## 6. API scripts — façade `Transform2DComponent`
+## 6. API scripts — façade `Transform`
 
 À la Unity `transform.SetParent(...)`, sur la façade stateless existante (elle re-résout à chaque accès, cf. invariants scripting) :
 
 ```ts
-this.transform.setParent(parent: Transform2DComponent | null, worldPositionStays?: boolean): this
-this.transform.parent: Transform2DComponent | null      // getter
-this.transform.getChildren(): Transform2DComponent[]
+this.transform.setParent(parent: Transform | null, worldPositionStays?: boolean): this
+this.transform.parent: Transform | null      // getter
+this.transform.getChildren(): Transform[]
 ```
 
 - `setParent` route vers `world.setParent(entity, parentEntity)` et applique le changement **immédiatement** : c'est sûr car les callbacks de cycle de vie d'un script (`onUpdate`/`onFixedUpdate`) ne s'exécutent jamais à l'intérieur d'un `world.query(...).each(...)`. Si un appelant reparente depuis **sa propre** itération `query().each()`, il doit différer via `world.commands.setParent(...)` (même dualité que §3.3).
 - `worldPositionStays` (défaut **`true`**, comme Unity) : après reparent, on recalcule le `Transform2D` **local** pour que le monde ne bouge pas : `localMatrix = parentWorld.invert() * currentWorld`, puis on ré-injecte translation/rotation/échelle (d'où `Mat3.invert`). Avec `false`, le local est conservé tel quel et réinterprété dans le repère du parent (l'enfant « snap »).
-- `parent` / `getChildren` résolvent les composants `Parent`/`Children` de Nexus et renvoient des façades `Transform2DComponent` fraîches.
+- `parent` / `getChildren` résolvent les composants `Parent`/`Children` de Nexus et renvoient des façades `Transform` fraîches.
 - **Références inter-entités** : un script parente vers un transform qu'il tient déjà (passé en prop de script, ou renvoyé par un service). La *découverte* d'entités arbitraires (« trouve le player ») reste hors scope — c'est la scène qui câble.
 
 ---
@@ -230,7 +230,7 @@ La composition de transform s'active dès que les deux entités ont un `Transfor
 
 1. `@atlasjs/nexus` : `Parent`/`Children`, `setParent`/`getParent`/`getChildren`, garde anti-cycle, destruction récursive, intégration command buffer.
 2. `@atlasjs/math` : `Mat3.multiply`/`invert` + décompose.
-3. `@atlasjs/gameplay` : `WorldTransform2D`, `TransformPropagationSystem`, mise à jour `SpriteRenderSystem`/`PhysicsPushSystem`/`PhysicsPullSystem`, façade `Transform2DComponent` (`setParent`/`parent`/`getChildren`).
+3. `@atlasjs/gameplay` : `WorldTransform2D`, `TransformPropagationSystem`, mise à jour `SpriteRenderSystem`/`PhysicsPushSystem`/`PhysicsPullSystem`, façade `Transform` (`setParent`/`parent`/`getChildren`).
 4. `apps/dino-brawl` : démo d'attachement natif dans `EcsScene` + depuis un script.
 
 **Hors-scope (→ `docs/backlog.md`) :**
@@ -251,5 +251,5 @@ La composition de transform s'active dès que les deux entités ont un `Transfor
 - [x] **Phase 2 — Math.** `Mat3.multiply` (+ statique), `invert`, `getTranslation`/`getRotation`/`getScale`. Tests : identités, compo associative, invert∘compo, round-trip décompose sans shear.
 - [x] **Phase 3 — Propagation gameplay.** `WorldTransform2D` + `TransformPropagationSystem` (règle unique + dynamic + pass-through), enregistrement dans la lane `update`. Tests : racine, chaîne parent→enfant, dynamic ignore le parent, ordre parent-avant-enfant.
 - [x] **Phase 4 — Consommateurs.** `SpriteRenderSystem` lit `WorldTransform2D` (+ décompose bord rendu), `PhysicsPushSystem` (kinematic/static) lit `WorldTransform2D`, `PhysicsPullSystem` restreint au dynamic. Tests : sprite enfant suit le parent, kinematic enfant suit (1 frame), dynamic non corrompu.
-- [x] **Phase 5 — Façade scripts.** `Transform2DComponent.setParent`/`parent`/`getChildren` + `worldPositionStays`. Tests : reparent garde/ne garde pas la position monde, façade reste stateless.
+- [x] **Phase 5 — Façade scripts.** `Transform.setParent`/`parent`/`getChildren` + `worldPositionStays`. Tests : reparent garde/ne garde pas la position monde, façade reste stateless.
 - [x] **Phase 6 — Dino Brawl + docs.** Démo `EcsScene` (attachement natif) + script d'attachement ; mettre à jour `docs/backlog.md` (items reportés) et marquer ce doc « implémenté ».

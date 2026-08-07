@@ -24,7 +24,7 @@ Les deux couches coexistent : `InputApi` **reste valable** pour l'input brut ; l
 
 Le framework de script (`AtlasScript` + `ScriptContext` + `RuntimeScriptContext`) n'exposait initialement **que l'accès aux composants** Nexus (raw + façades `ScriptComponent`). Un script n'avait **aucun moyen d'atteindre un service** de l'engine (`ServiceRegistry`). Or l'input clavier/souris vit dans un **service** global (`Input`, token `INPUT`, package `@atlasjs/input`), alimenté par `InputPlugin` (backend DOM → `Set` down/pressed/released, `endFrame()` au stage `Late` de la lane `update`).
 
-Objectif : permettre à un script de lire l'input, **sans statique global** (rester multi-engine / testable) et **sans exposer le service backend** au script (préserver la séparation backend ↔ scripting, exactement comme `Transform2DComponent` enveloppe le moteur `Transform2D`).
+Objectif : permettre à un script de lire l'input, **sans statique global** (rester multi-engine / testable) et **sans exposer le service backend** au script (préserver la séparation backend ↔ scripting, exactement comme `Transform` enveloppe le moteur `Transform2D`).
 
 ### Tension résolue
 
@@ -143,15 +143,15 @@ Reste inchangé : `getComponent`/`addComponent`/`requireComponent`/`removeCompon
 #### Exemple d'usage (dino-brawl)
 
 ```ts
-import { AtlasScript, InputApi, Key, Transform2DComponent } from "@atlasjs/gameplay";
+import { AtlasScript, InputApi, Key, Transform } from "@atlasjs/gameplay";
 
 export class Player extends AtlasScript {
   private input!: InputApi;
-  private transform!: Transform2DComponent;
+  private transform!: Transform;
 
   public onCreate(): void {
     this.input = this.getService(InputApi);
-    this.transform = this.addComponent(Transform2DComponent);
+    this.transform = this.addComponent(Transform);
   }
 
   public onUpdate(dt: number): void {
@@ -201,7 +201,7 @@ La logique lit des **actions** nommées (`jump.isPressed()`, `move.readValue()`)
 
 7. **Vocabulaire backend cohérent sur les deux couches.** `ButtonAction` reprend exactement le vocabulaire de la façade Phase 1 / du backend : `isDown` = maintenu, `isPressed` = front descendant (pressé cette frame), `isReleased` = front montant (relâché cette frame). Aucune divergence de nommage entre `InputApi` et les actions.
 
-8. **`PlayerInput` = composant Nexus brut (pas de façade).** Aucune autorité à router (contrairement à `Transform2DComponent`) ; son API publique est `get(name)` + `enabled`. Les handles d'action (`ButtonAction`…) **sont** l'API curée de lecture. Pas de troisième concept.
+8. **`PlayerInput` = composant Nexus brut (pas de façade).** Aucune autorité à router (contrairement à `Transform`) ; son API publique est `get(name)` + `enabled`. Les handles d'action (`ButtonAction`…) **sont** l'API curée de lecture. Pas de troisième concept.
 
 9. **Handles d'action persistants.** Les objets action vivent dans la `InputActionMap` ; le system les **mute en place** chaque frame. Le script garde une ref (`this.jump = actions.get("jump")` en `onCreate`) valable pour toute la vie de l'entité.
 
@@ -275,7 +275,7 @@ export class PlayerInputSystem implements NexusSystem {
 #### Usage script (dino-brawl — `TestScript`)
 
 ```ts
-import { AtlasScript, PlayerInput, Transform2DComponent } from "@atlasjs/gameplay";
+import { AtlasScript, PlayerInput, Transform } from "@atlasjs/gameplay";
 import { ButtonAction, Vector2Action, defineActions, button, vector2, Key } from "@atlasjs/input";
 
 const controls = defineActions({
@@ -284,14 +284,14 @@ const controls = defineActions({
 });
 
 export class Player extends AtlasScript {
-  private transform!: Transform2DComponent;
+  private transform!: Transform;
   private jump!: ButtonAction;
   private move!: Vector2Action;
 
   private readonly speed: number = 250;
 
   public onCreate(): void {
-    this.transform = this.addComponent(Transform2DComponent);
+    this.transform = this.addComponent(Transform);
     const actions = this.addComponent(PlayerInput, controls);
     this.jump = actions.get("jump");
     this.move = actions.get("move");
@@ -326,7 +326,7 @@ packages/gameplay/src/
       ScriptService.ts            ← Phase 1 (base + ScriptServiceCtor)
       index.ts
     components/                   # façades de composant (par-entité)
-      Transform2DComponent.ts  RigidBody2DComponent.ts  SpriteRendererComponent.ts  index.ts
+      Transform.ts  CharacterController.ts  index.ts
     services/                     ← Phase 1, miroir de components/ pour les façades de service
       InputApi.ts  index.ts
     runtime/
@@ -352,7 +352,7 @@ packages/input/src/public/
 
 ## Caveats / risques connus
 
-- **`mousePosition`/`mouseDelta` (Phase 1) et `Vector2Action.readValue()` (Phase 2) renvoient un `Vec2` backend vivant, mutable.** Un script pourrait le muter. Cohérent avec `Transform2DComponent.position` (renvoie aussi le live). Cloner allouerait à chaque accès/frame → non retenu. À surveiller si ça pose problème.
+- **`mousePosition`/`mouseDelta` (Phase 1) et `Vector2Action.readValue()` (Phase 2) renvoient un `Vec2` backend vivant, mutable.** Un script pourrait le muter. Cohérent avec `Transform.position` (renvoie aussi le live). Cloner allouerait à chaque accès/frame → non retenu. À surveiller si ça pose problème.
 - **`getService`/`getComponent` mintent un wrapper frais à chaque appel.** Sans conséquence au pattern visé (appel unique en `onCreate`, l'utilisateur détient l'instance). Acceptable (apatride).
 - **Ré-export de `Key` depuis gameplay** crée un point d'accès dupliqué (gameplay + input). Assumé : simplifie l'import côté script ; `Key` reste défini une seule fois dans `@atlasjs/input`.
 - **Caveat `onFixedUpdate` (les deux phases).** Lire l'input/les actions dans `onFixedUpdate` a le même problème : les fronts (`isPressed`/`isReleased`) sont par-frame `update` (fiables au stage `Logic`, avant `endFrame` au stage `Late`). En lane `fixed` (0..N passes/frame), les fronts sont ambigus. Recommander la lecture dans `onUpdate`. Documenté, pas de garde runtime. Réévaluer si un besoin réel d'input déterministe en lane `fixed` émerge (netcode).

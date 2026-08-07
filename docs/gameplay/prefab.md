@@ -1,6 +1,6 @@
 # Prefab & Instantiation — design
 
-> **Statut : 📋 non implémenté** (design validé, prêt pour plan d'exécution).
+> **Statut : ✅ implémenté** (shippé sur `dev`).
 > Domaine : `@atlasjs/gameplay`. Débloque la création d'entités **depuis un script** à l'exécution (projectiles, ennemis, effets), via des **prefabs code-first typés**.
 
 ---

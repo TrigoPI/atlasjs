@@ -1,6 +1,6 @@
 # occluders & Y-sort — Design (v1)
 
-> **Statut : ✅ implémenté & vérifié navigateur (branche `claude/feat/occluder-ysort`).**
+> **Statut : ✅ implémenté & vérifié navigateur (mergé sur `dev`).**
 >
 > Fait suite au Y-sort (`SortingLayers` + mode `ySorted`, cf. [`../rendering/renderer-architecture.md`](../rendering/renderer-architecture.md)) et au système TileSet/TileMap ([`tilemap.md`](tilemap.md)). Prépare la feature **collisions** : le même rectangle Tiled sert de ligne de tri _et_ de boîte de collision.
 
@@ -158,7 +158,7 @@ export class OccluderStrip {
 }
 ```
 
-Exposé aux scripts comme **token identité** (comme `SpriteRenderer`/`TileMapRenderer`) — aucune logique moteur à cacher.
+Composant **LEVEL 1** (`components/`), utilisé **brut** et réexporté depuis `gameplay/src/index.ts` — aucune logique moteur à cacher, pas de token scripting dédié.
 
 ## 7. Rendu — `OccluderRenderSystem`
 
@@ -252,7 +252,7 @@ Le socle est déjà là et le rectangle est **conçu pour servir les deux featur
 
 | Élément                                                     | Package / dossier                                            | Enregistrement                                                                           |
 | ----------------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| `OccluderStrip`                                             | `gameplay/src/components/`                                   | défini dans `GameplayPlugin.install` ; token identité dans `scripting/components/`       |
+| `OccluderStrip`                                             | `gameplay/src/components/`                                   | défini dans `GameplayPlugin.install` ; composant LEVEL 1 réexporté brut via `gameplay/src/index.ts`       |
 | `OccluderRenderSystem`                                      | `gameplay/src/systems/`                                      | `registerSystem(render, …, { stage: "PreRender" })` + `world.onRemove(OccluderStrip, …)` |
 | `bakeOccluderStrips` + `OccluderRegion`/`OccluderStripData` | `gameplay/src/systems/utils/` (ou `gameplay/src/occluders/`) | — (helper pur)                                                                           |
 | Ingestion `occluder_regions` + calque `occluders`           | `apps/dino-brawl/src/game/tiled/MapBuilder.ts`               | dans `MapBuilder.build`, après les calques de tuiles                                     |
