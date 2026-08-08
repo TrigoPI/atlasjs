@@ -55,7 +55,7 @@ describe("ScriptManager.getScript", () => {
   it("stops returning a destroyed script", () => {
     const e: Entity = h.world.createEntity();
     h.scripts.attach(e, Alpha);
-    h.scripts.destroyAllByEntity(e);
+    h.scripts.destroyEntityScripts(e);
 
     expect(h.scripts.getScript(e, Alpha)).toBeUndefined();
   });

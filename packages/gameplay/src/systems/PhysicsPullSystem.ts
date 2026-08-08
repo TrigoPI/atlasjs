@@ -1,12 +1,12 @@
 import { RigidBody } from "@atlasjs/inertia";
-import { NexusSystem, NexusSystemContext } from "@atlasjs/nexus";
+import { Entity, NexusSystem, NexusSystemContext } from "@atlasjs/nexus";
 
 import { PhysicsBodyRef, RigidBody2D, Transform2D } from "../components";
 
 export class PhysicsPullSystem implements NexusSystem {
   // prettier-ignore
   public update({ world }: NexusSystemContext): void {
-    world.query(RigidBody2D, Transform2D, PhysicsBodyRef).each((_, rigidBody, transform, ref) => {
+    world.query(RigidBody2D, Transform2D, PhysicsBodyRef).each((_: Entity, rigidBody: RigidBody2D, transform: Transform2D, ref: PhysicsBodyRef) => {
       if (rigidBody.type !== "dynamic") {
         return;
       }

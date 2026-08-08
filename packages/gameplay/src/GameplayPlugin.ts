@@ -1,5 +1,11 @@
 import { createLogger, Logger } from "@atlasjs/utils";
-import { Engine, Plugin, StepContext, StepHandle } from "@atlasjs/core";
+import {
+  Engine,
+  Plugin,
+  Scheduler,
+  StepContext,
+  StepHandle,
+} from "@atlasjs/core";
 import { NEBULA_RENDERER, NebulaRenderer } from "@atlasjs/nebula";
 import { INERTIAL_ENGINE, PhysicsWorld } from "@atlasjs/inertia";
 import { Entity, NEXUS, NexusWorld, Unsubscribe } from "@atlasjs/nexus";
@@ -63,13 +69,13 @@ export class GameplayPlugin extends Plugin {
     this.unsubscribers = [];
   }
 
-  //prettier-ignore
+  // prettier-ignore
   public async install(engine: Engine): Promise<void> {
     const world: NexusWorld = await engine.services.wait(NEXUS);
     const nebula: NebulaRenderer = await engine.services.wait(NEBULA_RENDERER);
     const inertia: PhysicsWorld = await engine.services.wait(INERTIAL_ENGINE);
     const assets: AssetManager = await engine.services.wait(ASSET_MANAGER);
-    
+
     assets.register(new SpriteLoader());
     assets.register(new TileSetLoader());
 
@@ -89,6 +95,35 @@ export class GameplayPlugin extends Plugin {
     const transformPropagationSystem: TransformPropagationSystem = new TransformPropagationSystem();
     const cameraSyncSystem: CameraSyncSystem = new CameraSyncSystem(cameraManager, nebula);
 
+    this.defineComponents(world);
+
+    this.registerCleanup(world, inertia, spriteRenderSystem, tileMapRenderSystem, occluderRenderSystem, cameraManager);
+
+    this.registerSteps(
+      engine.scheduler,
+      world,
+      playerInputSystem,
+      animatorSystem,
+      transformPropagationSystem,
+      physicsPushSystem,
+      physicsPullSystem,
+      physicsCollisionSystem,
+      cameraSyncSystem,
+      spriteRenderSystem,
+      tileMapRenderSystem,
+      occluderRenderSystem,
+    );
+
+    this.logger.log("GameplayPlugin installed.");
+    engine.services.provide(SCRIPT_MANAGER, this.scriptManager);
+    engine.services.provide(INSTANTIATOR, instantiator);
+    engine.services.provide(CAMERA_MANAGER, cameraManager);
+    engine.services.provide(SORTING_LAYERS, sortingLayers);
+
+    this.deferred.resolve();
+  }
+
+  private defineComponents(world: NexusWorld): void {
     world
       .defineComponent(RigidBody2D)
       .defineComponent(Transform2D)
@@ -106,7 +141,17 @@ export class GameplayPlugin extends Plugin {
       .defineComponent(TileMap)
       .defineComponent(TileMapRenderer)
       .defineComponent(OccluderStrip);
+  }
 
+  // prettier-ignore
+  private registerCleanup(
+    world: NexusWorld,
+    inertia: PhysicsWorld,
+    spriteRenderSystem: SpriteRenderSystem,
+    tileMapRenderSystem: TileMapRenderSystem,
+    occluderRenderSystem: OccluderRenderSystem,
+    cameraManager: CameraManager,
+  ): void {
     this.unsubscribers.push(
       world.onRemove(PhysicsBodyRef, (_entity: Entity, ref: PhysicsBodyRef) => {
         inertia.destroyRigidBody(ref.body);
@@ -162,8 +207,23 @@ export class GameplayPlugin extends Plugin {
         }
       }),
     );
+  }
 
-    const { fixed, update, render } = engine.scheduler;
+  private registerSteps(
+    scheduler: Scheduler,
+    world: NexusWorld,
+    playerInputSystem: PlayerInputSystem,
+    animatorSystem: AnimatorSystem,
+    transformPropagationSystem: TransformPropagationSystem,
+    physicsPushSystem: PhysicsPushSystem,
+    physicsPullSystem: PhysicsPullSystem,
+    physicsCollisionSystem: PhysicsCollisionSystem,
+    cameraSyncSystem: CameraSyncSystem,
+    spriteRenderSystem: SpriteRenderSystem,
+    tileMapRenderSystem: TileMapRenderSystem,
+    occluderRenderSystem: OccluderRenderSystem,
+  ): void {
+    const { fixed, update, render } = scheduler;
 
     this.handles.push(
       fixed.add(() => this.scriptManager.fixedUpdate(), {
@@ -247,20 +307,13 @@ export class GameplayPlugin extends Plugin {
         after: "gameplay:tilemap-render",
       }),
     );
-
-    this.logger.log("GameplayPlugin installed.");
-    engine.services.provide(SCRIPT_MANAGER, this.scriptManager);
-    engine.services.provide(INSTANTIATOR, instantiator);
-    engine.services.provide(CAMERA_MANAGER, cameraManager);
-    engine.services.provide(SORTING_LAYERS, sortingLayers);
-
-    this.deferred.resolve();
   }
 
   public uninstall(): void {
     this.logger.log("Uninstalling GameplayPlugin.");
     for (const handle of this.handles) handle.remove();
     for (const off of this.unsubscribers) off();
+    this.scriptManager.dispose();
     this.handles = [];
     this.unsubscribers = [];
   }

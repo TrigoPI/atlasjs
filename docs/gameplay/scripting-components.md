@@ -49,7 +49,7 @@ Les composants de données utilisateur ne sont **pas** un troisième niveau : ce
 | `RigidBody2DComponent` | 100 % `this.resolve().x` (passthrough) | **curation pure → injustifiée, supprimée** |
 | `SpriteRendererComponent` | 100 % `this.resolve().x` + sucre fluent | **curation pure → injustifiée, supprimée** |
 
-Après nettoyage il reste **exactement une** façade comportementale — `Transform`. La frontière doit être **principielle** (façade ⇔ comportement réel), pas arbitraire : `SpriteRender` avait une façade mais `Animator` non, sans raison de principe.
+Après nettoyage il ne restait **qu'une** façade comportementale, `Transform` ; depuis, un **second** token comportemental, `CharacterController` (collide-and-slide via rapier), l'a rejointe sous le même modèle. La frontière doit être **principielle** (façade ⇔ comportement réel), pas arbitraire : `SpriteRender` avait une façade mais `Animator` non, sans raison de principe.
 
 ## 4. La primitive token — `scripting/core/ScriptComponentToken.ts`
 
@@ -97,7 +97,9 @@ Deux formes, une seule primitive :
 - **Proxy comportemental.** `defineScriptComponent(engine, create)` renvoie un token brandé `{ [BRAND], engine, create }`. `create` mint un **proxy apatride frais** exposant l'API curée + l'autorité.
 - `isScriptComponentToken` : un `Component` est une **fonction** → jamais confondu avec un token (objet brandé). Le brand est aussi une garde contre un objet quelconque portant `engine` : c'est le brand, pas la présence d'`engine`, qui décide du dispatch.
 
-## 5. `Transform`, le seul token comportemental — `scripting/components/Transform.ts`
+## 5. `Transform`, token comportemental de référence — `scripting/components/Transform.ts`
+
+> Le second token comportemental, `CharacterController` (`scripting/components/CharacterController.ts`, `move(delta)` = collide-and-slide rapier), suit exactement ce modèle — cf. la table §6.
 
 `Transform` est justifié par trois comportements moteur réels : routage d'autorité, hiérarchie et world-matrix. L'API authored (getters, setters, méthodes chaînables) est portée 1:1 dans l'objet renvoyé par `create` — **inchangée pour l'auteur**. Les helpers privés (`worldMatrix`, `controllingBody`) et la logique parent/enfants sont des **fonctions libres de module** `(world, entity, …)`.
 
@@ -160,8 +162,10 @@ Tout le reste est **data-pure** — accédé brut, via l'identité case.
 | Nom de script | Backing moteur | Retour de `addComponent` | Forme |
 | --- | --- | --- | --- |
 | `Transform` | `Transform2D` | proxy `Transform` (API curée) | token comportemental |
+| `CharacterController` | `CharacterController2D` | proxy `CharacterController` (`move(delta)`) | token comportemental |
 | `RigidBody` | `RigidBody2D` | `RigidBody2D` brut | token identité |
 | `SpriteRenderer` | `SpriteRender` | `SpriteRender` brut | token identité |
+| `Collider` | `Collider2D` | `Collider2D` brut | token identité |
 | `Animator` | `Animator` | `Animator` brut | export brut (déjà propre) |
 | `PlayerInput` | `PlayerInput` | `PlayerInput<T>` brut (génériques préservés) | export brut (déjà propre) |
 
@@ -186,9 +190,11 @@ export * from "./Transform";
 
 On garde `Transform2D`/`RigidBody2D`/… importables : le boundary est une **convention typée**, pas une barrière runtime. Écrire le raw d'un dynamic sans routage d'autorité est un escape-hatch assumé (bloquer exigerait une table inverse moteur→façade qu'on refuse de maintenir).
 
-## 7. Dispatch runtime — `scripting/runtime/RuntimeScriptContext.ts`
+## 7. Dispatch runtime — `scripting/core/GameEntity.ts` (délégué par `RuntimeScriptContext`)
 
 Le dispatch collapse en un **seul point de bifurcation** : « le type est-il un token comportemental ? » (brand). Plus d'`instanceof`/`isFacade` dupliqué.
+
+> Le corps du dispatch vit désormais dans `createGameEntity` (`scripting/core/GameEntity.ts`) ; `RuntimeScriptContext` détient un `self: GameEntity` de sa propre entité et lui délègue `getComponent`/`addComponent`/`hasComponent`/`removeComponent` (les extraits ci-dessous montrent la même logique).
 
 ```ts
 public hasComponent(type) {
@@ -235,7 +241,7 @@ Sémantique du trio (identique quel que soit le niveau) :
 | `hasComponent(X)` | présence | `boolean` | — |
 | `removeComponent(X)` | retire | `void` | no-op |
 
-Pour un token, `addComponent` forwarde les `...args` au **composant moteur** (`type.engine`), puis mint un proxy frais. Seul `Transform` emprunte la branche token aujourd'hui ; `RigidBody`/`SpriteRenderer`/`Animator`/`PlayerInput` sont des `Component` (valeurs `function`) → `isScriptComponentToken` est faux → branche raw.
+Pour un token, `addComponent` forwarde les `...args` au **composant moteur** (`type.engine`), puis mint un proxy frais. `Transform` et `CharacterController` empruntent la branche token aujourd'hui ; `RigidBody`/`SpriteRenderer`/`Collider`/`Animator`/`PlayerInput` sont des `Component` (valeurs `function`) → `isScriptComponentToken` est faux → branche raw.
 
 ⚠️ Piège documenté (comportement Nexus, conservé) : `addComponent(token, ...args)` **ignore les args si le composant moteur existe déjà** (get-or-create).
 
@@ -284,8 +290,9 @@ src/
       ScriptComponentToken.ts     # defineScriptComponent / isScriptComponentToken
       index.ts
     components/                   # NIVEAU 2 — tokens scripting
-      Transform.ts                # seul token comportemental
-      index.ts                    # RigidBody / SpriteRenderer (identité) + Transform
+      Transform.ts                # token comportemental
+      CharacterController.ts      # token comportemental (collide-and-slide rapier)
+      index.ts                    # RigidBody / SpriteRenderer / Collider (identité) + Transform
     runtime/                      # ORCHESTRATION
       ScriptManager.ts  RuntimeScriptContext.ts  IncrementalScriptIdGenerator.ts  index.ts
     index.ts

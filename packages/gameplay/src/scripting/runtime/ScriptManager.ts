@@ -1,6 +1,8 @@
 import { ServiceRegistry } from "@atlasjs/core";
-import { Entity, NexusWorld } from "@atlasjs/nexus";
+import { Entity, NexusWorld, Unsubscribe } from "@atlasjs/nexus";
 import { Logger, createLogger } from "@atlasjs/utils";
+
+import { ScriptHost } from "../../components/ScriptHost";
 
 import { RuntimeScriptContext } from "./RuntimeScriptContext";
 import { IncrementalScriptIdGenerator } from "./IncrementalScriptIdGenerator";
@@ -40,6 +42,8 @@ export class ScriptManager implements ScriptResolver {
   private readonly pendingCreate: ScriptID[];
   private readonly pendingDestroy: ScriptID[];
 
+  private readonly unsubscribeHost: Unsubscribe;
+
   public constructor(
     world: NexusWorld,
     services: ServiceRegistry,
@@ -55,6 +59,12 @@ export class ScriptManager implements ScriptResolver {
     this.records = new Map<ScriptID, ScriptInstanceRecord>();
     this.recordsByEntity = new Map<Entity, Set<ScriptID>>();
     this.idGenerator = new IncrementalScriptIdGenerator();
+
+    this.world.defineComponent(ScriptHost);
+    this.unsubscribeHost = this.world.onRemove(
+      ScriptHost,
+      (entity: Entity): void => this.destroyEntityScripts(entity),
+    );
   }
 
   public attach<TScript extends AtlasScript>(
@@ -72,6 +82,10 @@ export class ScriptManager implements ScriptResolver {
 
     instance.__bindContext(context);
     this.injectProps(instance, ScriptType, rest[0]);
+
+    if (!this.world.hasComponent(entityId, ScriptHost)) {
+      this.world.addComponent(entityId, ScriptHost);
+    }
 
     const record: ScriptInstanceRecord<TScript> = {
       scriptType: ScriptType,
@@ -110,45 +124,16 @@ export class ScriptManager implements ScriptResolver {
     this.pendingDestroy.push(scriptId);
   }
 
-  public destroyAllByEntity(entityId: Entity): void {
-    const recordIds: Set<ScriptID> | undefined =
-      this.recordsByEntity.get(entityId);
-
-    if (!recordIds) {
-      return;
-    }
-
-    for (const recordId of recordIds) {
-      this.destroyById(recordId);
-    }
-  }
-
   public update(dt: number): void {
-    this.flushCreates();
-
-    for (const record of this.records.values()) {
-      if (!record.isCreated || record.isDestroyed || !record.isEnabled) {
-        continue;
-      }
-
+    this.runLifecycle((record: ScriptInstanceRecord): void => {
       record.instance.onUpdate?.(dt);
-    }
-
-    this.flushDestroys();
+    });
   }
 
   public fixedUpdate(): void {
-    this.flushCreates();
-
-    for (const record of this.records.values()) {
-      if (!record.isCreated || record.isDestroyed || !record.isEnabled) {
-        continue;
-      }
-
+    this.runLifecycle((record: ScriptInstanceRecord): void => {
       record.instance.onFixedUpdate?.();
-    }
-
-    this.flushDestroys();
+    });
   }
 
   public setEnabled(scriptId: ScriptID, enabled: boolean): void {
@@ -186,7 +171,20 @@ export class ScriptManager implements ScriptResolver {
   }
 
   public destroyEntityScripts(entityId: Entity): void {
-    this.destroyAllByEntity(entityId);
+    const recordIds: Set<ScriptID> | undefined =
+      this.recordsByEntity.get(entityId);
+
+    if (!recordIds) {
+      return;
+    }
+
+    for (const recordId of recordIds) {
+      this.destroyById(recordId);
+    }
+  }
+
+  public dispose(): void {
+    this.unsubscribeHost();
   }
 
   public getScript<T extends AtlasScript>(
@@ -253,9 +251,23 @@ export class ScriptManager implements ScriptResolver {
     }
   }
 
+  private runLifecycle(invoke: (record: ScriptInstanceRecord) => void): void {
+    this.flushCreates();
+
+    for (const record of this.records.values()) {
+      if (!record.isCreated || record.isDestroyed || !record.isEnabled) {
+        continue;
+      }
+
+      invoke(record);
+    }
+
+    this.flushDestroys();
+  }
+
   private flushCreates(): void {
-    while (this.pendingCreate.length > 0) {
-      const scriptId: ScriptID = this.pendingCreate.shift()!;
+    for (let i: number = 0; i < this.pendingCreate.length; i++) {
+      const scriptId: ScriptID = this.pendingCreate[i];
       const record: ScriptInstanceRecord | undefined =
         this.records.get(scriptId);
 
@@ -266,11 +278,13 @@ export class ScriptManager implements ScriptResolver {
       record.isCreated = true;
       record.instance.onCreate?.();
     }
+
+    this.pendingCreate.length = 0;
   }
 
   private flushDestroys(): void {
-    while (this.pendingDestroy.length > 0) {
-      const scriptId: ScriptID = this.pendingDestroy.shift()!;
+    for (let i: number = 0; i < this.pendingDestroy.length; i++) {
+      const scriptId: ScriptID = this.pendingDestroy[i];
       const record: ScriptInstanceRecord | undefined =
         this.records.get(scriptId);
 
@@ -297,5 +311,7 @@ export class ScriptManager implements ScriptResolver {
         }
       }
     }
+
+    this.pendingDestroy.length = 0;
   }
 }

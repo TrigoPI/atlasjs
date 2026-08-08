@@ -417,7 +417,7 @@ Le prédécesseur de ce système était `@Expose()` — un décorateur de champ 
 
 ## 9. Exemple complet (dino-brawl)
 
-**`apps/dino-brawl/src/game/scripts/TestScript.ts`** — reçoit ses assets **et** l'entité `sword`, et la pilote :
+**Un script joueur (dino-brawl)** — reçoit ses assets **et** l'entité `sword`, et la pilote :
 
 ```ts
 export class TestScript extends AtlasScript<{
@@ -433,16 +433,16 @@ export class TestScript extends AtlasScript<{
   private readonly controls!: PlayerControlsDescriptor;
   private readonly sword!: GameEntity;
 
-  private spriteRenderer!: SpriteRendererComponent;
+  private spriteRenderer!: SpriteRenderer;
   private animator!: Animator;
   // … transform, rigidbody, actions
 
   public onCreate(): void {
     const actions = this.addComponent(PlayerInput, this.controls);
-    this.transform = this.addComponent(Transform2DComponent);
-    this.rigidbody = this.addComponent(RigidBody2DComponent);
+    this.transform = this.addComponent(Transform);
+    this.rigidbody = this.addComponent(RigidBody);
 
-    this.spriteRenderer = this.addComponent(SpriteRendererComponent, this.sprite);
+    this.spriteRenderer = this.addComponent(SpriteRenderer, this.sprite);
     this.animator = this.addComponent(Animator, this.clips, "idle");
 
     const swordScript: SwordScript | undefined = this.sword.getScript(SwordScript);
@@ -462,7 +462,7 @@ registerScriptMetadata(TestScript, {
 });
 ```
 
-**`apps/dino-brawl/src/game/EcsScene.ts`** — fabrique les assets, ne pose plus `SpriteRender`/`Animator`, et passe l'entité `sword` **brute** :
+**`apps/dino-brawl/src/game/ArenaScene.ts`** — fabrique les assets, ne pose plus `SpriteRender`/`Animator`, et passe l'entité `sword` **brute** :
 
 ```ts
 const blueDinoSprite: Sprite = new Sprite(blueDinoTexture);

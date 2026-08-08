@@ -48,7 +48,7 @@ export class PhysicsPushSystem implements NexusSystem {
 
   // prettier-ignore
   public update({ world }: NexusSystemContext): void {
-    world.query(RigidBody2D, Transform2D).without(PhysicsBodyRef).each((entity) => {
+    world.query(RigidBody2D, Transform2D).without(PhysicsBodyRef).each((entity: Entity) => {
       this.pending.push(entity);
     });
 
@@ -70,7 +70,7 @@ export class PhysicsPushSystem implements NexusSystem {
 
     this.pending.length = 0;
 
-    world.query(RigidBody2D, Transform2D, PhysicsBodyRef).each((entity, rigidBody, transform, ref) => {
+    world.query(RigidBody2D, Transform2D, PhysicsBodyRef).each((entity: Entity, rigidBody: RigidBody2D, transform: Transform2D, ref: PhysicsBodyRef) => {
       const body: RigidBody = ref.body;
 
       body.setMass(rigidBody.mass);
@@ -84,7 +84,7 @@ export class PhysicsPushSystem implements NexusSystem {
       }
     });
 
-    world.query(Collider2D).without(PhysicsColliderRef).each((entity) => {
+    world.query(Collider2D).without(PhysicsColliderRef).each((entity: Entity) => {
       this.pendingColliders.push(entity);
     });
 
@@ -99,7 +99,7 @@ export class PhysicsPushSystem implements NexusSystem {
 
     this.pendingColliders.length = 0;
 
-    world.query(CharacterController2D).without(CharacterControllerRef).each((entity) => {
+    world.query(CharacterController2D).without(CharacterControllerRef).each((entity: Entity) => {
       this.pendingControllers.push(entity);
     });
 
