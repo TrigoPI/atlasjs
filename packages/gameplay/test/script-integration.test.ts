@@ -59,7 +59,7 @@ describe("Gameplay — script → handle → bridge → physics (end to end)", (
     );
     expect(h.physics.bodyCount).toBe(1);
 
-    h.scripts.destroyAllByEntity(e);
+    h.scripts.destroyEntityScripts(e);
     h.world.destroyEntity(e);
 
     // The body is torn down through onRemove(PhysicsBodyRef); no dangling body.

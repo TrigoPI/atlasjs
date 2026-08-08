@@ -30,7 +30,7 @@ export class TileMap {
   }
 
   public getTile(cx: number, cy: number): number {
-    const key: number | undefined = this.key(cx, cy);
+    const key: number = this.key(cx, cy);
     const value: number | undefined = this.cells.get(key);
     return value === undefined ? -1 : value;
   }

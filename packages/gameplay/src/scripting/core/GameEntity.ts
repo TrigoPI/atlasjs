@@ -2,24 +2,15 @@ import { Component, Entity, NexusWorld } from "@atlasjs/nexus";
 
 import type { AtlasScript } from "./AtlasScript";
 import type { ScriptConstructor } from "./core-types";
+import { ComponentAccess } from "./ComponentAccess";
 import {
   type ScriptComponentToken,
   isScriptComponentToken,
 } from "./ScriptComponentToken";
 
 // prettier-ignore
-export interface GameEntity {
+export interface GameEntity extends ComponentAccess {
   readonly id: Entity;
-
-  hasComponent(type: Component<object, any[]> | ScriptComponentToken<unknown, object, any[]>): boolean;
-
-  getComponent<TApi, TEngine extends object>(type: ScriptComponentToken<TApi, TEngine, any[]>): TApi | undefined;
-  getComponent<TComponent extends object>(type: Component<TComponent, any[]>): TComponent | undefined;
-
-  addComponent<TApi, TEngine extends object, TArgs extends unknown[]>(type: ScriptComponentToken<TApi, TEngine, TArgs>, ...args: TArgs): TApi;
-  addComponent<TComponent extends object, TArgs extends unknown[]>(type: Component<TComponent, TArgs>, ...args: TArgs): TComponent;
-
-  removeComponent(type: Component<object, any[]> | ScriptComponentToken<unknown, object, any[]>): void;
 
   requireComponent<TApi, TEngine extends object>(type: ScriptComponentToken<TApi, TEngine, any[]>): TApi;
   requireComponent<TComponent extends object>(type: Component<TComponent, any[]>): TComponent;

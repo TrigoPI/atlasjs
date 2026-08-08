@@ -4,12 +4,7 @@ import { SpriteRender, WorldTransform2D } from "../components";
 import { applySortFields } from "../rendering/applySortFields";
 import type { SortingLayers } from "../rendering";
 
-import {
-  Color,
-  NebulaRenderer,
-  Sampler,
-  SpriteNode,
-} from "@atlasjs/nebula";
+import { Color, NebulaRenderer, Sampler, SpriteNode } from "@atlasjs/nebula";
 
 import {
   Entity,
@@ -45,7 +40,7 @@ export class SpriteRenderSystem implements NexusSystem {
 
   // prettier-ignore
   public update({ world }: NexusSystemContext): void {
-    world.query(WorldTransform2D, SpriteRender).each((entity, worldTransform, spriteRender) => {
+    world.query(WorldTransform2D, SpriteRender).each((entity: Entity, worldTransform: WorldTransform2D, spriteRender: SpriteRender) => {
       const node: SpriteNode = this.resolveNode(entity, spriteRender.sprite);
 
       const position: Vec2 = worldTransform.getPosition(this.positionScratch);
