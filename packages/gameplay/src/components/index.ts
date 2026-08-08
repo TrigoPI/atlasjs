@@ -8,6 +8,7 @@ export * from "./PhysicsBodyRef";
 export * from "./PhysicsColliderRef";
 export * from "./PlayerInput";
 export * from "./RigidBody2D";
+export * from "./ScriptHost";
 export * from "./SpriteRender";
 export * from "./TileMap";
 export * from "./TileMapRenderer";

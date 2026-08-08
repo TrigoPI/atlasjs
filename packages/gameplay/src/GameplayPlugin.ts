@@ -261,6 +261,7 @@ export class GameplayPlugin extends Plugin {
     this.logger.log("Uninstalling GameplayPlugin.");
     for (const handle of this.handles) handle.remove();
     for (const off of this.unsubscribers) off();
+    this.scriptManager.dispose();
     this.handles = [];
     this.unsubscribers = [];
   }
