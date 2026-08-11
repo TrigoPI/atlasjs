@@ -2,6 +2,7 @@ import { type ReactNode, type RefObject, useEffect, useRef } from "react";
 
 import { Engine } from "@atlasjs/core";
 import { AssetPlugin } from "@atlasjs/assets";
+import { AudioPlugin } from "@atlasjs/audio";
 import { InputPlugin } from "@atlasjs/input";
 import { NexusPlugin } from "@atlasjs/nexus";
 import { InertialPlugin } from "@atlasjs/inertia";
@@ -31,6 +32,7 @@ export function GameCanvas({
 
     const renderer: WebGPURenderer = new WebGPURenderer(mount);
     const assetPlugin: AssetPlugin = new AssetPlugin();
+    const audioPlugin: AudioPlugin = new AudioPlugin();
     const rendererPlugin: NebulaPlugin = new NebulaPlugin(renderer);
     const nexusPlugin: NexusPlugin = new NexusPlugin();
     const gameplayPlugin: GameplayPlugin = new GameplayPlugin();
@@ -46,6 +48,7 @@ export function GameCanvas({
 
     engine
       .use(assetPlugin)
+      .use(audioPlugin)
       .use(inputPlugin)
       .use(inertiaPlugin)
       .use(rendererPlugin)

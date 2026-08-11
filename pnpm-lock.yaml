@@ -38,6 +38,9 @@ importers:
       '@atlasjs/assets':
         specifier: workspace:*
         version: link:../../packages/assets
+      '@atlasjs/audio':
+        specifier: workspace:*
+        version: link:../../packages/audio
       '@atlasjs/core':
         specifier: workspace:*
         version: link:../../packages/core
