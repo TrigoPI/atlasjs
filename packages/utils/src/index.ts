@@ -3,3 +3,4 @@ export * from "./types";
 
 export * from "./Observable";
 export * from "./Clock";
+export * from "./random";
