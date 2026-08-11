@@ -12,6 +12,7 @@ describe("AudioSource", () => {
     const source: AudioSource = new AudioSource();
     expect(source.clip).toBeNull();
     expect(source.volume).toBe(1);
+    expect(source.pitch).toBe(1);
     expect(source.loop).toBe(false);
     expect(source.mute).toBe(false);
     expect(source.playOnAwake).toBe(false);
@@ -25,9 +26,11 @@ describe("AudioSource", () => {
       loop: true,
       mute: true,
       playOnAwake: true,
+      pitch: 1.25,
     });
     expect(source.clip).toBe(clip);
     expect(source.volume).toBe(0.5);
+    expect(source.pitch).toBe(1.25);
     expect(source.loop).toBe(true);
     expect(source.mute).toBe(true);
     expect(source.playOnAwake).toBe(true);

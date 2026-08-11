@@ -1,12 +1,17 @@
-import { AudioClip, AudioEngine, AUDIO_ENGINE } from "@atlasjs/audio";
+import {
+  AudioClip,
+  AudioEngine,
+  AUDIO_ENGINE,
+  PlaybackParams,
+} from "@atlasjs/audio";
 
 import { ScriptService } from "../core";
 
 export class AudioApi extends ScriptService<AudioEngine> {
   public static readonly token = AUDIO_ENGINE;
 
-  public playOneShot(clip: AudioClip, volume?: number): void {
-    this.provided.playOneShot(clip, volume);
+  public playOneShot(clip: AudioClip, params?: PlaybackParams): void {
+    this.provided.playOneShot(clip, params);
   }
 
   public get masterVolume(): number {

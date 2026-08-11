@@ -39,6 +39,7 @@ export class AudioSystem implements NexusSystem {
         loop: source.loop,
         volume: source.volume,
         mute: source.mute,
+        pitch: source.pitch,
       });
       this.voices.set(source, voice);
       source.isPlaying = true;
@@ -53,7 +54,7 @@ export class AudioSystem implements NexusSystem {
     if (voice === undefined) {
       return;
     }
-    voice.apply(source.volume, source.mute);
+    voice.apply(source.volume, source.mute, source.pitch);
   }
 
   private sweepFinished(): void {

@@ -13,6 +13,7 @@ export class FakeGainNode {
 export class FakeBufferSourceNode {
   public buffer: unknown = null;
   public loop: boolean = false;
+  public playbackRate: { value: number } = { value: 1 };
   public started: boolean = false;
   public stopped: boolean = false;
   public disconnected: boolean = false;

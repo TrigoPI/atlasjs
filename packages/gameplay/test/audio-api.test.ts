@@ -1,15 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { ServiceRegistry } from "@atlasjs/core";
-import { AudioClip, AudioEngine, AUDIO_ENGINE } from "@atlasjs/audio";
+import {
+  AudioClip,
+  AudioEngine,
+  AUDIO_ENGINE,
+  PlaybackParams,
+} from "@atlasjs/audio";
 
 import { AudioApi } from "../src/scripting/services/AudioApi";
 
 class FakeEngine {
-  public oneShots: Array<[AudioClip, number | undefined]> = [];
+  public oneShots: Array<[AudioClip, PlaybackParams | undefined]> = [];
   public masterVolume: number = 1;
   public muted: boolean = false;
-  public playOneShot(clip: AudioClip, volume?: number): void {
-    this.oneShots.push([clip, volume]);
+  public playOneShot(clip: AudioClip, params?: PlaybackParams): void {
+    this.oneShots.push([clip, params]);
   }
 }
 
@@ -24,8 +29,8 @@ describe("AudioApi", () => {
     services.provide(AUDIO_ENGINE, engine as unknown as AudioEngine);
 
     const api: AudioApi = new AudioApi(services);
-    api.playOneShot(clip, 0.7);
-    expect(engine.oneShots).toEqual([[clip, 0.7]]);
+    api.playOneShot(clip, { volume: 0.7 });
+    expect(engine.oneShots).toEqual([[clip, { volume: 0.7 }]]);
 
     api.masterVolume = 0.3;
     expect(engine.masterVolume).toBe(0.3);

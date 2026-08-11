@@ -41,6 +41,7 @@ import {
   TextureAsset,
 } from "@atlasjs/nebula";
 import { AudioClip, AudioClipAsset } from "@atlasjs/audio";
+import { randomRange, pickRandom } from "@atlasjs/utils";
 
 // prettier-ignore
 export async function spawnPlayer(
@@ -183,12 +184,13 @@ export async function spawnPlayer(
   const runningAudioPlayer: Prefab = definePrefab({
     name: "runningAudioPlayer",
     build: (entity: EntityBuilder): void => {
-      const audio: AudioSource = entity.add(AudioSource, grassSound, { 
-        playOnAwake: true
+      const audio: AudioSource = entity.add(AudioSource, pickRandom([grassSound]), {
+        playOnAwake: true,
       });
 
-      audio.volume = Math.random() * 0.05 + 0.05;
-    }
+      audio.volume = randomRange(0.05, 0.1);
+      audio.pitch = randomRange(0.9, 1.1);
+    },
   });
 
   nexus.setParent(shadow, player);

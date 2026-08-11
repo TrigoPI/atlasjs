@@ -7,11 +7,13 @@ export interface AudioSourceOptions {
   loop?: boolean;
   mute?: boolean;
   playOnAwake?: boolean;
+  pitch?: number;
 }
 
 export class AudioSource {
   public clip: AudioClip | null;
   public volume: number;
+  public pitch: number;
   public loop: boolean;
   public mute: boolean;
   public playOnAwake: boolean;
@@ -24,6 +26,7 @@ export class AudioSource {
   ) {
     this.clip = clip;
     this.volume = options?.volume ?? 1;
+    this.pitch = options?.pitch ?? 1;
     this.loop = options?.loop ?? false;
     this.mute = options?.mute ?? false;
     this.playOnAwake = options?.playOnAwake ?? false;

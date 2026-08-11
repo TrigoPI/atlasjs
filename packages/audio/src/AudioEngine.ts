@@ -13,6 +13,11 @@ export interface AudioEngineOptions {
   doc?: VisibilityDoc;
 }
 
+export interface PlaybackParams {
+  volume?: number;
+  pitch?: number;
+}
+
 const GESTURE_EVENTS: readonly string[] = [
   "pointerdown",
   "keydown",
@@ -70,11 +75,12 @@ export class AudioEngine {
     return this.ctx.decodeAudioData(data);
   }
 
-  public playOneShot(clip: AudioClip, volume: number = 1): void {
+  public playOneShot(clip: AudioClip, params: PlaybackParams = {}): void {
     const source: AudioBufferSourceNode = this.ctx.createBufferSource();
     source.buffer = clip.buffer;
+    source.playbackRate.value = Math.max(0, params.pitch ?? 1);
     const gain: GainNode = this.ctx.createGain();
-    gain.gain.value = Math.max(0, volume);
+    gain.gain.value = Math.max(0, params.volume ?? 1);
     source.connect(gain);
     gain.connect(this.master);
     source.onended = (): void => {
@@ -87,11 +93,12 @@ export class AudioEngine {
 
   public createVoice(
     clip: AudioClip,
-    opts: { loop: boolean; volume: number; mute: boolean },
+    opts: { loop: boolean; volume: number; mute: boolean; pitch?: number },
   ): AudioVoice {
     const source: AudioBufferSourceNode = this.ctx.createBufferSource();
     source.buffer = clip.buffer;
     source.loop = opts.loop;
+    source.playbackRate.value = Math.max(0, opts.pitch ?? 1);
     const gain: GainNode = this.ctx.createGain();
     gain.gain.value = opts.mute ? 0 : Math.max(0, opts.volume);
     source.connect(gain);

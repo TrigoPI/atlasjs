@@ -7,10 +7,10 @@ import { AudioSystem } from "../src/systems/AudioSystem";
 
 class FakeVoice implements AudioVoice {
   public finished: boolean = false;
-  public applied: Array<[number, boolean]> = [];
+  public applied: Array<[number, boolean, number]> = [];
   public stopped: boolean = false;
-  public apply(volume: number, muted: boolean): void {
-    this.applied.push([volume, muted]);
+  public apply(volume: number, muted: boolean, pitch: number): void {
+    this.applied.push([volume, muted, pitch]);
   }
   public stop(): void {
     this.stopped = true;
@@ -20,11 +20,15 @@ class FakeVoice implements AudioVoice {
 
 class FakeEngine {
   public voices: FakeVoice[] = [];
-  public lastOpts: { loop: boolean; volume: number; mute: boolean } | null =
-    null;
+  public lastOpts: {
+    loop: boolean;
+    volume: number;
+    mute: boolean;
+    pitch?: number;
+  } | null = null;
   public createVoice(
     _clip: AudioClip,
-    opts: { loop: boolean; volume: number; mute: boolean },
+    opts: { loop: boolean; volume: number; mute: boolean; pitch?: number },
   ): AudioVoice {
     this.lastOpts = opts;
     const voice: FakeVoice = new FakeVoice();
@@ -59,7 +63,12 @@ describe("AudioSystem", () => {
     source.play();
     system.update({ world, dt: 0 });
     expect(engine.voices).toHaveLength(1);
-    expect(engine.lastOpts).toEqual({ loop: true, volume: 0.5, mute: false });
+    expect(engine.lastOpts).toEqual({
+      loop: true,
+      volume: 0.5,
+      mute: false,
+      pitch: 1,
+    });
     expect(source.command).toBe("none");
     expect(source.isPlaying).toBe(true);
   });
@@ -85,7 +94,7 @@ describe("AudioSystem", () => {
     source.volume = 0.2;
     source.mute = true;
     system.update({ world, dt: 0 });
-    expect(engine.voices[0].applied.at(-1)).toEqual([0.2, true]);
+    expect(engine.voices[0].applied.at(-1)).toEqual([0.2, true, 1]);
   });
 
   it("stop command stops the voice and clears playing", () => {
@@ -114,5 +123,16 @@ describe("AudioSystem", () => {
     system.release(source);
     expect(engine.voices[0].stopped).toBe(true);
     expect(source.isPlaying).toBe(false);
+  });
+
+  it("passes the source pitch to createVoice and pushes it live", () => {
+    const { world, engine, system, source } = setup();
+    source.pitch = 1.5;
+    source.play();
+    system.update({ world, dt: 0 });
+    expect(engine.lastOpts?.pitch).toBe(1.5);
+    source.pitch = 0.75;
+    system.update({ world, dt: 0 });
+    expect(engine.voices[0].applied.at(-1)).toEqual([0.5, false, 0.75]);
   });
 });

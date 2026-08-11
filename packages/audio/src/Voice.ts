@@ -13,8 +13,9 @@ export class Voice implements AudioVoice {
     };
   }
 
-  public apply(volume: number, muted: boolean): void {
+  public apply(volume: number, muted: boolean, pitch: number): void {
     this.gain.gain.value = muted ? 0 : Math.max(0, volume);
+    this.source.playbackRate.value = Math.max(0, pitch);
   }
 
   public stop(): void {

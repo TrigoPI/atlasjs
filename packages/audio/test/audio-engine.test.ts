@@ -70,7 +70,7 @@ describe("AudioEngine", () => {
 
   it("playOneShot wires a source through a gain into master and starts it", () => {
     const { engine, ctx } = make();
-    engine.playOneShot(clip, 0.5);
+    engine.playOneShot(clip, { volume: 0.5 });
     const source: FakeBufferSourceNode = ctx.sources[0];
     expect(source.buffer).toBe(clip.buffer);
     expect(source.started).toBe(true);
@@ -98,9 +98,9 @@ describe("AudioEngine", () => {
     const source: FakeBufferSourceNode = ctx.sources[0];
     expect(source.loop).toBe(true);
     expect(source.started).toBe(true);
-    voice.apply(0.2, false);
+    voice.apply(0.2, false, 1);
     expect(ctx.gains[1].gain.value).toBeCloseTo(0.2);
-    voice.apply(0.2, true);
+    voice.apply(0.2, true, 1);
     expect(ctx.gains[1].gain.value).toBe(0);
     expect(voice.finished).toBe(false);
     voice.stop();
@@ -168,5 +168,46 @@ describe("AudioEngine", () => {
     engine.destroy();
     expect(ctx.closed).toBe(true);
     expect(doc.has("visibilitychange")).toBe(false);
+  });
+
+  it("playOneShot applies pitch to the source playbackRate", () => {
+    const { engine, ctx } = make();
+    engine.playOneShot(clip, { volume: 1, pitch: 1.5 });
+    expect(ctx.sources[0].playbackRate.value).toBeCloseTo(1.5);
+    engine.destroy();
+  });
+
+  it("playOneShot defaults pitch to 1", () => {
+    const { engine, ctx } = make();
+    engine.playOneShot(clip);
+    expect(ctx.sources[0].playbackRate.value).toBe(1);
+    engine.destroy();
+  });
+
+  it("createVoice sets the initial playbackRate from pitch", () => {
+    const { engine, ctx } = make();
+    engine.createVoice(clip, {
+      loop: false,
+      volume: 1,
+      mute: false,
+      pitch: 0.5,
+    });
+    expect(ctx.sources[0].playbackRate.value).toBeCloseTo(0.5);
+    engine.destroy();
+  });
+
+  it("apply updates playbackRate live and clamps negatives to 0", () => {
+    const { engine, ctx } = make();
+    const voice = engine.createVoice(clip, {
+      loop: true,
+      volume: 1,
+      mute: false,
+    });
+    expect(ctx.sources[0].playbackRate.value).toBe(1);
+    voice.apply(1, false, 2);
+    expect(ctx.sources[0].playbackRate.value).toBeCloseTo(2);
+    voice.apply(1, false, -3);
+    expect(ctx.sources[0].playbackRate.value).toBe(0);
+    engine.destroy();
   });
 });
