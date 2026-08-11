@@ -142,17 +142,17 @@ export class AudioEngine {
       return;
     }
 
+    try {
+      await this.ctx.resume();
+    } catch {
+      return;
+    }
+
     this.unlocked = true;
     if (this.target !== null) {
       for (const type of GESTURE_EVENTS) {
         this.target.removeEventListener(type, this.onGesture);
       }
-    }
-
-    try {
-      await this.ctx.resume();
-    } catch {
-      void 0;
     }
   }
 

@@ -20,6 +20,7 @@ describe("AudioPlugin", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({
+        ok: true,
         arrayBuffer: async (): Promise<ArrayBuffer> => new ArrayBuffer(8),
       })),
     );

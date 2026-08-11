@@ -31,5 +31,10 @@ describe("AudioApi", () => {
     expect(engine.masterVolume).toBe(0.3);
     api.muted = true;
     expect(engine.muted).toBe(true);
+
+    engine.masterVolume = 0.42;
+    expect(api.masterVolume).toBe(0.42);
+    engine.muted = true;
+    expect(api.muted).toBe(true);
   });
 });

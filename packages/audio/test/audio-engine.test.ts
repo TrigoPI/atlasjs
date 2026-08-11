@@ -7,6 +7,22 @@ import {
   FakeBufferSourceNode,
 } from "./helpers/fakeAudioContext";
 
+class FlakyResumeContext extends FakeAudioContext {
+  public failuresLeft: number;
+  public constructor(failures: number) {
+    super();
+    this.failuresLeft = failures;
+  }
+  public async resume(): Promise<void> {
+    if (this.failuresLeft > 0) {
+      this.failuresLeft--;
+      this.resumeCalls++;
+      throw new Error("resume blocked");
+    }
+    return super.resume();
+  }
+}
+
 class FakeDoc implements VisibilityDoc {
   public hidden: boolean = false;
   private readonly listeners: Map<string, () => void> = new Map();
@@ -126,6 +142,24 @@ describe("AudioEngine", () => {
     doc.hidden = false;
     doc.fire("visibilitychange");
     expect(ctx.resumeCalls).toBe(2);
+    engine.destroy();
+  });
+
+  it("retries unlock on the next gesture after a resume rejection", async () => {
+    const ctx: FlakyResumeContext = new FlakyResumeContext(1);
+    const target: EventTarget = new EventTarget();
+    const engine: AudioEngine = new AudioEngine(
+      ctx as unknown as AudioContext,
+      {
+        target,
+      },
+    );
+    target.dispatchEvent(new Event("pointerdown"));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    target.dispatchEvent(new Event("pointerdown"));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(ctx.resumeCalls).toBe(2);
+    expect(ctx.state).toBe("running");
     engine.destroy();
   });
 

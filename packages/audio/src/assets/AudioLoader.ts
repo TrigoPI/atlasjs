@@ -14,6 +14,11 @@ export class AudioLoader implements AssetLoader<AudioClipAsset, AudioClip> {
 
   public async load(asset: AudioClipAsset): Promise<AudioClip> {
     const response: Response = await fetch(asset.source);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to load audio "${asset.source}": ${response.status}`,
+      );
+    }
     const data: ArrayBuffer = await response.arrayBuffer();
     const buffer: AudioBuffer = await this.engine.decode(data);
     return new AudioClip(asset.id, buffer);
