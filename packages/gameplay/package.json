@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@atlasjs/assets": "workspace:*",
+    "@atlasjs/audio": "workspace:*",
     "@atlasjs/core": "workspace:*",
     "@atlasjs/inertia": "workspace:*",
     "@atlasjs/input": "workspace:*",

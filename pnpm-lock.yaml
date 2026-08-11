@@ -209,6 +209,9 @@ importers:
       '@atlasjs/assets':
         specifier: workspace:*
         version: link:../assets
+      '@atlasjs/audio':
+        specifier: workspace:*
+        version: link:../audio
       '@atlasjs/core':
         specifier: workspace:*
         version: link:../core
