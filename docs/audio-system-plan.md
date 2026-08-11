@@ -1614,9 +1614,9 @@ In `apps/dino-brawl/package.json`, add to `dependencies` (keep alphabetical — 
 ```
 Then run: `pnpm install`
 
-- [ ] **Step 2: Add an audio asset**
+- [ ] **Step 2: Audio asset (already provided)**
 
-Place a short audio file at `apps/dino-brawl/assets/audio/music.ogg` (looping background track). If the user has none handy, any small royalty-free `.ogg`/`.mp3` works for verification.
+A synthesized placeholder track already exists at `apps/dino-brawl/assets/audio/music.wav` (~132 KB, seamless 3s loop). Use it as-is — do not create or download anything. dino-brawl references assets via Vite `@assets/*` imports (see Step 4a), not hardcoded URLs.
 
 - [ ] **Step 3: Register `AudioPlugin` in the engine chain**
 
