@@ -1,6 +1,6 @@
 import Map from "@maps/dino_brawl.json";
 
-import Music from "@assets/audio/music.wav";
+import Grass from "@assets/audio/grass.mp3";
 
 import GrassTileset from "@assets/tilesets/ground/grass-tileset.png";
 import Props from "@assets/tilesets/props/props.png";
@@ -19,7 +19,7 @@ import Default from "@assets/sprites/swords/Iicon_32_01.png";
 export const ResourcesPath = {
   Map,
   Audio: {
-    Music: Music,
+    Grass: Grass,
   },
   Sprites: {
     Props: {

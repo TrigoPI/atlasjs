@@ -10,6 +10,7 @@ import { SortingLayer, SortingOrder, CollisionLayers } from "../config";
 import {
   PlayerAnimationScript,
   PlayerMovementScript,
+  RunningAudioPlayerScript,
   RunningParticleScript,
   RunningParticleSpawnerScript,
 } from "../scripts";
@@ -20,6 +21,7 @@ import {
   type ScriptManager,
   type Sprite,
   Animator,
+  AudioSource,
   CharacterController2D,
   Collider2D,
   Color,
@@ -38,6 +40,7 @@ import {
   SpriteSheet,
   TextureAsset,
 } from "@atlasjs/nebula";
+import { AudioClip, AudioClipAsset } from "@atlasjs/audio";
 
 // prettier-ignore
 export async function spawnPlayer(
@@ -52,11 +55,14 @@ export async function spawnPlayer(
   const runningParticleSpriteAsset: SpriteAsset = SpriteAsset.fromPath(ResourcesPath.Sprites.Particles.RunningCloud);
   const dinoAsset: TextureAsset = new TextureAsset(ResourcesPath.Sprites.Dinos.Yellow);
   const dinoSpriteAsset: SpriteAsset = new SpriteAsset(dinoAsset, { pivot: new Vec2(0.5, 1) });
+  const grassSoundAsset: AudioClipAsset = new AudioClipAsset(ResourcesPath.Audio.Grass);
 
   const dinoTexture: Texture2D = await assets.load<Texture2D>(dinoAsset);
   const dinoSprite: Sprite = await assets.load<Sprite>(dinoSpriteAsset);
   const shadowSprite: Sprite = await assets.load<Sprite>(shadowSpriteAsset);
   const runningParticleSprite: Sprite = await assets.load<Sprite>(runningParticleSpriteAsset);
+
+  const grassSound: AudioClip = await assets.load<AudioClip>(grassSoundAsset);
 
   const playerSheet: SpriteSheet = SpriteSheet.fromAutoGrid({
     name: "player_dino",
@@ -160,6 +166,7 @@ export async function spawnPlayer(
       };
 
       entity.add(Animator, runningParticleClips, "default");
+      entity.add(AudioSource, grassSound);
 
       const renderer: SpriteRenderer = entity.add(SpriteRenderer, runningParticleSprite);
       renderer.sortingLayer = SortingLayer.Entities;
@@ -173,11 +180,26 @@ export async function spawnPlayer(
     }
   })
 
+  const runningAudioPlayer: Prefab = definePrefab({
+    name: "runningAudioPlayer",
+    build: (entity: EntityBuilder): void => {
+      const audio: AudioSource = entity.add(AudioSource, grassSound, { 
+        playOnAwake: true
+      });
+
+      audio.volume = Math.random() * 0.05 + 0.05;
+    }
+  });
+
   nexus.setParent(shadow, player);
 
   scriptManager.attach(player, RunningParticleSpawnerScript, {
     runningParticlePrefab: runningParticlePrefab,
   });
+
+  scriptManager.attach(player, RunningAudioPlayerScript, {
+    audioPrefab: runningAudioPlayer,
+  })
 
   scriptManager.attach(player, PlayerAnimationScript);
   scriptManager.attach(player, PlayerMovementScript, {
