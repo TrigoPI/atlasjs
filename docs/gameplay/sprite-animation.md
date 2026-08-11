@@ -154,7 +154,9 @@ export class AnimatorSystem implements NexusSystem {
 
 ## 10. Non-objectifs (V2 → `docs/backlog.md`)
 
-State machine / transitions, blend trees, **events de frame** (le stub existe), events de fin d'anim (`onComplete`), root motion, vitesse d'anim / timescale par clip, sérialisation d'un asset d'animation.
+State machine / transitions, blend trees, **events de frame** (le stub existe), root motion, vitesse d'anim / timescale par clip, sérialisation d'un asset d'animation.
+
+> **Events de clip (`started`/`finished`/`loop`) : implémenté** → voir `docs/gameplay/animation-events.md`. Détection côté gameplay (nebula intouché), `Animator.on`/`off` sur l'`EventBus` de core.
 
 ## 11. Ordre d'implémentation suggéré
 

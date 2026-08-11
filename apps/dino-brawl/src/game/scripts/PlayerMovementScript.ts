@@ -12,8 +12,12 @@ import {
   Vector2Action,
 } from "@atlasjs/gameplay";
 
-export class PlayerMovementScript extends AtlasScript<{ speed: number }> {
-  private readonly speed: number;
+export class PlayerMovementScript extends AtlasScript<{
+  walkingSpeed: number;
+  runningSpeed: number;
+}> {
+  private readonly walkingSpeed: number;
+  private readonly runningSpeed: number;
 
   private character: CharacterController;
 
@@ -34,7 +38,9 @@ export class PlayerMovementScript extends AtlasScript<{ speed: number }> {
 
   public onUpdate(dt: number): void {
     const v: Vec2 = this.move.readValue();
-    const speed: number = this.boost.isDown() ? this.speed * 2 : this.speed;
+    const speed: number = this.boost.isDown()
+      ? this.runningSpeed * 2
+      : this.walkingSpeed;
 
     if (v.x !== 0 || v.y !== 0) {
       this.moveDelta.set(v.x * speed * dt, v.y * speed * dt);
@@ -49,6 +55,7 @@ export class PlayerMovementScript extends AtlasScript<{ speed: number }> {
 
 registerScriptMetadata(PlayerMovementScript, {
   exposed: {
-    speed: ScriptMetadata.field({ required: true }),
+    walkingSpeed: ScriptMetadata.field({ required: true }),
+    runningSpeed: ScriptMetadata.field({ required: true }),
   },
 });

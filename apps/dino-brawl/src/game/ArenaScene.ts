@@ -4,7 +4,7 @@ import { type SortingLayers, SORTING_LAYERS } from "@atlasjs/gameplay";
 
 import { SortingLayer } from "./config";
 import type { BuiltMap, WorldPoint } from "./tiled";
-import { spawnCamera, spawnPlayer, spawnSword, spawnWorld } from "./spawn";
+import { spawnCamera, spawnPlayer, spawnWorld } from "./spawn";
 
 export class ArenaScene extends Scene {
   private fpsCallback: (fps: number) => void;
@@ -30,8 +30,7 @@ export class ArenaScene extends Scene {
       : Vec2.zero();
 
     const { player } = await spawnPlayer(ctx, spawnPosition);
-    await spawnSword(ctx, player);
-    // await spawnProps(ctx, spawnPosition);
+    // await spawnSword(ctx, player);
 
     spawnCamera(ctx, player);
   }

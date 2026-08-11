@@ -5,17 +5,25 @@ import { type AssetManager, ASSET_MANAGER } from "@atlasjs/assets";
 
 import { ResourcesPath } from "../ResourcesPath";
 import { dinoControls } from "../controls";
-
 import { SortingLayer, SortingOrder, CollisionLayers } from "../config";
-import { PlayerAnimationScript, PlayerMovementScript } from "../scripts";
 
 import {
+  PlayerAnimationScript,
+  PlayerMovementScript,
+  RunningParticleScript,
+  RunningParticleSpawnerScript,
+} from "../scripts";
+
+import {
+  type EntityBuilder,
+  type Prefab,
   type ScriptManager,
   type Sprite,
   Animator,
   CharacterController2D,
   Collider2D,
   Color,
+  definePrefab,
   PlayerInput,
   RigidBody,
   SCRIPT_MANAGER,
@@ -41,18 +49,28 @@ export async function spawnPlayer(
   const scriptManager: ScriptManager = ctx.services.get(SCRIPT_MANAGER);
 
   const shadowSpriteAsset: SpriteAsset = SpriteAsset.fromPath(ResourcesPath.Sprites.Props.Shadow);
+  const runningParticleSpriteAsset: SpriteAsset = SpriteAsset.fromPath(ResourcesPath.Sprites.Particles.RunningCloud);
   const dinoAsset: TextureAsset = new TextureAsset(ResourcesPath.Sprites.Dinos.Yellow);
   const dinoSpriteAsset: SpriteAsset = new SpriteAsset(dinoAsset, { pivot: new Vec2(0.5, 1) });
 
   const dinoTexture: Texture2D = await assets.load<Texture2D>(dinoAsset);
   const dinoSprite: Sprite = await assets.load<Sprite>(dinoSpriteAsset);
   const shadowSprite: Sprite = await assets.load<Sprite>(shadowSpriteAsset);
+  const runningParticleSprite: Sprite = await assets.load<Sprite>(runningParticleSpriteAsset);
 
   const playerSheet: SpriteSheet = SpriteSheet.fromAutoGrid({
     name: "player_dino",
     texture: dinoTexture,
     rows: 1,
     columns: 24,
+    pivot: new Vec2(0.5, 1),
+  });
+
+  const runningParticleSheet: SpriteSheet = SpriteSheet.fromAutoGrid({
+    name: "running_particle",
+    texture: runningParticleSprite.texture,
+    rows: 1,
+    columns: 8,
     pivot: new Vec2(0.5, 1),
   });
 
@@ -82,6 +100,7 @@ export async function spawnPlayer(
       autoPlay: true,
     }),
   };
+
 
   const player: Entity = nexus.createEntity();
   const playerTransform: Transform2D = nexus.addComponent(player, Transform2D);
@@ -128,11 +147,42 @@ export async function spawnPlayer(
   shadowTransform.scale.set(0.7, 0.6);
   shadowTransform.position.set(-0.5, -3);
 
+  const runningParticlePrefab: Prefab<{ position: Vec2 }> = definePrefab({
+    name: "runningParticle",
+    build: (entity: EntityBuilder, { position }): void => {
+      const runningParticleClips: Record<string, SpriteAnimation> = {
+        default: new SpriteAnimation({
+          frames: runningParticleSheet.getManyInRange("running_particle_", 0, 7),
+          fps: 15,
+          loop: false,
+          autoPlay: true,
+        })
+      };
+
+      entity.add(Animator, runningParticleClips, "default");
+
+      const renderer: SpriteRenderer = entity.add(SpriteRenderer, runningParticleSprite);
+      renderer.sortingLayer = SortingLayer.Entities;
+      renderer.sortingOrder = 100;
+
+      const transform: Transform2D = entity.add(Transform2D);
+      transform.scale.set(2, 2);
+      transform.position.copyFrom(position);
+
+      entity.attach(RunningParticleScript);
+    }
+  })
+
   nexus.setParent(shadow, player);
 
-  scriptManager.attach(player, PlayerAnimationScript, {});
+  scriptManager.attach(player, RunningParticleSpawnerScript, {
+    runningParticlePrefab: runningParticlePrefab,
+  });
+
+  scriptManager.attach(player, PlayerAnimationScript);
   scriptManager.attach(player, PlayerMovementScript, {
-    speed: 150,
+    walkingSpeed: 200,
+    runningSpeed: 205,
   });
 
   return { player, shadow };

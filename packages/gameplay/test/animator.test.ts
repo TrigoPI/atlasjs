@@ -6,6 +6,13 @@ import { Animator } from "../src";
 import { fakeTexture } from "./helpers/fakes";
 
 function clip(n: number): { anim: SpriteAnimation; frames: Frame[] } {
+  return clipOpts(n, true);
+}
+
+function clipOpts(
+  n: number,
+  loop: boolean,
+): { anim: SpriteAnimation; frames: Frame[] } {
   const texture = fakeTexture();
   const frames: Frame[] = Array.from(
     { length: n },
@@ -14,7 +21,7 @@ function clip(n: number): { anim: SpriteAnimation; frames: Frame[] } {
   const anim: SpriteAnimation = new SpriteAnimation({
     frames,
     fps: 10,
-    loop: true,
+    loop,
     autoPlay: true,
   });
   return { anim, frames };
@@ -57,5 +64,121 @@ describe("Animator", () => {
     const animator: Animator = new Animator({ walk: walk.anim }, "walk");
     animator.tick(210);
     expect(animator.currentFrame()).toBe(walk.frames[2]);
+  });
+});
+
+describe("Animator events", () => {
+  it("emits started with the clip name when play switches clips", () => {
+    const animator: Animator = new Animator(
+      { idle: clipOpts(2, true).anim, walk: clipOpts(3, true).anim },
+      "idle",
+    );
+    const seen: string[] = [];
+    animator.on("started", (clip: string) => seen.push(clip));
+
+    animator.play("walk");
+
+    expect(seen).toEqual(["walk"]);
+  });
+
+  it("does not emit started when play targets the active clip", () => {
+    const animator: Animator = new Animator(
+      { idle: clipOpts(2, true).anim },
+      "idle",
+    );
+    const seen: string[] = [];
+    animator.on("started", (clip: string) => seen.push(clip));
+
+    animator.play("idle");
+
+    expect(seen).toEqual([]);
+  });
+
+  it("emits finished once when a non-looping clip reaches its last frame", () => {
+    const animator: Animator = new Animator(
+      { attack: clipOpts(2, false).anim },
+      "attack",
+    );
+    const seen: string[] = [];
+    animator.on("finished", (clip: string) => seen.push(clip));
+
+    animator.tick(100);
+    animator.tick(100);
+
+    expect(seen).toEqual(["attack"]);
+  });
+
+  it("never emits finished for a looping clip", () => {
+    const animator: Animator = new Animator(
+      { run: clipOpts(2, true).anim },
+      "run",
+    );
+    const seen: string[] = [];
+    animator.on("finished", (clip: string) => seen.push(clip));
+
+    animator.tick(1000);
+
+    expect(seen).toEqual([]);
+  });
+
+  it("emits loop on each wrap of a looping clip", () => {
+    const animator: Animator = new Animator(
+      { run: clipOpts(2, true).anim },
+      "run",
+    );
+    const seen: string[] = [];
+    animator.on("loop", (clip: string) => seen.push(clip));
+
+    for (let i: number = 0; i < 4; i++) {
+      animator.tick(100);
+    }
+
+    expect(seen).toEqual(["run", "run"]);
+  });
+
+  it("does not emit loop for a non-looping clip", () => {
+    const animator: Animator = new Animator(
+      { attack: clipOpts(2, false).anim },
+      "attack",
+    );
+    const seen: string[] = [];
+    animator.on("loop", (clip: string) => seen.push(clip));
+
+    animator.tick(1000);
+
+    expect(seen).toEqual([]);
+  });
+
+  it("off unsubscribes a listener", () => {
+    const animator: Animator = new Animator(
+      { attack: clipOpts(2, false).anim },
+      "attack",
+    );
+    const seen: string[] = [];
+    const cb = (clip: string): void => {
+      seen.push(clip);
+    };
+    animator.on("finished", cb);
+    animator.off("finished", cb);
+
+    animator.tick(100);
+
+    expect(seen).toEqual([]);
+  });
+
+  it("notifies every subscriber of an event", () => {
+    const animator: Animator = new Animator(
+      { idle: clipOpts(2, true).anim, walk: clipOpts(3, true).anim },
+      "idle",
+    );
+    const a: string[] = [];
+    const b: string[] = [];
+    animator.on("started", (clip: string) => a.push(clip));
+    animator.on("started", (clip: string) => b.push(clip));
+
+    animator.play("walk");
+
+    expect(a).toEqual(["walk"]);
+    expect(b).toEqual(["walk"]);
   });
 });

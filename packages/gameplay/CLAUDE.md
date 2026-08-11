@@ -8,6 +8,7 @@ The gameplay layer of AtlasJS: a Unity-style **scripting** framework (`AtlasScri
 > - `docs/gameplay/exposed-script-variables.md` — exposing script variables/fields + entity references (`registerScriptMetadata`, `GameEntity`).
 > - `docs/gameplay/input-scripting.md` — Phase 1 (scripts reach services via `getService` + the `InputApi` façade) & Phase 2 (the named-action system, `PlayerInput` + `PlayerInputSystem`).
 > - `docs/gameplay/sprite-animation.md` — **implemented**: `Animator` (LEVEL-1 component, named clips + `play(name)`) + `AnimatorSystem` (dt-driven, pushes the current frame into `SpriteRender.sprite`), reusing nebula `SpriteSheet`/`SpriteAnimation`. See `components/Animator.ts`, `systems/AnimatorSystem.ts`.
+> - `docs/gameplay/animation-events.md` — **implemented**: clip-boundary events on `Animator` (`started`/`finished`/`loop` via `on`/`off` over core's `EventBus`, payload = clip name), edge-detected gameplay-side in `components/Animator.ts` — nebula untouched.
 
 ## The two component levels (do not conflate)
 

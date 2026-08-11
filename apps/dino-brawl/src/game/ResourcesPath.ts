@@ -8,6 +8,8 @@ import GreenDino from "@assets/sprites/dinos/dino_green.png";
 import RedDino from "@assets/sprites/dinos/dino_red.png";
 import YellowDino from "@assets/sprites/dinos/dino_yellow.png";
 
+import RunningParticle from "@assets/sprites/particles/dust_cloud_run.png";
+
 import Shadow from "@assets/sprites/props/shadow.png";
 
 import Default from "@assets/sprites/swords/Iicon_32_01.png";
@@ -23,6 +25,9 @@ export const ResourcesPath = {
       Green: GreenDino,
       Red: RedDino,
       Yellow: YellowDino,
+    },
+    Particles: {
+      RunningCloud: RunningParticle,
     },
     Swords: {
       Default: Default,

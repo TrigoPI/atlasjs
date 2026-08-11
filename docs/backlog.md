@@ -43,7 +43,8 @@ Source : [`rendering/sprites.md`](rendering/sprites.md) (non-objectifs v1).
 Source : [`gameplay/sprite-animation.md`](gameplay/sprite-animation.md) (§10 non-objectifs) + review de branche `claude/feat/animator`.
 
 - 📋 **State machine / transitions** ; **blend trees**.
-- 📋 **Events de frame** (le stub existait dans `SpriteAnimation`, retiré au passage dt — point d'accroche à réintroduire) + **events de fin d'anim** (`onComplete`).
+- 📋 **Events de frame** (le stub existait dans `SpriteAnimation`, retiré au passage dt — point d'accroche à réintroduire).
+- ✅ **Events de clip** _(fait)_ : `started`/`finished`/`loop` sur `Animator` (`on`/`off`), détection côté gameplay → [`gameplay/animation-events.md`](gameplay/animation-events.md).
 - 📋 **Root motion** ; **vitesse / timescale d'anim par clip**.
 - 📋 **Sérialisation d'un asset d'animation**.
 - ✅ **Pivot par frame** _(fait)_ : `Frame` porte désormais un `pivot`, et `AnimatorSystem.spriteFor` le thread dans le `Sprite` de frame (`new Sprite(frame.texture, { rect: frame.rect, pivot: frame.pivot })`, `packages/gameplay/src/systems/AnimatorSystem.ts:35`).
@@ -203,6 +204,21 @@ Source : [`gameplay/entity-hierarchy.md`](gameplay/entity-hierarchy.md) (§9, ho
 - 📋 **Util de slicing en grille partagé** : `TileSet` refait sa propre boucle (décision A) ; extraire un util commun avec `SpriteSheet.fromGrid`/`fromAutoGrid` (nebula), et/ou exposer un accès `(row,col)`/index dans `SpriteSheet`.
 - 📋 **Tile Anchor configurable + scaling *fit-to-cell*** : la v1 ancre la tuile au coin d'origine de la cellule et la dessine à sa taille native ; permettre un ancrage centré (défaut Unity) et un redimensionnement à `cellSize`. (C'est ce qui lèverait la contrainte « `cellSize` = taille native » — sinon trous entre tuiles.)
 - 📋 **Durcissements notés à la review finale** (tous Minor, acceptés en v1) : `TileSet` ne valide pas des `columns`/`rows` explicites surdimensionnés vs la texture (uvRect > 1, clampé par `clamp-to-edge` — dégrade sans crash) → warn dev optionnel ; `TileMap.setTile` bumpe `revision` même sur réécriture identique (désormais `revision` gate le cache de rebuild du `TileMapRenderSystem` → une réécriture identique déclenche un rebuild inutile, sans impact de correctness) ; culling vs rendu peuvent diverger sous shear + scale non-uniforme + rotation (cull conservateur → sans artefact, même chemin lossy que `SpriteRenderSystem`).
+---
+
+## Audio
+
+Source : [`gameplay/audio.md`](gameplay/audio.md) — nouveau package plugin `@atlasjs/audio`.
+
+- 🔶 **Cœur v1 (design validé, non implémenté)** — **split façon `@atlasjs/input`** : le **backend pur** dans un nouveau package `@atlasjs/audio` (ECS-free) — `AudioClipAsset`/`AudioLoader`/`AudioClip` (moule asset), `AudioEngine` (service, propriétaire de l'audio graph Web Audio + master gain + déblocage autoplay + pause d'onglet), `AudioPlugin` (`requires: [ASSET_MANAGER]`, `provides: [AUDIO_ENGINE]`) ; l'**intégration ECS** dans `@atlasjs/gameplay` — `AudioSource` (composant LEVEL-1) + `AudioSystem` (réconciliation, stage `Late`) + `AudioApi` (façade script `playOneShot`/`masterVolume`/`muted`), câblés par `GameplayPlugin` (comme `PlayerInput`/`PlayerInputSystem`/`InputApi`). SFX one-shots + musique en boucle (`playOnAwake`) + volume par source & master. À implémenter (plan d'implémentation à suivre).
+- 📋 **Audio spatial 2D** : pan + atténuation par distance via `Transform2D` + `AudioListener` (caméra/joueur), `PannerNode`. `AudioSource` déjà forward-compat. Ouvre la porte 3D.
+- 📋 **Pause/resume par source** : offset tracking + recréation du `AudioBufferSourceNode` (pas de pause native). Le suspend global couvre le besoin v1.
+- 📋 **Bus / groupes de mixage** (master → sfx / music / ui) + **ducking** automatique.
+- 📋 **Crossfade** entre musiques.
+- 📋 **Pooling de voix / cap de concurrence**.
+- 📋 **Refcount / eviction** des `AudioClip` (dépend du chantier `AssetManager` V2).
+- 📋 **(Dé)sérialisation** des refs de clip (`AssetRef` par id) pour scène/prefab sur disque.
+
 ---
 
 ## Dette technique

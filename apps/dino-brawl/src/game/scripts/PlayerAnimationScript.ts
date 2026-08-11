@@ -17,6 +17,7 @@ export class PlayerAnimationScript extends AtlasScript {
 
   private move: Vector2Action;
   private boost: ButtonAction;
+  private clock: number;
 
   public onCreate(): void {
     const actions: PlayerInput<DinoControls> =
@@ -27,15 +28,20 @@ export class PlayerAnimationScript extends AtlasScript {
 
     this.move = actions.get("move");
     this.boost = actions.get("boost");
+
+    this.clock = 0;
   }
 
-  public onUpdate(): void {
+  public onUpdate(dt: number): void {
+    this.clock += dt;
+
     const v: Vec2 = this.move.readValue();
 
     if (v.x !== 0 || v.y !== 0) {
       const animation: string = this.boost.isDown() ? "sprint" : "run";
       this.animator.play(animation);
     } else {
+      this.clock = 0;
       this.animator.play("idle");
     }
 
