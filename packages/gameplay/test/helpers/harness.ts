@@ -3,11 +3,13 @@ import { NEXUS, NexusPlugin, NexusWorld } from "@atlasjs/nexus";
 import { NEBULA_RENDERER, SceneGraph } from "@atlasjs/nebula";
 import { InertialPlugin } from "@atlasjs/inertia";
 import { AssetPlugin } from "@atlasjs/assets";
+import { AUDIO_ENGINE, AudioEngine } from "@atlasjs/audio";
 
 import { GameplayPlugin } from "../../src/GameplayPlugin";
 import { SCRIPT_MANAGER } from "../../src/tokens";
 import { ScriptManager } from "../../src/scripting";
 import { FakePhysicsWorld } from "./fake-physics";
+import { FakeAudioEngine } from "./fake-audio";
 
 export const FIXED = 0.1;
 
@@ -30,6 +32,7 @@ class Provide extends Plugin {
 export interface Harness {
   world: NexusWorld;
   physics: FakePhysicsWorld;
+  audio: FakeAudioEngine;
   scripts: ScriptManager;
   services: ServiceRegistry;
   /** Runs one frame carrying `ticks` fixed sub-steps (+ half a step of slack). */
@@ -40,6 +43,7 @@ export async function createHarness(): Promise<Harness> {
   let onTick: ((dt: number) => void) | null = null;
 
   const physics: FakePhysicsWorld = new FakePhysicsWorld();
+  const audio: FakeAudioEngine = new FakeAudioEngine();
 
   // A per-harness stub renderer with a real scene so tests observe mounts.
   const fakeNebula = { createSampler: () => ({}), scene: new SceneGraph() };
@@ -57,6 +61,9 @@ export async function createHarness(): Promise<Harness> {
   engine.use(new Provide("stub-nebula", NEBULA_RENDERER, fakeNebula));
   engine.use(new InertialPlugin(physics));
   engine.use(new AssetPlugin());
+  engine.use(
+    new Provide("stub-audio", AUDIO_ENGINE, audio as unknown as AudioEngine),
+  );
   engine.use(new GameplayPlugin());
 
   await engine.start();
@@ -67,6 +74,7 @@ export async function createHarness(): Promise<Harness> {
   return {
     world,
     physics,
+    audio,
     scripts,
     services: engine.services,
     frame: (ticks: number = 1): void => onTick!(ticks * FIXED + FIXED * 0.5),

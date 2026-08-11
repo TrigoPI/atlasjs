@@ -5,15 +5,12 @@ import { NEXUS, NexusPlugin, NexusWorld } from "@atlasjs/nexus";
 import { NEBULA_RENDERER } from "@atlasjs/nebula";
 import { INERTIAL_ENGINE } from "@atlasjs/inertia";
 import { AssetPlugin } from "@atlasjs/assets";
+import { AUDIO_ENGINE } from "@atlasjs/audio";
 
 import { GameplayPlugin } from "../src/GameplayPlugin";
 import { SCRIPT_MANAGER } from "../src/tokens";
 import { Transform2D } from "../src/components";
-import {
-  AtlasScript,
-  ScriptManager,
-  Transform,
-} from "../src/scripting";
+import { AtlasScript, ScriptManager, Transform } from "../src/scripting";
 
 const FIXED = 0.1;
 
@@ -37,6 +34,10 @@ class Provide extends Plugin {
 // render lane), so a minimal stub is enough to construct the systems.
 const fakeNebula = { createSampler: () => ({}), scene: { addChild: () => {} } };
 const fakeInertia = { drainCollisions: () => {} };
+const fakeAudio = {
+  playOneShot: () => {},
+  createVoice: () => ({ finished: false, apply: () => {}, stop: () => {} }),
+};
 
 class MoveScript extends AtlasScript {
   private transform!: Transform;
@@ -64,6 +65,7 @@ async function runFixed(ticks: number): Promise<number> {
   engine.use(new NexusPlugin());
   engine.use(new Provide("stub-nebula", NEBULA_RENDERER, fakeNebula));
   engine.use(new Provide("stub-inertia", INERTIAL_ENGINE, fakeInertia));
+  engine.use(new Provide("stub-audio", AUDIO_ENGINE, fakeAudio));
   engine.use(new AssetPlugin());
   engine.use(new GameplayPlugin());
 
@@ -102,6 +104,7 @@ async function runFixedMany(ticks: number, count: number): Promise<number[]> {
   engine.use(new NexusPlugin());
   engine.use(new Provide("stub-nebula", NEBULA_RENDERER, fakeNebula));
   engine.use(new Provide("stub-inertia", INERTIAL_ENGINE, fakeInertia));
+  engine.use(new Provide("stub-audio", AUDIO_ENGINE, fakeAudio));
   engine.use(new AssetPlugin());
   engine.use(new GameplayPlugin());
 

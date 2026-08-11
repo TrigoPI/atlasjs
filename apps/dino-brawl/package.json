@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@atlasjs/assets": "workspace:*",
+    "@atlasjs/audio": "workspace:*",
     "@atlasjs/core": "workspace:*",
     "@atlasjs/gameplay": "workspace:*",
     "@atlasjs/inertia": "workspace:*",

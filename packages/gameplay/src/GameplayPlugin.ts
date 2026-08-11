@@ -10,6 +10,7 @@ import { NEBULA_RENDERER, NebulaRenderer } from "@atlasjs/nebula";
 import { INERTIAL_ENGINE, PhysicsWorld } from "@atlasjs/inertia";
 import { Entity, NEXUS, NexusWorld, Unsubscribe } from "@atlasjs/nexus";
 import { ASSET_MANAGER, AssetManager } from "@atlasjs/assets";
+import { AUDIO_ENGINE, AudioEngine } from "@atlasjs/audio";
 
 import { SCRIPT_MANAGER, INSTANTIATOR } from "./tokens";
 import { CameraManager, CAMERA_MANAGER } from "./camera";
@@ -23,6 +24,7 @@ import { OccluderRenderSystem } from "./systems/OccluderRenderSystem";
 
 import {
   AnimatorSystem,
+  AudioSystem,
   CameraSyncSystem,
   PhysicsCollisionSystem,
   PhysicsPullSystem,
@@ -35,6 +37,7 @@ import {
 
 import {
   Animator,
+  AudioSource,
   Camera,
   CharacterController2D,
   CharacterControllerRef,
@@ -61,7 +64,13 @@ export class GameplayPlugin extends Plugin {
 
   public constructor() {
     super("gameplay-plugin", {
-      requires: [NEXUS, NEBULA_RENDERER, INERTIAL_ENGINE, ASSET_MANAGER],
+      requires: [
+        NEXUS,
+        NEBULA_RENDERER,
+        INERTIAL_ENGINE,
+        ASSET_MANAGER,
+        AUDIO_ENGINE,
+      ],
       provides: [SCRIPT_MANAGER, INSTANTIATOR, CAMERA_MANAGER, SORTING_LAYERS],
     });
     this.logger = createLogger(GameplayPlugin.name);
@@ -75,6 +84,7 @@ export class GameplayPlugin extends Plugin {
     const nebula: NebulaRenderer = await engine.services.wait(NEBULA_RENDERER);
     const inertia: PhysicsWorld = await engine.services.wait(INERTIAL_ENGINE);
     const assets: AssetManager = await engine.services.wait(ASSET_MANAGER);
+    const audio: AudioEngine = await engine.services.wait(AUDIO_ENGINE);
 
     assets.register(new SpriteLoader());
     assets.register(new TileSetLoader());
@@ -91,6 +101,7 @@ export class GameplayPlugin extends Plugin {
     const occluderRenderSystem: OccluderRenderSystem = new OccluderRenderSystem(nebula, sortingLayers);
     const playerInputSystem: PlayerInputSystem = new PlayerInputSystem(engine.services);
     const animatorSystem: AnimatorSystem = new AnimatorSystem();
+    const audioSystem: AudioSystem = new AudioSystem(audio);
     const cameraManager: CameraManager = new CameraManager(nebula);
     const transformPropagationSystem: TransformPropagationSystem = new TransformPropagationSystem();
     const cameraSyncSystem: CameraSyncSystem = new CameraSyncSystem(cameraManager, nebula);
@@ -99,11 +110,23 @@ export class GameplayPlugin extends Plugin {
 
     this.registerCleanup(world, inertia, spriteRenderSystem, tileMapRenderSystem, occluderRenderSystem, cameraManager);
 
+    this.unsubscribers.push(
+      world.onAdd(AudioSource, (_entity: Entity, source: AudioSource) => {
+        if (source.playOnAwake) {
+          source.play();
+        }
+      }),
+      world.onRemove(AudioSource, (_entity: Entity, source: AudioSource) => {
+        audioSystem.release(source);
+      }),
+    );
+
     this.registerSteps(
       engine.scheduler,
       world,
       playerInputSystem,
       animatorSystem,
+      audioSystem,
       transformPropagationSystem,
       physicsPushSystem,
       physicsPullSystem,
@@ -136,6 +159,7 @@ export class GameplayPlugin extends Plugin {
       .defineComponent(CharacterControllerRef)
       .defineComponent(PlayerInput)
       .defineComponent(Animator)
+      .defineComponent(AudioSource)
       .defineComponent(Camera)
       .defineComponent(Grid)
       .defineComponent(TileMap)
@@ -214,6 +238,7 @@ export class GameplayPlugin extends Plugin {
     world: NexusWorld,
     playerInputSystem: PlayerInputSystem,
     animatorSystem: AnimatorSystem,
+    audioSystem: AudioSystem,
     transformPropagationSystem: TransformPropagationSystem,
     physicsPushSystem: PhysicsPushSystem,
     physicsPullSystem: PhysicsPullSystem,
@@ -251,6 +276,13 @@ export class GameplayPlugin extends Plugin {
         name: "gameplay:animator",
         stage: "Logic",
         after: "gameplay:script-update",
+      }),
+    );
+
+    this.handles.push(
+      registerSystem(update, world, audioSystem, {
+        name: "gameplay:audio",
+        stage: "Late",
       }),
     );
 

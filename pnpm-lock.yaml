@@ -38,6 +38,9 @@ importers:
       '@atlasjs/assets':
         specifier: workspace:*
         version: link:../../packages/assets
+      '@atlasjs/audio':
+        specifier: workspace:*
+        version: link:../../packages/audio
       '@atlasjs/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -152,6 +155,18 @@ importers:
         specifier: workspace:*
         version: link:../utils
 
+  packages/audio:
+    dependencies:
+      '@atlasjs/assets':
+        specifier: workspace:*
+        version: link:../assets
+      '@atlasjs/core':
+        specifier: workspace:*
+        version: link:../core
+      '@atlasjs/utils':
+        specifier: workspace:*
+        version: link:../utils
+
   packages/core:
     dependencies:
       '@atlasjs/utils':
@@ -197,6 +212,9 @@ importers:
       '@atlasjs/assets':
         specifier: workspace:*
         version: link:../assets
+      '@atlasjs/audio':
+        specifier: workspace:*
+        version: link:../audio
       '@atlasjs/core':
         specifier: workspace:*
         version: link:../core

@@ -1,4 +1,5 @@
 export * from "./Animator";
+export * from "./AudioSource";
 export * from "./Camera";
 export * from "./CharacterController2D";
 export * from "./CharacterControllerRef";

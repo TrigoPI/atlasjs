@@ -1,10 +1,18 @@
 import { Vec2 } from "@atlasjs/math";
 import { type SceneContext, Scene } from "@atlasjs/core";
-import { type SortingLayers, SORTING_LAYERS } from "@atlasjs/gameplay";
+import { NEXUS, type NexusWorld, type Entity } from "@atlasjs/nexus";
+import { ASSET_MANAGER, type AssetManager } from "@atlasjs/assets";
+import { AudioClipAsset, type AudioClip } from "@atlasjs/audio";
+import {
+  type SortingLayers,
+  SORTING_LAYERS,
+  AudioSource,
+} from "@atlasjs/gameplay";
 
 import { SortingLayer } from "./config";
 import type { BuiltMap, WorldPoint } from "./tiled";
 import { spawnCamera, spawnPlayer, spawnWorld } from "./spawn";
+import { ResourcesPath } from "./ResourcesPath";
 
 export class ArenaScene extends Scene {
   private fpsCallback: (fps: number) => void;
@@ -33,6 +41,18 @@ export class ArenaScene extends Scene {
     // await spawnSword(ctx, player);
 
     spawnCamera(ctx, player);
+
+    const assets: AssetManager = ctx.services.get(ASSET_MANAGER);
+    const world: NexusWorld = ctx.services.get(NEXUS);
+    const music: AudioClip = await assets.load<AudioClip>(
+      new AudioClipAsset(ResourcesPath.Audio.Music),
+    );
+    const musicEntity: Entity = world.createEntity();
+    world.addComponent(musicEntity, AudioSource, music, {
+      loop: true,
+      playOnAwake: true,
+      volume: 0.5,
+    });
   }
 
   public onUpdate(dt: number): void {

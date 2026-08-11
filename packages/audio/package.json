@@ -1,5 +1,5 @@
 {
-  "name": "@atlasjs/gameplay",
+  "name": "@atlasjs/audio",
   "type": "module",
   "version": "0.0.1",
   "private": true,
@@ -16,17 +16,11 @@
     "dev": "tsdown --watch",
     "test": "vitest run",
     "clean": "rimraf dist",
-    "typecheck": "tsc --noEmit -p tsconfig.test.json"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@atlasjs/assets": "workspace:*",
-    "@atlasjs/audio": "workspace:*",
     "@atlasjs/core": "workspace:*",
-    "@atlasjs/inertia": "workspace:*",
-    "@atlasjs/input": "workspace:*",
-    "@atlasjs/math": "workspace:*",
-    "@atlasjs/nebula": "workspace:*",
-    "@atlasjs/nexus": "workspace:*",
     "@atlasjs/utils": "workspace:*"
   }
 }
