@@ -18,9 +18,11 @@ import {
   type PlayerPrefabProps,
   type RunningParticlePrefabProps,
   type ShadowPrefabProps,
+  type SwordPrefabProps,
   createRunningAudioPrefab,
   createRunningParticlePrefab,
   createPlayerPrefab,
+  createSwordPrefab,
   createShadowPrefab,
 } from "../prefabs";
 
@@ -36,14 +38,18 @@ export function spawnPlayer(
   const dinoSprite: Sprite = assetsLoader.getAsset("sprite:yellow_dino");
   const shadowSprite: Sprite = assetsLoader.getAsset("sprite:shadow");
   const particleSprite: Sprite = assetsLoader.getAsset("sprite:running_particle");
+  const swordSprite: Sprite = assetsLoader.getAsset("sprite:default_sword");
   const grassSound: AudioClip = assetsLoader.getAsset("audio:grass_audio");
+  
 
   const shadowPrefab: Prefab<ShadowPrefabProps> = createShadowPrefab();
+  const swordPrefab: Prefab<SwordPrefabProps> = createSwordPrefab();
+
   const runningParticlePrefab: Prefab<RunningParticlePrefabProps> =
     createRunningParticlePrefab({
+      clips: () => sheetLoader.createClips("sheet:running_particle"),
       sprite: particleSprite,
       sound: grassSound,
-      clips: () => sheetLoader.createClips("sheet:running_particle"),
     });
 
   const runningAudioPrefab: Prefab = createRunningAudioPrefab({
@@ -54,7 +60,6 @@ export function spawnPlayer(
     runningAudioPrefab,
     runningParticlePrefab
   });
-
 
   const player: GameEntity = instantiator.instantiate(playerPrefab, {
     position: spawnPosition,
@@ -67,6 +72,12 @@ export function spawnPlayer(
     { sprite: shadowSprite },
     { parent: player.id },
   );
+  
+  instantiator.instantiate(swordPrefab, {
+    owner: player.id,
+    sprite: swordSprite,
+  });
+
 
   return player.id;
 }

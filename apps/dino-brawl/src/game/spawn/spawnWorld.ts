@@ -1,6 +1,6 @@
+import Map from "@maps/dino_brawl.json";
 import type { SceneContext } from "@atlasjs/core";
 
-import { ResourcesPath } from "../loaders/ResourcesPath";
 import { SortingLayer, MAP_SCALE } from "../config";
 
 import {
@@ -12,7 +12,7 @@ import {
 } from "../tiled";
 
 export async function spawnWorld(ctx: SceneContext): Promise<BuiltMap> {
-  const doc: TiledDocument = new TiledDocument(ResourcesPath.Map);
+  const doc: TiledDocument = new TiledDocument(Map);
 
   return MapBuilder.build(ctx, doc, {
     scale: MAP_SCALE,

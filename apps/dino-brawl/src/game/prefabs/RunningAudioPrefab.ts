@@ -19,10 +19,9 @@ export function createRunningAudioPrefab(deps: RunningAudioPrefabDeps): Prefab {
       const audio: AudioSource = entity.add(
         AudioSource,
         pickRandom([deps.sound]),
-        {
-          playOnAwake: true,
-        },
+        { playOnAwake: true },
       );
+
       audio.volume = randomRange(0.01, 0.05);
       audio.pitch = randomRange(1, 1.2);
     },

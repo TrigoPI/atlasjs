@@ -16,8 +16,12 @@ import { throttle } from "../utils";
 
 export function GameCanvas({
   onFps,
+  onReady,
+  onError,
 }: {
   onFps: (fps: number) => void;
+  onReady: () => void;
+  onError: (error: unknown) => void;
 }): ReactNode {
   const mountRef: RefObject<HTMLCanvasElement | null> =
     useRef<HTMLCanvasElement | null>(null);
@@ -55,16 +59,22 @@ export function GameCanvas({
       .use(nexusPlugin)
       .use(gameplayPlugin);
 
-    engine.start().then(() => {
-      const cb = throttle((frame: number) => {
-        onFps(Math.round(frame));
-      }, 500);
+    engine
+      .start()
+      .then(() => {
+        const cb = throttle((frame: number) => {
+          onFps(Math.round(frame));
+        }, 500);
 
-      engine.scene.set(new ArenaScene(cb));
-    });
+        engine.scene.set(new ArenaScene(cb, onReady));
+      })
+      .catch((error: unknown) => {
+        console.error("Failed to start the engine", error);
+        onError(error);
+      });
 
     return () => engine.stop();
-  }, [onFps]);
+  }, [onFps, onReady, onError]);
 
   return <canvas ref={mountRef} style={{ width: "100vw", height: "100vh" }} />;
 }

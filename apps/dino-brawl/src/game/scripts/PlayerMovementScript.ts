@@ -1,5 +1,4 @@
 import { Vec2 } from "@atlasjs/math";
-import type { GameEntity } from "@atlasjs/gameplay";
 import type { DinoControls } from "../controls";
 
 import {
@@ -38,18 +37,16 @@ export class PlayerMovementScript extends AtlasScript<{
 
   public onUpdate(dt: number): void {
     const v: Vec2 = this.move.readValue();
+    const vn: Vec2 = v.clone().normalize();
+
     const speed: number = this.boost.isDown()
       ? this.runningSpeed * 2
       : this.walkingSpeed;
 
     if (v.x !== 0 || v.y !== 0) {
-      this.moveDelta.set(v.x * speed * dt, v.y * speed * dt);
+      this.moveDelta.set(vn.x * speed * dt, vn.y * speed * dt);
       this.character.move(this.moveDelta);
     }
-  }
-
-  public onCollisionEnter(other: GameEntity): void {
-    console.log("[collision] player entered", other.id);
   }
 }
 

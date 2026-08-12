@@ -9,6 +9,7 @@ export const SortingLayer = {
 export const SortingOrder = {
   Shadow: 8,
   Player: 10,
+  Particle: 15,
   Sword: 20,
 } as const;
 

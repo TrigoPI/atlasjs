@@ -13,10 +13,12 @@ import { AssetsLoader, AudioList, SpriteList, TextureList } from "./loaders";
 
 export class ArenaScene extends Scene {
   private fpsCallback: (fps: number) => void;
+  private onAssetsLoad: () => void;
 
-  public constructor(cb: (fps: number) => void) {
+  public constructor(cb: (fps: number) => void, onAssetsLoad: () => void) {
     super("game-scene");
     this.fpsCallback = cb;
+    this.onAssetsLoad = onAssetsLoad;
   }
 
   public override async onCreate(ctx: SceneContext): Promise<void> {
@@ -75,6 +77,7 @@ export class ArenaScene extends Scene {
   private async loadAssets(assetsLoader: AssetsLoader): Promise<void> {
     this.initAssets(assetsLoader);
     await assetsLoader.load();
+    this.onAssetsLoad();
   }
 
   private loadSheets(sheetLoader: SheetLoader): void {

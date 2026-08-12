@@ -1,4 +1,5 @@
 import type { Unsubscribe } from "@atlasjs/core";
+import { randomRange } from "@atlasjs/utils";
 import { Animator, AtlasScript, Transform } from "@atlasjs/gameplay";
 
 export class RunningParticleScript extends AtlasScript {
@@ -8,7 +9,7 @@ export class RunningParticleScript extends AtlasScript {
   private unsubscribe: Unsubscribe;
 
   public onCreate(): void {
-    const scale: number = 2 + Math.random() * 0.85;
+    const scale: number = randomRange(2, 2.9);
 
     this.animator = this.requireComponent(Animator);
     this.transform = this.requireComponent(Transform);

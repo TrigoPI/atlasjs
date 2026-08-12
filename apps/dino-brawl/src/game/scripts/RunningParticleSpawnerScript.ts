@@ -3,6 +3,7 @@ import type { DinoControls } from "../controls";
 
 import {
   AtlasScript,
+  ButtonAction,
   PlayerInput,
   registerScriptMetadata,
   ScriptMetadata,
@@ -17,19 +18,25 @@ export class RunningParticleSpawnerScript extends AtlasScript<{
   private readonly runningParticlePrefab: Prefab<{ position: Vec2 }>;
 
   private transform: Transform;
-  private move: Vector2Action;
   private clock: number;
+
+  private move: Vector2Action;
+  private boost: ButtonAction;
 
   public onCreate(): void {
     const actions: PlayerInput<DinoControls> =
       this.requireComponent(PlayerInput);
 
     this.transform = this.requireComponent(Transform);
+
     this.move = actions.get("move");
+    this.boost = actions.get("boost");
   }
 
   public onUpdate(dt: number): void {
     const v: Vec2 = this.move.readValue();
+    const boost: boolean = this.boost.isDown();
+    const cooldown: number = boost ? 0.09 : 0.15;
 
     this.clock += dt;
 
@@ -37,7 +44,7 @@ export class RunningParticleSpawnerScript extends AtlasScript<{
       this.clock = 0;
     }
 
-    if (this.clock >= 0.15) {
+    if (this.clock >= cooldown) {
       this.clock = 0;
       this.instantiate(this.runningParticlePrefab, {
         position: this.transform.worldPosition.clone(),

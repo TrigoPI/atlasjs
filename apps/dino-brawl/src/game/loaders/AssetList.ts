@@ -18,6 +18,7 @@ export const SpriteList: ResourceDescriptor[] = [
   { name: "sprite:yellow_dino", path: Textures.YellowDino },
   { name: "sprite:shadow", path: Textures.Shadow },
   { name: "sprite:running_particle", path: Textures.RunningParticle },
+  { name: "sprite:default_sword", path: Textures.DefaultSword },
 ];
 
 export const AudioList: ResourceDescriptor[] = [
