@@ -1,6 +1,6 @@
 import type { SceneContext } from "@atlasjs/core";
 
-import { ResourcesPath } from "../ResourcesPath";
+import { ResourcesPath } from "../loaders/ResourcesPath";
 import { SortingLayer, MAP_SCALE } from "../config";
 
 import {

@@ -3,6 +3,7 @@ import type { DinoControls } from "../controls";
 
 import {
   AtlasScript,
+  ButtonAction,
   PlayerInput,
   registerScriptMetadata,
   ScriptMetadata,
@@ -16,6 +17,7 @@ export class RunningAudioPlayerScript extends AtlasScript<{
   private readonly audioPrefab: Prefab;
 
   private move: Vector2Action;
+  private boost: ButtonAction;
   private clock: number;
 
   public onCreate(): void {
@@ -24,10 +26,13 @@ export class RunningAudioPlayerScript extends AtlasScript<{
 
     this.clock = 0;
     this.move = actions.get("move");
+    this.boost = actions.get("boost");
   }
 
   public onUpdate(dt: number): void {
     const v: Vec2 = this.move.readValue();
+    const boost: boolean = this.boost.isDown();
+    const cooldown: number = boost ? 0.25 : 0.3;
 
     if (v.mag() > 0) {
       this.clock += dt;
@@ -35,7 +40,7 @@ export class RunningAudioPlayerScript extends AtlasScript<{
       this.clock = 0;
     }
 
-    if (this.clock >= 0.3) {
+    if (this.clock >= cooldown) {
       this.clock = 0;
       this.instantiate(this.audioPrefab);
     }
