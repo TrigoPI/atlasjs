@@ -2,6 +2,7 @@ import { DebugOverlay } from "./DebugOverlay";
 import { ErrorScreen } from "./ErrorScreen";
 import { GameCanvas } from "./GameCanvas";
 import { LoadingScreen } from "./LoadingScreen";
+import { MenuScreen } from "./MenuScreen";
 
 import {
   type ReactNode,
@@ -13,7 +14,7 @@ import {
 
 const MIN_LOADING_MS: number = 3000;
 
-type GameStatus = "loading" | "ready" | "error";
+type GameStatus = "loading" | "prompt" | "menu" | "ready" | "error";
 
 export function App(): ReactNode {
   const [fps, setFps] = useState<number>(0);
@@ -27,9 +28,23 @@ export function App(): ReactNode {
     window.setTimeout((): void => {
       setStatus(
         (current: GameStatus): GameStatus =>
-          current === "error" ? current : "ready",
+          current === "error" ? current : "prompt",
       );
     }, remaining);
+  }, []);
+
+  const handleProceed = useCallback((): void => {
+    setStatus(
+      (current: GameStatus): GameStatus =>
+        current === "prompt" ? "menu" : current,
+    );
+  }, []);
+
+  const handleStart = useCallback((): void => {
+    setStatus(
+      (current: GameStatus): GameStatus =>
+        current === "menu" ? "ready" : current,
+    );
   }, []);
 
   const handleError = useCallback((error: unknown): void => {
@@ -41,7 +56,10 @@ export function App(): ReactNode {
     <div>
       <GameCanvas onFps={setFps} onReady={handleReady} onError={handleError} />
       <DebugOverlay fps={fps} />
-      {status === "loading" && <LoadingScreen />}
+      {(status === "loading" || status === "prompt") && (
+        <LoadingScreen ready={status === "prompt"} onProceed={handleProceed} />
+      )}
+      {status === "menu" && <MenuScreen onStart={handleStart} />}
       {status === "error" && <ErrorScreen message={errorMessage} />}
     </div>
   );
