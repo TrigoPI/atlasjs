@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 
 import "@fontsource/press-start-2p";
 
@@ -158,6 +158,16 @@ const STYLES: string = `
 .dino-loading__dots span:nth-child(2) { animation-delay: 0.2s; }
 .dino-loading__dots span:nth-child(3) { animation-delay: 0.4s; }
 
+.dino-loading__press {
+  font-size: clamp(11px, 2vw, 18px);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--green);
+  text-shadow: 0 3px 0 var(--green-dark);
+  cursor: pointer;
+  animation: dino-blink 1.1s steps(1) infinite;
+}
+
 @keyframes dino-blink {
   0%, 70% { opacity: 1; }
   71%, 100% { opacity: 0.35; }
@@ -169,8 +179,27 @@ const STYLES: string = `
 }
 `;
 
-export function LoadingScreen(): ReactNode {
+export function LoadingScreen({
+  ready = false,
+  onProceed,
+}: {
+  ready?: boolean;
+  onProceed?: () => void;
+}): ReactNode {
   const parade: readonly string[] = [...DINOS, ...DINOS];
+
+  useEffect(() => {
+    if (!ready || !onProceed) {
+      return;
+    }
+    const proceed = (): void => onProceed();
+    window.addEventListener("keydown", proceed, { once: true });
+    window.addEventListener("pointerdown", proceed, { once: true });
+    return (): void => {
+      window.removeEventListener("keydown", proceed);
+      window.removeEventListener("pointerdown", proceed);
+    };
+  }, [ready, onProceed]);
 
   return (
     <div className="dino-loading">
@@ -193,14 +222,18 @@ export function LoadingScreen(): ReactNode {
         <div className="dino-loading__ground" />
       </div>
 
-      <div className="dino-loading__status">
-        <span>Loading</span>
-        <span className="dino-loading__dots">
-          <span>.</span>
-          <span>.</span>
-          <span>.</span>
-        </span>
-      </div>
+      {ready ? (
+        <div className="dino-loading__press">Press any key to start</div>
+      ) : (
+        <div className="dino-loading__status">
+          <span>Loading</span>
+          <span className="dino-loading__dots">
+            <span>.</span>
+            <span>.</span>
+            <span>.</span>
+          </span>
+        </div>
+      )}
     </div>
   );
 }
