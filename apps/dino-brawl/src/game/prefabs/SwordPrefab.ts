@@ -23,6 +23,7 @@ export const createSwordPrefab = () =>
       const renderer: SpriteRender = entity.add(SpriteRender, props.sprite);
       renderer.sortingLayer = SortingLayer.Entities;
       renderer.sortingOrder = SortingOrder.Sword;
+      renderer.sortPointEntity = props.owner;
 
       entity.add(Transform2D);
       entity.attach(SwordScript, {
