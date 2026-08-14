@@ -14,7 +14,7 @@ import { SpriteRenderSystem } from "../src/systems";
 import { SortingLayers } from "../src/rendering";
 import { fakeTexture } from "./helpers/fakes";
 
-function setup(): {
+function setup(sortingLayers: SortingLayers = new SortingLayers()): {
   world: NexusWorld;
   scene: SceneGraph;
   system: SpriteRenderSystem;
@@ -28,7 +28,11 @@ function setup(): {
     createSampler: (): Sampler => ({}) as Sampler,
   } as unknown as NebulaRenderer;
 
-  return { world, scene, system: new SpriteRenderSystem(nebula, new SortingLayers()) };
+  return {
+    world,
+    scene,
+    system: new SpriteRenderSystem(nebula, sortingLayers),
+  };
 }
 
 function mount(
@@ -37,7 +41,9 @@ function mount(
   transform: Transform2D = new Transform2D(),
 ): Entity {
   const entity: Entity = world.createEntity();
-  world.addComponent(entity, WorldTransform2D).matrix.fromTransform2D(transform);
+  world
+    .addComponent(entity, WorldTransform2D)
+    .matrix.fromTransform2D(transform);
   world.addComponent(entity, SpriteRender, sprite);
   return entity;
 }
@@ -126,7 +132,9 @@ describe("SpriteRenderSystem", () => {
     system.update({ world, dt: 0 });
     const first: SpriteNode = children(scene)[0];
 
-    world.requireComponent(entity, SpriteRender).sprite = new Sprite(fakeTexture("b"));
+    world.requireComponent(entity, SpriteRender).sprite = new Sprite(
+      fakeTexture("b"),
+    );
     system.update({ world, dt: 0 });
 
     expect(children(scene).length).toBe(1);
@@ -142,5 +150,109 @@ describe("SpriteRenderSystem", () => {
 
     system.unmount(entity);
     expect(children(scene).length).toBe(0);
+  });
+});
+
+function ySortedLayers(): SortingLayers {
+  return new SortingLayers().define([{ name: "Entities", mode: "ySorted" }]);
+}
+
+function anchorAt(world: NexusWorld, y: number): Entity {
+  const entity: Entity = world.createEntity();
+  world
+    .addComponent(entity, WorldTransform2D)
+    .matrix.fromTransform2D(new Transform2D(new Vec2(0, y)));
+  return entity;
+}
+
+describe("SpriteRenderSystem sort point anchor", () => {
+  it("resolves sortPrimary from the carrier's world Y on a ySorted layer", () => {
+    const { world, scene, system } = setup(ySortedLayers());
+    const carrier: Entity = anchorAt(world, 100);
+    const sword: Entity = mount(
+      world,
+      new Sprite(fakeTexture()),
+      new Transform2D(new Vec2(0, 80)),
+    );
+    const render: SpriteRender = world.requireComponent(sword, SpriteRender);
+    render.sortingLayer = "Entities";
+    render.sortPointEntity = carrier;
+
+    system.update({ world, dt: 0 });
+
+    const node: SpriteNode = children(scene)[0];
+    expect(node.sortPrimary).toBe(100);
+  });
+
+  it("stacks the accessory above its carrier via sortingOrder at the shared Y", () => {
+    const { world, scene, system } = setup(ySortedLayers());
+    const player: Entity = mount(
+      world,
+      new Sprite(fakeTexture()),
+      new Transform2D(new Vec2(0, 100)),
+    );
+    const playerRender: SpriteRender = world.requireComponent(
+      player,
+      SpriteRender,
+    );
+    playerRender.sortingLayer = "Entities";
+    playerRender.sortingOrder = 10;
+
+    const sword: Entity = mount(
+      world,
+      new Sprite(fakeTexture()),
+      new Transform2D(new Vec2(0, 80)),
+    );
+    const swordRender: SpriteRender = world.requireComponent(
+      sword,
+      SpriteRender,
+    );
+    swordRender.sortingLayer = "Entities";
+    swordRender.sortingOrder = 20;
+    swordRender.sortPointEntity = player;
+
+    system.update({ world, dt: 0 });
+
+    const playerNode: SpriteNode = children(scene)[0];
+    const swordNode: SpriteNode = children(scene)[1];
+    expect(swordNode.sortPrimary).toBe(playerNode.sortPrimary);
+    expect(swordNode.sortSecondary).toBeGreaterThan(playerNode.sortSecondary);
+  });
+
+  it("falls back to its own world Y when the carrier has no WorldTransform2D", () => {
+    const { world, scene, system } = setup(ySortedLayers());
+    const orphan: Entity = world.createEntity();
+    const sword: Entity = mount(
+      world,
+      new Sprite(fakeTexture()),
+      new Transform2D(new Vec2(0, 80)),
+    );
+    const render: SpriteRender = world.requireComponent(sword, SpriteRender);
+    render.sortingLayer = "Entities";
+    render.sortPointEntity = orphan;
+
+    system.update({ world, dt: 0 });
+
+    const node: SpriteNode = children(scene)[0];
+    expect(node.sortPrimary).toBe(80);
+  });
+
+  it("falls back to its own world Y when the carrier was destroyed", () => {
+    const { world, scene, system } = setup(ySortedLayers());
+    const carrier: Entity = anchorAt(world, 100);
+    const sword: Entity = mount(
+      world,
+      new Sprite(fakeTexture()),
+      new Transform2D(new Vec2(0, 80)),
+    );
+    const render: SpriteRender = world.requireComponent(sword, SpriteRender);
+    render.sortingLayer = "Entities";
+    render.sortPointEntity = carrier;
+
+    world.destroyEntity(carrier);
+
+    expect(() => system.update({ world, dt: 0 })).not.toThrow();
+    const node: SpriteNode = children(scene)[0];
+    expect(node.sortPrimary).toBe(80);
   });
 });

@@ -46,8 +46,6 @@ export const createPlayerPrefab = (options: PlayerPrefabOptions) =>
       transform.position.copyFrom(props.position);
       transform.scale.set(3, 3);
 
-      entity.add(Animator, props.clips, "idle");
-
       const renderer: SpriteRenderer = entity.add(SpriteRenderer, props.sprite);
       renderer.sortingLayer = SortingLayer.Entities;
       renderer.sortingOrder = SortingOrder.Player;
@@ -59,7 +57,8 @@ export const createPlayerPrefab = (options: PlayerPrefabOptions) =>
       collider.offset.set(0, -15);
       collider.layer = CollisionLayers.Player;
       collider.collidesWith = CollisionLayers.World;
-
+  
+      entity.add(Animator, props.clips, "idle");
       entity.add(CharacterController2D);
       entity.add(PlayerInput, dinoControls);
 

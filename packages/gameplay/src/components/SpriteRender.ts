@@ -1,4 +1,5 @@
 import { Color } from "@atlasjs/nebula";
+import type { Entity } from "@atlasjs/nexus";
 import { Sprite } from "../assets";
 
 export class SpriteRender {
@@ -9,6 +10,7 @@ export class SpriteRender {
   public visible: boolean;
   public sortingOrder: number;
   public sortingLayer: string;
+  public sortPointEntity: Entity | null;
 
   public constructor(
     sprite: Sprite,
@@ -26,5 +28,6 @@ export class SpriteRender {
     this.visible = visible;
     this.sortingOrder = sortingOrder;
     this.sortingLayer = sortingLayer;
+    this.sortPointEntity = null;
   }
 }

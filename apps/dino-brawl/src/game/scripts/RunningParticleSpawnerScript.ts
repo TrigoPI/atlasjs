@@ -1,5 +1,6 @@
 import { Vec2 } from "@atlasjs/math";
 import type { DinoControls } from "../controls";
+import type { RunningParticlePrefabProps } from "../prefabs";
 
 import {
   AtlasScript,
@@ -13,9 +14,9 @@ import {
 } from "@atlasjs/gameplay";
 
 export class RunningParticleSpawnerScript extends AtlasScript<{
-  runningParticlePrefab: Prefab<{ position: Vec2 }>;
+  runningParticlePrefab: Prefab<RunningParticlePrefabProps>;
 }> {
-  private readonly runningParticlePrefab: Prefab<{ position: Vec2 }>;
+  private readonly runningParticlePrefab: Prefab<RunningParticlePrefabProps>;
 
   private transform: Transform;
   private clock: number;
