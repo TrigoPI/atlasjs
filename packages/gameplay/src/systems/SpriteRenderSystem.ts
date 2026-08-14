@@ -24,6 +24,7 @@ export class SpriteRenderSystem implements NexusSystem {
   private readonly sampler: Sampler;
   private readonly positionScratch: Vec2;
   private readonly scaleScratch: Vec2;
+  private readonly sortScratch: Vec2;
   private readonly sortingLayers: SortingLayers;
 
   public constructor(nebula: NebulaRenderer, sortingLayers: SortingLayers) {
@@ -32,6 +33,7 @@ export class SpriteRenderSystem implements NexusSystem {
     this.sortingLayers = sortingLayers;
     this.positionScratch = new Vec2();
     this.scaleScratch = new Vec2();
+    this.sortScratch = new Vec2();
     this.sampler = nebula.createSampler({
       magFilter: "nearest",
       minFilter: "nearest",
@@ -58,12 +60,28 @@ export class SpriteRenderSystem implements NexusSystem {
         .setTint(color.r, color.g, color.b, color.a)
         .setVisible(spriteRender.visible);
 
+      let sortY: number = position.y;
+
+      if (
+        spriteRender.sortPointEntity !== null &&
+        world.exists(spriteRender.sortPointEntity)
+      ) {
+        const carrier: WorldTransform2D | undefined = world.getComponent(
+          spriteRender.sortPointEntity,
+          WorldTransform2D,
+        );
+
+        if (carrier !== undefined) {
+          sortY = carrier.getPosition(this.sortScratch).y;
+        }
+      }
+
       applySortFields(
         node,
         this.sortingLayers,
         spriteRender.sortingLayer,
         spriteRender.sortingOrder,
-        position.y,
+        sortY,
       );
     });
   }
