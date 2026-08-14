@@ -1,7 +1,7 @@
 import type { Entity } from "@atlasjs/nexus";
 
 import { SwordScript } from "../scripts";
-import { SortingLayer } from "../config";
+import { SortingLayer, SortingOrder } from "../config";
 
 import {
   type EntityBuilder,
@@ -20,11 +20,11 @@ export const createSwordPrefab = () =>
   definePrefab<SwordPrefabProps>({
     name: "sword_prefab",
     build: (entity: EntityBuilder, props: SwordPrefabProps): void => {
-      entity.add(Transform2D);
-
       const renderer: SpriteRender = entity.add(SpriteRender, props.sprite);
       renderer.sortingLayer = SortingLayer.Entities;
+      renderer.sortingOrder = SortingOrder.Sword;
 
+      entity.add(Transform2D);
       entity.attach(SwordScript, {
         owner: props.owner,
       });

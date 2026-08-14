@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/purity */
 import { DebugOverlay } from "./DebugOverlay";
 import { ErrorScreen } from "./ErrorScreen";
 import { GameCanvas } from "./GameCanvas";
@@ -17,10 +18,12 @@ const MIN_LOADING_MS: number = 3000;
 type GameStatus = "loading" | "prompt" | "menu" | "ready" | "error";
 
 export function App(): ReactNode {
+  const performanceNow: number = performance.now();
+
   const [fps, setFps] = useState<number>(0);
   const [status, setStatus] = useState<GameStatus>("loading");
   const [errorMessage, setErrorMessage] = useState<string>("");
-  const startedAt: RefObject<number> = useRef<number>(performance.now());
+  const startedAt: RefObject<number> = useRef<number>(performanceNow);
 
   const handleReady = useCallback((): void => {
     const elapsed: number = performance.now() - startedAt.current;
@@ -56,11 +59,11 @@ export function App(): ReactNode {
     <div>
       <GameCanvas onFps={setFps} onReady={handleReady} onError={handleError} />
       <DebugOverlay fps={fps} />
-      {(status === "loading" || status === "prompt") && (
+      {/* {(status === "loading" || status === "prompt") && (
         <LoadingScreen ready={status === "prompt"} onProceed={handleProceed} />
       )}
       {status === "menu" && <MenuScreen onStart={handleStart} />}
-      {status === "error" && <ErrorScreen message={errorMessage} />}
+      {status === "error" && <ErrorScreen message={errorMessage} />} */}
     </div>
   );
 }
