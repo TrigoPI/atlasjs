@@ -62,10 +62,8 @@ export class SpriteRenderSystem implements NexusSystem {
 
       let sortY: number = position.y;
 
-      if (
-        spriteRender.sortPointEntity !== null &&
-        world.exists(spriteRender.sortPointEntity)
-      ) {
+      // prettier-ignore
+      if (spriteRender.sortPointEntity !== null && world.exists(spriteRender.sortPointEntity)) {
         const carrier: WorldTransform2D | undefined = world.getComponent(
           spriteRender.sortPointEntity,
           WorldTransform2D,
