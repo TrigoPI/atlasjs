@@ -1,7 +1,7 @@
+import { Vec2 } from "@atlasjs/math";
 import { SortingLayer, SortingOrder } from "../config";
 
 import {
-  Color,
   definePrefab,
   Sprite,
   SpriteRenderer,
@@ -11,6 +11,8 @@ import {
 
 export type ShadowPrefabProps = {
   sprite: Sprite;
+  scale: Vec2;
+  offset: Vec2;
 };
 
 export const createShadowPrefab = () =>
@@ -18,12 +20,12 @@ export const createShadowPrefab = () =>
     name: "shadow",
     build: (entity: EntityBuilder, props: ShadowPrefabProps): void => {
       const transform: Transform2D = entity.add(Transform2D);
-      transform.scale.set(0.7, 0.6);
-      transform.position.set(-0.5, -3);
+      transform.scale.copyFrom(props.scale);
+      transform.position.copyFrom(props.offset);
 
       const renderer: SpriteRenderer = entity.add(SpriteRenderer, props.sprite);
       renderer.sortingLayer = SortingLayer.Entities;
       renderer.sortingOrder = SortingOrder.Shadow;
-      renderer.color = new Color(1, 1, 1, 0.4);
+      renderer.color.set(1, 1, 1, 0.4);
     },
   });

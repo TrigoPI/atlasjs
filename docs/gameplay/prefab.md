@@ -309,9 +309,10 @@ registerScriptMetadata(ShooterScript, {
 
 ## 10. Hors périmètre (V2)
 
-- **Prefabs multi-entités avec références internes** (dino + ombre d'un bloc, un script référençant un
-  frère du même prefab) — le vrai gros morceau : création d'enfants dans le builder (`entity.child()`)
-  + **remap des références internes** vers les instances fraîches. Reporté (choix mono-racine).
+- **Prefabs multi-entités avec enfants inline** — ✅ **implémenté** via `EntityBuilder.child(buildFn)`
+  (voir [`prefab-multi-entity.md`](prefab-multi-entity.md)) : enfants créés synchronement dans le
+  `build`, références internes câblées par capture directe du `.entity` du handle retourné (pas de
+  remap). Le **remap de références sérialisées** (prefab JSON / éditeur) reste V2.
 - **Sérialisation JSON / éditeur / `PrefabAsset`** (modèle deux-phases Asset↔Resource :
   `PrefabAsset` → `PrefabLoader` → `Prefab`) — comme le reste du repo, l'éditeur/serialisation est V2.
 - **Introspection statique** (« lister les composants d'un prefab sans l'instancier ») — nécessite un

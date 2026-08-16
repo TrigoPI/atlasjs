@@ -6,3 +6,4 @@ export * from "./RunningAudioPlayerScript";
 export * from "./RunningParticleScript";
 export * from "./RunningParticleSpawnerScript";
 export * from "./SwordScript";
+export * from "./SwordShadowScript";

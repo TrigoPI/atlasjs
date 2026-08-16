@@ -1,4 +1,4 @@
-import type { Vec2 } from "@atlasjs/math";
+import { Vec2 } from "@atlasjs/math";
 import type { AudioClip } from "@atlasjs/audio";
 import type { SceneContext } from "@atlasjs/core";
 import type { GameEntity } from "@atlasjs/gameplay";
@@ -18,12 +18,14 @@ import {
   type PlayerPrefabProps,
   type RunningParticlePrefabProps,
   type ShadowPrefabProps,
-  type SwordPrefabProps,
+  type SwordWithShadowPrefabProps,
+  type SwordAnchorPrefabProps,
   createRunningAudioPrefab,
   createRunningParticlePrefab,
   createPlayerPrefab,
-  createSwordPrefab,
   createShadowPrefab,
+  createSwordWithShadowPrefab,
+  createSwordAnchorPrefab,
 } from "../prefabs";
 
 // prettier-ignore
@@ -43,7 +45,8 @@ export function spawnPlayer(
   
 
   const shadowPrefab: Prefab<ShadowPrefabProps> = createShadowPrefab();
-  const swordPrefab: Prefab<SwordPrefabProps> = createSwordPrefab();
+  const swordWithShadowPrefab: Prefab<SwordWithShadowPrefabProps> = createSwordWithShadowPrefab();
+  const swordAnchorPrefab: Prefab<SwordAnchorPrefabProps> = createSwordAnchorPrefab();
 
   const runningParticlePrefab: Prefab<RunningParticlePrefabProps> =
     createRunningParticlePrefab({
@@ -67,17 +70,28 @@ export function spawnPlayer(
     clips: sheetLoader.createClips("sheet:dino"),
   });
 
-  instantiator.instantiate(
-    shadowPrefab,
-    { sprite: shadowSprite },
-    { parent: player.id },
+  const anchor: GameEntity = instantiator.instantiate(
+    swordAnchorPrefab,
+    { anchor: new Vec2(-15, -15) },
+    { parent: player.id }
   );
-  
-  instantiator.instantiate(swordPrefab, {
+
+
+  instantiator.instantiate(swordWithShadowPrefab, {
     owner: player.id,
-    sprite: swordSprite,
+    anchor: anchor.id,
+    swordSprite,
+    shadowSprite,
+    angularSpeed: 1.5,
+    r: 40,
+    angle: 0,
   });
 
+  instantiator.instantiate(
+    shadowPrefab, 
+    { sprite: shadowSprite, scale: new Vec2(0.7, 0.6), offset: new Vec2(-0.5, -3) },
+    { parent: player.id }
+  );
 
   return player.id;
 }

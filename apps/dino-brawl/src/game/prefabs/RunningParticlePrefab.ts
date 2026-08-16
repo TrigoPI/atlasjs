@@ -1,8 +1,9 @@
 import type { Vec2 } from "@atlasjs/math";
 import type { AudioClip } from "@atlasjs/audio";
 import type { SpriteAnimation } from "@atlasjs/nebula";
+import type { Entity } from "@atlasjs/nexus";
 
-import { SortingLayer } from "../config";
+import { SortingLayer, SortingOrder } from "../config";
 import { RunningParticleScript } from "../scripts";
 
 import {
@@ -23,6 +24,7 @@ export type RunningParticlePrefabOptions = {
 
 export type RunningParticlePrefabProps = {
   position: Vec2;
+  owner: Entity;
 };
 
 export const createRunningParticlePrefab = (
@@ -37,7 +39,8 @@ export const createRunningParticlePrefab = (
 
       const renderer: SpriteRenderer = entity.add(SpriteRenderer, opt.sprite);
       renderer.sortingLayer = SortingLayer.Entities;
-      renderer.sortingOrder = 100;
+      renderer.sortingOrder = SortingOrder.Particle;
+      renderer.sortPointEntity = props.owner;
 
       const transform: Transform2D = entity.add(Transform2D);
       transform.scale.set(2, 2);
