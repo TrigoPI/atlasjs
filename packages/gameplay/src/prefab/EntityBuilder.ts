@@ -16,17 +16,20 @@ export interface EntityBuilder {
   add<TApi, TEngine extends object, TArgs extends unknown[]>(type: ScriptComponentToken<TApi, TEngine, TArgs>, ...args: TArgs): TApi;
   add<TComponent extends object, TArgs extends unknown[]>(type: Component<TComponent, TArgs>, ...args: TArgs): TComponent;
   attach<TScript extends AtlasScript>(Script: ScriptConstructor<TScript>, ...rest: AttachArgs<TScript>): TScript;
+  child(build: (entity: EntityBuilder) => void): EntityBuilder;
 }
 
 // prettier-ignore
 export class PrefabEntityBuilder implements EntityBuilder {
   public readonly entity: Entity;
   private readonly self: GameEntity;
+  private readonly world: NexusWorld;
   private readonly scripts: ScriptManager;
 
   public constructor(entity: Entity, world: NexusWorld, scripts: ScriptManager) {
     this.entity = entity;
     this.self = createGameEntity(entity, world, scripts);
+    this.world = world;
     this.scripts = scripts;
   }
 
@@ -38,5 +41,13 @@ export class PrefabEntityBuilder implements EntityBuilder {
 
   public attach<TScript extends AtlasScript>(Script: ScriptConstructor<TScript>, ...rest: AttachArgs<TScript>): TScript {
     return this.scripts.attach(this.entity, Script, ...rest);
+  }
+
+  public child(build: (entity: EntityBuilder) => void): EntityBuilder {
+    const childEntity: Entity = this.world.createEntity();
+    const childBuilder: PrefabEntityBuilder = new PrefabEntityBuilder(childEntity, this.world, this.scripts);
+    build(childBuilder);
+    this.world.setParent(childEntity, this.entity);
+    return childBuilder;
   }
 }

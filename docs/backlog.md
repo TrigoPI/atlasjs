@@ -190,6 +190,18 @@ Source : [`gameplay/entity-hierarchy.md`](gameplay/entity-hierarchy.md) (§9, ho
 
 ---
 
+## Gameplay — Prefab
+
+> **Cœur v1 implémenté** : `EntityBuilder.child()` pour les enfants inline et les références internes câblées par capture. Source : [`gameplay/prefab-multi-entity.md`](gameplay/prefab-multi-entity.md). Restent les **extensions V2** ci-dessous.
+
+- **Prefab `child(subPrefab, params)`** — variante de `EntityBuilder.child()` composant un sous-prefab
+  réutilisable (en plus du callback inline). Voir `docs/gameplay/prefab-multi-entity.md` §9.
+- **Propagation à travers des nœuds de groupe sans transform** — permettre à
+  `TransformPropagationSystem` de descendre depuis une racine sans `Transform2D` (aujourd'hui la racine
+  d'un groupe porte un `Transform2D` identité). Voir `docs/gameplay/prefab-multi-entity.md` §4.
+
+---
+
 ## Gameplay — TileSet & TileMap
 
 > **Cœur v1 (design validé, non implémenté)** : `TileSet` en asset complet, `Grid` → N `TileMap` enfants (multi-calque), remplissage code-first, rendu instancié via `TileMapNode` dédié + culling, tri par `sortingOrder`. Source : [`gameplay/tilemap.md`](gameplay/tilemap.md) (§2 non-objectifs). Ne restent que les **extensions** ci-dessous.
