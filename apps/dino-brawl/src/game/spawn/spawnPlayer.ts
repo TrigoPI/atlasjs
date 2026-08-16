@@ -76,19 +76,16 @@ export function spawnPlayer(
     { parent: player.id }
   );
 
-  const swordCount: number = 6;
-  for (let i: number = 0; i < swordCount; i++) {
-    const angle: number = (i / swordCount) * Math.PI * 2;
-    instantiator.instantiate(swordWithShadowPrefab, {
-      owner: player.id,
-      anchor: anchor.id,
-      r: 40,
-      angle,
-      angularSpeed: 1.5,
-      swordSprite,
-      shadowSprite,
-    });
-  }
+
+  instantiator.instantiate(swordWithShadowPrefab, {
+    owner: player.id,
+    anchor: anchor.id,
+    swordSprite,
+    shadowSprite,
+    angularSpeed: 1.5,
+    r: 40,
+    angle: 0,
+  });
 
   instantiator.instantiate(
     shadowPrefab, 
