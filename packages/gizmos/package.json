@@ -1,0 +1,30 @@
+{
+  "name": "@atlasjs/gizmos",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "test": "vitest run",
+    "clean": "rimraf dist",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@atlasjs/core": "workspace:*",
+    "@atlasjs/gameplay": "workspace:*",
+    "@atlasjs/inertia": "workspace:*",
+    "@atlasjs/math": "workspace:*",
+    "@atlasjs/nebula": "workspace:*",
+    "@atlasjs/nexus": "workspace:*",
+    "@atlasjs/utils": "workspace:*"
+  }
+}
