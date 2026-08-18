@@ -1,4 +1,3 @@
-import { Vec2 } from "@atlasjs/math";
 import type { AudioClip } from "@atlasjs/audio";
 import type { Entity } from "@atlasjs/nexus";
 
@@ -8,14 +7,12 @@ import {
   SwordAnchorScript,
   SwordHitboxScript,
   SwordScript,
-  SwordShadowScript,
   SwordSortingScript,
   type WeaponAttack,
 } from "../../scripts";
 
 import {
   Collider2D,
-  Color,
   definePrefab,
   RigidBody,
   Sprite,
@@ -58,7 +55,7 @@ export const createSwordWithShadowPrefab = () =>
         });
       });
 
-      const sword: EntityBuilder = entity.child((e: EntityBuilder): void => {
+      entity.child((e: EntityBuilder): void => {
         const renderer: SpriteRender = e.add(SpriteRender, props.swordSprite);
         renderer.sortingLayer = SortingLayer.Entities;
         renderer.sortingOrder = SortingOrder.SwordFront;
@@ -76,6 +73,7 @@ export const createSwordWithShadowPrefab = () =>
           width: 40,
           height: 40,
         });
+
         collider.offset.set(0, 0);
         collider.isSensor = true;
         collider.layer = CollisionLayers.Weapon;
