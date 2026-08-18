@@ -1,0 +1,51 @@
+import { Vec2 } from "@atlasjs/math";
+import type { SceneContext } from "@atlasjs/core";
+import type { GameEntity } from "@atlasjs/gameplay";
+import type { Entity } from "@atlasjs/nexus";
+
+import type { AssetsLoader } from "../loaders";
+import type { SheetLoader } from "../sheets";
+
+import {
+  type Instantiator,
+  type Prefab,
+  INSTANTIATOR,
+  Sprite,
+} from "@atlasjs/gameplay";
+
+import {
+  type EnemyPrefabProps,
+  type ShadowPrefabProps,
+  createEnemyPrefab,
+  createShadowPrefab,
+} from "../prefabs";
+
+// prettier-ignore
+export function spawnEnemy(
+  ctx: SceneContext,
+  spawnPosition: Vec2,
+  assetsLoader: AssetsLoader,
+  sheetLoader: SheetLoader,
+): Entity {
+  const instantiator: Instantiator = ctx.services.get(INSTANTIATOR);
+
+  const dinoSprite: Sprite = assetsLoader.getAsset("sprite:evil_dino");
+  const shadowSprite: Sprite = assetsLoader.getAsset("sprite:shadow");
+
+  const shadowPrefab: Prefab<ShadowPrefabProps> = createShadowPrefab();
+  const enemyPrefab: Prefab<EnemyPrefabProps> = createEnemyPrefab();
+
+  const enemy: GameEntity = instantiator.instantiate(enemyPrefab, {
+    position: spawnPosition,
+    sprite: dinoSprite,
+    clips: sheetLoader.createClips("sheet:evil_dino"),
+  });
+
+  instantiator.instantiate(
+    shadowPrefab,
+    { sprite: shadowSprite, scale: new Vec2(0.7, 0.6), offset: new Vec2(-0.5, -3) },
+    { parent: enemy.id }
+  );
+
+  return enemy.id;
+}

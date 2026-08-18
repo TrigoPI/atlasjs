@@ -1,5 +1,5 @@
 import { Vec2 } from "@atlasjs/math";
-import { SortingLayer, SortingOrder } from "../config";
+import { SortingLayer, SortingOrder } from "../../config";
 
 import {
   definePrefab,

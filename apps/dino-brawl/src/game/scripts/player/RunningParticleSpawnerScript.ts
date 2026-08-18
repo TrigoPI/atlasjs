@@ -1,6 +1,6 @@
 import { Vec2 } from "@atlasjs/math";
-import type { DinoControls } from "../controls";
-import type { RunningParticlePrefabProps } from "../prefabs";
+import type { DinoControls } from "../../controls";
+import type { RunningParticlePrefabProps } from "../../prefabs";
 
 import {
   AtlasScript,

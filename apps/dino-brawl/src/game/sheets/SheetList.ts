@@ -13,6 +13,12 @@ export const SheetList: SheetDescriptor[] = [
     clips: DinoClips,
   },
   {
+    name: "sheet:evil_dino",
+    texture: "texture:evil_dino",
+    sheet: DinoSheetBuilder,
+    clips: DinoClips,
+  },
+  {
     name: "sheet:running_particle",
     texture: "texture:running_particle",
     sheet: RunningParticleSheetBuilder,

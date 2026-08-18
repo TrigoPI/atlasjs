@@ -1,5 +1,5 @@
 import type { Vec2 } from "@atlasjs/math";
-import type { DinoControls } from "../controls";
+import type { DinoControls } from "../../controls";
 
 import {
   AtlasScript,
@@ -32,7 +32,7 @@ export class RunningAudioPlayerScript extends AtlasScript<{
   public onUpdate(dt: number): void {
     const v: Vec2 = this.move.readValue();
     const boost: boolean = this.boost.isDown();
-    const cooldown: number = boost ? 0.25 : 0.3;
+    const cooldown: number = boost ? 0.4 : 0.5;
 
     if (v.mag() > 0) {
       this.clock += dt;

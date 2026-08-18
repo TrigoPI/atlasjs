@@ -8,10 +8,11 @@ import type { AssetsLoader } from "../loaders";
 import type { SheetLoader } from "../sheets";
 
 import {
+  type EntityBuilder,
   type Instantiator,
   type Prefab,
-  type Sprite,
   INSTANTIATOR,
+  Sprite,
 } from "@atlasjs/gameplay";
 
 import {
@@ -28,6 +29,14 @@ import {
   createSwordAnchorPrefab,
 } from "../prefabs";
 
+import {
+  AttackChain,
+  SpinAttack,
+  SwingAttack,
+  ThrustAttack,
+  type WeaponAttack,
+} from "../scripts";
+
 // prettier-ignore
 export function spawnPlayer(
   ctx: SceneContext,
@@ -42,7 +51,10 @@ export function spawnPlayer(
   const particleSprite: Sprite = assetsLoader.getAsset("sprite:running_particle");
   const swordSprite: Sprite = assetsLoader.getAsset("sprite:default_sword");
   const grassSound: AudioClip = assetsLoader.getAsset("audio:grass_audio");
-  
+  const hitSound: AudioClip = assetsLoader.getAsset("audio:hit");
+  const woosh1Sound: AudioClip = assetsLoader.getAsset("audio:woosh_1");
+  const woosh2Sound: AudioClip = assetsLoader.getAsset("audio:woosh_2");
+  const woosh3Sound: AudioClip = assetsLoader.getAsset("audio:woosh_3");
 
   const shadowPrefab: Prefab<ShadowPrefabProps> = createShadowPrefab();
   const swordWithShadowPrefab: Prefab<SwordWithShadowPrefabProps> = createSwordWithShadowPrefab();
@@ -72,19 +84,26 @@ export function spawnPlayer(
 
   const anchor: GameEntity = instantiator.instantiate(
     swordAnchorPrefab,
-    { anchor: new Vec2(-15, -15) },
+    { anchor: new Vec2(0, -10) },
     { parent: player.id }
   );
 
-
   instantiator.instantiate(swordWithShadowPrefab, {
-    owner: player.id,
-    anchor: anchor.id,
     swordSprite,
     shadowSprite,
-    angularSpeed: 1.5,
-    r: 40,
+    owner: player.id,
+    anchor: anchor.id,
     angle: 0,
+    r: 40,
+    hitClip: hitSound,
+    attack: (e: EntityBuilder): WeaponAttack =>
+      e.attach(AttackChain, {
+        attacks: [
+          e.attach(ThrustAttack, { clip: woosh1Sound, pitch: 1 }),
+          e.attach(SwingAttack, { clip: woosh2Sound, pitch: 1.1 }),
+          e.attach(SpinAttack, { clip: woosh3Sound, pitch: 1.2 }),
+        ],
+      }),
   });
 
   instantiator.instantiate(

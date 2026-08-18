@@ -9,7 +9,7 @@ import {
   Vector2Action,
 } from "@atlasjs/gameplay";
 
-import type { DinoControls } from "../controls";
+import type { DinoControls } from "../../controls";
 
 export class PlayerAnimationScript extends AtlasScript {
   private animator: Animator;

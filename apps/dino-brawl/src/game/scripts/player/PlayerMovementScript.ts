@@ -1,5 +1,5 @@
 import { Vec2 } from "@atlasjs/math";
-import type { DinoControls } from "../controls";
+import type { DinoControls } from "../../controls";
 
 import {
   AtlasScript,
