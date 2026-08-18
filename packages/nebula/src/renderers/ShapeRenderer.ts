@@ -71,7 +71,7 @@ export class ShapeRenderer
     const data: ShapeRenderData = this.getOrCreateRenderData(shape);
 
     this.updateColor(shape, data.color);
-    data.params.set(kind, 0, 0, 0);
+    data.params.set(kind, shape.borderWidth, 0, 0);
     this.updateModelMatrix(shape, data.model);
 
     return {

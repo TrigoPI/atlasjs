@@ -141,6 +141,27 @@ async function getImage(src: string): Promise<ImageBitmap> {
   nebula.scene.addChild(circle);
   nebula.scene.addChild(line);
 
+  const filledRect: RectNode = new RectNode(80, 80);
+  filledRect.setPosition(120, 420).setColor(1, 1, 1, 1);
+
+  const strokedRect: RectNode = new RectNode(80, 80);
+  strokedRect.setPosition(260, 420).setColor(0, 1, 0, 1).setBorderWidth(3);
+
+  const wideStrokedRect: RectNode = new RectNode(160, 60);
+  wideStrokedRect.setPosition(460, 420).setColor(1, 1, 0, 1).setBorderWidth(3);
+
+  const filledCircle: CircleNode = new CircleNode(40);
+  filledCircle.setPosition(640, 420).setColor(1, 1, 1, 1);
+
+  const ring: CircleNode = new CircleNode(40);
+  ring.setPosition(760, 420).setColor(0, 1, 1, 1).setBorderWidth(3);
+
+  nebula.scene.addChild(filledRect);
+  nebula.scene.addChild(strokedRect);
+  nebula.scene.addChild(wideStrokedRect);
+  nebula.scene.addChild(filledCircle);
+  nebula.scene.addChild(ring);
+
   setInterval(() => {
     nebula.render();
   }, 1000 / 60);
