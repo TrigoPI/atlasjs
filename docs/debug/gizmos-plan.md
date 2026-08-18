@@ -950,16 +950,35 @@ describe("GizmoPlugin", () => {
     expect(() => world.addComponent(entity, PivotGizmo)).not.toThrow();
   });
 
-  it("flush masque les nœuds non réutilisés à chaque frame", async () => {
-    const { scene, gizmos, frame } = await boot();
+  it("masque les nœuds non réutilisés dans la même frame, sans latence", async () => {
+    const { engine, scene, gizmos, frame } = await boot();
 
-    gizmos.drawRect(0, 0, 10, 10, 0);
-    gizmos.drawRect(0, 0, 10, 10, 0);
+    let count: number = 3;
+
+    const handle: StepHandle = engine.scheduler.render.add(
+      () => {
+        for (let i: number = 0; i < count; i += 1) {
+          gizmos.drawRect(0, 0, 10, 10, 0);
+        }
+      },
+      { name: "test:producer", stage: "PreRender", before: "gizmos:flush" },
+    );
+
     frame();
 
-    expect(scene.root.getChildren().length).toBe(2);
-    expect(scene.root.getChildren()[0].visible).toBe(false);
-    expect(scene.root.getChildren()[1].visible).toBe(false);
+    expect(scene.root.getChildren().length).toBe(3);
+    expect(scene.root.getChildren().every((n: Node) => n.visible)).toBe(true);
+
+    count = 1;
+    frame();
+
+    const children: ReadonlyArray<Node> = scene.root.getChildren();
+    expect(children.length).toBe(3);
+    expect(children[0].visible).toBe(true);
+    expect(children[1].visible).toBe(false);
+    expect(children[2].visible).toBe(false);
+
+    handle.remove();
   });
 
   it("uninstall retire les nœuds du pool de la scène", async () => {
@@ -976,7 +995,11 @@ describe("GizmoPlugin", () => {
 });
 ```
 
-Note sur le 4ᵉ cas : les dessins sont faits **hors** step, donc quand `gizmos:flush` tourne dans la frame il ne voit aucun producteur — les deux nœuds sont au-delà du curseur et sont donc masqués. C'est exactement le comportement attendu, et c'est ce qui prouve que le flush tourne.
+Le 4ᵉ cas **doit enregistrer un vrai producteur de step**, pas dessiner depuis le corps du test. Dessiner hors step avance le curseur avant que le flush ne tourne : `hideUnused()` ne voit alors rien à masquer et il faut deux frames pour observer quoi que ce soit, ce qui suggère faussement une latence d'une frame. En enregistrant un producteur avec `before: "gizmos:flush"`, on teste l'invariant réel du § 5.1 du spec : **un nœud non réutilisé est masqué dans la frame même**, avant le draw.
+
+Ce test discrimine bien l'ordre des steps : si le flush tournait avant le producteur, la frame 2 laisserait `children[1].visible === true` et l'assertion tomberait. Il couvre donc aussi le seam `before: "gizmos:flush"` dont les Tasks 3 et 4 dépendent.
+
+Ajouter les imports de type correspondants : `StepHandle` depuis `@atlasjs/core` et `Node` depuis `@atlasjs/nebula`.
 
 - [ ] **Step 11 : Lancer le test pour vérifier qu'il échoue**
 
