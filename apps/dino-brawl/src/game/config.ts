@@ -8,15 +8,18 @@ export const SortingLayer = {
 
 export const SortingOrder = {
   Shadow: 8,
+  SwordBehind: 9,
   Player: 10,
   Particle: 15,
-  Sword: 20,
+  SwordFront: 20,
 } as const;
 
 export const CollisionLayers = defineCollisionLayers(
   "Player",
   "Occluder",
   "World",
+  "Enemy",
+  "Weapon",
 );
 
 export const MAP_SCALE: number = 2;

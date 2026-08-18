@@ -8,7 +8,7 @@ export const DinoSheetBuilder: SheetBuilder = (
 ): SpriteSheet =>
   SpriteSheet.fromAutoGrid({
     texture,
-    name: "player_dino",
+    name: "dino",
     rows: 1,
     columns: 24,
     pivot: new Vec2(0.5, 1),
@@ -18,25 +18,25 @@ export const DinoClips: ClipBuilder = (
   sheet: SpriteSheet,
 ): Record<string, SpriteAnimation> => ({
   idle: new SpriteAnimation({
-    frames: sheet.getManyInRange("player_dino_", 0, 3),
+    frames: sheet.getManyInRange("dino_", 0, 3),
     fps: 5,
     loop: true,
     autoPlay: true,
   }),
   run: new SpriteAnimation({
-    frames: sheet.getManyInRange("player_dino_", 4, 9),
+    frames: sheet.getManyInRange("dino_", 4, 9),
     fps: 12,
     loop: true,
     autoPlay: true,
   }),
   pre_sprint: new SpriteAnimation({
-    frames: sheet.getManyInRange("player_dino_", 17, 17),
+    frames: sheet.getManyInRange("dino_", 17, 17),
     fps: 1,
     loop: false,
     autoPlay: true,
   }),
   sprint: new SpriteAnimation({
-    frames: sheet.getManyInRange("player_dino_", 18, 23),
+    frames: sheet.getManyInRange("dino_", 18, 23),
     fps: 12,
     loop: true,
     autoPlay: true,

@@ -6,11 +6,11 @@ import {
   PlayerMovementScript,
   RunningAudioPlayerScript,
   RunningParticleSpawnerScript,
-} from "../scripts";
-import { CollisionLayers, SortingLayer, SortingOrder } from "../config";
-import { dinoControls } from "../controls";
+} from "../../scripts";
+import { CollisionLayers, SortingLayer, SortingOrder } from "../../config";
+import { dinoControls } from "../../controls";
 
-import type { RunningParticlePrefabProps } from "./RunningParticlePrefab";
+import type { RunningParticlePrefabProps } from "../fx/RunningParticlePrefab";
 
 import {
   Animator,

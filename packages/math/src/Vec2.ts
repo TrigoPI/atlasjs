@@ -1,4 +1,10 @@
-import { cos, sin } from "./Math";
+import { atan2, cos, PI_2, sin } from "./Math";
+
+function normalizeAngle(r: number): number {
+  if (r >= 0) return r < PI_2 ? r : r % PI_2;
+  const n: number = (r % PI_2) + PI_2;
+  return n < PI_2 ? n : 0;
+}
 
 export class Vec2 {
   public x: number;
@@ -78,6 +84,10 @@ export class Vec2 {
     return Math.sqrt(this.x * this.x + this.y * this.y);
   }
 
+  public angle(): number {
+    return atan2(this.y, this.x);
+  }
+
   public static from(a: Vec2): Vec2 {
     return new Vec2(a.x, a.y);
   }
@@ -88,6 +98,10 @@ export class Vec2 {
 
   public static sub(a: Vec2, b: Vec2): Vec2 {
     return new Vec2(a.x - b.x, a.y - b.y);
+  }
+
+  public static angle(a: Vec2, b: Vec2): number {
+    return normalizeAngle(atan2(b.y - a.y, b.x - a.x));
   }
 
   public static fromAngle(r: number): Vec2 {

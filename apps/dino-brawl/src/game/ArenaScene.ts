@@ -8,7 +8,7 @@ import type { BuiltMap, WorldPoint } from "./tiled";
 
 import { SortingLayer } from "./config";
 import { SheetList, SheetLoader } from "./sheets";
-import { spawnCamera, spawnPlayer, spawnWorld } from "./spawn";
+import { spawnCamera, spawnEnemy, spawnPlayer, spawnWorld } from "./spawn";
 import { AssetsLoader, AudioList, SpriteList, TextureList } from "./loaders";
 
 export class ArenaScene extends Scene {
@@ -41,6 +41,13 @@ export class ArenaScene extends Scene {
     const player: Entity = spawnPlayer(
       ctx,
       spawnPosition,
+      assetsLoader,
+      sheetLoader,
+    );
+
+    spawnEnemy(
+      ctx,
+      Vec2.create(spawnPosition.x + 150, spawnPosition.y),
       assetsLoader,
       sheetLoader,
     );

@@ -22,7 +22,7 @@ export function createRunningAudioPrefab(deps: RunningAudioPrefabDeps): Prefab {
         { playOnAwake: true },
       );
 
-      audio.volume = randomRange(0.01, 0.05);
+      audio.volume = randomRange(0.5, 0.8);
       audio.pitch = randomRange(1, 1.2);
     },
   });

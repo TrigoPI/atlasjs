@@ -1,5 +1,6 @@
 export * from "./Bound";
 export * from "./Box2";
+export * from "./Easing";
 export * from "./Mat3";
 export * from "./Mat4";
 export * from "./Math";

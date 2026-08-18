@@ -3,8 +3,8 @@ import type { AudioClip } from "@atlasjs/audio";
 import type { SpriteAnimation } from "@atlasjs/nebula";
 import type { Entity } from "@atlasjs/nexus";
 
-import { SortingLayer, SortingOrder } from "../config";
-import { RunningParticleScript } from "../scripts";
+import { SortingLayer, SortingOrder } from "../../config";
+import { RunningParticleScript } from "../../scripts";
 
 import {
   Animator,
