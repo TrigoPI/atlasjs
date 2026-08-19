@@ -24,7 +24,7 @@ Source : [`rendering/renderer-architecture.md`](rendering/renderer-architecture.
 
 Source : [`rendering/shapes.md`](rendering/shapes.md) (hors périmètre v1).
 
-- Strokes / contours (fill uniquement aujourd'hui), coins arrondis, polygones arbitraires, remplissage gradient/texture, anchor configurable par forme. `params.y/z/w` sont réservés pour coins arrondis / feather.
+- ✅ **Strokes / contours** _(fait)_ : `ShapeNode.borderWidth` → `params.y` → SDF de contour en WGSL (rect + cercle), taille monde dérivée de la matrice model. Voir [`debug/gizmos.md`](debug/gizmos.md) § 6. Restent : coins arrondis, polygones arbitraires, remplissage gradient/texture, anchor configurable par forme. `params.z/w` restent réservés aux coins arrondis / feather.
 
 ---
 
@@ -199,6 +199,21 @@ Source : [`gameplay/entity-hierarchy.md`](gameplay/entity-hierarchy.md) (§9, ho
 - **Propagation à travers des nœuds de groupe sans transform** — permettre à
   `TransformPropagationSystem` de descendre depuis une racine sans `Transform2D` (aujourd'hui la racine
   d'un groupe porte un `Transform2D` identité). Voir `docs/gameplay/prefab-multi-entity.md` §4.
+
+---
+
+## Debug — Gizmos
+
+> **Cœur v1 implémenté** : `ColliderGizmo`/`PivotGizmo` + switch global, service immediate-mode `Gizmos` sur pool de nœuds recyclés, stroke SDF dans nebula. Source : [`debug/gizmos.md`](debug/gizmos.md) (§ 9 non-objectifs). Restent les **extensions V2** ci-dessous.
+
+- 📋 **Gizmos d'éditeur** : poignées de sélection/déplacement/échelle, contour de l'entité sélectionnée, preview de collider en cours d'édition. Le seam est déjà posé — tout producteur s'insère avec `before: "gizmos:flush"` sans toucher au package.
+- 📋 **`Gizmos.drawLine` + pool de `LineNode`** : débloque d'un coup les gizmos de raycast, les vecteurs (direction, vitesse, normales de contact) et les lignes de hiérarchie parent → enfant. Écarté en v1 faute de consommateur réel.
+- 📋 **`capsule` / `segment` / `polygon` exacts** : capsule via un 3ᵉ `shapeKind` SDF, segment/polygon via une boucle de `LineNode`. Aujourd'hui : rien dessiné + un warn unique par type (choix assumé — pas d'AABB approximative, un gizmo ne doit pas mentir sur la géométrie).
+- 📋 **Épaisseur de contour constante à l'écran** : `borderWidth` est en unités monde, donc le contour s'épaissit visuellement au zoom. Une épaisseur en pixels demanderait le facteur de zoom caméra dans le shader.
+- 📋 **Texte à l'écran** (labels d'entité, valeurs numériques) : dépend du rendu de texte (item A2 de la section Rendering).
+- 📋 **Contour du sprite / marqueur de sort point** : rect du sprite rendu, et position du `sortPointEntity`.
+- 📋 **Surcharge `Collider.getTranslation(out?: Vec2)`** dans `@atlasjs/inertia` : `RapierCollider.getTranslation()` alloue un `Vec2` par appel, soit ~2 allocations par collider par frame **quand le debug est allumé**. Assumé en v1 (outil opt-in) plutôt que de faire changer un contrat de package physique pour un outil de debug.
+- 💭 **Passe/batch gizmo dédiée** dans nebula : overlay dessiné après la scène, hors scene-graph. Conceptuellement plus juste (les gizmos ne sont pas du contenu de scène) mais sans effet sur l'API appelante — le `GIZMO_SORTING_LAYER` produit le même résultat visuel aujourd'hui.
 
 ---
 

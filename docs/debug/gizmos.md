@@ -1,8 +1,8 @@
 # Debug — Gizmos (colliders & pivots)
 
-> Statut : **design validé, non implémenté**.
+> Statut : **implémenté** (v1). Les extensions V2 sont dans [`../backlog.md`](../backlog.md) § Debug — Gizmos.
 > Portée : nouveau package `@atlasjs/gizmos` + extension **stroke** de `@atlasjs/nebula` / `@atlasjs/nebula-webgpu`. Vérification dans `apps/webgpu` et `apps/dino-brawl`.
-> Contexte : aujourd'hui un collider est invisible et un pivot ne se devine qu'en collant un sprite `debug.png` en enfant de l'entité (workaround présent dans `apps/dino-brawl`, cf. `SwordWithShadowPrefab`). Ce design remplace ce bricolage par des gizmos moteur, en posant la brique dont le futur éditeur aura besoin.
+> Contexte : avant cette feature, un collider était invisible et un pivot ne se devinait qu'en collant un sprite `debug.png` en enfant de l'entité (workaround qui vivait dans `apps/dino-brawl`, `SwordWithShadowPrefab`, **supprimé par cette feature**). Ce design remplace ce bricolage par des gizmos moteur, en posant la brique dont le futur éditeur aura besoin.
 
 ---
 
@@ -75,7 +75,9 @@ packages/gizmos/                        → @atlasjs/gizmos
 
 Dépendances : `@atlasjs/core`, `@atlasjs/nexus`, `@atlasjs/nebula`, `@atlasjs/math`, `@atlasjs/utils`, **`@atlasjs/gameplay`** (pour `Collider2D`, `PhysicsColliderRef`, `WorldTransform2D`) et **`@atlasjs/inertia`** (pour `ColliderShapeDesc`, à narrower par `.type`, et `Collider`, à lire pour la position).
 
-Le sens est unique : `gameplay` n'apprend jamais l'existence de `gizmos` → aucun cycle. Le package est un **plugin optionnel** au sens du CLAUDE.md : le moteur et le gameplay restent indépendants de lui.
+Le sens est unique : `gameplay` n'apprend jamais l'existence de `gizmos` → aucun cycle.
+
+**Prérequis découvert à l'intégration** : `GizmoPlugin` est le premier plugin à faire attendre **deux** plugins sur un même service pas encore fourni (`NEBULA_RENDERER`, attendu aussi par `GameplayPlugin`). `ServiceRegistry.wait` ne gardait qu'**un** waiter par token et l'écrasait silencieusement, donc le premier plugin n'était jamais réveillé → `BootTimeoutError` au bout de 10 s. Bug latent de `@atlasjs/core`, indépendant des gizmos, corrigé (waiters en liste par token) avec un test de régression dans `packages/core/test/ServiceRegistry.test.ts`. Le package est un **plugin optionnel** au sens du CLAUDE.md : le moteur et le gameplay restent indépendants de lui.
 
 Le **stroke** n'atterrit pas ici : c'est une capacité de rendu, pas du debug. Il va dans `@atlasjs/nebula` (+ backend `nebula-webgpu`) et ferme l'item backlog « strokes / contours » de `docs/rendering/shapes.md`.
 
