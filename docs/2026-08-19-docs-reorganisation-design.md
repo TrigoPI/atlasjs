@@ -255,6 +255,7 @@ Estimation post-tri : **~55 notes** pour ~110 puces d'origine (beaucoup sont des
 | `verified` se périme et le §1.2 se reproduit | `/atlas-done` réécrit `verified` à chaque clôture |
 | La vue `.base` n'est lisible que dans Obsidian | `_index.md` markdown maintenu en parallèle, régénéré |
 | Le hook prettier réécrit le fichier avec `--write` sans remonter le nouveau contenu à l'agent ; une édition suivante qui s'appuie sur le texte exact venant d'être écrit peut échouer si le reformatage (guillemets, retours à la ligne, points-virgules) change ce texte | Risque accepté et connu, à revisiter si des échecs d'édition inexpliqués apparaissent ; le rendre bloquant coûterait plus cher que le défaut qu'il évite |
+| Deux éditions de `.wgsl` émises dans le même tour déclenchent deux hooks, donc deux `pnpm build` concurrents écrivant dans le même `dist`, sans verrou pour les sérialiser | Risque accepté, non mitigé ; l'échec serait un `dist` transitoirement incohérent, que la prochaine édition de shader répare ; à revisiter si une corruption est réellement observée — un verrou coûterait plus cher que le défaut qu'il évite |
 
 ---
 

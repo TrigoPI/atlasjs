@@ -284,7 +284,8 @@ try {
 }
 
 const filePath = payload?.tool_input?.file_path ?? "";
-if (!filePath.endsWith(".wgsl")) process.exit(0);
+if (!filePath.endsWith(".wgsl") || !filePath.includes("packages/nebula-webgpu/"))
+  process.exit(0);
 
 try {
   execFileSync("pnpm", ["--filter", "@atlasjs/nebula-webgpu", "build"], {
@@ -313,30 +314,42 @@ echo '{"tool_input":{"file_path":"packages/core/src/index.ts"}}' | node .claude/
 
 Attendu : **aucune sortie**, `exit=0`. Aucun build ne doit être déclenché par un `.ts`.
 
-- [ ] **Step 4 : Vérifier le chemin nominal**
+- [ ] **Step 4 : Vérifier la garde de package**
 
 ```bash
-WGSL=$(find packages/nebula-webgpu -name '*.wgsl' | head -1) && echo "{\"tool_input\":{\"file_path\":\"$WGSL\"}}" | node .claude/hooks/wgsl-rebuild.mjs; echo "exit=$?"
+echo '{"tool_input":{"file_path":"apps/webgpu/shaders/test.wgsl"}}' | node .claude/hooks/wgsl-rebuild.mjs; echo "exit=$?"
+```
+
+Attendu : **aucune sortie**, `exit=0`. Un `.wgsl` hors de `packages/nebula-webgpu/` ne doit déclencher aucun build — sinon un futur package `.wgsl` (backend WebGL, module 3D) rebuilderait `nebula-webgpu` au lieu de lui-même.
+
+- [ ] **Step 5 : Vérifier le chemin nominal**
+
+```bash
+echo '{"tool_input":{"file_path":"packages/nebula-webgpu/src/shaders/shape_instanced.wgsl"}}' | node .claude/hooks/wgsl-rebuild.mjs; echo "exit=$?"
 ```
 
 Attendu : `[wgsl] rebuild @atlasjs/nebula-webgpu OK (...)`, `exit=0`.
 
-- [ ] **Step 5 : Prouver que le rebuild agit réellement sur `dist`**
+- [ ] **Step 6 : Prouver que le rebuild agit réellement sur `dist`**
 
 C'est le cœur du piège : il ne suffit pas que le hook s'exécute, il faut que `dist` change.
 
+Le build (`tsdown`) produit du **`.mjs`**, pas du `.js`, et inline chaque shader dans un module de même nom : `src/shaders/X.wgsl` → `dist/shaders/X.mjs`. La paire est donc déterministe, pas à deviner.
+
 ```bash
-WGSL=$(find packages/nebula-webgpu -name '*.wgsl' | head -1)
-DIST=$(find packages/nebula-webgpu/dist -name '*.js' | head -1)
+WGSL=packages/nebula-webgpu/src/shaders/shape_instanced.wgsl
+DIST=packages/nebula-webgpu/dist/shaders/shape_instanced.mjs
 shasum "$DIST"
 printf '\n// hook-probe\n' >> "$WGSL"
 echo "{\"tool_input\":{\"file_path\":\"$WGSL\"}}" | node .claude/hooks/wgsl-rebuild.mjs
 shasum "$DIST"
 ```
 
-Attendu : les deux sommes **diffèrent**. Si elles sont identiques, le shader n'est pas inliné dans ce fichier `dist` — chercher le bon fichier de sortie avant de conclure.
+Attendu : les deux sommes **diffèrent**, et la seconde contient la sonde (`grep -c 'hook-probe' "$DIST"` vaut 1). Si elles sont identiques, le hook n'a pas rebuildé — c'est un échec de la tâche, pas un fichier mal choisi.
 
-- [ ] **Step 6 : Restaurer le shader sonde**
+`//` est un commentaire valide en WGSL : la sonde n'empêche pas le shader de compiler.
+
+- [ ] **Step 7 : Restaurer le shader sonde**
 
 ```bash
 git checkout -- packages/nebula-webgpu && git status --short packages/nebula-webgpu
@@ -344,7 +357,7 @@ git checkout -- packages/nebula-webgpu && git status --short packages/nebula-web
 
 Attendu : sortie vide.
 
-- [ ] **Step 7 : Ajouter le hook aux réglages**
+- [ ] **Step 8 : Ajouter le hook aux réglages**
 
 Ajouter une seconde entrée dans le tableau `hooks` de l'objet `matcher: "Edit|Write"` existant :
 
@@ -355,7 +368,7 @@ Ajouter une seconde entrée dans le tableau `hooks` de l'objet `matcher: "Edit|W
 }
 ```
 
-- [ ] **Step 8 : Valider**
+- [ ] **Step 9 : Valider**
 
 ```bash
 node -e "const s=require('./.claude/settings.json'); const h=s.hooks.PostToolUse[0].hooks; console.log(h.length, h.map(x=>x.command))"
@@ -363,7 +376,7 @@ node -e "const s=require('./.claude/settings.json'); const h=s.hooks.PostToolUse
 
 Attendu : `2` et les deux commandes.
 
-- [ ] **Step 9 : Arrêt pour revue et commit utilisateur**
+- [ ] **Step 10 : Arrêt pour revue et commit utilisateur**
 
 ---
 
