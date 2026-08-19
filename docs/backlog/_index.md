@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **49** items.
+Total : **60** items.
 
 ## assets
 
@@ -43,6 +43,12 @@ Total : **49** items.
 | GAMEPLAY-24 | [GAMEPLAY-24-input-hold-tap-multitap](GAMEPLAY-24-input-hold-tap-multitap.md) | 📋 à faire | M | 2026-08-19 |
 | GAMEPLAY-25 | [GAMEPLAY-25-input-processors](GAMEPLAY-25-input-processors.md) | 📋 à faire | S | 2026-08-19 |
 | GAMEPLAY-29 | [GAMEPLAY-29-input-fixed-lane-sampling](GAMEPLAY-29-input-fixed-lane-sampling.md) | 📋 à faire | M | 2026-08-19 |
+| GAMEPLAY-34 | [GAMEPLAY-34-underscore-prefixed-public-surface](GAMEPLAY-34-underscore-prefixed-public-surface.md) | 📋 à faire | S | 2026-08-19 |
+| GAMEPLAY-36 | [GAMEPLAY-36-getservice-facade-cache](GAMEPLAY-36-getservice-facade-cache.md) | 📋 à faire | S | 2026-08-19 |
+| GAMEPLAY-38 | [GAMEPLAY-38-optional-array-entity-fields](GAMEPLAY-38-optional-array-entity-fields.md) | 📋 à faire | S | 2026-08-19 |
+| GAMEPLAY-39 | [GAMEPLAY-39-getscripts-plural](GAMEPLAY-39-getscripts-plural.md) | 📋 à faire | S | 2026-08-19 |
+| GAMEPLAY-40 | [GAMEPLAY-40-prefab-child-subprefab](GAMEPLAY-40-prefab-child-subprefab.md) | 📋 à faire | S | 2026-08-19 |
+| GAMEPLAY-35 | [GAMEPLAY-35-addcomponent-overload-duplication](GAMEPLAY-35-addcomponent-overload-duplication.md) | 🔶 partiel | S | 2026-08-19 |
 | GAMEPLAY-03 | [GAMEPLAY-03-animator-state-machine](GAMEPLAY-03-animator-state-machine.md) | 💭 vision | L | 2026-08-19 |
 | GAMEPLAY-05 | [GAMEPLAY-05-animation-root-motion](GAMEPLAY-05-animation-root-motion.md) | 💭 vision | L | 2026-08-19 |
 | GAMEPLAY-08 | [GAMEPLAY-08-animator-sprite-cache-eviction](GAMEPLAY-08-animator-sprite-cache-eviction.md) | 💭 vision | S | 2026-08-19 |
@@ -53,6 +59,11 @@ Total : **49** items.
 | GAMEPLAY-26 | [GAMEPLAY-26-input-gamepad-analog-axes](GAMEPLAY-26-input-gamepad-analog-axes.md) | 💭 vision | L | 2026-08-19 |
 | GAMEPLAY-27 | [GAMEPLAY-27-input-control-schemes-rebinding](GAMEPLAY-27-input-control-schemes-rebinding.md) | 💭 vision | M | 2026-08-19 |
 | GAMEPLAY-28 | [GAMEPLAY-28-input-actions-asset-serialization-editor](GAMEPLAY-28-input-actions-asset-serialization-editor.md) | 💭 vision | L | 2026-08-19 |
+| GAMEPLAY-30 | [GAMEPLAY-30-script-compiler](GAMEPLAY-30-script-compiler.md) | 💭 vision | L | 2026-08-19 |
+| GAMEPLAY-31 | [GAMEPLAY-31-expose-validation-throw](GAMEPLAY-31-expose-validation-throw.md) | 💭 vision | M | 2026-08-19 |
+| GAMEPLAY-32 | [GAMEPLAY-32-rich-editor-metadata](GAMEPLAY-32-rich-editor-metadata.md) | 💭 vision | M | 2026-08-19 |
+| GAMEPLAY-33 | [GAMEPLAY-33-exposed-values-deserialization](GAMEPLAY-33-exposed-values-deserialization.md) | 💭 vision | M | 2026-08-19 |
+| GAMEPLAY-37 | [GAMEPLAY-37-transform-pure-data-changed](GAMEPLAY-37-transform-pure-data-changed.md) | 💭 vision | L | 2026-08-19 |
 
 ## rendering
 

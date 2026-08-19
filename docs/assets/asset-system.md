@@ -49,7 +49,7 @@ Le contrat `Asset` actuel (`id + kind + dispose`) décrit en réalité le **hand
 | Loaders | Un `AssetLoader<A, R>` par `type`, enregistré dans le manager par le plugin du domaine | Point d'extension plugin ; le manager ne dépend d'aucun backend |
 | Dédup | `load(asset)` d'un même `id` renvoie la **même** instance de `Resource` (cache par la Promise) | Une texture partagée par N sprites = 1 seul `Texture2D` GPU |
 | Lifetime v1 | Le manager retient les resources chargées et les `destroy()` toutes au teardown. **Pas de refcount.** | Refcount/eviction = backlog B1, hors périmètre |
-| Nommage scene-graph | Les primitives renderables de nebula adoptent le suffixe `*Node` (`SpriteNode`, `RectNode`, `ShapeNode`, `CircleNode`, `LineNode`) | Lève la collision `Sprite` (node) ↔ `Sprite` (asset) à la source (fin de l'alias d'import) et auto-documente le scene-graph ; aligne sur l'éditeur (backlog B2) |
+| Nommage scene-graph | Les primitives renderables de nebula adoptent le suffixe `*Node` (`SpriteNode`, `RectNode`, `ShapeNode`, `CircleNode`, `LineNode`) | Lève la collision `Sprite` (node) ↔ `Sprite` (asset) à la source (fin de l'alias d'import) et auto-documente le scene-graph ; s'alignait aussi sur l'ancien `packages/editor`, supprimé depuis |
 
 ## Architecture
 
@@ -218,7 +218,7 @@ export class SpriteLoader implements AssetLoader<SpriteAsset, Sprite> {
 
 ### 7. Renommage scene-graph → convention `*Node` (`@atlasjs/nebula`)
 
-Décision compagnon de ce redesign : toutes les primitives renderables du scene-graph de nebula adoptent le suffixe `*Node`. Motivation directe : lever la collision `Sprite` (node) ↔ `Sprite` (asset) **à la source** (fin de l'alias d'import), et auto-documenter le rôle « nœud de scène » (l'éditeur attend déjà `RectNode`, backlog B2).
+Décision compagnon de ce redesign : toutes les primitives renderables du scene-graph de nebula adoptent le suffixe `*Node`. Motivation directe : lever la collision `Sprite` (node) ↔ `Sprite` (asset) **à la source** (fin de l'alias d'import), et auto-documenter le rôle « nœud de scène » (l'ancien `packages/editor`, supprimé depuis, attendait déjà `RectNode`).
 
 | Avant | Après |
 |---|---|
