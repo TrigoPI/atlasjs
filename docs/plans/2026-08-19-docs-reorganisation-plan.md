@@ -139,8 +139,8 @@ Attendu : **échec**, plusieurs docs signalés comme non formatés. C'est la pre
 Ajouter à la fin de `.prettierignore` :
 
 ```
-# Docs : rédigés à la main, jamais reformatés (tableaux et blocs de code)
-docs/
+# Docs: hand-written, never reformatted (tables and code blocks churn)
+/docs/
 apps/*/docs/
 ```
 
@@ -180,11 +180,14 @@ try {
   execFileSync("pnpm", ["exec", "prettier", "--write", filePath], {
     stdio: "pipe",
     encoding: "utf8",
+    timeout: 15000,
   });
   console.log(`[prettier] ${filePath}`);
   process.exit(0);
 } catch (error) {
-  console.error(`[prettier] echec sur ${filePath}\n${error.stderr ?? ""}`);
+  console.error(
+    `[prettier] failed on ${filePath}\n${error.stderr ?? error.message ?? ""}`,
+  );
   process.exit(2);
 }
 ```
@@ -287,13 +290,14 @@ try {
   execFileSync("pnpm", ["--filter", "@atlasjs/nebula-webgpu", "build"], {
     stdio: "pipe",
     encoding: "utf8",
+    timeout: 180000,
   });
   console.log(`[wgsl] rebuild @atlasjs/nebula-webgpu OK (${filePath})`);
   process.exit(0);
 } catch (error) {
   console.error(
-    `[wgsl] REBUILD ECHOUE apres edition de ${filePath}. ` +
-      `Le dist sert encore l ancien shader.\n${error.stdout ?? ""}${error.stderr ?? ""}`,
+    `[wgsl] REBUILD FAILED after editing ${filePath}. ` +
+      `dist still serves the old shader.\n${error.stdout ?? ""}${error.stderr ?? error.message ?? ""}`,
   );
   process.exit(2);
 }
