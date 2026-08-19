@@ -730,11 +730,13 @@ Le contenu utile vit désormais dans les hooks, la skill et les `CLAUDE.md`.
 
 - [ ] **Step 6 : Réparer les liens cassés**
 
+Chercher les **liens markdown** réels, pas toute mention textuelle — plusieurs docs permanents évoquent en prose des plans déjà fusionnés (« anciennement `shapes-primitives-plan.md` »), et ces phrases sont exactes : les « réparer » les abîmerait.
+
 ```bash
-grep -rn 'dino-brawl-cleanup\|dino-brawl-tiled-bridge\|2026-08-12-dino-brawl\|-plan\.md' docs CLAUDE.md apps/*/CLAUDE.md packages/*/CLAUDE.md 2>/dev/null | grep -v 'docs/plans/2026-08-19'
+grep -rnE '\]\([^)]*(dino-brawl-cleanup|dino-brawl-tiled-bridge|2026-08-12-dino-brawl|-plan\.md)[^)]*\)' docs CLAUDE.md apps/*/CLAUDE.md packages/*/CLAUDE.md 2>/dev/null | grep -vE '^docs/(plans/|\.obsidian/)'
 ```
 
-Attendu à terme : **aucune sortie**. Chaque référence trouvée est soit repointée vers `apps/dino-brawl/docs/`, soit supprimée si elle visait un plan.
+Attendu : **aucune sortie**. Mesuré avant la tâche, les trois seuls liens réels vivaient à l'intérieur des plans supprimés eux-mêmes — ils disparaissent donc avec eux. Si une sortie apparaît malgré tout, c'est un lien à repointer vers `apps/dino-brawl/docs/`.
 
 - [ ] **Step 7 : Mesurer le gain**
 
