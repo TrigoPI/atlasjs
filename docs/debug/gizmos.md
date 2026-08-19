@@ -299,7 +299,9 @@ Le warn est émis **une seule fois par type de forme** (un `Set` de types déjà
 
 ## 8. Tests et vérification
 
-Vitest, environnement node (pas de jsdom), comme le reste du dépôt.
+Vitest, environnement node (pas de jsdom), comme le reste du dépôt — mêmes `define` (`__DEV__`/`__CONSOLE_TRANSPORT__`/`__WEBSOCKET_TRANSPORT__` à `"false"`) que les packages voisins.
+
+**Comment tester un warn** : `createLogger` renvoie un `Logger` **sans aucun transport** quand `__DEV__` est faux (`packages/utils/src/logging/Logger.ts`), donc espionner `console.warn` ne voit rien. Espionner `Logger.prototype.warn` intercepte l'appel indépendamment des transports — pas de `define` à basculer (ce sont des constantes de compilation, donc tout le package ou rien), pas de seam d'injection à ajouter au système. C'est le premier test de warn du dépôt ; c'est le motif à réutiliser.
 
 ### 8.1 Pool & service
 
@@ -311,14 +313,18 @@ Dessiner N formes → N nœuds acquis et ajoutés à la scène ; le flush masque
 |---|---|
 | `box` + `PhysicsColliderRef`, `Transform2D.scale = (2, 2)` | un rect à la translation **rapier**, extents **non scalés** |
 | `Collider2D` sans `PhysicsColliderRef` | **rien** dessiné |
+| composant présent **mais** `PhysicsColliderRef` absent | **rien** dessiné |
 | `isSensor = true` | `settings.sensorColor` |
 | `showColliders = true`, aucun `ColliderGizmo` | dessiné quand même |
 | `showColliders = false`, aucun `ColliderGizmo` | rien |
 | composant **et** switch global actifs | **un seul** rect |
 | `capsule` / `segment` / `polygon` | rien dessiné + **un seul** warn, pas un par frame |
+| solide dessiné **après** un sensor dans le même `update` | `colliderColor`, pas le `sensorColor` résiduel |
 | `ColliderGizmo.color` non nul | override de la couleur du settings |
 
 Le premier cas verrouille en exécutable la règle « le gizmo ne ment pas » ; c'est le test le plus important du lot.
+
+Le cas **solide-après-sensor** couvre un piège structurel de l'immediate-mode à état : `Gizmos.color` et `Gizmos.borderWidth` sont un pinceau **mutable partagé** (§ 3.3), que rien ne réinitialise entre deux entités, deux systèmes ou deux frames. Un système qui ne pose pas l'état complet du pinceau avant *chaque* dessin héritera de la valeur précédente — et le gizmo mentirait sur la couleur. Les assertions se font par **contenu** et non par index : l'ordre d'itération des entités n'est pas un contrat.
 
 ### 8.3 `PivotGizmoSystem`
 

@@ -1149,7 +1149,7 @@ Le cœur de la feature. Les tests de cette tâche **sont** la spécification : i
 Créer `packages/gizmos/test/collider-gizmo-system.test.ts` :
 
 ```ts
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { Transform2D as MathTransform2D, Vec2 } from "@atlasjs/math";
 import { Color, SceneGraph } from "@atlasjs/nebula";
 import type { CircleNode, NebulaRenderer, Node, RectNode } from "@atlasjs/nebula";
@@ -1226,6 +1226,10 @@ function visible(scene: SceneGraph): ReadonlyArray<Node> {
 }
 
 describe("ColliderGizmoSystem", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("dessine la vérité physique, pas l'intention : extents non scalés à la position rapier", () => {
     const ctx: Ctx = setup();
     ctx.gizmos.settings.showColliders = true;
@@ -1267,6 +1271,26 @@ describe("ColliderGizmoSystem", () => {
       width: 40,
       height: 40,
     });
+
+    ctx.system.update({ world: ctx.world, dt: 0 });
+
+    expect(ctx.scene.root.getChildren().length).toBe(0);
+  });
+
+  it("ne dessine rien même avec le composant si PhysicsColliderRef est absent", () => {
+    const ctx: Ctx = setup();
+
+    const entity: Entity = ctx.world.createEntity();
+    const transform: MathTransform2D = new MathTransform2D();
+    ctx.world
+      .addComponent(entity, WorldTransform2D)
+      .matrix.fromTransform2D(transform);
+    ctx.world.addComponent(entity, Collider2D, {
+      type: "box",
+      width: 40,
+      height: 40,
+    });
+    ctx.world.addComponent(entity, ColliderGizmo);
 
     ctx.system.update({ world: ctx.world, dt: 0 });
 
@@ -1371,10 +1395,42 @@ describe("ColliderGizmoSystem", () => {
     expect([rect.color.r, rect.color.g, rect.color.b]).toEqual([1, 0, 0]);
   });
 
+  it("ne réutilise pas la couleur du sensor pour le collider solide suivant", () => {
+    const ctx: Ctx = setup();
+    ctx.gizmos.settings.showColliders = true;
+
+    const sensor: Entity = spawn(
+      ctx,
+      { type: "box", width: 10, height: 10 },
+      { x: 0, y: 0 },
+    );
+    ctx.world.requireComponent(sensor, Collider2D).isSensor = true;
+
+    spawn(ctx, { type: "box", width: 10, height: 10 }, { x: 50, y: 0 });
+
+    ctx.system.update({ world: ctx.world, dt: 0 });
+
+    const rects: ReadonlyArray<RectNode> =
+      ctx.scene.root.getChildren() as ReadonlyArray<RectNode>;
+
+    expect(rects.length).toBe(2);
+
+    const colors: number[][] = rects.map((r: RectNode) => [
+      r.color.r,
+      r.color.g,
+      r.color.b,
+    ]);
+
+    expect(colors).toContainEqual([0, 1, 1]);
+    expect(colors).toContainEqual([0, 1, 0]);
+  });
+
   it("ne dessine rien pour une capsule et ne warn qu'une fois sur 3 frames", () => {
     const ctx: Ctx = setup();
     ctx.gizmos.settings.showColliders = true;
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const warn = vi
+      .spyOn(Logger.prototype, "warn")
+      .mockImplementation(() => {});
 
     spawn(ctx, { type: "capsule", radius: 5, halfHeight: 10 }, { x: 0, y: 0 });
 
@@ -1385,12 +1441,11 @@ describe("ColliderGizmoSystem", () => {
     expect(ctx.scene.root.getChildren().length).toBe(0);
     expect(warn).toHaveBeenCalledTimes(1);
 
-    warn.mockRestore();
   });
 });
 ```
 
-**Si le dernier cas ne voit pas le `console.warn` :** `createLogger` de `@atlasjs/utils` est piloté par les `define` du `vitest.config.ts` (`__CONSOLE_TRANSPORT__: "false"`). Dans ce cas, ne pas espionner `console` — injecter un logger de test, ou passer `__CONSOLE_TRANSPORT__` à `"true"` dans le `vitest.config.ts` du package. **Vérifier le comportement réel avant de choisir**, et garder l'assertion « une seule fois sur 3 frames » : c'est elle qui compte.
+**Espionner `Logger.prototype.warn`, pas `console.warn`.** `createLogger` renvoie un `Logger` **sans aucun transport** quand `__DEV__` est faux (`packages/utils/src/logging/Logger.ts`), et `__DEV__` vaut `"false"` dans le `vitest.config.ts` du package comme dans tous les packages voisins : un spy sur `console` ne verrait donc rien. `Logger.warn` étant une méthode de prototype ordinaire, l'espionner intercepte l'appel quel que soit le nombre de transports — sans toucher aux `define` (ce sont des constantes de compilation : tout le package ou rien) et sans ajouter de seam d'injection au système. Importer `Logger` comme **valeur** depuis `@atlasjs/utils`. C'est le premier test de warn du dépôt ; c'est le motif à réutiliser.
 
 - [ ] **Step 2 : Lancer le test pour vérifier qu'il échoue**
 
@@ -1534,7 +1589,7 @@ export * from "./systems/ColliderGizmoSystem";
 pnpm --filter @atlasjs/gizmos test
 ```
 
-Attendu : PASS, 23 tests (7 pool + 5 plugin + 11 collider).
+Attendu : PASS, 25 tests (7 pool + 5 plugin + 13 collider).
 
 ```bash
 pnpm --filter @atlasjs/gizmos typecheck
@@ -1787,7 +1842,7 @@ export * from "./systems/PivotGizmoSystem";
 pnpm --filter @atlasjs/gizmos test
 ```
 
-Attendu : PASS, 29 tests (7 + 5 + 11 + 6).
+Attendu : PASS, 31 tests (7 + 5 + 13 + 6).
 
 ```bash
 pnpm --filter @atlasjs/gizmos typecheck
@@ -1976,7 +2031,7 @@ Puis ajouter une nouvelle section, à placer après « Gameplay — Prefab » :
 pnpm test
 ```
 
-Attendu : tous les packages au vert, y compris `@atlasjs/gizmos` (29 tests) et `@atlasjs/nebula` (avec les 5 nouveaux).
+Attendu : tous les packages au vert, y compris `@atlasjs/gizmos` (31 tests) et `@atlasjs/nebula` (avec les 5 nouveaux).
 
 - [ ] **Step 10 : Formater et stager (NE PAS COMMITER)**
 
