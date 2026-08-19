@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **24** items.
+Total : **28** items.
 
 ## assets
 
@@ -10,6 +10,15 @@ Total : **24** items.
 | --- | --- | --- | --- | --- |
 | ASSETS-01 | [ASSETS-01-asset-manager-hardening](ASSETS-01-asset-manager-hardening.md) | 🔶 partiel | S | 2026-08-19 |
 | ASSETS-02 | [ASSETS-02-animation-asset-serialization](ASSETS-02-animation-asset-serialization.md) | 💭 vision | M | 2026-08-19 |
+
+## core
+
+| ID | Item | Statut | Effort | Vérifié |
+| --- | --- | --- | --- | --- |
+| CORE-01 | [CORE-01-archetype-soa-storage](CORE-01-archetype-soa-storage.md) | 📋 à faire | L | 2026-08-19 |
+| CORE-02 | [CORE-02-changed-t-detection](CORE-02-changed-t-detection.md) | 📋 à faire | L | 2026-08-19 |
+| CORE-03 | [CORE-03-component-registry-by-name](CORE-03-component-registry-by-name.md) | 💭 vision | S | 2026-08-19 |
+| CORE-04 | [CORE-04-rollback-driver](CORE-04-rollback-driver.md) | 💭 vision | L | 2026-08-19 |
 
 ## gameplay
 

@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Le backlog vit dans [`backlog/`](backlog/) — **24** items ouverts, index dans [`backlog/_index.md`](backlog/_index.md).
+Le backlog vit dans [`backlog/`](backlog/) — **28** items ouverts, index dans [`backlog/_index.md`](backlog/_index.md).
 
 Les plans d'implémentation en cours vivent dans [`plans/`](plans/) et sont **transitoires** : ils sont supprimés à la clôture de la feature (`/atlas-done`).
 
@@ -24,7 +24,7 @@ Les plans d'implémentation en cours vivent dans [`plans/`](plans/) et sont **tr
 | Document | Statut |
 | --- | --- |
 | [nexus-ecs.md](core/nexus-ecs.md) | implémenté (phases 0→7 + migration gameplay terminées). Document de design + suivi. Voir l |
-| [scheduling.md](core/scheduling.md) | implémenté — phases 0, 1, 2, 4, 5, 6, 7, 8 + vitest terminées. Phase 3 (Physics dt) reste  |
+| [scheduling.md](core/scheduling.md) | implémenté — phases 0 à 8 + vitest terminées, y compris la Phase 3 (Physics dt), livrée au |
 
 ## debug
 

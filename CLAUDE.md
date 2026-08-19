@@ -107,7 +107,7 @@ Consult it before undertaking a significant change: a design may already be vali
 
 ### `docs/core/`
 
-- `docs/core/scheduling.md` — **implemented** (except Phase 3). Scheduling/loop refactor: single ordering authority (lanes → named stages → before/after), rollback-ready fixed step (`advanceFixed`, `fixedDelta` drives physics), declared plugin deps with topological boot, removable/groupable steps (`StepHandle`/`StepSet`), fixed→update→render loop with interpolation alpha. `scheduler.<lane>.add(fn, spec)` is the API; every lane ends with a trailing `Sync` stage (anchor 1000). **Phase 3 (Physics dt) still pending** (→ backlog).
+- `docs/core/scheduling.md` — **implemented** (all phases, including Phase 3). Scheduling/loop refactor: single ordering authority (lanes → named stages → before/after), rollback-ready fixed step (`advanceFixed`, `fixedDelta` drives physics), declared plugin deps with topological boot, removable/groupable steps (`StepHandle`/`StepSet`), fixed→update→render loop with interpolation alpha. `scheduler.<lane>.add(fn, spec)` is the API; every lane ends with a trailing `Sync` stage (anchor 1000). Phase 3 (fixed-step delta drives `PhysicsWorld.step(dt)`) shipped in commit `efa3f1e`.
 - `docs/core/nexus-ecs.md` — **implemented** (+ `gameplay` migration). Nexus ECS: generational entities, swappable `IComponentStore` backend (sparse-set today), typed `world.query(...).each((e, a, b) => …)` with fail-fast structural-change guard, hybrid command buffer (`world.commands` + `world.flush()`, auto-flushed at `Sync`), multi-world via injectable `ComponentRegistry`, `without`/`optional` filters, `world.onAdd`/`onRemove`. Future: archetype/SoA backend, `Changed<T>` change-detection (→ backlog).
 
 ### `docs/gameplay/`

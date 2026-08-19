@@ -1,6 +1,6 @@
 # Refonte du scheduling d'AtlasJS
 
-> **Statut : implémenté** — phases 0, 1, 2, 4, 5, 6, 7, 8 + vitest terminées. **Phase 3 (Physics dt) reste à faire** → voir `docs/backlog.md`. Document de design + suivi. Voir la checklist en bas.
+> **Statut : implémenté** — phases 0 à 8 + vitest terminées, y compris la Phase 3 (Physics dt), livrée au commit `efa3f1e`. Document de design + suivi. Voir la checklist en bas.
 
 ## Context
 
@@ -176,7 +176,7 @@ On implémente **une phase à la fois** ; après validation de l'auteur, on coch
 - [x] **Phase 0 — Scheduler additif** : nouveau `Scheduler` (lanes/stages/sets/handles/`StepContext`) + façade de compat (`onUpdate/…(fn,{priority,id})` mappe `priority`→stage synthétique, wrap `(dt)→(ctx)`). Rien d'autre ne bouge, `dino-brawl` inchangé. _(vitest + 15 tests verts ; core build + monorepo OK.)_
 - [x] **Phase 1 — Boucle** : réorg Engine (fixed→update→render, alpha, compteurs, step `scene:update`, `FrameClock`, seam `advanceFixed`, driver de boucle injectable). _(6 tests Engine verts ; `dino-brawl` sert proprement sous Vite après fix d'un import cassé pré-existant.)_
 - [x] **Phase 2 — Boot topo** : `provides/requires` sur tous les plugins, tri topo (Kahn) + `MissingDependencyError`/`DependencyCycleError`/`DuplicateProviderError` + `BootTimeoutError`, assertion post-install, `Plugin.order`/`setOrder` supprimés. _(4 tests boot verts ; tous les packages compilent.)_
-- [ ] **Phase 3 — Physics dt** : `PhysicsWorld.step(dt)` + `world.timestep = dt`.
+- [x] **Phase 3 — Physics dt** : `PhysicsWorld.step(dt)` + `world.timestep = dt`. _(`Engine.advanceFixed` passe `fixedDelta` à la lane `fixed` ; `InertialPlugin` relaie `ctx.dt` à `PhysicsWorld.step` ; `RapierPhysicsWorld.step(dt)` fait `this.world.timestep = dt` avant `this.world.step()`. Commit `efa3f1e`.)_
 - [x] **Phase 4 — Re-lanes ECS** : split `GameplayPlugin` en étapes fixed/render (adaptateur `registerSystem`) + `scriptManager.fixedUpdate` branché (bug #1) + `uninstall` retire les handles. `SpriteRenderSystem` en `render/PreRender`. _(test de déterminisme gameplay vert : `onFixedUpdate` s'exécute + pipeline reproductible.)_
 - [x] **Phase 5 — Suppr. `NexusScheduler`** : suppression `NexusScheduler.ts` + export + le type orphelin `SystemPhase`. Nexus = pur data-store, une seule autorité d'ordonnancement (le core).
 - [x] **Phase 6 — Fix input** : `clear` (début de frame) → `endFrame()` en fin de logique (nouvelle étape `update/Late`, ancre 900). Les edges `isPressed`/`isReleased` sont enfin observables par les systèmes. Handle retiré à l'`uninstall`. _(test de timing input vert.)_
