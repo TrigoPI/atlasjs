@@ -5,12 +5,12 @@ import { ServiceToken } from "./types";
 export class ServiceRegistry {
   private readonly logger: Logger;
   private readonly services: Map<symbol, unknown>;
-  private readonly waiters: Map<symbol, Deferred<any>>;
+  private readonly waiters: Map<symbol, Deferred<any>[]>;
 
   public constructor() {
     this.logger = createLogger(ServiceRegistry.name);
     this.services = new Map<symbol, unknown>();
-    this.waiters = new Map<symbol, Deferred<any>>();
+    this.waiters = new Map<symbol, Deferred<any>[]>();
   }
 
   public static createToken<T>(description: string): ServiceToken<T> {
@@ -34,7 +34,14 @@ export class ServiceRegistry {
     }
 
     const deferred: Deferred<T> = new Deferred<T>();
-    this.waiters.set(token, deferred);
+    const waiting: Deferred<any>[] | undefined = this.waiters.get(token);
+
+    if (waiting === undefined) {
+      this.waiters.set(token, [deferred]);
+    } else {
+      waiting.push(deferred);
+    }
+
     return deferred.ready;
   }
 
@@ -49,10 +56,16 @@ export class ServiceRegistry {
   }
 
   private resolveWaiting<T>(token: ServiceToken<T>, value: T): void {
-    const isWaiting: Deferred<unknown> | undefined = this.waiters.get(token);
-    if (isWaiting) {
-      isWaiting.resolve(value);
-      this.waiters.delete(token);
+    const waiting: Deferred<unknown>[] | undefined = this.waiters.get(token);
+
+    if (waiting === undefined) {
+      return;
+    }
+
+    this.waiters.delete(token);
+
+    for (const deferred of waiting) {
+      deferred.resolve(value);
     }
   }
 }
