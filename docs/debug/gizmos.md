@@ -348,13 +348,23 @@ Fournit `GIZMOS` ; `defineComponent` les deux composants ; enregistre les steps 
 1. **`apps/webgpu`** — un rect stroké et un anneau ; **et** la non-régression du fill existant (cf. § 6.4).
 2. **`apps/dino-brawl`** — `showColliders` allumé, contrôle de la hitbox d'épée et des colliders de tilemap.
 
-Redémarrer le serveur de dev plutôt que de faire confiance au HMR, qui sert des scènes périmées sur ce projet.
+### Trois pièges qui coûtent des heures
+
+**Rebuilder le backend après *chaque* édition de `.wgsl`.** Les apps importent les packages par leur champ `exports` → `./dist`, et le `.wgsl` est **inliné dans `dist` au build**. Éditer `src/shaders/*.wgsl` sans `pnpm --filter @atlasjs/nebula-webgpu build` laisse servir l'ancien shader — **redémarrer le serveur de dev ne suffit pas**, et le HMR encore moins. C'est le piège qui a coûté le plus de temps sur cette feature.
+
+**Une erreur de compilation WGSL n'est pas une erreur console.** Elle arrive en `warn` (`Error while parsing WGSL:`), puis se fait noyer par des `Invalid RenderPipeline … due to a previous error` répétés à 60 fps. Lire la console **sans** filtre `onlyErrors`. Pour l'erreur exacte à coup sûr : compiler le shader dans la page et lire `getCompilationInfo()`.
+
+**Pas de `if` dépendant de `params` avant `fwidth`** (cf. § 6.2) : `fwidth` est un builtin de dérivée, WGSL interdit de l'appeler en contrôle de flux non-uniforme, et le shader refuse alors de compiler. Cette règle vaut pour toute extension future du shader (coins arrondis, feather).
+
+Enfin, sur `apps/dino-brawl` la boucle est en RAF et se fait fortement throttler quand le panneau navigateur n'est pas au premier plan : on obtient un canvas noir à 0 fps **sans aucune erreur**. Mettre l'onglet devant avant de juger. Le readback programmatique du canvas (`drawImage`/`getImageData`) y renvoie du vide pour la même raison — il marche sur `apps/webgpu`, dont la boucle est un `setInterval`.
 
 ---
 
 ## 9. Non-objectifs / suites V2
 
 - **Gizmos d'éditeur** : poignées de sélection/déplacement/échelle, contour de l'entité sélectionnée, preview de collider en cours d'édition. Le seam est posé (`before: "gizmos:flush"`), rien n'est implémenté.
+
+  ⚠️ **`packages/editor` existe déjà et porte un vocabulaire concurrent** : `Gizmo`, `GizmoTool`, `SelectionOverlayTool`, `ScaleTool`, `DragTool`, enregistrés dans la lane **`update`** sous un stage `"Editor"`, et dessinant via un modèle `renderer.overlay` / `renderer.root`. C'est du **code mort** — il ne compile plus contre l'API nebula actuelle, c'est l'item backlog **B2**. Deux modèles cohabitent donc dans le dépôt après cette feature : nœuds retenus + registry d'outils en `update` d'un côté, immediate-mode + pool en `render`/`PreRender` de l'autre, avec des noms qui se frôlent (`Gizmo` / `Gizmos`). À noter : l'éditeur mort réclamait précisément les deux choses que la v1 des gizmos n'a pas — une **passe overlay** hors scene-graph et une **épaisseur constante à l'écran**, tous deux déjà dans cette liste. La reprise de B2 devrait donc faire de ses outils des **producteurs** de l'API immediate-mode plutôt que de reconstruire un chemin de rendu parallèle. Décision à prendre en ouvrant B2, pas avant.
 - **`Gizmos.drawLine` + pool de `LineNode`** : débloque d'un coup les gizmos de raycast / vecteurs (direction, vitesse, normales de contact) et les lignes de hiérarchie. Écarté en v1 faute de consommateur (§ 5.2).
 - **Texte à l'écran** (labels d'entité, valeurs) : dépend du rendu de texte (item backlog A2).
 - **Épaisseur de contour constante à l'écran** : aujourd'hui `borderWidth` est en unités monde, donc le contour s'épaissit visuellement au zoom. Une épaisseur constante en pixels demanderait le facteur de zoom caméra dans le shader.
