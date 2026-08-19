@@ -885,7 +885,7 @@ Attendu : le fichier autour de 200 lignes, et un volume total repassé sous **10
 ## Task 9 : Script d'index — parser et génération
 
 **Files:**
-- Create: `scripts/lib/frontmatter.mjs`, `scripts/lib/frontmatter.test.mjs`, `scripts/backlog-index.mjs`
+- Create: `scripts/lib/frontmatter.mjs`, `scripts/lib/frontmatter.test.mjs`, `scripts/backlog-index.mjs`, `scripts/backlog-index.test.mjs`
 - Modify: `package.json`
 
 **Interfaces:**
@@ -932,7 +932,49 @@ test("ignore un deux-points dans la valeur", () => {
   const { data } = parseFrontmatter("---\nnote: voir a: cet endroit\n---\n");
   assert.equal(data.note, "voir a: cet endroit");
 });
+
+test("frontmatter non terminé (pas de --- final) : traité comme absence de frontmatter", () => {
+  const input = "---\nid: RENDER-01\nstatus: todo\n\n# Titre\nCorps.";
+  const { data, body } = parseFrontmatter(input);
+  assert.deepEqual(data, {});
+  assert.equal(body, input);
+});
+
+test("bloc de frontmatter vide : data vide, body préservé", () => {
+  const { data, body } = parseFrontmatter("---\n---\n\nBody");
+  assert.deepEqual(data, {});
+  assert.equal(body, "\nBody");
+});
+
+test("fins de ligne CRLF : parse les paires et retire le \\r des valeurs", () => {
+  const input = "---\r\nid: RENDER-02\r\nstatus: todo\r\n---\r\n\r\n# Titre\r\n";
+  const { data, body } = parseFrontmatter(input);
+  assert.equal(data.id, "RENDER-02");
+  assert.equal(data.status, "todo");
+  assert.equal(body, "\r\n# Titre\r\n");
+});
+
+test("clé dupliquée : la dernière occurrence gagne (comportement retenu, pas une erreur)", () => {
+  const { data } = parseFrontmatter("---\nid: FIRST\nid: SECOND\n---\nBody");
+  assert.equal(data.id, "SECOND");
+});
+
+test("BOM en tête de fichier : retiré avant le parsing", () => {
+  const { data, body } = parseFrontmatter("﻿---\nid: RENDER-03\n---\nBody");
+  assert.equal(data.id, "RENDER-03");
+  assert.equal(body, "Body");
+});
+
+test("frontière exacte du corps : un seul saut de ligne en tête est retiré, pas plus", () => {
+  // Régression ciblée : si `.replace(/^\r?\n/, "")` disparaît du parser, le corps
+  // redevient "\n\nBody line" (les deux sauts de ligne bruts après le "---" fermant)
+  // au lieu de "\nBody line" — cette égalité stricte doit échouer dans ce cas.
+  const { body } = parseFrontmatter("---\nid: RENDER-04\n---\n\nBody line");
+  assert.equal(body, "\nBody line");
+});
 ```
+
+Les six derniers cas verrouillent la frontière parser/corps : une revue par mutation avait établi que la suite initiale (les quatre premiers tests) ne faisait échouer aucun test si le retrait du saut de ligne en tête de `body` (`.replace(/^\r?\n/, "")`) disparaissait. Le test « frontière exacte du corps » ci-dessus échoue précisément dans ce cas (voir Step 4bis).
 
 - [ ] **Step 2 : Vérifier l'échec**
 
@@ -947,14 +989,17 @@ Attendu : **ÉCHEC** — `Cannot find module './frontmatter.mjs'`.
 `scripts/lib/frontmatter.mjs` :
 
 ```js
+// Flat scalars only ("key: value"). A YAML list ("tags:" followed by "- a" lines) is not
+// parsed and is silently dropped from `data` — do not use list fields in backlog notes.
 export function parseFrontmatter(text) {
-  if (!text.startsWith("---")) return { data: {}, body: text };
+  const input = text.replace(/^\uFEFF/, "");
+  if (!input.startsWith("---")) return { data: {}, body: input };
 
-  const end = text.indexOf("\n---", 3);
-  if (end === -1) return { data: {}, body: text };
+  const end = input.indexOf("\n---", 3);
+  if (end === -1) return { data: {}, body: input };
 
-  const block = text.slice(4, end);
-  const body = text.slice(end + 4).replace(/^\r?\n/, "");
+  const block = input.slice(4, end);
+  const body = input.slice(end + 4).replace(/^\r?\n/, "");
   const data = {};
 
   for (const line of block.split("\n")) {
@@ -973,13 +1018,18 @@ export function parseFrontmatter(text) {
 }
 ```
 
+Deux différences avec la version initialement écrite au Step 1/3 (une revue post-implémentation les a ajoutées, avant que ce plan ne soit mis à jour rétroactivement) :
+
+- Le BOM (`﻿`) en tête de fichier est retiré avant tout test sur `"---"` — sans ça, une note enregistrée avec BOM par certains éditeurs perdait silencieusement tout son frontmatter.
+- Le retrait du saut de ligne en tête de `body` (`.replace(/^\r?\n/, "")`) est la frontière la plus fragile du parser : c'est ce que le test « frontière exacte du corps » du Step 1 verrouille.
+
 - [ ] **Step 4 : Vérifier le succès**
 
 ```bash
 node --test scripts/lib/frontmatter.test.mjs
 ```
 
-Attendu : `# pass 4`, `# fail 0`.
+Attendu : `# pass 10`, `# fail 0`.
 
 - [ ] **Step 5 : Écrire le générateur**
 
@@ -988,6 +1038,7 @@ Attendu : `# pass 4`, `# fail 0`.
 ```js
 import { readdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { parseFrontmatter } from "./lib/frontmatter.mjs";
 
 const BACKLOG_DIR = "docs/backlog";
@@ -995,41 +1046,62 @@ const DOCS_DIR = "docs";
 const STATUS_ORDER = ["todo", "partial", "vision"];
 const STATUS_LABEL = { todo: "📋 à faire", partial: "🔶 partiel", vision: "💭 vision" };
 
-function readBacklog() {
+// Treats both "no value" and "" (an empty frontmatter value) as missing — a bare `??`
+// fallback only catches the former, and an empty string then renders as a blank cell
+// instead of the placeholder.
+function orDefault(value, fallback) {
+  return value === undefined || value === "" ? fallback : value;
+}
+
+function statusRank(status) {
+  const index = STATUS_ORDER.indexOf(status);
+  return index === -1 ? STATUS_ORDER.length : index;
+}
+
+export function readBacklog() {
   if (!existsSync(BACKLOG_DIR)) return [];
   return readdirSync(BACKLOG_DIR)
     .filter((name) => name.endsWith(".md") && !name.startsWith("_"))
     .map((name) => {
       const { data } = parseFrontmatter(readFileSync(join(BACKLOG_DIR, name), "utf8"));
+      if (!data.id) {
+        console.warn(`docs:index — ${name}: no "id" in frontmatter (malformed or missing block), check the file`);
+      }
       return { file: name, ...data };
     });
 }
 
-function renderBacklogIndex(items) {
-  const domains = [...new Set(items.map((item) => item.domain ?? "?"))].sort();
+export function renderBacklogIndex(items) {
+  // Normalize the domain once per item so the section header and the group filter
+  // agree on the same value — computing the header from a fallback but filtering on
+  // the raw field let domain-less items fall into an empty section while still being
+  // counted in the total.
+  const withDomain = items.map((item) => ({ ...item, domain: orDefault(item.domain, "?") }));
+  const domains = [...new Set(withDomain.map((item) => item.domain))].sort();
   const lines = [
     "# Backlog — index",
     "",
     "> Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.",
     "",
-    `Total : **${items.length}** items.`,
+    `Total : **${withDomain.length}** items.`,
     "",
   ];
 
   for (const domain of domains) {
-    const group = items
+    const group = withDomain
       .filter((item) => item.domain === domain)
       .sort(
         (a, b) =>
-          STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status) ||
-          String(a.id).localeCompare(String(b.id)),
+          statusRank(a.status) - statusRank(b.status) ||
+          String(orDefault(a.id, "?")).localeCompare(String(orDefault(b.id, "?"))),
       );
     lines.push(`## ${domain}`, "");
     lines.push("| ID | Item | Statut | Effort | Vérifié |", "| --- | --- | --- | --- | --- |");
     for (const item of group) {
       const title = item.file.replace(/\.md$/, "");
+      const statusLabel = STATUS_LABEL[item.status] ?? orDefault(item.status, "?");
       lines.push(
-        `| ${item.id ?? "?"} | [${title}](${item.file}) | ${STATUS_LABEL[item.status] ?? item.status} | ${item.effort ?? "?"} | ${item.verified ?? "—"} |`,
+        `| ${orDefault(item.id, "?")} | [${title}](${item.file}) | ${statusLabel} | ${orDefault(item.effort, "?")} | ${orDefault(item.verified, "—")} |`,
       );
     }
     lines.push("");
@@ -1038,27 +1110,49 @@ function renderBacklogIndex(items) {
   return lines.join("\n");
 }
 
-function readDesignDocs() {
-  const folders = readdirSync(DOCS_DIR, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && !["backlog", "plans"].includes(entry.name))
+function describeDoc(fullPath, name) {
+  const head = readFileSync(fullPath, "utf8").split("\n").slice(0, 8);
+  const statusLine = head.find((line) => /statut|status/i.test(line)) ?? "";
+  const status = statusLine.replace(/[>*`]/g, "").replace(/^\s*statut\s*:\s*/i, "").trim();
+  return { name, status: status.slice(0, 90) || "—" };
+}
+
+export function readDesignDocs() {
+  const entries = readdirSync(DOCS_DIR, { withFileTypes: true });
+  const sections = [];
+
+  const rootDocs = entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".md") && entry.name !== "README.md")
+    .map((entry) => entry.name)
+    .sort()
+    .map((name) => describeDoc(join(DOCS_DIR, name), name));
+  if (rootDocs.length > 0) sections.push({ folder: "racine", prefix: "", docs: rootDocs });
+
+  const folders = entries
+    .filter(
+      (entry) =>
+        entry.isDirectory() &&
+        !entry.name.startsWith(".") &&
+        !["backlog", "plans"].includes(entry.name),
+    )
     .map((entry) => entry.name)
     .sort();
 
-  return folders.map((folder) => ({
-    folder,
-    docs: readdirSync(join(DOCS_DIR, folder))
-      .filter((name) => name.endsWith(".md"))
-      .sort()
-      .map((name) => {
-        const head = readFileSync(join(DOCS_DIR, folder, name), "utf8").split("\n").slice(0, 8);
-        const statusLine = head.find((line) => /statut|status/i.test(line)) ?? "";
-        const status = statusLine.replace(/[>*`]/g, "").replace(/^\s*statut\s*:\s*/i, "").trim();
-        return { name, status: status.slice(0, 90) || "—" };
-      }),
-  }));
+  for (const folder of folders) {
+    sections.push({
+      folder,
+      prefix: `${folder}/`,
+      docs: readdirSync(join(DOCS_DIR, folder))
+        .filter((name) => name.endsWith(".md"))
+        .sort()
+        .map((name) => describeDoc(join(DOCS_DIR, folder, name), name)),
+    });
+  }
+
+  return sections;
 }
 
-function renderReadme(sections, itemCount) {
+export function renderReadme(sections, itemCount) {
   const lines = [
     "# Documentation AtlasJS",
     "",
@@ -1076,7 +1170,7 @@ function renderReadme(sections, itemCount) {
     lines.push(`## ${section.folder}`, "");
     lines.push("| Document | Statut |", "| --- | --- |");
     for (const doc of section.docs) {
-      lines.push(`| [${doc.name}](${section.folder}/${doc.name}) | ${doc.status} |`);
+      lines.push(`| [${doc.name}](${section.prefix}${doc.name}) | ${doc.status} |`);
     }
     lines.push("");
   }
@@ -1084,11 +1178,98 @@ function renderReadme(sections, itemCount) {
   return lines.join("\n");
 }
 
-const items = readBacklog();
-writeFileSync(join(BACKLOG_DIR, "_index.md"), renderBacklogIndex(items) + "\n");
-writeFileSync(join(DOCS_DIR, "README.md"), renderReadme(readDesignDocs(), items.length) + "\n");
-console.log(`docs:index — ${items.length} items de backlog, README régénéré.`);
+function main() {
+  const items = readBacklog();
+  writeFileSync(join(BACKLOG_DIR, "_index.md"), renderBacklogIndex(items) + "\n");
+  writeFileSync(join(DOCS_DIR, "README.md"), renderReadme(readDesignDocs(), items.length) + "\n");
+  console.log(`docs:index — ${items.length} items de backlog, README régénéré.`);
+}
+
+const entryPoint = process.argv[1];
+if (entryPoint && import.meta.url === pathToFileURL(entryPoint).href) {
+  main();
+}
 ```
+
+Toutes les fonctions non triviales sont exportées (`readBacklog`, `renderBacklogIndex`, `readDesignDocs`, `renderReadme`) et l'exécution passe derrière une garde `main()` — c'est ce qui permet de tester `renderBacklogIndex` en lui passant des objets directement (Step 5bis), sans écrire de fichiers sur disque.
+
+Correctifs apportés par une revue post-implémentation (avant que ce plan ne soit mis à jour rétroactivement pour refléter le code réel) :
+
+- **Bug critical — domaine manquant disparaît silencieusement.** La version ci-dessus normalise le `domain` une fois par item (`orDefault(item.domain, "?")`) avant de calculer à la fois l'en-tête de section et le filtre du groupe. L'ancienne version calculait l'en-tête depuis `item.domain ?? "?"` mais filtrait sur le champ brut (`item.domain === domain`) : un item sans `domain` produisait une section `## ?` vide tout en étant compté dans le total.
+- **Bug critical — statut inconnu trié en premier.** `statusRank` fait retomber un `indexOf` à `-1` sur `STATUS_ORDER.length` (donc en dernier), au lieu de laisser `-1` (qui trie *avant* `"todo"`, `indexOf(0)`).
+- `orDefault` traite `undefined` et la chaîne vide comme manquants pour toutes les cellules du tableau, pour qu'une valeur de frontmatter vide (`id:` sans valeur) rende le marqueur `?`/`—` plutôt qu'une cellule blanche.
+- `readBacklog` avertit sur stderr (`console.warn`) pour tout fichier dont le frontmatter n'a produit aucun `id`, sans interrompre l'indexation.
+
+Deux pièges que ce code évite délibérément, et qu'il ne faut pas « simplifier » :
+
+- Les `.md` **à la racine** de `docs/` sont indexés dans une section `racine`. Ne parcourir que les dossiers en ferait des orphelins permanents, ce que le critère de succès n°2 du chantier interdit.
+- Les dossiers cachés (`.obsidian/`) sont exclus. Sans ce filtre, le vault Obsidian apparaîtrait comme une section de documentation vide.
+
+- [ ] **Step 5bis : Créer `scripts/backlog-index.test.mjs`**
+
+Tests sur les fonctions pures, sans écrire sur `docs/backlog/` :
+
+```js
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { renderBacklogIndex } from "./backlog-index.mjs";
+
+test("un item sans domain apparaît comme ligne de tableau, pas seulement comme en-tête de section", () => {
+  const out = renderBacklogIndex([
+    { file: "no-domain.md", id: "MISC-01", status: "todo" },
+  ]);
+  assert.match(out, /## \?/);
+  assert.match(out, /\| MISC-01 \|/);
+  assert.match(out, /\[no-domain\]\(no-domain\.md\)/);
+});
+
+test("un statut inconnu trie après todo, partial et vision", () => {
+  const out = renderBacklogIndex([
+    { file: "z-weird.md", id: "A-03", domain: "core", status: "weird" },
+    { file: "a-todo.md", id: "A-01", domain: "core", status: "todo" },
+    { file: "b-partial.md", id: "A-02", domain: "core", status: "partial" },
+    { file: "c-vision.md", id: "A-04", domain: "core", status: "vision" },
+  ]);
+  const order = ["A-01", "A-02", "A-04", "A-03"];
+  const positions = order.map((id) => out.indexOf(`| ${id} |`));
+  for (const position of positions) assert.notEqual(position, -1);
+  for (let i = 1; i < positions.length; i++) {
+    assert.ok(positions[i] > positions[i - 1], `${order[i]} devrait apparaître après ${order[i - 1]}`);
+  }
+});
+
+test("aucune cellule générée ne contient jamais la chaîne undefined", () => {
+  const out = renderBacklogIndex([
+    { file: "sparse.md" },
+    { file: "partial-fields.md", id: "PART-01", status: "todo" },
+  ]);
+  assert.doesNotMatch(out, /undefined/);
+});
+
+test("une valeur vide (id: sans valeur) rend le marqueur de valeur manquante, pas une cellule blanche", () => {
+  const out = renderBacklogIndex([{ file: "empty-id.md", id: "", domain: "core", status: "todo" }]);
+  assert.match(out, /\| \? \|/);
+  assert.doesNotMatch(out, /\|  \|/);
+});
+
+test("le total compte tous les items, y compris ceux sans domain", () => {
+  const out = renderBacklogIndex([
+    { file: "a.md", id: "A-01", domain: "core", status: "todo" },
+    { file: "b.md", id: "B-01", status: "todo" },
+  ]);
+  assert.match(out, /Total : \*\*2\*\* items\./);
+});
+```
+
+Les deux premiers tests sont les tests de non-régression des deux bugs Critical ci-dessus : casser l'un ou l'autre correctif fait échouer le test correspondant (vérifié par mutation — voir le rapport de revue).
+
+- [ ] **Step 5ter : Vérifier le succès**
+
+```bash
+node --test 'scripts/**/*.test.mjs'
+```
+
+Attendu : `# tests 15`, `# pass 15`, `# fail 0` (10 pour `frontmatter.test.mjs` + 5 pour `backlog-index.test.mjs`).
 
 - [ ] **Step 6 : Créer le dossier de backlog et lancer à vide**
 
