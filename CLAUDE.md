@@ -128,6 +128,10 @@ Consult it before undertaking a significant change: a design may already be vali
 
 - `docs/assets/asset-system.md` — **implemented**. Asset system: `Asset` (serializable descriptor) ↔ `Resource` (runtime handle); `AssetManager` (register/load/get/destroy + dedup); plugin-based loaders by type; `TextureAsset`/`TextureLoader` in `@atlasjs/nebula`; `SpriteAsset`/`SpriteLoader` in `@atlasjs/gameplay`. Scene-graph primitives renamed to `*Node` convention. V2 extensions (refcount/eviction, `AssetRef` by id + serialization, audio, editor, non-path sources) → backlog.
 
+### `docs/debug/`
+
+- `docs/debug/gizmos.md` — **implemented**. Debug gizmos: collider outlines + entity-origin discs as opt-in components (`ColliderGizmo`/`PivotGizmo`) plus a global switch, in a standalone `@atlasjs/gizmos` plugin package. Immediate-mode `Gizmos` service over a recycled node pool flushed by a single `gizmos:flush` step; `GIZMO_SORTING_LAYER` draws over everything without knowing the app's named layers. **Reads physics truth**: position/rotation from `PhysicsColliderRef`, extents from `Collider2D.shape` un-scaled, nothing drawn when no collider exists. Added stroke support to nebula shapes (`ShapeNode.borderWidth` → `params.y` → SDF border), closing the renderer backlog "strokes" item. V2 (editor handles, raycast/vector gizmos, `drawLine`, screen-constant thickness, capsule/segment/polygon) → backlog.
+
 ---
 
 ## Architectural Direction

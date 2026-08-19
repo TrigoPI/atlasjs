@@ -47,6 +47,9 @@ importers:
       '@atlasjs/gameplay':
         specifier: workspace:*
         version: link:../../packages/gameplay
+      '@atlasjs/gizmos':
+        specifier: workspace:*
+        version: link:../../packages/gizmos
       '@atlasjs/inertia':
         specifier: workspace:*
         version: link:../../packages/inertia
@@ -227,6 +230,30 @@ importers:
       '@atlasjs/input':
         specifier: workspace:*
         version: link:../input
+      '@atlasjs/math':
+        specifier: workspace:*
+        version: link:../math
+      '@atlasjs/nebula':
+        specifier: workspace:*
+        version: link:../nebula
+      '@atlasjs/nexus':
+        specifier: workspace:*
+        version: link:../nexus
+      '@atlasjs/utils':
+        specifier: workspace:*
+        version: link:../utils
+
+  packages/gizmos:
+    dependencies:
+      '@atlasjs/core':
+        specifier: workspace:*
+        version: link:../core
+      '@atlasjs/gameplay':
+        specifier: workspace:*
+        version: link:../gameplay
+      '@atlasjs/inertia':
+        specifier: workspace:*
+        version: link:../inertia
       '@atlasjs/math':
         specifier: workspace:*
         version: link:../math

@@ -15,6 +15,7 @@
     "@atlasjs/audio": "workspace:*",
     "@atlasjs/core": "workspace:*",
     "@atlasjs/gameplay": "workspace:*",
+    "@atlasjs/gizmos": "workspace:*",
     "@atlasjs/inertia": "workspace:*",
     "@atlasjs/input": "workspace:*",
     "@atlasjs/math": "workspace:*",

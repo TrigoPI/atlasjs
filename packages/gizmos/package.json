@@ -1,5 +1,5 @@
 {
-  "name": "@atlasjs/editor",
+  "name": "@atlasjs/gizmos",
   "type": "module",
   "version": "0.0.1",
   "private": true,
@@ -14,13 +14,17 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "clean": "rimraf dist"
+    "test": "vitest run",
+    "clean": "rimraf dist",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@atlasjs/math": "workspace:*",
     "@atlasjs/core": "workspace:*",
+    "@atlasjs/gameplay": "workspace:*",
+    "@atlasjs/inertia": "workspace:*",
+    "@atlasjs/math": "workspace:*",
     "@atlasjs/nebula": "workspace:*",
-    "@atlasjs/input": "workspace:*",
+    "@atlasjs/nexus": "workspace:*",
     "@atlasjs/utils": "workspace:*"
   }
 }

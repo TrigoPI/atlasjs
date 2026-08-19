@@ -8,6 +8,7 @@ import { NexusPlugin } from "@atlasjs/nexus";
 import { InertialPlugin } from "@atlasjs/inertia";
 import { RapierPhysicsWorld } from "@atlasjs/rapier";
 import { GameplayPlugin } from "@atlasjs/gameplay";
+import { GizmoPlugin } from "@atlasjs/gizmos";
 import { NebulaPlugin } from "@atlasjs/nebula";
 import { WebGPURenderer } from "@atlasjs/nebula-webgpu";
 
@@ -40,6 +41,7 @@ export function GameCanvas({
     const rendererPlugin: NebulaPlugin = new NebulaPlugin(renderer);
     const nexusPlugin: NexusPlugin = new NexusPlugin();
     const gameplayPlugin: GameplayPlugin = new GameplayPlugin();
+    const gizmoPlugin: GizmoPlugin = new GizmoPlugin({ showColliders: true });
 
     const rapierWorld: RapierPhysicsWorld = new RapierPhysicsWorld({
       unitsPerMeter: 100,
@@ -57,7 +59,8 @@ export function GameCanvas({
       .use(inertiaPlugin)
       .use(rendererPlugin)
       .use(nexusPlugin)
-      .use(gameplayPlugin);
+      .use(gameplayPlugin)
+      .use(gizmoPlugin);
 
     engine
       .start()
