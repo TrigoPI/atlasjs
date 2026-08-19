@@ -2,7 +2,27 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **11** items.
+Total : **21** items.
+
+## assets
+
+| ID | Item | Statut | Effort | Vérifié |
+| --- | --- | --- | --- | --- |
+| ASSETS-01 | [ASSETS-01-asset-manager-hardening](ASSETS-01-asset-manager-hardening.md) | 🔶 partiel | S | 2026-08-19 |
+| ASSETS-02 | [ASSETS-02-animation-asset-serialization](ASSETS-02-animation-asset-serialization.md) | 💭 vision | M | 2026-08-19 |
+
+## gameplay
+
+| ID | Item | Statut | Effort | Vérifié |
+| --- | --- | --- | --- | --- |
+| GAMEPLAY-01 | [GAMEPLAY-01-sprite-blend-sampler](GAMEPLAY-01-sprite-blend-sampler.md) | 📋 à faire | S | 2026-08-19 |
+| GAMEPLAY-02 | [GAMEPLAY-02-nullable-sprite-render](GAMEPLAY-02-nullable-sprite-render.md) | 📋 à faire | S | 2026-08-19 |
+| GAMEPLAY-04 | [GAMEPLAY-04-animation-frame-events](GAMEPLAY-04-animation-frame-events.md) | 📋 à faire | M | 2026-08-19 |
+| GAMEPLAY-06 | [GAMEPLAY-06-animation-clip-timescale](GAMEPLAY-06-animation-clip-timescale.md) | 📋 à faire | S | 2026-08-19 |
+| GAMEPLAY-07 | [GAMEPLAY-07-oneshot-clip-retrigger](GAMEPLAY-07-oneshot-clip-retrigger.md) | 📋 à faire | S | 2026-08-19 |
+| GAMEPLAY-03 | [GAMEPLAY-03-animator-state-machine](GAMEPLAY-03-animator-state-machine.md) | 💭 vision | L | 2026-08-19 |
+| GAMEPLAY-05 | [GAMEPLAY-05-animation-root-motion](GAMEPLAY-05-animation-root-motion.md) | 💭 vision | L | 2026-08-19 |
+| GAMEPLAY-08 | [GAMEPLAY-08-animator-sprite-cache-eviction](GAMEPLAY-08-animator-sprite-cache-eviction.md) | 💭 vision | S | 2026-08-19 |
 
 ## rendering
 
