@@ -30,7 +30,6 @@ export type SwordWithShadowPrefabProps = {
   shadowSprite: Sprite;
   attack: (entity: EntityBuilder) => WeaponAttack;
   hitClip?: AudioClip;
-  debug?: Sprite;
 };
 
 export const createSwordWithShadowPrefab = () =>
@@ -42,11 +41,6 @@ export const createSwordWithShadowPrefab = () =>
       entity.child((e: EntityBuilder): void => {
         const transform: Transform2D = e.add(Transform2D);
         transform.scale.set(0.2, 0.2);
-
-        if (props.debug) {
-          const renderer: SpriteRender = e.add(SpriteRender, props.debug);
-          renderer.sortingLayer = SortingLayer.Overhead;
-        }
 
         e.attach(SwordAnchorScript, {
           anchor: props.anchor,

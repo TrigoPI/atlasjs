@@ -21,7 +21,6 @@ export const SpriteList: ResourceDescriptor[] = [
   { name: "sprite:shadow", path: Textures.Shadow },
   { name: "sprite:running_particle", path: Textures.RunningParticle },
   { name: "sprite:default_sword", path: Textures.DefaultSword },
-  { name: "sprite:white_square", path: Textures.WhiteSquare },
 ];
 
 export const AudioList: ResourceDescriptor[] = [

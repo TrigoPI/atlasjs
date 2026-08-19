@@ -19,9 +19,6 @@ import Woosh1 from "@assets/audio/swords/woosh_1.wav";
 import Woosh2 from "@assets/audio/swords/woosh_2.wav";
 import Woosh3 from "@assets/audio/swords/woosh_3.wav";
 
-// Debug
-import WhiteSquare from "@assets/sprites/debug.png";
-
 export const Textures = {
   BlueDino,
   EvilDino,
@@ -31,7 +28,6 @@ export const Textures = {
   Shadow,
   RunningParticle,
   DefaultSword,
-  WhiteSquare,
 } as const;
 
 export const Audios = {

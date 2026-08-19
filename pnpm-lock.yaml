@@ -47,6 +47,9 @@ importers:
       '@atlasjs/gameplay':
         specifier: workspace:*
         version: link:../../packages/gameplay
+      '@atlasjs/gizmos':
+        specifier: workspace:*
+        version: link:../../packages/gizmos
       '@atlasjs/inertia':
         specifier: workspace:*
         version: link:../../packages/inertia
