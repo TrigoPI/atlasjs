@@ -17,6 +17,16 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/plan-reminder.mjs"
+          }
+        ]
+      }
     ]
   }
 }
