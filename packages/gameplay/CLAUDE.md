@@ -53,6 +53,10 @@ This is the core mental model. Two folders, two meanings:
 - **Input naming:** `isDown` = held, `isPressed`/`isReleased` = this-frame edges (matches `@atlasjs/input`).
 - **Systems own per-frame work; the scheduler is the single ordering authority.** Register via `registerSystem(lane, world, system, { stage })` and keep the `StepHandle` for teardown. Input sampling runs at `update`/`Early` (before scripts at `Logic`); the input backend clears edges at `Late`. **Read input in `onUpdate`, not `onFixedUpdate`** (edges are per-`update`-frame).
 
+## Import pitfalls
+
+- **`Transform2D` exists in two distinct packages.** `@atlasjs/math` carries the raw TRS values (used by `Mat3.fromTransform2D`); `@atlasjs/gameplay` carries the ECS component (LEVEL 1). To build a `WorldTransform2D` in a test, or for any matrix computation outside the ECS, use the one from **`@atlasjs/math`**. The `@atlasjs/gameplay` component is reserved for the ECS world (systems, `world.addComponent`).
+
 ## Build & test
 
 `pnpm --filter @atlasjs/gameplay build` (tsdown → `dist`). `pnpm --filter @atlasjs/gameplay test` (vitest; `test/helpers/harness.ts` boots a real `Engine` with stub plugins and exposes `world`/`services`/`scripts`/`frame()`). **Typecheck with `tsc --noEmit`** — never `tsc -b` (it emits artifacts next to sources). When a dependency's public API changes (e.g. `@atlasjs/input`), rebuild its `dist` so this package's typecheck and the sandbox's vite preview resolve it.

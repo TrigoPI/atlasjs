@@ -26,6 +26,11 @@ Key areas:
 
 `wgsl_reflect` ships its real ESM via the `module` field; its `main` is CJS. Vite/bundlers resolve the ESM build correctly. A bare named import under raw Node resolves the CJS build and fails — irrelevant for the app, but don't be surprised in Node scripts (import `wgsl_reflect/wgsl_reflect.module.js` there if needed).
 
+## WGSL
+
+- **No `if` depending on `params` before a call to `fwidth`.** `fwidth` is a derivative builtin: WGSL forbids calling it from non-uniform control flow (`error: 'fwidth' must only be called from uniform control flow`). Compute the SDF and the derivative **unconditionally**, and express any decision that depends on `params` only through `select`. Applies to any future extension of the shapes shader (rounded corners, feather). Full detail: `docs/debug/gizmos.md` §6.2.
+- After any `.wgsl` edit, `dist` must be rebuilt — a `PostToolUse` hook takes care of this.
+
 ## Build
 
 `pnpm build` (tsdown, ESM + d.ts, `.wgsl` loaded as text). Must build after `@atlasjs/nebula` (turbo `^build` handles ordering). The future `@atlasjs/material-graph` will generate WGSL that flows through `createShader` here.

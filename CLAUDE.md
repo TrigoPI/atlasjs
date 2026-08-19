@@ -170,6 +170,7 @@ Before modifying the project:
 - Avoid introducing unnecessary 2D-only assumptions into foundational APIs.
 - Avoid adding comments
 - Always type the code, even if the type is trivial. (Function parameters, variables, class params)
+- **Import type-only symbols with `import type`** in app and script files (`verbatimModuleSyntax: true`). A value import for a type (`import { GameEntity }`) passes `tsc --noEmit` — the type is erased at type-check time — but **breaks at runtime** under Vite/esbuild: `SyntaxError: … does not provide an export named 'GameEntity'`, black screen. Runtime tokens and values (`NEXUS`, `ASSET_MANAGER`, component classes, `Vec2`) stay normal imports — only the type/value distinction matters. Verify in the browser, not just with `tsc`.
 - Avoid circular dependencies
 
 Architecture consistency is generally more important than implementing the quickest possible solution.
