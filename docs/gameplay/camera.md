@@ -216,11 +216,18 @@ this.getComponent(Camera).zoom = 1.5;
 - **Cycle de vie** : retirer la caméra active → `getActive() === undefined`.
 - **Intégration harness** : entité `Transform2D + Camera`, `setActive`, `frame()` → la matrice de rendu reflète la caméra ; `screenToWorld` de la souris cohérent.
 
-## 14. Non-objectifs (v2 → `docs/backlog.md`)
+## 14. Comportements connus (par design, pas des bugs)
+
+Deux conséquences directes du flux par frame (§9), à connaître plutôt qu'à corriger :
+
+- **`screenToWorld`/`worldToScreen` lus dans un `onUpdate` reflètent la caméra de la frame précédente.** `CameraSyncSystem` est l'unique producteur de `renderer.camera`, et il tourne en lane `render`, synchronisé après `update`. Un script qui appelle ces méthodes pendant `onUpdate` lit donc encore la position/zoom laissés par le sync de la frame N-1, pas ceux calculés pour la frame N.
+- **`renderer.camera` reste à sa valeur par défaut en frame 0.** Tant que `CameraSyncSystem` n'a pas tourné une première fois — c'est-à-dire avant le premier passage de la lane `render` — `renderer.camera` est encore le `Camera2D` construit par défaut par `NebulaRenderer`, non centré sur la caméra active gameplay.
+
+## 15. Non-objectifs (v2 → `docs/backlog.md`)
 
 Rendu simultané multi-caméras (split-screen / minimap / render-to-texture = une `RenderPass` par caméra, viewport rects distincts) ; rotation de caméra (exige `Mat4.invert`, `view` sans rotation) ; `clearColor` / `viewport rect` / `renderTarget` par caméra ; couches de rendu / culling mask par caméra ; système de « mode » edit↔play formel ; caméra à projection non-ortho (perspective, ouverture 3D).
 
-## 15. Ordre d'implémentation suggéré
+## 16. Ordre d'implémentation suggéré
 
 1. Nebula : `Camera2D.screenToWorld`/`worldToScreen` (+ `out?`) + tests ; exposer la taille logique du viewport sur `NebulaRenderer` (§4bis). Rebuild `dist`.
 2. Gameplay : composant `Camera` (LEVEL 1) + export + token `CAMERA_MANAGER`.

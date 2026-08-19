@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **28** items.
+Total : **49** items.
 
 ## assets
 
@@ -29,9 +29,30 @@ Total : **28** items.
 | GAMEPLAY-04 | [GAMEPLAY-04-animation-frame-events](GAMEPLAY-04-animation-frame-events.md) | 📋 à faire | M | 2026-08-19 |
 | GAMEPLAY-06 | [GAMEPLAY-06-animation-clip-timescale](GAMEPLAY-06-animation-clip-timescale.md) | 📋 à faire | S | 2026-08-19 |
 | GAMEPLAY-07 | [GAMEPLAY-07-oneshot-clip-retrigger](GAMEPLAY-07-oneshot-clip-retrigger.md) | 📋 à faire | S | 2026-08-19 |
+| GAMEPLAY-09 | [GAMEPLAY-09-transform-propagation-fixed-lane](GAMEPLAY-09-transform-propagation-fixed-lane.md) | 📋 à faire | M | 2026-08-19 |
+| GAMEPLAY-10 | [GAMEPLAY-10-transform-exact-shear](GAMEPLAY-10-transform-exact-shear.md) | 📋 à faire | M | 2026-08-19 |
+| GAMEPLAY-11 | [GAMEPLAY-11-transform-dirty-tracking-subtree](GAMEPLAY-11-transform-dirty-tracking-subtree.md) | 📋 à faire | M | 2026-08-19 |
+| GAMEPLAY-12 | [GAMEPLAY-12-dynamic-body-transform-composition](GAMEPLAY-12-dynamic-body-transform-composition.md) | 📋 à faire | S | 2026-08-19 |
+| GAMEPLAY-13 | [GAMEPLAY-13-orphan-destruction-reparent-root](GAMEPLAY-13-orphan-destruction-reparent-root.md) | 📋 à faire | S | 2026-08-19 |
+| GAMEPLAY-14 | [GAMEPLAY-14-onreparent-signal](GAMEPLAY-14-onreparent-signal.md) | 📋 à faire | S | 2026-08-19 |
+| GAMEPLAY-17 | [GAMEPLAY-17-camera-rotation](GAMEPLAY-17-camera-rotation.md) | 📋 à faire | M | 2026-08-19 |
+| GAMEPLAY-18 | [GAMEPLAY-18-camera-per-camera-render-data](GAMEPLAY-18-camera-per-camera-render-data.md) | 📋 à faire | M | 2026-08-19 |
+| GAMEPLAY-19 | [GAMEPLAY-19-camera-render-layers-culling-mask](GAMEPLAY-19-camera-render-layers-culling-mask.md) | 📋 à faire | M | 2026-08-19 |
+| GAMEPLAY-22 | [GAMEPLAY-22-camera-subpixel-scroll-lowres-rt](GAMEPLAY-22-camera-subpixel-scroll-lowres-rt.md) | 📋 à faire | L | 2026-08-19 |
+| GAMEPLAY-23 | [GAMEPLAY-23-input-events-callbacks](GAMEPLAY-23-input-events-callbacks.md) | 📋 à faire | M | 2026-08-19 |
+| GAMEPLAY-24 | [GAMEPLAY-24-input-hold-tap-multitap](GAMEPLAY-24-input-hold-tap-multitap.md) | 📋 à faire | M | 2026-08-19 |
+| GAMEPLAY-25 | [GAMEPLAY-25-input-processors](GAMEPLAY-25-input-processors.md) | 📋 à faire | S | 2026-08-19 |
+| GAMEPLAY-29 | [GAMEPLAY-29-input-fixed-lane-sampling](GAMEPLAY-29-input-fixed-lane-sampling.md) | 📋 à faire | M | 2026-08-19 |
 | GAMEPLAY-03 | [GAMEPLAY-03-animator-state-machine](GAMEPLAY-03-animator-state-machine.md) | 💭 vision | L | 2026-08-19 |
 | GAMEPLAY-05 | [GAMEPLAY-05-animation-root-motion](GAMEPLAY-05-animation-root-motion.md) | 💭 vision | L | 2026-08-19 |
 | GAMEPLAY-08 | [GAMEPLAY-08-animator-sprite-cache-eviction](GAMEPLAY-08-animator-sprite-cache-eviction.md) | 💭 vision | S | 2026-08-19 |
+| GAMEPLAY-15 | [GAMEPLAY-15-generic-typed-relations](GAMEPLAY-15-generic-typed-relations.md) | 💭 vision | L | 2026-08-19 |
+| GAMEPLAY-16 | [GAMEPLAY-16-multi-camera-render](GAMEPLAY-16-multi-camera-render.md) | 💭 vision | L | 2026-08-19 |
+| GAMEPLAY-20 | [GAMEPLAY-20-camera-edit-play-mode](GAMEPLAY-20-camera-edit-play-mode.md) | 💭 vision | S | 2026-08-19 |
+| GAMEPLAY-21 | [GAMEPLAY-21-camera-non-ortho-projection](GAMEPLAY-21-camera-non-ortho-projection.md) | 💭 vision | L | 2026-08-19 |
+| GAMEPLAY-26 | [GAMEPLAY-26-input-gamepad-analog-axes](GAMEPLAY-26-input-gamepad-analog-axes.md) | 💭 vision | L | 2026-08-19 |
+| GAMEPLAY-27 | [GAMEPLAY-27-input-control-schemes-rebinding](GAMEPLAY-27-input-control-schemes-rebinding.md) | 💭 vision | M | 2026-08-19 |
+| GAMEPLAY-28 | [GAMEPLAY-28-input-actions-asset-serialization-editor](GAMEPLAY-28-input-actions-asset-serialization-editor.md) | 💭 vision | L | 2026-08-19 |
 
 ## rendering
 
