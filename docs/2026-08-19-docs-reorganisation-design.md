@@ -28,7 +28,7 @@
 | --- | --- | --- |
 | `gameplay/audio.md` | « design validé, non implémenté » | Shippé sur `dev` le 2026-08-11 |
 | `rendering/canvas-resize.md` | « validé, prêt pour plan » | `CLAUDE.md` dit « implémenté » |
-| `physics/character-controller.md` | « conçu, non implémenté » | Implémenté sur `feat/claude/tilemap-collision`, non mergé |
+| `physics/character-controller.md` | « conçu, non implémenté » | Implémenté **et mergé dans `dev`** (branche supprimée depuis ; constaté par `git branch --contains`) |
 | `physics/collision-layer.md` | *aucun statut* | Phase 1 shippée |
 
 **Conséquence structurante :** la migration du backlog ne peut pas faire confiance aux en-têtes. Chaque item est vérifié **contre le code**. C'est le poste de coût principal du chantier — devant tous les déplacements de fichiers réunis.

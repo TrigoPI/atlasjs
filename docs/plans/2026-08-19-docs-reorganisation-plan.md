@@ -789,16 +789,24 @@ grep -rn 'resize' packages/nebula/src --include='*.ts' | grep -i 'renderer\|auto
 
 ```bash
 git branch -a | grep -i 'tilemap-collision'
-grep -rn 'KinematicCharacterController\|CharacterController' packages/gameplay/src --include='*.ts' -l | head
+grep -rln 'CharacterController' packages/gameplay/src packages/inertia/src --include='*.ts'
+git log --oneline -3 -- packages/gameplay/src/components/CharacterController2D.ts
+git branch --contains $(git log -1 --format=%H -- packages/gameplay/src/components/CharacterController2D.ts)
 ```
 
-Attendu : implémenté sur une branche **non mergée** dans `dev`. Le statut correct n'est ni « non implémenté » ni « implémenté ».
+⚠️ **La prémisse initiale de ce plan était périmée.** Elle annonçait « implémenté sur une branche non mergée ». Mesure faite au moment d'écrire ce step : la branche `feat/claude/tilemap-collision` **n'existe plus**, `CharacterController2D`/`CharacterControllerRef`/`CharacterController2D` sont dans `packages/gameplay/src`, et le commit qui les introduit est contenu dans `dev`. La feature **a donc été mergée**.
+
+Constate-le toi-même avec les commandes ci-dessus, puis écris ce que tu observes — pas ce que ce paragraphe annonce. C'est exactement le travers que cette tâche corrige.
 
 - [ ] **Step 6 : `physics/character-controller.md` — corriger**
 
+Écrire le statut **constaté au step 5**, avec la portée réellement livrée. Si le constat est bien celui annoncé ci-dessus, la forme attendue est :
+
 ```markdown
-> Statut : **implémenté sur la branche `feat/claude/tilemap-collision`, non mergé dans `dev`.** Le code existe et fonctionne ; il n'est pas dans la ligne principale.
+> Statut : **implémenté** (mergé dans `dev`). Collide-and-slide via le `KinematicCharacterController` de rapier.
 ```
+
+Ne recopie pas cette formule sans l'avoir vérifiée : c'est un exemple de forme, pas un constat.
 
 - [ ] **Step 7 : `physics/collision-layer.md` — ajouter un statut**
 
@@ -813,6 +821,64 @@ for f in $(find docs -name '*.md' ! -path 'docs/plans/*'); do head -8 "$f" | gre
 Attendu : aucune sortie hors `docs/backlog.md` (supprimé en T17) et `docs/README.md` (créé en T18).
 
 - [ ] **Step 9 : Arrêt pour revue et commit utilisateur**
+
+---
+
+## Task 8bis : Dégraisser `collision-layer.md` — plan exécuté → doc de design
+
+**Files:**
+- Modify: `docs/physics/collision-layer.md`
+
+**Interfaces:**
+- Consumes: rien. Produces: un doc de design consommable par le lot Physics du backlog (T10-T17).
+
+Ce fichier de **1 807 lignes** a échappé à T7 sur un détail de nommage : il s'intitule « Implementation Plan », porte `## Global Constraints`, `## Implementation Progress`, `## File Structure`, `## Self-Review`, 14 titres *Step/Task*, 138 blocs de code et 17 coches — c'est le gabarit exact des 9 plans supprimés.
+
+**Ce qui le rend différent des neuf autres, et qui interdit de le supprimer :** il n'existe **aucun doc de design séparé** pour cette feature. `docs/physics/` ne contient que lui et `character-controller.md`. Le supprimer perdrait la raison d'être de tout le système de couches de collision.
+
+D'où l'ordre : extraire d'abord, dégraisser ensuite. C'est la procédure de `/atlas-done` étape 2, appliquée à la main.
+
+- [ ] **Step 1 : Cartographier ce qui porte du design**
+
+```bash
+grep -n '^#\{1,3\} ' docs/physics/collision-layer.md | head -40
+wc -l docs/physics/collision-layer.md
+```
+
+Lire intégralement les sections non-exécution : `## Context (why this plan exists)`, `## Global Constraints`, `## File Structure`, `## Self-Review`. Le design vit aussi **dans** les tâches, sous forme de justifications au fil du texte — les repérer, ne pas se limiter aux titres.
+
+- [ ] **Step 2 : Extraire les pièges survivants**
+
+Même règle qu'à l'étape 0 du chantier (§5 de la spec) : piège mécanique et transverse → hook / skill / `CLAUDE.md` de proximité ; caveat de design → le doc réécrit au step 3. Si le fichier n'en contient aucun, le dire explicitement.
+
+```bash
+grep -niE 'piège|gotcha|attention|caveat|⚠|pitfall|leçon' docs/physics/collision-layer.md
+```
+
+- [ ] **Step 3 : Écrire le doc de design**
+
+Réécrire `docs/physics/collision-layer.md` dans le style des autres documents de `docs/` (français, ligne de statut `>` en tête, sections numérotées), en visant **~200 lignes**. Doit contenir : le contexte et le problème résolu, les décisions de design et leurs raisons, l'architecture livrée par package, les invariants à ne pas casser, les caveats, et les non-objectifs / suites V2.
+
+Doit **disparaître** : la table de progression, les étapes d'exécution, les blocs de code de tâches, les protocoles de vérification, la self-review.
+
+Conserver le statut établi en T8 (`implémenté`, Phase 1, mergée dans `dev`).
+
+Un bloc de code ne survit que s'il **documente un contrat public** (une signature, une forme de configuration) — jamais parce qu'il montre comment une tâche a été réalisée.
+
+- [ ] **Step 4 : Contrôler qu'aucune raison n'a été perdue**
+
+Confronter le nouveau texte à l'ancien, récupérable par `git show HEAD:docs/physics/collision-layer.md`. Pour chaque décision d'architecture, contrainte non évidente ou justification présente dans l'ancien, vérifier qu'elle a un équivalent dans le nouveau. Ce qui a été volontairement abandonné est listé dans le rapport, avec le motif.
+
+- [ ] **Step 5 : Mesurer**
+
+```bash
+wc -l docs/physics/collision-layer.md
+find docs apps/dino-brawl/docs -name '*.md' -exec wc -l {} + | tail -1
+```
+
+Attendu : le fichier autour de 200 lignes, et un volume total repassé sous **10 000**.
+
+- [ ] **Step 6 : Arrêt pour revue et commit utilisateur**
 
 ---
 
