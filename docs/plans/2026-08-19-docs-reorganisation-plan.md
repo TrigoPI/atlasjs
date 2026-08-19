@@ -395,12 +395,12 @@ Attendu : `2` et les deux commandes.
 ```markdown
 ---
 name: atlas-verify-webgpu
-description: Use when verifying a rendering change in the browser for AtlasJS (apps/webgpu or apps/dino-brawl) — covers the WGSL rebuild requirement, WebGPU compile errors that never surface as console errors, and RAF throttling that produces a black canvas with zero errors.
+description: Use when verifying a rendering change in the browser for AtlasJS (apps/webgpu or apps/dino-brawl), or when the preview looks wrong for no obvious reason — covers the WGSL rebuild requirement, WebGPU compile errors that never surface as console errors, RAF throttling that produces a black canvas with zero errors, a dev server serving a stale scene after hot-reload, and a preview running on a different port than the one announced.
 ---
 
 # WebGPU browser verification (AtlasJS)
 
-Four pitfalls make browser verification misleading on this project. Ignoring them produces either a false negative, or an unfounded "it works".
+Six pitfalls make browser verification misleading on this project. Ignoring them produces either a false negative, or an unfounded "it works".
 
 ## 1. Rebuild the backend after any `.wgsl` edit
 
@@ -429,12 +429,21 @@ Programmatic canvas readback (`drawImage`/`getImageData`) returns empty for the 
 
 No `if` depending on `params` **before** a call to `fwidth`: it's a derivative builtin, WGSL forbids calling it in non-uniform control flow, and the shader then refuses to compile. Applies to any future extension (rounded corners, feather).
 
+## 5. HMR sometimes serves a stale WebGPU scene
+
+At the slightest doubt about what is on screen after a change, restart the dev server (`preview_stop` then `preview_start`) rather than trusting HMR. To inspect the real scene state without restarting, stash a reference on `window.__scene` and query it from the console or `javascript_tool`.
+
+## 6. The announced preview port can differ from Vite's actual port
+
+When the port is already taken, Vite silently picks another one while the harness still announces the first. Read `preview_logs` for the effective port before navigating, instead of trusting the port reported at startup.
+
 ## Verification order
 
 1. `pnpm --filter @atlasjs/nebula-webgpu build` if a `.wgsl` has changed.
-2. Open the preview, **tab in the foreground**.
+2. Open the preview on the port reported by `preview_logs`, **tab in the foreground**.
 3. Read the **entire** console, not just the errors.
 4. Confirm the render with a screenshot; never conclude from an empty readback without first ruling out throttling.
+5. If the result looks stale, restart the dev server before investigating further.
 ```
 
 - [ ] **Step 2 : Vérifier le frontmatter**
