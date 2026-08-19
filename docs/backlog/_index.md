@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **60** items.
+Total : **77** items.
 
 ## assets
 
@@ -19,6 +19,19 @@ Total : **60** items.
 | CORE-02 | [CORE-02-changed-t-detection](CORE-02-changed-t-detection.md) | 📋 à faire | L | 2026-08-19 |
 | CORE-03 | [CORE-03-component-registry-by-name](CORE-03-component-registry-by-name.md) | 💭 vision | S | 2026-08-19 |
 | CORE-04 | [CORE-04-rollback-driver](CORE-04-rollback-driver.md) | 💭 vision | L | 2026-08-19 |
+
+## debug
+
+| ID | Item | Statut | Effort | Vérifié |
+| --- | --- | --- | --- | --- |
+| DEBUG-01 | [DEBUG-01-editor-gizmos](DEBUG-01-editor-gizmos.md) | 📋 à faire | M | 2026-08-19 |
+| DEBUG-02 | [DEBUG-02-gizmos-drawline](DEBUG-02-gizmos-drawline.md) | 📋 à faire | M | 2026-08-19 |
+| DEBUG-03 | [DEBUG-03-gizmo-shapes-capsule-segment-polygon](DEBUG-03-gizmo-shapes-capsule-segment-polygon.md) | 📋 à faire | M | 2026-08-19 |
+| DEBUG-04 | [DEBUG-04-gizmo-constant-screen-thickness](DEBUG-04-gizmo-constant-screen-thickness.md) | 📋 à faire | S | 2026-08-19 |
+| DEBUG-05 | [DEBUG-05-gizmo-onscreen-text](DEBUG-05-gizmo-onscreen-text.md) | 📋 à faire | S | 2026-08-19 |
+| DEBUG-06 | [DEBUG-06-sprite-outline-sortpoint-gizmo](DEBUG-06-sprite-outline-sortpoint-gizmo.md) | 📋 à faire | S | 2026-08-19 |
+| DEBUG-07 | [DEBUG-07-collider-gettranslation-out-param](DEBUG-07-collider-gettranslation-out-param.md) | 📋 à faire | S | 2026-08-19 |
+| DEBUG-08 | [DEBUG-08-dedicated-gizmo-render-pass](DEBUG-08-dedicated-gizmo-render-pass.md) | 💭 vision | M | 2026-08-19 |
 
 ## gameplay
 
@@ -48,7 +61,15 @@ Total : **60** items.
 | GAMEPLAY-38 | [GAMEPLAY-38-optional-array-entity-fields](GAMEPLAY-38-optional-array-entity-fields.md) | 📋 à faire | S | 2026-08-19 |
 | GAMEPLAY-39 | [GAMEPLAY-39-getscripts-plural](GAMEPLAY-39-getscripts-plural.md) | 📋 à faire | S | 2026-08-19 |
 | GAMEPLAY-40 | [GAMEPLAY-40-prefab-child-subprefab](GAMEPLAY-40-prefab-child-subprefab.md) | 📋 à faire | S | 2026-08-19 |
+| GAMEPLAY-42 | [GAMEPLAY-42-tilemap-json-serialization-assetref](GAMEPLAY-42-tilemap-json-serialization-assetref.md) | 📋 à faire | L | 2026-08-19 |
+| GAMEPLAY-43 | [GAMEPLAY-43-multi-tileset-rich-tile](GAMEPLAY-43-multi-tileset-rich-tile.md) | 📋 à faire | M | 2026-08-19 |
+| GAMEPLAY-44 | [GAMEPLAY-44-tilemap-collider-generation](GAMEPLAY-44-tilemap-collider-generation.md) | 📋 à faire | M | 2026-08-19 |
+| GAMEPLAY-45 | [GAMEPLAY-45-tilemap-iso-hex-layouts](GAMEPLAY-45-tilemap-iso-hex-layouts.md) | 📋 à faire | L | 2026-08-19 |
+| GAMEPLAY-48 | [GAMEPLAY-48-shared-grid-slicing-util](GAMEPLAY-48-shared-grid-slicing-util.md) | 📋 à faire | S | 2026-08-19 |
+| GAMEPLAY-49 | [GAMEPLAY-49-tile-anchor-fit-to-cell](GAMEPLAY-49-tile-anchor-fit-to-cell.md) | 📋 à faire | M | 2026-08-19 |
+| GAMEPLAY-50 | [GAMEPLAY-50-tilemap-hardening-minors](GAMEPLAY-50-tilemap-hardening-minors.md) | 📋 à faire | S | 2026-08-19 |
 | GAMEPLAY-35 | [GAMEPLAY-35-addcomponent-overload-duplication](GAMEPLAY-35-addcomponent-overload-duplication.md) | 🔶 partiel | S | 2026-08-19 |
+| GAMEPLAY-47 | [GAMEPLAY-47-tilemap-render-persistent-buffer-chunking](GAMEPLAY-47-tilemap-render-persistent-buffer-chunking.md) | 🔶 partiel | M | 2026-08-19 |
 | GAMEPLAY-03 | [GAMEPLAY-03-animator-state-machine](GAMEPLAY-03-animator-state-machine.md) | 💭 vision | L | 2026-08-19 |
 | GAMEPLAY-05 | [GAMEPLAY-05-animation-root-motion](GAMEPLAY-05-animation-root-motion.md) | 💭 vision | L | 2026-08-19 |
 | GAMEPLAY-08 | [GAMEPLAY-08-animator-sprite-cache-eviction](GAMEPLAY-08-animator-sprite-cache-eviction.md) | 💭 vision | S | 2026-08-19 |
@@ -64,6 +85,7 @@ Total : **60** items.
 | GAMEPLAY-32 | [GAMEPLAY-32-rich-editor-metadata](GAMEPLAY-32-rich-editor-metadata.md) | 💭 vision | M | 2026-08-19 |
 | GAMEPLAY-33 | [GAMEPLAY-33-exposed-values-deserialization](GAMEPLAY-33-exposed-values-deserialization.md) | 💭 vision | M | 2026-08-19 |
 | GAMEPLAY-37 | [GAMEPLAY-37-transform-pure-data-changed](GAMEPLAY-37-transform-pure-data-changed.md) | 💭 vision | L | 2026-08-19 |
+| GAMEPLAY-46 | [GAMEPLAY-46-tile-palette-editor](GAMEPLAY-46-tile-palette-editor.md) | 💭 vision | M | 2026-08-19 |
 
 ## rendering
 
