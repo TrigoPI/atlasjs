@@ -24,7 +24,7 @@
 - **`Renderer.camera: Camera`** — une caméra unique ; tout le `SceneRenderer` rend à travers elle, `getCameraViewport()` (backend) en dérive le culling.
 - **`NebulaRenderer.camera`** ré-expose ce `Camera2D` (ergonomie 2D).
 
-Aujourd'hui, cette caméra est pilotée **directement** (l'éditeur, `packages/editor`, fait pan/zoom dessus). Il manque :
+Aujourd'hui, cette caméra est pilotée **directement** (un ancien `packages/editor`, supprimé depuis, faisait pan/zoom dessus). Il manque :
 
 1. Une caméra **gameplay** : une entité Nexus (avec un `Transform2D`) dont la position/zoom pilotent la caméra de rendu — pour un follow-player, un switch de caméra, etc.
 2. `screenToWorld` / `worldToScreen` accessibles au code de jeu (picking souris → monde, placement d'UI monde → écran).
