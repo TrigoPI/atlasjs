@@ -558,17 +558,20 @@ Le hook détecte et rappelle ; la commande exécute. Une commande seule n'empêc
 
 ```js
 import { existsSync, readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join, resolve } from "node:path";
 
-const dir = "docs/plans";
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+const dir = join(repoRoot, "docs", "plans");
 if (!existsSync(dir)) process.exit(0);
 
 const plans = readdirSync(dir).filter((name) => name.endsWith(".md"));
 if (plans.length === 0) process.exit(0);
 
 console.log(
-  `Plan(s) en cours dans docs/plans/ : ${plans.join(", ")}. ` +
-    `Si le chantier correspondant est termine, derouler /atlas-done pour cloturer ` +
-    `(supprimer le plan, mettre a jour le backlog et le statut du doc de design).`,
+  `Plan(s) in progress under docs/plans/: ${plans.join(", ")}. ` +
+    `If the corresponding work is finished, run /atlas-done to close it out ` +
+    `(delete the plan, update the backlog and the design doc status).`,
 );
 ```
 
@@ -582,8 +585,18 @@ node .claude/hooks/plan-reminder.mjs
 
 Attendu : le rappel mentionnant `2026-08-19-docs-reorganisation-plan.md` (ce plan est dans `docs/plans/`).
 
+Puis, **depuis un autre répertoire**, pour prouver que le déclenchement ne dépend pas du répertoire courant :
+
 ```bash
-mkdir -p /tmp/atlas-probe && cd /tmp/atlas-probe && node "$OLDPWD/.claude/hooks/plan-reminder.mjs"; echo "exit=$?"; cd "$OLDPWD"
+REPO=$(git rev-parse --show-toplevel) && (cd "$HOME" && node "$REPO/.claude/hooks/plan-reminder.mjs"); echo "exit=$?"
+```
+
+Attendu : le **même** rappel qu'au-dessus, `exit=0`. Un silence ici signalerait un chemin résolu depuis le répertoire courant.
+
+Enfin, le cas « aucun plan », via une copie du hook dans une arborescence qui n'a pas de `docs/plans/` :
+
+```bash
+SCRATCH="$TMPDIR/atlas-hook-probe" && mkdir -p "$SCRATCH/.claude/hooks" && cp .claude/hooks/plan-reminder.mjs "$SCRATCH/.claude/hooks/" && node "$SCRATCH/.claude/hooks/plan-reminder.mjs"; echo "exit=$?"; rm -rf "$SCRATCH"
 ```
 
 Attendu : **aucune sortie**, `exit=0` — pas de `docs/plans/`, donc silence.
@@ -629,13 +642,20 @@ Si aucun plan n'est nommé, lister `docs/plans/*.md` et demander lequel clôture
 Dérouler dans l'ordre. **Ne pas passer à l'étape suivante si la précédente échoue.**
 
 1. **Vérifier que le travail est réellement terminé.** Exécuter les tests du périmètre concerné et constater le résultat. Si un test échoue, s'arrêter ici et le dire — ne rien clôturer sur une hypothèse.
-2. **Corriger le doc de design** de la feature : statut → implémenté, avec la portée réelle livrée et ce qui reste hors périmètre.
-3. **Fermer les notes de backlog couvertes** : les supprimer de `docs/backlog/`. Le vocabulaire de statut n'a pas de valeur `done` — un item terminé quitte le backlog. Si une partie seulement est livrée, créer une note `todo` distincte pour le reste plutôt que de laisser un reliquat dans une note fermée.
-4. **Créer les notes** correspondant aux V2 et hors-périmètre annoncés par la feature, avec `status`, `domain`, `source`, `effort` et `verified` à la date du jour.
-5. **Supprimer le plan** dans `docs/plans/`.
-6. **Régénérer les index** : `pnpm docs:index`.
-7. **Clore les tâches** correspondantes.
-8. **S'arrêter.** Ne rien commiter : la revue et le commit appartiennent à l'utilisateur. Présenter un résumé de ce qui a changé.
+2. **Extraire les pièges survivants du plan, avant toute suppression.** Un plan exécuté contient souvent la seule trace écrite d'un piège qui a coûté des heures. Le relire en entier et router ce qui survit :
+   - piège **mécanique et transverse** (une commande à lancer, un flag, un comportement de build) → hook, skill, ou le `CLAUDE.md` le plus proche de ce qu'il protège ;
+   - **caveat de design** (incompréhensible hors de son système) → le doc de design du système concerné.
+
+   Si le plan n'en contient aucun, le dire explicitement plutôt que de sauter l'étape en silence. C'est la seule étape irréversible de cette procédure : ce qui n'est pas extrait ici disparaît avec le plan.
+3. **Corriger le doc de design** de la feature : statut → implémenté, avec la portée réelle livrée et ce qui reste hors périmètre.
+4. **Créer les notes** correspondant aux V2 et hors-périmètre annoncés par la feature, avec `status`, `domain`, `source`, `effort` et `verified` à la date du jour. On crée **avant** de fermer, pour qu'aucun instant ne voie l'ancien contenu disparu et le nouveau pas encore écrit.
+5. **Fermer les notes de backlog couvertes** : les supprimer de `docs/backlog/`. Le vocabulaire de statut n'a pas de valeur `done` — un item terminé quitte le backlog. Si une partie seulement est livrée, le reste vit dans une note `todo` distincte (créée à l'étape 4), jamais en reliquat dans une note fermée.
+6. **Supprimer le plan** dans `docs/plans/`.
+7. **Régénérer les index** : `pnpm docs:index`.
+8. **Clore les tâches** correspondantes, et consigner la clôture dans le journal de progression s'il en existe un.
+9. **S'arrêter.** Ne rien commiter : la revue et le commit appartiennent à l'utilisateur. Présenter un résumé de ce qui a changé.
+
+> **Tant que la réorganisation des docs n'est pas terminée**, `docs/backlog/` et le script `pnpm docs:index` peuvent ne pas exister encore. Dans ce cas : opérer sur `docs/backlog.md` à l'étape 5, et sauter l'étape 7 **en le signalant**. C'est la seule exception à la règle « ne pas passer à l'étape suivante si la précédente échoue » — elle ne vaut que pour une infrastructure absente, jamais pour un test qui échoue.
 ```
 
 - [ ] **Step 6 : Vérifier la présence de la commande**

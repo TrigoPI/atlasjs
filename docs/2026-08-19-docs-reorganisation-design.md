@@ -143,13 +143,18 @@ Fichier : `.claude/commands/atlas-done.md`. Argument optionnel : le nom du plan.
 Procédure :
 
 1. **Vérifier** que le travail est réellement terminé — tests du périmètre exécutés, résultat constaté. Aucune étape suivante si cette vérification échoue.
-2. **Corriger le doc de design** : statut → implémenté, avec la portée réelle et ce qui reste.
-3. **Fermer les notes de backlog** couvertes : suppression (D4). Ce qui reste devient une note `todo` distincte, jamais un reliquat dans une note fermée.
+2. **Extraire les pièges survivants du plan**, avant toute suppression : outillage mécanique → hook / skill / `CLAUDE.md` de proximité ; caveat de design → doc de design du système. Absence de piège à déclarer explicitement.
+3. **Corriger le doc de design** : statut → implémenté, avec la portée réelle et ce qui reste.
 4. **Créer les notes** pour les V2 / hors-périmètre annoncés par la feature.
-5. **Supprimer** le plan dans `docs/plans/`.
-6. **Régénérer** `docs/README.md` et `docs/backlog/_index.md` (§9).
-7. **Clore les tâches** correspondantes.
-8. **S'arrêter là.** Rien n'est commité : la revue et le commit restent à l'utilisateur.
+5. **Fermer les notes de backlog** couvertes : suppression (D4). Ce qui reste vit dans la note `todo` créée à l'étape 4, jamais en reliquat dans une note fermée.
+6. **Supprimer** le plan dans `docs/plans/`.
+7. **Régénérer** `docs/README.md` et `docs/backlog/_index.md` (§9).
+8. **Clore les tâches** correspondantes.
+9. **S'arrêter là.** Rien n'est commité : la revue et le commit restent à l'utilisateur.
+
+L'étape 2 est ajoutée après revue : sans elle, `/atlas-done` détruirait le plan sans que ses pièges aient été routés — exactement la perte que ce chantier corrige à la main en étape 0 (§11). C'est la seule étape irréversible de la procédure.
+
+Les étapes 5 et 7 dépendent d'une infrastructure posée par les étapes 4 et 5 du plan de migration (§11). Tant qu'elle n'existe pas, la commande opère sur `docs/backlog.md` et saute la régénération **en le signalant** — seule exception tolérée à la règle d'arrêt sur échec, et jamais pour un test qui échoue.
 
 ---
 
