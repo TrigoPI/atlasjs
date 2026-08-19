@@ -2,6 +2,7 @@ import { Engine, Plugin, StepHandle } from "@atlasjs/core";
 import { createLogger, Logger } from "@atlasjs/utils";
 import { NEXUS, NexusWorld } from "@atlasjs/nexus";
 import { NEBULA_RENDERER, NebulaRenderer } from "@atlasjs/nebula";
+import { registerSystem } from "@atlasjs/gameplay";
 
 import { GIZMOS } from "./tokens";
 import { Gizmos } from "./Gizmos";
@@ -9,6 +10,7 @@ import { GizmoNodePool } from "./GizmoNodePool";
 import { GizmoPluginOptions, GizmoSettings } from "./GizmoSettings";
 import { ColliderGizmo } from "./components/ColliderGizmo";
 import { PivotGizmo } from "./components/PivotGizmo";
+import { ColliderGizmoSystem } from "./systems/ColliderGizmoSystem";
 
 export class GizmoPlugin extends Plugin {
   private readonly logger: Logger;
@@ -39,6 +41,16 @@ export class GizmoPlugin extends Plugin {
     this.pool = pool;
 
     world.defineComponent(ColliderGizmo).defineComponent(PivotGizmo);
+
+    const colliderSystem: ColliderGizmoSystem = new ColliderGizmoSystem(gizmos);
+
+    this.handles.push(
+      registerSystem(engine.scheduler.render, world, colliderSystem, {
+        name: "gizmos:collider",
+        stage: "PreRender",
+        before: "gizmos:flush",
+      }),
+    );
 
     this.handles.push(
       engine.scheduler.render.add(

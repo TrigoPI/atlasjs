@@ -6,3 +6,4 @@ export * from "./GizmoNodePool";
 export * from "./GizmoPlugin";
 export * from "./components/ColliderGizmo";
 export * from "./components/PivotGizmo";
+export * from "./systems/ColliderGizmoSystem";
