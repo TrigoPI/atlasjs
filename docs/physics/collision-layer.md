@@ -1,5 +1,7 @@
 # Collision Layer — Repair & Wiring — Implementation Plan
 
+> **Statut : implémenté** (Phase 1, mergée dans `dev`). `CollisionLayers` (membership/filtre nommés) dans `@atlasjs/inertia`, backend rapier correct (filtrage par groupes, drain d'événements, `userData`) dans `@atlasjs/rapier`, bridge ECS (`Collider2D`, `PhysicsColliderRef`, `PhysicsCollisionSystem` → `onCollisionEnter/Exit`/`onTriggerEnter/Exit` sur les scripts) dans `@atlasjs/gameplay`. Les 16 tâches de la table de suivi ci-dessous sont marquées `✅ done`. Suite : la solidité du monde (Phase 3) → [`character-controller.md`](character-controller.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make colliders actually work end-to-end — a `Collider2D` on an entity produces a real, layer-filtered collision with Unity-style callbacks on scripts — by repairing the broken physics abstraction and wiring the collision half that was never connected.

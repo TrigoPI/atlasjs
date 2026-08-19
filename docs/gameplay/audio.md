@@ -1,6 +1,6 @@
 # Système audio — `@atlasjs/audio`
 
-> **Statut : design validé, non implémenté.** Nouveau package plugin `@atlasjs/audio` : lecture de sons (SFX one-shots + musique/ambiance en boucle) avec volume par source et volume master. Spatial reporté en V2 (§10).
+> **Statut : implémenté.** Backend `@atlasjs/audio` (`AudioEngine`/`AudioLoader`/`AudioPlugin`) + intégration gameplay (`AudioSource`/`AudioSystem`/`AudioApi`), câblés dans `GameplayPlugin`. Lecture de sons (SFX one-shots + musique/ambiance en boucle) avec volume par source et volume master. Spatial reporté en V2 (§10, → backlog).
 > Prérequis de lecture : `docs/assets/asset-system.md` (le couple `Asset`/`Resource` + `AssetManager` + loaders par type, calqué ici), `docs/gameplay/sprite-animation.md` (le couple composant `Animator` + `AnimatorSystem`, calqué par `AudioSource` + `AudioSystem`), `docs/gameplay/input-scripting.md` (le split composant `PlayerInput` + service `InputApi`, calqué par `AudioSource` + `AudioApi`).
 
 ---

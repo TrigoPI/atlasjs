@@ -1,6 +1,6 @@
 # Canvas resize — design (B3)
 
-> Statut : **validé**, prêt pour plan d'implémentation
+> Statut : **implémenté**. `Renderer.resize(w, h)` en pixels logiques (CSS), backing store physique `× devicePixelRatio` pour le HiDPI, auto-observe via `ResizeObserver` (opt-out `autoResize`) — voir `WebGPURenderer`/`WebGPUSurface` dans `@atlasjs/nebula-webgpu` et le passthrough `NebulaRenderer.resize`.
 > Portée : `@atlasjs/nebula` (interface `Renderer`), `@atlasjs/nebula-webgpu` (`WebGPURenderer`), apps `dino-brawl` + `webgpu`
 > Référence backlog : `docs/backlog.md` §B3
 
