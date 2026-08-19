@@ -476,7 +476,7 @@ Règle de placement : le piège vit **au plus près** de ce qu'il protège. Un p
 - [ ] **Step 1 : Créer `apps/dino-brawl/CLAUDE.md`**
 
 ```markdown
-# apps/dino-brawl
+# AGENTS.md — apps/dino-brawl
 
 ## Type-check
 
@@ -504,7 +504,7 @@ Attendu : les deux invocations n'ont pas le même comportement. Si `tsc --noEmit
 Sous les *AI Agent Guidelines* :
 
 ```markdown
-- **Import type-only symbols with `import type`.** In app and script files, a value import for a type (`import { GameEntity }`) passes `tsc --noEmit` — the type is erased at type-check time — but **breaks at runtime** under Vite/esbuild: `SyntaxError: … does not provide an export named 'GameEntity'`, black screen. Verify in the browser, not just with `tsc`.
+- **Import type-only symbols with `import type`** in app and script files (`verbatimModuleSyntax: true`). A value import for a type (`import { GameEntity }`) passes `tsc --noEmit` — the type is erased at type-check time — but **breaks at runtime** under Vite/esbuild: `SyntaxError: … does not provide an export named 'GameEntity'`, black screen. Runtime tokens and values (`NEXUS`, `ASSET_MANAGER`, component classes, `Vec2`) stay normal imports — only the type/value distinction matters. Verify in the browser, not just with `tsc`.
 ```
 
 - [ ] **Step 4 : Ajouter la règle `fwidth` au `CLAUDE.md` de nebula-webgpu**
@@ -512,7 +512,7 @@ Sous les *AI Agent Guidelines* :
 ```markdown
 ## WGSL
 
-- **No `if` depending on `params` before a call to `fwidth`.** `fwidth` is a derivative builtin: WGSL forbids calling it from non-uniform control flow, and the shader refuses to compile. Constraint to respect for any extension of the shapes shader (rounded corners, feather).
+- **No `if` depending on `params` before a call to `fwidth`.** `fwidth` is a derivative builtin: WGSL forbids calling it from non-uniform control flow (`error: 'fwidth' must only be called from uniform control flow`). Compute the SDF and the derivative **unconditionally**, and express any decision that depends on `params` only through `select`. Applies to any future extension of the shapes shader (rounded corners, feather). Full detail: `docs/debug/gizmos.md` §6.2.
 - After any `.wgsl` edit, `dist` must be rebuilt — a `PostToolUse` hook takes care of this.
 ```
 
@@ -529,8 +529,10 @@ Sous les *AI Agent Guidelines* :
 - [ ] **Step 5 : Vérifier la couverture**
 
 ```bash
-grep -c 'Destination : CLAUDE' docs/plans/pieges-extraits.md
+grep -c 'Destination :\*\* `CLAUDE' docs/plans/pieges-extraits.md
 ```
+
+Attendu : **4** (racine, app dino-brawl, nebula-webgpu, gameplay).
 
 Chaque entrée doit avoir une destination réelle dans l'un des **quatre** fichiers (`CLAUDE.md` racine, `apps/dino-brawl/CLAUDE.md`, `packages/nebula-webgpu/CLAUDE.md`, `packages/gameplay/CLAUDE.md`).
 
