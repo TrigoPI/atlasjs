@@ -1395,6 +1395,19 @@ describe("ColliderGizmoSystem", () => {
     expect([rect.color.r, rect.color.g, rect.color.b]).toEqual([1, 0, 0]);
   });
 
+  it("n'est pas affecté par le borderWidth résiduel laissé par un autre producteur", () => {
+    const ctx: Ctx = setup();
+    ctx.gizmos.settings.showColliders = true;
+    ctx.gizmos.borderWidth = 0;
+
+    spawn(ctx, { type: "box", width: 10, height: 10 }, { x: 0, y: 0 });
+
+    ctx.system.update({ world: ctx.world, dt: 0 });
+
+    const rect: RectNode = ctx.scene.root.getChildren()[0] as RectNode;
+    expect(rect.borderWidth).toBe(1);
+  });
+
   it("ne réutilise pas la couleur du sensor pour le collider solide suivant", () => {
     const ctx: Ctx = setup();
     ctx.gizmos.settings.showColliders = true;
@@ -1589,7 +1602,7 @@ export * from "./systems/ColliderGizmoSystem";
 pnpm --filter @atlasjs/gizmos test
 ```
 
-Attendu : PASS, 25 tests (7 pool + 5 plugin + 13 collider).
+Attendu : PASS, 26 tests (7 pool + 5 plugin + 14 collider).
 
 ```bash
 pnpm --filter @atlasjs/gizmos typecheck
@@ -1842,7 +1855,7 @@ export * from "./systems/PivotGizmoSystem";
 pnpm --filter @atlasjs/gizmos test
 ```
 
-Attendu : PASS, 31 tests (7 + 5 + 13 + 6).
+Attendu : PASS, 32 tests (7 + 5 + 14 + 6).
 
 ```bash
 pnpm --filter @atlasjs/gizmos typecheck
@@ -2031,7 +2044,7 @@ Puis ajouter une nouvelle section, à placer après « Gameplay — Prefab » :
 pnpm test
 ```
 
-Attendu : tous les packages au vert, y compris `@atlasjs/gizmos` (31 tests) et `@atlasjs/nebula` (avec les 5 nouveaux).
+Attendu : tous les packages au vert, y compris `@atlasjs/gizmos` (32 tests) et `@atlasjs/nebula` (avec les 5 nouveaux).
 
 - [ ] **Step 10 : Formater et stager (NE PAS COMMITER)**
 

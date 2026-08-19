@@ -320,9 +320,12 @@ Dessiner N formes → N nœuds acquis et ajoutés à la scène ; le flush masque
 | composant **et** switch global actifs | **un seul** rect |
 | `capsule` / `segment` / `polygon` | rien dessiné + **un seul** warn, pas un par frame |
 | solide dessiné **après** un sensor dans le même `update` | `colliderColor`, pas le `sensorColor` résiduel |
+| `gizmos.borderWidth` laissé à `0` par un autre producteur | `settings.borderWidth`, pas l'aplat plein |
 | `ColliderGizmo.color` non nul | override de la couleur du settings |
 
 Le premier cas verrouille en exécutable la règle « le gizmo ne ment pas » ; c'est le test le plus important du lot.
+
+Les deux systèmes producteurs **n'ont aucun ordre relatif déclaré** entre eux (tous deux seulement `before: "gizmos:flush"`), donc le scheduler les sème par ordre d'insertion. Le pivot laisse `borderWidth = 0` derrière lui ; sans repose explicite, le collider de la frame suivante hériterait de `0` et **tous les contours se dessineraient en aplat plein**, masquant les sprites qu'on cherche à observer. Chaque système doit donc reposer l'état complet du pinceau, et **les deux sens sont testés** — un test par système, chacun vérifié par mutation.
 
 Le cas **solide-après-sensor** couvre un piège structurel de l'immediate-mode à état : `Gizmos.color` et `Gizmos.borderWidth` sont un pinceau **mutable partagé** (§ 3.3), que rien ne réinitialise entre deux entités, deux systèmes ou deux frames. Un système qui ne pose pas l'état complet du pinceau avant *chaque* dessin héritera de la valeur précédente — et le gizmo mentirait sur la couleur. Les assertions se font par **contenu** et non par index : l'ordre d'itération des entités n'est pas un contrat.
 
