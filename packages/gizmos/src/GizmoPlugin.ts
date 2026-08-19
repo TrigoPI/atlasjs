@@ -11,6 +11,7 @@ import { GizmoPluginOptions, GizmoSettings } from "./GizmoSettings";
 import { ColliderGizmo } from "./components/ColliderGizmo";
 import { PivotGizmo } from "./components/PivotGizmo";
 import { ColliderGizmoSystem } from "./systems/ColliderGizmoSystem";
+import { PivotGizmoSystem } from "./systems/PivotGizmoSystem";
 
 export class GizmoPlugin extends Plugin {
   private readonly logger: Logger;
@@ -30,6 +31,7 @@ export class GizmoPlugin extends Plugin {
     this.pool = null;
   }
 
+  // prettier-ignore
   public async install(engine: Engine): Promise<void> {
     const world: NexusWorld = await engine.services.wait(NEXUS);
     const nebula: NebulaRenderer = await engine.services.wait(NEBULA_RENDERER);
@@ -52,9 +54,18 @@ export class GizmoPlugin extends Plugin {
       }),
     );
 
+    const pivotSystem: PivotGizmoSystem = new PivotGizmoSystem(gizmos);
+
     this.handles.push(
-      engine.scheduler.render.add(
-        () => {
+      registerSystem(engine.scheduler.render, world, pivotSystem, {
+        name: "gizmos:pivot",
+        stage: "PreRender",
+        before: "gizmos:flush",
+      }),
+    );
+
+    this.handles.push(
+      engine.scheduler.render.add(() => {
           pool.hideUnused();
           pool.reset();
         },
