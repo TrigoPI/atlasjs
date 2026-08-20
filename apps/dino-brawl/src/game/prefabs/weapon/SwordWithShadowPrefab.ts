@@ -28,9 +28,12 @@ export type SwordWithShadowPrefabProps = {
   angle: number;
   swordSprite: Sprite;
   shadowSprite: Sprite;
-  attack: (entity: EntityBuilder) => WeaponAttack;
   hitClip?: AudioClip;
+  colliderRotation?: number;
+  attack: (entity: EntityBuilder) => WeaponAttack;
 };
+
+const DEFAULT_COLLIDER_ROTATION: number = -Math.PI / 4;
 
 export const createSwordWithShadowPrefab = () =>
   definePrefab<SwordWithShadowPrefabProps>({
@@ -69,6 +72,7 @@ export const createSwordWithShadowPrefab = () =>
         });
 
         collider.offset.set(0, 0);
+        collider.rotation = props.colliderRotation ?? DEFAULT_COLLIDER_ROTATION;
         collider.isSensor = true;
         collider.layer = CollisionLayers.Weapon;
         collider.collidesWith = CollisionLayers.Enemy;
