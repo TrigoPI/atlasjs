@@ -9,6 +9,8 @@ import {
 export type HitInfo = {
   direction: Vec2;
   knockback?: number;
+  /** Seconds both the attacker and the victim hold still on impact. */
+  hitstop?: number;
   invincibilityDuration?: number;
 };
 
@@ -22,6 +24,7 @@ export class HurtboxScript extends AtlasScript<HurtboxScriptProps> {
 
   private invincibilityRemaining: number = 0;
   private lastKnockback: number = 0;
+  private lastHitstop: number = 0;
 
   public get isInvincible(): boolean {
     return this.invincibilityRemaining > 0;
@@ -33,6 +36,10 @@ export class HurtboxScript extends AtlasScript<HurtboxScriptProps> {
 
   public get hitKnockback(): number {
     return this.lastKnockback;
+  }
+
+  public get hitHitstop(): number {
+    return this.lastHitstop;
   }
 
   public onUpdate(dt: number): void {
@@ -53,6 +60,7 @@ export class HurtboxScript extends AtlasScript<HurtboxScriptProps> {
 
     this.lastDirection.copyFrom(hit.direction).normalize();
     this.lastKnockback = hit.knockback ?? 0;
+    this.lastHitstop = hit.hitstop ?? 0;
 
     return true;
   }

@@ -66,7 +66,7 @@ export const createSwordWithShadowPrefab = () =>
         const collider: Collider2D = e.add(Collider2D, {
           type: "box",
           width: 30,
-          height: 80,
+          height: 60,
         });
 
         collider.offset.set(20, -20);
@@ -76,15 +76,16 @@ export const createSwordWithShadowPrefab = () =>
         collider.collidesWith = CollisionLayers.Enemy;
 
         const attack: WeaponAttack = props.attack(e);
-
         const hitbox: SwordHitboxScript = e.attach(SwordHitboxScript);
 
         e.attach(SwordScript, {
           playerAnchor: props.anchor,
+          owner: props.owner,
           radius: props.r,
           angleOffset: props.angle,
           attack,
           hitbox,
+          knockback: 1000,
         });
 
         e.attach(SwordSortingScript, {

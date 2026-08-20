@@ -67,9 +67,29 @@ function createTarget(id: number, hurtbox?: RecordingHurtbox): GameEntity {
   } as unknown as GameEntity;
 }
 
+type ShakeCall = { strength: number; x: number; y: number };
+
+class FakeOwner {
+  public readonly moves: Vec2[] = [];
+
+  public move(delta: Vec2): Vec2 {
+    this.moves.push(delta.clone());
+    return delta;
+  }
+}
+
+/** The anchor the sword orbits: a child entity, with no controller on it. */
 function createAnchor(): GameEntity {
   return {
     requireComponent: (): object => ({ worldPosition: Vec2.zero() }),
+    getComponent: (): undefined => undefined,
+  } as unknown as GameEntity;
+}
+
+/** The wielder, which is where the character controller actually lives. */
+function createOwner(owner: FakeOwner): GameEntity {
+  return {
+    getComponent: (): FakeOwner => owner,
   } as unknown as GameEntity;
 }
 
@@ -86,6 +106,8 @@ function createTransform(): object {
 type Rig = {
   sword: SwordScript;
   hitbox: FakeHitbox;
+  shakes: ShakeCall[];
+  owner: FakeOwner;
   frame: () => void;
 };
 
@@ -96,6 +118,8 @@ type Rig = {
 function createRig(targetInvincibility?: number): Rig {
   const sword: SwordScript = new SwordScript();
   const hitbox: FakeHitbox = new FakeHitbox();
+  const shakes: ShakeCall[] = [];
+  const owner: FakeOwner = new FakeOwner();
 
   const injected: Record<string, unknown> = sword as unknown as Record<
     string,
@@ -103,6 +127,7 @@ function createRig(targetInvincibility?: number): Rig {
   >;
 
   injected.playerAnchor = createAnchor();
+  injected.owner = createOwner(owner);
   injected.radius = 40;
   injected.angleOffset = 0;
   injected.attack = new FakeAttack();
@@ -127,6 +152,9 @@ function createRig(targetInvincibility?: number): Rig {
 
   injected.camera = {
     screenToWorld: (): Vec2 => new Vec2(100, 0),
+    shake: (strength: number, direction: Vec2): void => {
+      shakes.push({ strength, x: direction.x, y: direction.y });
+    },
   } as unknown as CameraApi;
 
   injected.state = "attacking";
@@ -136,6 +164,8 @@ function createRig(targetInvincibility?: number): Rig {
   return {
     sword,
     hitbox,
+    shakes,
+    owner,
     frame: (): void => sword.onUpdate(DT),
   };
 }
@@ -229,6 +259,51 @@ describe("SwordScript impact resolution", () => {
     // The rig aims at (100, 0) from the origin, so straight to the right.
     expect(hurtbox.lastDirectionX).toBeCloseTo(1);
     expect(hurtbox.lastKnockback).toBeGreaterThan(0);
+  });
+
+  it("punches the camera along the blow only when the blow lands", () => {
+    const rig: Rig = createRig();
+
+    rig.frame();
+    rig.frame();
+    expect(rig.shakes).toHaveLength(0);
+
+    rig.hitbox.setTargets([createTarget(1, new RecordingHurtbox())]);
+    rig.frame();
+
+    expect(rig.shakes).toHaveLength(1);
+    expect(rig.shakes[0].strength).toBeGreaterThan(0);
+    expect(rig.shakes[0].x).toBeCloseTo(1);
+  });
+
+  it("shoves the wielder back, against the blow", () => {
+    const rig: Rig = createRig();
+
+    rig.hitbox.setTargets([createTarget(1, new RecordingHurtbox())]);
+    rig.frame();
+
+    expect(rig.owner.moves).toHaveLength(1);
+    expect(rig.owner.moves[0].x).toBeLessThan(0);
+  });
+
+  it("looks for the controller on the wielder, not on the orbit anchor", () => {
+    const rig: Rig = createRig();
+
+    rig.hitbox.setTargets([createTarget(1, new RecordingHurtbox())]);
+
+    expect(() => rig.frame()).not.toThrow();
+    expect(rig.owner.moves).toHaveLength(1);
+  });
+
+  it("neither shakes nor recoils on a swing that connects with nothing", () => {
+    const rig: Rig = createRig();
+
+    for (let i: number = 0; i < 6; i++) {
+      rig.frame();
+    }
+
+    expect(rig.shakes).toHaveLength(0);
+    expect(rig.owner.moves).toHaveLength(0);
   });
 
   it("hits every target present in the hitbox on the same frame", () => {

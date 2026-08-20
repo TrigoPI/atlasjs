@@ -9,7 +9,16 @@ import { HurtReactionScript } from "../../../../src/game/scripts/combat/HurtReac
 
 class FakeAnimator {
   public readonly played: string[] = [];
+  public paused: boolean = false;
   private current: string = "idle";
+
+  public pause(): void {
+    this.paused = true;
+  }
+
+  public resume(): void {
+    this.paused = false;
+  }
 
   public play(name: string): void {
     if (name === this.current) {
@@ -58,7 +67,7 @@ type Rig = {
   audio: FakeAudioApi;
   character: FakeCharacter;
   clip: AudioClip;
-  hit: (knockback?: number) => void;
+  hit: (knockback?: number, hitstop?: number) => void;
   /** Advances the hurtbox timer then the observer, as the runtime does. */
   frame: (dt: number) => void;
 };
@@ -81,6 +90,7 @@ function createRig(overrides: Record<string, unknown> = {}): Rig {
   injected.restClip = "idle";
   injected.hitClip = clip;
   injected.hitPitch = 1;
+  injected.hitPitchJitter = 0;
   injected.hitVolume = 1;
 
   // onCreate() needs a bound script context, so resolve its lookups here.
@@ -99,8 +109,8 @@ function createRig(overrides: Record<string, unknown> = {}): Rig {
     audio,
     character,
     clip,
-    hit: (knockback: number = 200): void => {
-      hurtbox.takeHit({ direction: new Vec2(1, 0), knockback });
+    hit: (knockback: number = 200, hitstop: number = 0): void => {
+      hurtbox.takeHit({ direction: new Vec2(1, 0), knockback, hitstop });
     },
     frame: (dt: number): void => {
       hurtbox.onUpdate(dt);
@@ -264,6 +274,85 @@ describe("HurtReactionScript", () => {
     expect(() => rig.frame(0.05)).not.toThrow();
     expect(rig.animator.played).toEqual(["hurt"]);
     expect(rig.audio.calls).toHaveLength(1);
+  });
+
+  it("freezes the victim on impact instead of pushing it straight away", () => {
+    const rig: Rig = createRig();
+
+    rig.hit(200, 0.1);
+    rig.frame(0.02);
+
+    expect(rig.animator.paused).toBe(true);
+    expect(rig.character.moves).toHaveLength(0);
+    expect(rig.animator.played).toEqual(["hurt"]);
+    expect(rig.audio.calls).toHaveLength(1);
+  });
+
+  it("launches the victim at full speed once the freeze ends", () => {
+    const rig: Rig = createRig();
+
+    rig.hit(200, 0.1);
+
+    for (let i: number = 0; i < 4; i++) {
+      rig.frame(0.02);
+    }
+
+    expect(rig.animator.paused).toBe(true);
+    expect(rig.character.moves).toHaveLength(0);
+
+    rig.frame(0.02);
+
+    expect(rig.animator.paused).toBe(false);
+    expect(rig.character.moves).toHaveLength(1);
+    // Undamped during the freeze, so the first step carries the full speed.
+    expect(rig.character.moves[0].x).toBeCloseTo(200 * 0.02);
+  });
+
+  it("does not freeze when the weapon asked for no hitstop", () => {
+    const rig: Rig = createRig();
+
+    rig.hit(200, 0);
+    rig.frame(0.02);
+
+    expect(rig.animator.paused).toBe(false);
+    expect(rig.character.moves).toHaveLength(1);
+  });
+
+  it("varies the pitch from hit to hit so chains stop sounding mechanical", () => {
+    const rig: Rig = createRig({ hitPitchJitter: 0.08 });
+    const pitches: Set<number> = new Set<number>();
+
+    for (let i: number = 0; i < 20; i++) {
+      rig.hit();
+      rig.frame(0.01);
+      rig.frame(0.5);
+    }
+
+    for (const call of rig.audio.calls) {
+      const pitch: number = call.params?.pitch ?? 0;
+      pitches.add(pitch);
+      expect(pitch).toBeGreaterThanOrEqual(1 - 0.08);
+      expect(pitch).toBeLessThanOrEqual(1 + 0.08);
+    }
+
+    expect(rig.audio.calls.length).toBeGreaterThan(1);
+    expect(pitches.size).toBeGreaterThan(1);
+  });
+
+  it("never drops the pitch to zero or below, whatever the jitter", () => {
+    const rig: Rig = createRig({ hitPitch: 0.02, hitPitchJitter: 5 });
+
+    for (let i: number = 0; i < 20; i++) {
+      rig.hit();
+      rig.frame(0.01);
+      rig.frame(0.5);
+    }
+
+    expect(rig.audio.calls.length).toBeGreaterThan(1);
+
+    for (const call of rig.audio.calls) {
+      expect(call.params?.pitch ?? 0).toBeGreaterThan(0);
+    }
   });
 
   it("honours overridden clip names", () => {

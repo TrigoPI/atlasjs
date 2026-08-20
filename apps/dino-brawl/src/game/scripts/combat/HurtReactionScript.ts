@@ -34,6 +34,7 @@ export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
   private readonly restClip: string = "idle";
   private readonly hitClip?: AudioClip;
   private readonly hitPitch: number = 1;
+  private readonly hitPitchJitter: number = 0.08;
   private readonly hitVolume: number = 1;
   private readonly knockbackScale: number = 1;
   private readonly knockbackDamping: number = 12;
@@ -45,12 +46,14 @@ export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
   private character?: CharacterController;
   private audio?: AudioApi;
   private wasInvincible: boolean;
+  private hitstopRemaining: number = 0;
 
   public onCreate(): void {
     this.animator = this.target.requireComponent(Animator);
     this.character = this.target.getComponent(CharacterController);
     this.audio = this.getService(AudioApi);
     this.wasInvincible = this.hurtbox.isInvincible;
+    this.hitstopRemaining = 0;
   }
 
   public onUpdate(dt: number): void {
@@ -66,7 +69,27 @@ export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
       }
     }
 
+    if (this.advanceHitstop(dt)) {
+      return;
+    }
+
     this.advanceKnockback(dt);
+  }
+
+  /** Holds the victim still on impact. Returns true while frozen. */
+  private advanceHitstop(dt: number): boolean {
+    if (this.hitstopRemaining <= 0) {
+      return false;
+    }
+
+    this.hitstopRemaining -= dt;
+
+    if (this.hitstopRemaining > 0) {
+      return true;
+    }
+
+    this.animator.resume();
+    return false;
   }
 
   private onHit(): void {
@@ -76,6 +99,12 @@ export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
     this.knockbackVelocity
       .copyFrom(this.hurtbox.hitDirection)
       .mult(this.hurtbox.hitKnockback * this.knockbackScale);
+
+    this.hitstopRemaining = this.hurtbox.hitHitstop;
+
+    if (this.hitstopRemaining > 0) {
+      this.animator.pause();
+    }
   }
 
   private advanceKnockback(dt: number): void {
@@ -97,8 +126,10 @@ export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
       return;
     }
 
+    const jitter: number = (Math.random() * 2 - 1) * this.hitPitchJitter;
+
     this.audio.playOneShot(this.hitClip, {
-      pitch: this.hitPitch,
+      pitch: Math.max(0.01, this.hitPitch + jitter),
       volume: this.hitVolume,
     });
   }
@@ -112,6 +143,7 @@ registerScriptMetadata(HurtReactionScript, {
     restClip: ScriptMetadata.field(),
     hitClip: ScriptMetadata.field(),
     hitPitch: ScriptMetadata.field(),
+    hitPitchJitter: ScriptMetadata.field(),
     hitVolume: ScriptMetadata.field(),
     knockbackScale: ScriptMetadata.field(),
     knockbackDamping: ScriptMetadata.field(),

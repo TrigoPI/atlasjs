@@ -3,6 +3,7 @@ import { Vec2 } from "@atlasjs/math";
 import {
   AtlasScript,
   CameraApi,
+  CharacterController,
   InputApi,
   Key,
   registerScriptMetadata,
@@ -19,6 +20,8 @@ import type { SwordHitboxScript } from "./SwordHitboxScript";
 
 type SwordScriptProps = {
   playerAnchor: GameEntity;
+  /** The wielder itself, which carries the character controller to recoil. */
+  owner: GameEntity;
   radius: number;
   angleOffset: number;
   attack: WeaponAttack;
@@ -26,22 +29,28 @@ type SwordScriptProps = {
   hitstopDuration?: number;
   targetInvincibility?: number;
   knockback?: number;
+  shakeStrength?: number;
+  recoil?: number;
 };
 
 type SwordState = "idle" | "attacking";
 
 export class SwordScript extends AtlasScript<SwordScriptProps> {
   private readonly playerAnchor: GameEntity;
+  private readonly owner: GameEntity;
   private readonly radius: number;
   private readonly angleOffset: number;
   private readonly attack: WeaponAttack;
   private readonly hitbox: SwordHitboxScript;
-  private readonly hitstopDuration: number = 0.07;
+  private readonly hitstopDuration: number = 0.1;
   private readonly targetInvincibility?: number;
   private readonly knockback: number = 220;
+  private readonly shakeStrength: number = 90;
+  private readonly recoil: number = 60;
 
   /** Reused so a swing overlapping a target allocates nothing per frame. */
   private readonly hit: HitInfo = { direction: new Vec2() };
+  private readonly recoilDelta: Vec2 = new Vec2();
 
   private transform: Transform;
   private offsetAmplitude: number;
@@ -139,6 +148,8 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     if (this.applyHits(aimAngle)) {
       this.hitstopRemaining = this.hitstopDuration;
       this.frozenAimAngle = aimAngle;
+      this.camera.shake(this.shakeStrength, this.hit.direction);
+      this.pushOwnerBack();
     }
 
     this.applyAttackPose(aimAngle);
@@ -179,6 +190,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
 
     this.hit.direction.set(Math.cos(aimAngle), Math.sin(aimAngle));
     this.hit.knockback = this.knockback;
+    this.hit.hitstop = this.hitstopDuration;
     this.hit.invincibilityDuration = this.targetInvincibility;
 
     for (const target of targets) {
@@ -195,6 +207,23 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     }
 
     return landed;
+  }
+
+  /** Shoves the wielder away from the blow, so the swing has weight. */
+  private pushOwnerBack(): void {
+    if (this.recoil <= 0) {
+      return;
+    }
+
+    const wielder: CharacterController | undefined =
+      this.owner.getComponent(CharacterController);
+
+    if (wielder === undefined) {
+      return;
+    }
+
+    this.recoilDelta.copyFrom(this.hit.direction).mult(-this.recoil);
+    wielder.move(this.recoilDelta);
   }
 
   private getFloatingOffset(): Vec2 {
@@ -224,6 +253,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
 registerScriptMetadata(SwordScript, {
   exposed: {
     playerAnchor: ScriptMetadata.entity({ required: true }),
+    owner: ScriptMetadata.entity({ required: true }),
     radius: ScriptMetadata.field({ required: true }),
     angleOffset: ScriptMetadata.field({ required: true }),
     attack: ScriptMetadata.field({ required: true }),
@@ -231,5 +261,7 @@ registerScriptMetadata(SwordScript, {
     hitstopDuration: ScriptMetadata.field(),
     targetInvincibility: ScriptMetadata.field(),
     knockback: ScriptMetadata.field(),
+    shakeStrength: ScriptMetadata.field(),
+    recoil: ScriptMetadata.field(),
   },
 });
