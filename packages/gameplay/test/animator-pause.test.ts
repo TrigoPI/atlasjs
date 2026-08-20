@@ -41,4 +41,27 @@ describe("Animator pause/resume", () => {
 
     expect(animator.currentFrame()).not.toBe(held);
   });
+
+  it("ignores replaying the clip already running", () => {
+    const animator: Animator = new Animator(createClips(), "walk");
+
+    animator.tick(150);
+    const advanced = animator.currentFrame();
+
+    animator.play("walk");
+
+    expect(animator.currentFrame()).toBe(advanced);
+  });
+
+  it("replays from the first frame when asked to restart", () => {
+    const animator: Animator = new Animator(createClips(), "walk");
+
+    const first = animator.currentFrame();
+    animator.tick(150);
+    expect(animator.currentFrame()).not.toBe(first);
+
+    animator.play("walk", true);
+
+    expect(animator.currentFrame()).toBe(first);
+  });
 });

@@ -24,14 +24,18 @@ export class Animator {
     }
   }
 
-  public play(name: string): this {
+  /**
+   * Switches clip. Playing the clip already running is a no-op unless
+   * `restart` is set, which replays it from its first frame.
+   */
+  public play(name: string, restart: boolean = false): this {
     const previous: string | null =
       this.player.getCurrentAnimationName() ?? null;
-    this.player.play(name);
+    this.player.play(name, restart);
     const current: string | null =
       this.player.getCurrentAnimationName() ?? null;
 
-    if (current !== null && current !== previous) {
+    if (current !== null && (current !== previous || restart)) {
       this.events.emit("started", current);
     }
 
