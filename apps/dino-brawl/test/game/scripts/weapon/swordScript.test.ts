@@ -69,6 +69,8 @@ function createTarget(id: number, hurtbox?: RecordingHurtbox): GameEntity {
 
 type ShakeCall = { strength: number; x: number; y: number };
 
+type ShakeSpecLike = { strength: number };
+
 class FakeOwner {
   public readonly moves: Vec2[] = [];
 
@@ -115,7 +117,10 @@ type Rig = {
  * Puts a SwordScript straight into its "attacking" state without an ECS world,
  * mirroring how the other weapon test files inject private fields.
  */
-function createRig(targetInvincibility?: number): Rig {
+function createRig(
+  targetInvincibility?: number,
+  overrides: Record<string, unknown> = {},
+): Rig {
   const sword: SwordScript = new SwordScript();
   const hitbox: FakeHitbox = new FakeHitbox();
   const shakes: ShakeCall[] = [];
@@ -152,10 +157,14 @@ function createRig(targetInvincibility?: number): Rig {
 
   injected.camera = {
     screenToWorld: (): Vec2 => new Vec2(100, 0),
-    shake: (strength: number, direction: Vec2): void => {
-      shakes.push({ strength, x: direction.x, y: direction.y });
+    shake: (spec: ShakeSpecLike, direction: Vec2): void => {
+      shakes.push({ strength: spec.strength, x: direction.x, y: direction.y });
     },
   } as unknown as CameraApi;
+
+  for (const key of Object.keys(overrides)) {
+    injected[key] = overrides[key];
+  }
 
   injected.state = "attacking";
   injected.buffered = false;
@@ -276,27 +285,77 @@ describe("SwordScript impact resolution", () => {
     expect(rig.shakes[0].x).toBeCloseTo(1);
   });
 
-  it("shoves the wielder back, against the blow", () => {
-    const rig: Rig = createRig();
+  it("shoves the wielder back, against the blow, once the freeze lifts", () => {
+    const rig: Rig = createRig(undefined, { recoil: 140 });
 
     rig.hitbox.setTargets([createTarget(1, new RecordingHurtbox())]);
-    rig.frame();
 
-    expect(rig.owner.moves).toHaveLength(1);
+    // Held still on impact, like the victim.
+    rig.frame();
+    expect(rig.owner.moves).toHaveLength(0);
+
+    for (let i: number = 0; i < 4; i++) {
+      rig.frame();
+    }
+
+    expect(rig.owner.moves.length).toBeGreaterThan(0);
     expect(rig.owner.moves[0].x).toBeLessThan(0);
   });
 
-  it("looks for the controller on the wielder, not on the orbit anchor", () => {
-    const rig: Rig = createRig();
+  it("eases the wielder back rather than teleporting it", () => {
+    const rig: Rig = createRig(undefined, { recoil: 140 });
 
     rig.hitbox.setTargets([createTarget(1, new RecordingHurtbox())]);
 
-    expect(() => rig.frame()).not.toThrow();
-    expect(rig.owner.moves).toHaveLength(1);
+    for (let i: number = 0; i < 12; i++) {
+      rig.frame();
+    }
+
+    const moves: Vec2[] = rig.owner.moves;
+
+    // Spread over several frames, each shorter than the last.
+    expect(moves.length).toBeGreaterThan(2);
+    expect(moves[0].mag()).toBeGreaterThan(moves[moves.length - 1].mag());
+
+    // And no step is the old one-frame jump of `recoil` units outright.
+    for (const move of moves) {
+      expect(move.mag()).toBeLessThan(20);
+    }
+
+    // The push settles around recoil / recoilDamping.
+    const total: number = moves.reduce((sum, m) => sum + m.mag(), 0);
+    expect(total).toBeGreaterThan(5);
+    expect(total).toBeLessThan(15);
+  });
+
+  it("leaves the wielder alone when recoil is switched off", () => {
+    const rig: Rig = createRig(undefined, { recoil: 0 });
+
+    rig.hitbox.setTargets([createTarget(1, new RecordingHurtbox())]);
+
+    for (let i: number = 0; i < 6; i++) {
+      rig.frame();
+    }
+
+    expect(rig.owner.moves).toHaveLength(0);
+  });
+
+  it("looks for the controller on the wielder, not on the orbit anchor", () => {
+    const rig: Rig = createRig(undefined, { recoil: 140 });
+
+    rig.hitbox.setTargets([createTarget(1, new RecordingHurtbox())]);
+
+    expect(() => {
+      for (let i: number = 0; i < 5; i++) {
+        rig.frame();
+      }
+    }).not.toThrow();
+
+    expect(rig.owner.moves.length).toBeGreaterThan(0);
   });
 
   it("neither shakes nor recoils on a swing that connects with nothing", () => {
-    const rig: Rig = createRig();
+    const rig: Rig = createRig(undefined, { recoil: 140 });
 
     for (let i: number = 0; i < 6; i++) {
       rig.frame();

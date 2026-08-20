@@ -4,6 +4,8 @@ import {
   AtlasScript,
   CameraApi,
   CharacterController,
+  ShakePresets,
+  type ShakeSpec,
   InputApi,
   Key,
   registerScriptMetadata,
@@ -29,11 +31,14 @@ type SwordScriptProps = {
   hitstopDuration?: number;
   targetInvincibility?: number;
   knockback?: number;
-  shakeStrength?: number;
+  shake?: ShakeSpec;
   recoil?: number;
+  recoilDamping?: number;
 };
 
 type SwordState = "idle" | "attacking";
+
+const MIN_RECOIL_SPEED: number = 1;
 
 export class SwordScript extends AtlasScript<SwordScriptProps> {
   private readonly playerAnchor: GameEntity;
@@ -45,11 +50,14 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
   private readonly hitstopDuration: number = 0.1;
   private readonly targetInvincibility?: number;
   private readonly knockback: number = 220;
-  private readonly shakeStrength: number = 90;
-  private readonly recoil: number = 60;
+  private readonly shake: ShakeSpec = { ...ShakePresets.medium, strength: 500 };
+  /** 0 disables the wielder's recoil; ~140 is a readable nudge. */
+  private readonly recoil: number = 0;
+  private readonly recoilDamping: number = 14;
 
   /** Reused so a swing overlapping a target allocates nothing per frame. */
   private readonly hit: HitInfo = { direction: new Vec2() };
+  private readonly recoilVelocity: Vec2 = new Vec2();
   private readonly recoilDelta: Vec2 = new Vec2();
 
   private transform: Transform;
@@ -113,10 +121,14 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
 
     if (this.state === "attacking") {
       this.updateAttackingState(dt);
-      return;
+    } else {
+      this.updateIdleState();
     }
 
-    this.updateIdleState();
+    // Frozen along with everything else while the blow lands.
+    if (this.hitstopRemaining <= 0) {
+      this.advanceRecoil(dt);
+    }
   }
 
   private updateIdleState(): void {
@@ -148,8 +160,8 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     if (this.applyHits(aimAngle)) {
       this.hitstopRemaining = this.hitstopDuration;
       this.frozenAimAngle = aimAngle;
-      this.camera.shake(this.shakeStrength, this.hit.direction);
-      this.pushOwnerBack();
+      this.camera.shake(this.shake, this.hit.direction);
+      this.kickOwnerBack();
     }
 
     this.applyAttackPose(aimAngle);
@@ -209,21 +221,33 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     return landed;
   }
 
-  /** Shoves the wielder away from the blow, so the swing has weight. */
-  private pushOwnerBack(): void {
+  /**
+   * Shoves the wielder away from the blow. Sets a speed rather than moving
+   * outright: a single large step reads as a teleport, not as weight.
+   */
+  private kickOwnerBack(): void {
     if (this.recoil <= 0) {
+      return;
+    }
+
+    this.recoilVelocity.copyFrom(this.hit.direction).mult(-this.recoil);
+  }
+
+  private advanceRecoil(dt: number): void {
+    if (this.recoilVelocity.mag() < MIN_RECOIL_SPEED) {
+      this.recoilVelocity.set(0, 0);
       return;
     }
 
     const wielder: CharacterController | undefined =
       this.owner.getComponent(CharacterController);
 
-    if (wielder === undefined) {
-      return;
+    if (wielder !== undefined) {
+      this.recoilDelta.copyFrom(this.recoilVelocity).mult(dt);
+      wielder.move(this.recoilDelta);
     }
 
-    this.recoilDelta.copyFrom(this.hit.direction).mult(-this.recoil);
-    wielder.move(this.recoilDelta);
+    this.recoilVelocity.mult(Math.max(0, 1 - this.recoilDamping * dt));
   }
 
   private getFloatingOffset(): Vec2 {
@@ -261,7 +285,8 @@ registerScriptMetadata(SwordScript, {
     hitstopDuration: ScriptMetadata.field(),
     targetInvincibility: ScriptMetadata.field(),
     knockback: ScriptMetadata.field(),
-    shakeStrength: ScriptMetadata.field(),
+    shake: ScriptMetadata.field(),
     recoil: ScriptMetadata.field(),
+    recoilDamping: ScriptMetadata.field(),
   },
 });
