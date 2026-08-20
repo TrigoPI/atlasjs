@@ -67,13 +67,14 @@ export const createEnemyPrefab = () =>
         hitboxCollider.offset.set(0, -28);
 
         const hurtbox: HurtboxScript = e.attach(HurtboxScript, {
-          invincibilityDuration: 0.6,
+          invincibilityDuration: 0.3,
         });
 
         e.attach(HurtReactionScript, {
           hurtbox,
           target: entity.entity,
           hitClip: props.hitClip,
+          knockbackDamping: 20,
         });
       });
     },
