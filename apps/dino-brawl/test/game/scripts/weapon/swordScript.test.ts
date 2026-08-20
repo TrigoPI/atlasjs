@@ -71,27 +71,9 @@ type ShakeCall = { strength: number; x: number; y: number };
 
 type ShakeSpecLike = { strength: number };
 
-class FakeOwner {
-  public readonly moves: Vec2[] = [];
-
-  public move(delta: Vec2): Vec2 {
-    this.moves.push(delta.clone());
-    return delta;
-  }
-}
-
-/** The anchor the sword orbits: a child entity, with no controller on it. */
 function createAnchor(): GameEntity {
   return {
     requireComponent: (): object => ({ worldPosition: Vec2.zero() }),
-    getComponent: (): undefined => undefined,
-  } as unknown as GameEntity;
-}
-
-/** The wielder, which is where the character controller actually lives. */
-function createOwner(owner: FakeOwner): GameEntity {
-  return {
-    getComponent: (): FakeOwner => owner,
   } as unknown as GameEntity;
 }
 
@@ -109,7 +91,6 @@ type Rig = {
   sword: SwordScript;
   hitbox: FakeHitbox;
   shakes: ShakeCall[];
-  owner: FakeOwner;
   frame: () => void;
 };
 
@@ -124,7 +105,6 @@ function createRig(
   const sword: SwordScript = new SwordScript();
   const hitbox: FakeHitbox = new FakeHitbox();
   const shakes: ShakeCall[] = [];
-  const owner: FakeOwner = new FakeOwner();
 
   const injected: Record<string, unknown> = sword as unknown as Record<
     string,
@@ -132,7 +112,6 @@ function createRig(
   >;
 
   injected.playerAnchor = createAnchor();
-  injected.owner = createOwner(owner);
   injected.radius = 40;
   injected.angleOffset = 0;
   injected.attack = new FakeAttack();
@@ -174,7 +153,6 @@ function createRig(
     sword,
     hitbox,
     shakes,
-    owner,
     frame: (): void => sword.onUpdate(DT),
   };
 }
@@ -285,84 +263,14 @@ describe("SwordScript impact resolution", () => {
     expect(rig.shakes[0].x).toBeCloseTo(1);
   });
 
-  it("shoves the wielder back, against the blow, once the freeze lifts", () => {
-    const rig: Rig = createRig(undefined, { recoil: 140 });
-
-    rig.hitbox.setTargets([createTarget(1, new RecordingHurtbox())]);
-
-    // Held still on impact, like the victim.
-    rig.frame();
-    expect(rig.owner.moves).toHaveLength(0);
-
-    for (let i: number = 0; i < 4; i++) {
-      rig.frame();
-    }
-
-    expect(rig.owner.moves.length).toBeGreaterThan(0);
-    expect(rig.owner.moves[0].x).toBeLessThan(0);
-  });
-
-  it("eases the wielder back rather than teleporting it", () => {
-    const rig: Rig = createRig(undefined, { recoil: 140 });
-
-    rig.hitbox.setTargets([createTarget(1, new RecordingHurtbox())]);
-
-    for (let i: number = 0; i < 12; i++) {
-      rig.frame();
-    }
-
-    const moves: Vec2[] = rig.owner.moves;
-
-    // Spread over several frames, each shorter than the last.
-    expect(moves.length).toBeGreaterThan(2);
-    expect(moves[0].mag()).toBeGreaterThan(moves[moves.length - 1].mag());
-
-    // And no step is the old one-frame jump of `recoil` units outright.
-    for (const move of moves) {
-      expect(move.mag()).toBeLessThan(20);
-    }
-
-    // The push settles around recoil / recoilDamping.
-    const total: number = moves.reduce((sum, m) => sum + m.mag(), 0);
-    expect(total).toBeGreaterThan(5);
-    expect(total).toBeLessThan(15);
-  });
-
-  it("leaves the wielder alone when recoil is switched off", () => {
-    const rig: Rig = createRig(undefined, { recoil: 0 });
-
-    rig.hitbox.setTargets([createTarget(1, new RecordingHurtbox())]);
-
-    for (let i: number = 0; i < 6; i++) {
-      rig.frame();
-    }
-
-    expect(rig.owner.moves).toHaveLength(0);
-  });
-
-  it("looks for the controller on the wielder, not on the orbit anchor", () => {
-    const rig: Rig = createRig(undefined, { recoil: 140 });
-
-    rig.hitbox.setTargets([createTarget(1, new RecordingHurtbox())]);
-
-    expect(() => {
-      for (let i: number = 0; i < 5; i++) {
-        rig.frame();
-      }
-    }).not.toThrow();
-
-    expect(rig.owner.moves.length).toBeGreaterThan(0);
-  });
-
-  it("neither shakes nor recoils on a swing that connects with nothing", () => {
-    const rig: Rig = createRig(undefined, { recoil: 140 });
+  it("does not shake on a swing that connects with nothing", () => {
+    const rig: Rig = createRig();
 
     for (let i: number = 0; i < 6; i++) {
       rig.frame();
     }
 
     expect(rig.shakes).toHaveLength(0);
-    expect(rig.owner.moves).toHaveLength(0);
   });
 
   it("hits every target present in the hitbox on the same frame", () => {

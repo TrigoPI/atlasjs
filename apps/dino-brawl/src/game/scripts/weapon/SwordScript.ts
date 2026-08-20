@@ -1,17 +1,15 @@
 import { Vec2 } from "@atlasjs/math";
 
 import {
+  type GameEntity,
+  type ShakeSpec,
   AtlasScript,
   CameraApi,
-  CharacterController,
-  ShakePresets,
-  type ShakeSpec,
   InputApi,
   Key,
   registerScriptMetadata,
   ScriptMetadata,
   Transform,
-  type GameEntity,
 } from "@atlasjs/gameplay";
 
 import { type HitInfo, HurtboxScript } from "../combat/HurtboxScript";
@@ -22,8 +20,6 @@ import type { SwordHitboxScript } from "./SwordHitboxScript";
 
 type SwordScriptProps = {
   playerAnchor: GameEntity;
-  /** The wielder itself, which carries the character controller to recoil. */
-  owner: GameEntity;
   radius: number;
   angleOffset: number;
   attack: WeaponAttack;
@@ -32,33 +28,28 @@ type SwordScriptProps = {
   targetInvincibility?: number;
   knockback?: number;
   shake?: ShakeSpec;
-  recoil?: number;
-  recoilDamping?: number;
 };
 
 type SwordState = "idle" | "attacking";
 
-const MIN_RECOIL_SPEED: number = 1;
+const shake: ShakeSpec = {
+  strength: 300,
+  stiffness: 240,
+  damping: 17,
+};
 
 export class SwordScript extends AtlasScript<SwordScriptProps> {
   private readonly playerAnchor: GameEntity;
-  private readonly owner: GameEntity;
   private readonly radius: number;
   private readonly angleOffset: number;
   private readonly attack: WeaponAttack;
   private readonly hitbox: SwordHitboxScript;
-  private readonly hitstopDuration: number = 0.1;
+  private readonly hitstopDuration: number = 0.15;
   private readonly targetInvincibility?: number;
   private readonly knockback: number = 220;
-  private readonly shake: ShakeSpec = { ...ShakePresets.medium, strength: 500 };
-  /** 0 disables the wielder's recoil; ~140 is a readable nudge. */
-  private readonly recoil: number = 0;
-  private readonly recoilDamping: number = 14;
+  private readonly shake: ShakeSpec = shake;
 
-  /** Reused so a swing overlapping a target allocates nothing per frame. */
   private readonly hit: HitInfo = { direction: new Vec2() };
-  private readonly recoilVelocity: Vec2 = new Vec2();
-  private readonly recoilDelta: Vec2 = new Vec2();
 
   private transform: Transform;
   private offsetAmplitude: number;
@@ -124,11 +115,6 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     } else {
       this.updateIdleState();
     }
-
-    // Frozen along with everything else while the blow lands.
-    if (this.hitstopRemaining <= 0) {
-      this.advanceRecoil(dt);
-    }
   }
 
   private updateIdleState(): void {
@@ -161,7 +147,6 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
       this.hitstopRemaining = this.hitstopDuration;
       this.frozenAimAngle = aimAngle;
       this.camera.shake(this.shake, this.hit.direction);
-      this.kickOwnerBack();
     }
 
     this.applyAttackPose(aimAngle);
@@ -221,35 +206,6 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     return landed;
   }
 
-  /**
-   * Shoves the wielder away from the blow. Sets a speed rather than moving
-   * outright: a single large step reads as a teleport, not as weight.
-   */
-  private kickOwnerBack(): void {
-    if (this.recoil <= 0) {
-      return;
-    }
-
-    this.recoilVelocity.copyFrom(this.hit.direction).mult(-this.recoil);
-  }
-
-  private advanceRecoil(dt: number): void {
-    if (this.recoilVelocity.mag() < MIN_RECOIL_SPEED) {
-      this.recoilVelocity.set(0, 0);
-      return;
-    }
-
-    const wielder: CharacterController | undefined =
-      this.owner.getComponent(CharacterController);
-
-    if (wielder !== undefined) {
-      this.recoilDelta.copyFrom(this.recoilVelocity).mult(dt);
-      wielder.move(this.recoilDelta);
-    }
-
-    this.recoilVelocity.mult(Math.max(0, 1 - this.recoilDamping * dt));
-  }
-
   private getFloatingOffset(): Vec2 {
     const w: number = 2 * Math.PI * this.offsetFrequency;
     const offset: number = Math.sin(w * this.clock) * this.offsetAmplitude;
@@ -277,7 +233,6 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
 registerScriptMetadata(SwordScript, {
   exposed: {
     playerAnchor: ScriptMetadata.entity({ required: true }),
-    owner: ScriptMetadata.entity({ required: true }),
     radius: ScriptMetadata.field({ required: true }),
     angleOffset: ScriptMetadata.field({ required: true }),
     attack: ScriptMetadata.field({ required: true }),
@@ -286,7 +241,5 @@ registerScriptMetadata(SwordScript, {
     targetInvincibility: ScriptMetadata.field(),
     knockback: ScriptMetadata.field(),
     shake: ScriptMetadata.field(),
-    recoil: ScriptMetadata.field(),
-    recoilDamping: ScriptMetadata.field(),
   },
 });

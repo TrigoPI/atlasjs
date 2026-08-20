@@ -80,7 +80,6 @@ export const createSwordWithShadowPrefab = () =>
 
         e.attach(SwordScript, {
           playerAnchor: props.anchor,
-          owner: props.owner,
           radius: props.r,
           angleOffset: props.angle,
           attack,
