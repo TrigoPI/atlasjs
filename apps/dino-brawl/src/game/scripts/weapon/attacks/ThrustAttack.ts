@@ -34,10 +34,6 @@ export class ThrustAttack extends WeaponAttack<ThrustAttackProps> {
     );
   }
 
-  public get impactTime(): number {
-    return this.pullbackDuration + this.thrustDuration;
-  }
-
   public begin(): void {
     this.playClip();
   }

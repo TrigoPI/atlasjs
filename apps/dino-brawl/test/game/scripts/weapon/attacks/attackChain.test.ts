@@ -12,20 +12,14 @@ class FakeAttack extends WeaponAttack {
   public beginCount: number = 0;
   public readonly sampleCalls: Array<{ t: number; out: AttackPose }> = [];
   private readonly fixedDuration: number;
-  private readonly fixedImpactTime: number;
 
-  public constructor(fixedDuration: number, fixedImpactTime?: number) {
+  public constructor(fixedDuration: number) {
     super();
     this.fixedDuration = fixedDuration;
-    this.fixedImpactTime = fixedImpactTime ?? fixedDuration * 0.5;
   }
 
   public get duration(): number {
     return this.fixedDuration;
-  }
-
-  public get impactTime(): number {
-    return this.fixedImpactTime;
   }
 
   public begin(): void {
@@ -191,24 +185,5 @@ describe("AttackChain", () => {
 
     const pose: AttackPose = createPose();
     expect(() => chain.sample(0, pose)).not.toThrow();
-  });
-
-  it("impactTime delegates to the current step and changes when the step changes", () => {
-    const chain: AttackChain = new AttackChain();
-    const thrust: FakeAttack = new FakeAttack(0.5, 0.2);
-    const swing: FakeAttack = new FakeAttack(0.6, 0.3);
-
-    injectAttacks(chain, [thrust, swing]);
-
-    chain.begin();
-    expect(chain.impactTime).toBeCloseTo(0.2);
-
-    chain.begin();
-    expect(chain.impactTime).toBeCloseTo(0.3);
-  });
-
-  it("impactTime is 0 when the attack list is empty", () => {
-    const chain: AttackChain = new AttackChain();
-    expect(chain.impactTime).toBe(0);
   });
 });

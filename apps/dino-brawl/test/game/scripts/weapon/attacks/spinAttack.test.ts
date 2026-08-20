@@ -17,30 +17,6 @@ describe("SpinAttack", () => {
     expect(attack.duration).toBeCloseTo(0.16 + 0.26 + 0.14);
   });
 
-  it("impactTime is windupDuration + spinDuration * 0.5", () => {
-    const attack: SpinAttack = new SpinAttack();
-    expect(attack.impactTime).toBeCloseTo(0.16 + 0.26 * 0.5);
-  });
-
-  it("impactTime stays within [0, duration]", () => {
-    const attack: SpinAttack = new SpinAttack();
-    expect(attack.impactTime).toBeGreaterThanOrEqual(0);
-    expect(attack.impactTime).toBeLessThanOrEqual(attack.duration);
-  });
-
-  it("impactTime follows injected windup/spin duration settings", () => {
-    const attack: SpinAttack = new SpinAttack();
-    const injected: Record<string, unknown> = attack as unknown as Record<
-      string,
-      unknown
-    >;
-
-    injected.windupDuration = 1;
-    injected.spinDuration = 2;
-
-    expect(attack.impactTime).toBeCloseTo(1 + 2 * 0.5);
-  });
-
   it("is neutral at t=0", () => {
     const attack: SpinAttack = new SpinAttack();
     const pose: AttackPose = createPose();

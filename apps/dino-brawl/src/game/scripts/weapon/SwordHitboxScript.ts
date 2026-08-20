@@ -13,14 +13,9 @@ export class SwordHitboxScript extends AtlasScript {
     this.targets.delete(other.id);
   }
 
-  public hasTargets(): boolean {
+  public getTargets(): readonly GameEntity[] {
     this.pruneDeadTargets();
-    return this.targets.size > 0;
-  }
-
-  public getTargets(): readonly Entity[] {
-    this.pruneDeadTargets();
-    return Array.from(this.targets.keys());
+    return Array.from(this.targets.values());
   }
 
   private pruneDeadTargets(): void {

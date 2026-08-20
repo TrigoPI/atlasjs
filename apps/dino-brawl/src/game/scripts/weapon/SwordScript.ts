@@ -13,6 +13,8 @@ import {
   type GameEntity,
 } from "@atlasjs/gameplay";
 
+import { HurtboxScript } from "../combat/HurtboxScript";
+
 import { readAimAngle } from "./aim";
 import type { AttackPose, WeaponAttack } from "./attacks/WeaponAttack";
 import type { SwordHitboxScript } from "./SwordHitboxScript";
@@ -24,6 +26,7 @@ type SwordScriptProps = {
   attack: WeaponAttack;
   hitbox: SwordHitboxScript;
   hitstopDuration?: number;
+  targetInvincibility?: number;
   hitClip?: AudioClip;
   hitPitch?: number;
   hitVolume?: number;
@@ -38,6 +41,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
   private readonly attack: WeaponAttack;
   private readonly hitbox: SwordHitboxScript;
   private readonly hitstopDuration: number = 0.07;
+  private readonly targetInvincibility?: number;
   private readonly hitClip?: AudioClip;
   private readonly hitPitch: number = 1;
   private readonly hitVolume: number = 1;
@@ -51,7 +55,6 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
   private attackClock: number;
   private swingDirection: number;
   private attackDuration: number;
-  private attackImpactTime: number;
   private frozenAimAngle: number;
 
   private readonly pose: AttackPose = {
@@ -67,7 +70,6 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
   private state: SwordState;
   private buffered: boolean;
   private hitstopRemaining: number;
-  private impactTriggered: boolean;
 
   public onCreate(): void {
     this.transform = this.requireComponent(Transform);
@@ -84,13 +86,11 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     this.attackClock = 0;
     this.swingDirection = 1;
     this.attackDuration = 0;
-    this.attackImpactTime = 0;
     this.frozenAimAngle = 0;
 
     this.state = "idle";
     this.buffered = false;
     this.hitstopRemaining = 0;
-    this.impactTriggered = false;
   }
 
   public onUpdate(dt: number): void {
@@ -139,14 +139,10 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     this.attackClock += dt;
     this.attack.sample(this.attackClock, this.pose);
 
-    if (!this.impactTriggered && this.attackClock >= this.attackImpactTime) {
-      this.impactTriggered = true;
-
-      if (this.hitbox.hasTargets()) {
-        this.hitstopRemaining = this.hitstopDuration;
-        this.frozenAimAngle = this.getAimAngle();
-        this.playImpactSound();
-      }
+    if (this.applyHits()) {
+      this.hitstopRemaining = this.hitstopDuration;
+      this.frozenAimAngle = this.getAimAngle();
+      this.playImpactSound();
     }
 
     this.applyAttackPose(this.getAimAngle());
@@ -173,14 +169,32 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     this.state = "attacking";
     this.attackClock = 0;
     this.swingDirection = Math.cos(this.getAimAngle()) >= 0 ? -1 : 1;
-    this.impactTriggered = false;
     this.hitstopRemaining = 0;
     this.pose.angleOffset = 0;
     this.pose.radiusScale = 1;
     this.pose.scale = 1;
     this.attack.begin();
     this.attackDuration = this.attack.duration;
-    this.attackImpactTime = this.attack.impactTime;
+  }
+
+  private applyHits(): boolean {
+    const targets: readonly GameEntity[] = this.hitbox.getTargets();
+    let landed: boolean = false;
+
+    for (const target of targets) {
+      const hurtbox: HurtboxScript | undefined =
+        target.getScript(HurtboxScript);
+
+      if (hurtbox === undefined) {
+        continue;
+      }
+
+      if (hurtbox.takeHit(this.targetInvincibility)) {
+        landed = true;
+      }
+    }
+
+    return landed;
   }
 
   private getFloatingOffset(): Vec2 {
@@ -226,6 +240,7 @@ registerScriptMetadata(SwordScript, {
     attack: ScriptMetadata.field({ required: true }),
     hitbox: ScriptMetadata.field({ required: true }),
     hitstopDuration: ScriptMetadata.field(),
+    targetInvincibility: ScriptMetadata.field(),
     hitClip: ScriptMetadata.field(),
     hitPitch: ScriptMetadata.field(),
     hitVolume: ScriptMetadata.field(),

@@ -64,8 +64,8 @@ export const createSwordWithShadowPrefab = () =>
 
         const collider: Collider2D = e.add(Collider2D, {
           type: "box",
-          width: 40,
-          height: 40,
+          width: 60,
+          height: 60,
         });
 
         collider.offset.set(0, 0);

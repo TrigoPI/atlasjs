@@ -17,30 +17,6 @@ describe("ThrustAttack", () => {
     expect(attack.duration).toBeCloseTo(0.22 + 0.07 + 0.05 + 0.2);
   });
 
-  it("impactTime is pullbackDuration + thrustDuration", () => {
-    const attack: ThrustAttack = new ThrustAttack();
-    expect(attack.impactTime).toBeCloseTo(0.22 + 0.07);
-  });
-
-  it("impactTime stays within [0, duration]", () => {
-    const attack: ThrustAttack = new ThrustAttack();
-    expect(attack.impactTime).toBeGreaterThanOrEqual(0);
-    expect(attack.impactTime).toBeLessThanOrEqual(attack.duration);
-  });
-
-  it("impactTime follows injected pullback/thrust duration settings", () => {
-    const attack: ThrustAttack = new ThrustAttack();
-    const injected: Record<string, unknown> = attack as unknown as Record<
-      string,
-      unknown
-    >;
-
-    injected.pullbackDuration = 1;
-    injected.thrustDuration = 2;
-
-    expect(attack.impactTime).toBeCloseTo(1 + 2);
-  });
-
   it("keeps angleOffset at 0 and scale at 1 across the whole timeline", () => {
     const attack: ThrustAttack = new ThrustAttack();
     const pose: AttackPose = createPose();

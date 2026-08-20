@@ -20,11 +20,6 @@ export class AttackChain extends WeaponAttack<AttackChainProps> {
     return current === undefined ? 0 : current.duration;
   }
 
-  public get impactTime(): number {
-    const current: WeaponAttack | undefined = this.getCurrentAttack();
-    return current === undefined ? 0 : current.impactTime;
-  }
-
   public begin(): void {
     const next: WeaponAttack | undefined = this.selectNextAttack();
 

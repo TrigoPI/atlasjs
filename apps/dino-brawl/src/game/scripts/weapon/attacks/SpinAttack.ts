@@ -31,10 +31,6 @@ export class SpinAttack extends WeaponAttack<SpinAttackProps> {
     return this.windupDuration + this.spinDuration + this.recoverDuration;
   }
 
-  public get impactTime(): number {
-    return this.windupDuration + this.spinDuration * 0.5;
-  }
-
   public begin(): void {
     this.playClip();
   }

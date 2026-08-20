@@ -30,7 +30,6 @@ export abstract class WeaponAttack<
   private audio?: AudioApi;
 
   public abstract get duration(): number;
-  public abstract get impactTime(): number;
   public abstract begin(): void;
   public abstract sample(t: number, out: AttackPose): void;
 

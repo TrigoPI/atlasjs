@@ -29,10 +29,6 @@ export class SwingAttack extends WeaponAttack<SwingAttackProps> {
     return this.windupDuration + this.strikeDuration + this.recoverDuration;
   }
 
-  public get impactTime(): number {
-    return this.windupDuration + this.strikeDuration * 0.5;
-  }
-
   public begin(): void {
     this.playClip();
   }

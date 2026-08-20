@@ -3,6 +3,8 @@ import type { SpriteAnimation } from "@atlasjs/nebula";
 
 import { CollisionLayers, SortingLayer, SortingOrder } from "../../config";
 
+import { HurtboxScript } from "../../scripts";
+
 import {
   Animator,
   Collider2D,
@@ -39,8 +41,28 @@ export const createEnemyPrefab = () =>
       const collider: Collider2D = entity.add(Collider2D, { type: "box", width: 32, height: 16 });
       collider.offset.set(0, -15);
       collider.layer = CollisionLayers.Enemy;
-      collider.collidesWith = CollisionLayers.World | CollisionLayers.Weapon;
+      collider.collidesWith = CollisionLayers.World;
 
       entity.add(Animator, props.clips, "idle");
+
+      entity.child((e: EntityBuilder): void => {
+        e.add(Transform2D);
+
+        const hitboxBody: RigidBody = e.add(RigidBody);
+        hitboxBody.type = "kinematic";
+
+        const hitboxCollider: Collider2D = e.add(Collider2D, { 
+          type: "box", 
+          width: 32, 
+          height: 64 
+        });
+
+        hitboxCollider.layer = CollisionLayers.Enemy;
+        hitboxCollider.collidesWith = CollisionLayers.Weapon;
+        hitboxCollider.isSensor = true;
+        hitboxCollider.offset.set(0, -28);
+
+        e.attach(HurtboxScript);
+      });
     },
   });
