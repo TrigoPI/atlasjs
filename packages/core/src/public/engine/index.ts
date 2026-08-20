@@ -6,3 +6,4 @@ export * from "./Scheduler";
 export * from "./ServiceRegistry";
 export * from "./Deferred";
 export * from "./Stages";
+export * from "./TimeControl";

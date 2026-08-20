@@ -4,6 +4,7 @@ import { Plugin } from "./Plugin";
 import { EventBus } from "./EventBus";
 import { Scheduler } from "./Scheduler";
 import { ServiceRegistry } from "./ServiceRegistry";
+import { TIME, TimeControl } from "./TimeControl";
 import { FrameClock, startRafLoop } from "../../private";
 import { SceneManager } from "../scene";
 
@@ -40,6 +41,7 @@ export class Engine {
 
   private fixedDelta: number;
   private maxSubSteps: number;
+  private currentTimeScale: number;
 
   private booted: boolean;
   private readonly clock: FrameClock;
@@ -58,6 +60,7 @@ export class Engine {
 
     this.fixedDelta = opts.fixedDelta ?? DEFAULT_FIXED_DELTA;
     this.maxSubSteps = opts.maxSubSteps ?? DEFAULT_MAX_SUB_STEPS;
+    this.currentTimeScale = opts.timeScale ?? 1;
 
     this.clock = new FrameClock();
     this.loopFactory = opts.loop ?? startRafLoop;
@@ -69,6 +72,25 @@ export class Engine {
       name: "scene:update",
       stage: "Early",
     });
+
+    const engine: Engine = this;
+
+    this.services.provide<TimeControl>(TIME, {
+      get scale(): number {
+        return engine.timeScale;
+      },
+      set scale(value: number) {
+        engine.timeScale = value;
+      },
+    });
+  }
+
+  public get timeScale(): number {
+    return this.currentTimeScale;
+  }
+
+  public set timeScale(value: number) {
+    this.currentTimeScale = Number.isFinite(value) ? Math.max(0, value) : 1;
   }
 
   public isBooted(): boolean {
@@ -228,7 +250,9 @@ export class Engine {
   }
 
   private startLoop(): void {
-    this.stopLoop = this.loopFactory((dt) => {
+    this.stopLoop = this.loopFactory((rawDt) => {
+      const dt: number = rawDt * this.currentTimeScale;
+
       this.clock.acc += dt;
       this.clock.elapsed += dt;
 
