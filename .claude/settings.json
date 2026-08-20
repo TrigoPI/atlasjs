@@ -1,5 +1,32 @@
 {
   "enabledPlugins": {
     "superpowers@claude-plugins-official": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/prettier-touched.mjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/wgsl-rebuild.mjs"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/plan-reminder.mjs"
+          }
+        ]
+      }
+    ]
   }
 }

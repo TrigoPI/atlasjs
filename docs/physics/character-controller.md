@@ -1,6 +1,6 @@
 # Character Controller & solidité du monde — Design (v1)
 
-> **Statut : 🟡 conçu, non implémenté.** Brainstorm validé (2026-08-04). Suite naturelle de [`collision-layer.md`](collision-layer.md) (Phase 1, ✅ mergée) — la « Phase 3 » solidité du monde annoncée dans son suivi. Le plan d'implémentation (TDD, sub-agent-driven) sera écrit à part.
+> **Statut : implémenté, mergé dans `dev`.** Contrat `CharacterController` dans `@atlasjs/inertia`, backend `RapierCharacterController` (collide-and-slide via le `KinematicCharacterController` de rapier) dans `@atlasjs/rapier`, composants `CharacterController2D`/`CharacterControllerRef` dans `@atlasjs/gameplay`. Suite de [`collision-layer.md`](collision-layer.md) (Phase 1) — la « Phase 3 » solidité du monde.
 
 ## 1. Vue d'ensemble
 
@@ -163,4 +163,4 @@ Le character controller est une **requête** contre le monde tel que laissé par
 
 ## 11. Non-objectifs / backlog
 
-`isGrounded()` + `computedGrounded`, pentes/`maxSlopeClimbAngle`, `enableAutostep`, `enableSnapToGround`, `setApplyImpulsesToDynamicBodies` (pousser les corps dynamiques), `up` vector non-défaut (concepts plateforme) ; colliders **non-rectangulaires** depuis Tiled (polygones/ellipses) ; réutilisation optionnelle de `occluder_regions` comme solides ; multi-collider par entité ; character controller piloté par **système** (modèle Godot `move_and_slide`) si un jour plusieurs movers ; dépénétration des overlaps au spawn. Consigner dans [`../backlog.md`](../backlog.md) § physique.
+`isGrounded()` + `computedGrounded`, pentes/`maxSlopeClimbAngle`, `enableAutostep`, `enableSnapToGround`, `setApplyImpulsesToDynamicBodies` (pousser les corps dynamiques), `up` vector non-défaut (concepts plateforme) ; colliders **non-rectangulaires** depuis Tiled (polygones/ellipses) ; réutilisation optionnelle de `occluder_regions` comme solides ; multi-collider par entité ; character controller piloté par **système** (modèle Godot `move_and_slide`) si un jour plusieurs movers ; dépénétration des overlaps au spawn. Consigner dans [`../backlog/`](../backlog/).

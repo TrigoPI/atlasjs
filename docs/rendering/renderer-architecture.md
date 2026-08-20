@@ -1,6 +1,6 @@
 # Nebula — Refonte Architecture du Renderer
 
-> Statut : **implémenté** (6 phases 0→5 + dirty-flag + tint/blend par sprite). Durcissement post-refactor : voir l'appendice « Refactor plans » en bas. Reste ouvert (text, post-process, depth 3D, resource lifecycle) → `docs/backlog.md`.
+> Statut : **implémenté** (6 phases 0→5 + dirty-flag + tint/blend par sprite). Durcissement post-refactor : voir l'appendice « Refactor plans » en bas. Reste ouvert (text, post-process, depth 3D, resource lifecycle) → `docs/backlog/`.
 > Portée : `@atlasjs/nebula` (contrats + couche render agnostique) + `@atlasjs/nebula-webgpu` (impl)
 > Objectif : passer d'un renderer « draw immédiat, 1 sprite = 1 draw call » à un renderer scalable et ergonomique, sans casser le split backend-agnostique ni l'autorité de la réflexion WGSL.
 > Prérequis de lecture : `docs/rendering/shaders-materials.md` (implémenté). Ce doc en est la suite logique côté pipeline de soumission.
@@ -317,10 +317,10 @@ Une fois l'architecture ci-dessus en place, deux plans de durcissement ont été
 - **D3 — desync d'état sur draw instancié** : les draws instanciés passent désormais par le `WebGPUBinder` existant (plus de state désynchronisé entre chemin instancié et chemin classique).
 - **E2 — unification des pipelines** : les deux systèmes de pipeline parallèles sont regroupés derrière un unique `WebGPUPipelineFactory` + une seule clé de cache (absorbe le bug de layout de storage partagé, D4).
 - **E1 — éclatement du god-object** : `WebGPURenderer` allégé par extraction de `WebGPUSurface` et `WebGPUFrameGlobals`.
-- Reste noté : `topology` n'a pas de canal dans `PipelineKeySpec` (inerte tant que tout est `triangle-list`) ; `WebGPURenderer` encore ~540 lignes (extractions futures possibles) → `docs/backlog.md`.
+- Reste noté : `topology` n'a pas de canal dans `PipelineKeySpec` (inerte tant que tout est `triangle-list`) ; `WebGPURenderer` encore ~540 lignes (extractions futures possibles) → `docs/backlog/`.
 
 ### 7.2 Core agnostique — `@atlasjs/nebula` (E3)
 
 - **E3 — seam `NodeRenderer`** : le dispatch node→draw, auparavant codé en dur à 6 endroits et dupliqué entre `SpriteRenderer`/`ShapeRenderer`, passe derrière un seul seam `NodeRenderer` + un `Map<kind, Batcher>` dans `RenderQueue` + un `NodeRendererBase` partagé. `SceneRenderer.collect` devient générique : un nouveau kind (text, particules) se branche sans toucher la machinerie de dispatch.
 - Écart d'implémentation vs plan : le culling est resté dans un `collect(node, viewport, scratch)` par renderer (au lieu du build→bound→cull générique) pour préserver le z-order exact ; l'interface a shippé en `{ kind; matches; collect; createBatcher }`.
-- Prochain consommateur visé : le **text rendering** (backlog A2) se branchera comme batcher sur ce seam → `docs/backlog.md`.
+- Prochain consommateur visé : le **text rendering** (backlog A2) se branchera comme batcher sur ce seam → [`docs/backlog/RENDER-01-text-rendering.md`](../backlog/RENDER-01-text-rendering.md).

@@ -233,7 +233,7 @@ La composition de transform s'active dès que les deux entités ont un `Transfor
 3. `@atlasjs/gameplay` : `WorldTransform2D`, `TransformPropagationSystem`, mise à jour `SpriteRenderSystem`/`PhysicsPushSystem`/`PhysicsPullSystem`, façade `Transform` (`setParent`/`parent`/`getChildren`).
 4. `apps/dino-brawl` : démo d'attachement natif dans `EcsScene` + depuis un script.
 
-**Hors-scope (→ `docs/backlog.md`) :**
+**Hors-scope (→ `docs/backlog/`) :**
 
 - Passe physique de hiérarchie **sans latence** (propagation dans la lane fixed).
 - Rendu **exact du shear** (seam matrice monde sur `Node` nebula).
@@ -252,4 +252,4 @@ La composition de transform s'active dès que les deux entités ont un `Transfor
 - [x] **Phase 3 — Propagation gameplay.** `WorldTransform2D` + `TransformPropagationSystem` (règle unique + dynamic + pass-through), enregistrement dans la lane `update`. Tests : racine, chaîne parent→enfant, dynamic ignore le parent, ordre parent-avant-enfant.
 - [x] **Phase 4 — Consommateurs.** `SpriteRenderSystem` lit `WorldTransform2D` (+ décompose bord rendu), `PhysicsPushSystem` (kinematic/static) lit `WorldTransform2D`, `PhysicsPullSystem` restreint au dynamic. Tests : sprite enfant suit le parent, kinematic enfant suit (1 frame), dynamic non corrompu.
 - [x] **Phase 5 — Façade scripts.** `Transform.setParent`/`parent`/`getChildren` + `worldPositionStays`. Tests : reparent garde/ne garde pas la position monde, façade reste stateless.
-- [x] **Phase 6 — Dino Brawl + docs.** Démo `EcsScene` (attachement natif) + script d'attachement ; mettre à jour `docs/backlog.md` (items reportés) et marquer ce doc « implémenté ».
+- [x] **Phase 6 — Dino Brawl + docs.** Démo `EcsScene` (attachement natif) + script d'attachement ; mettre à jour `docs/backlog/` (items reportés) et marquer ce doc « implémenté ».

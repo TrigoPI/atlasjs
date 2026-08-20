@@ -503,7 +503,7 @@ Toutes les frictions du §1 sont résolues par **le même** mécanisme d'injecti
 
 ---
 
-## 11. Hors périmètre (V2 → `docs/backlog.md`)
+## 11. Hors périmètre (V2 → `docs/backlog/`)
 
 - **Métadonnées d'éditeur riches** dans `ExposeFieldMetadata` (`kind`, `assetKind`, `runtimeType`, `tooltip`, `range`, `step`, `category`, contrainte de composant requis type Unity `[RequireComponent]`) + inspecteur — l'union discriminée est ouverte à l'extension mais aucun schéma spéculatif n'est figé ; elles seront **générées par le compilateur**.
 - **Compilateur TypeScript custom** (réécriture `addComponent<T>(a, b)` → `addComponent(T, a, b)`, génération de `registerScriptMetadata`, lien automatique `TProps` ↔ metadata, réintroduction de `@Expose()` comme pur marqueur compile-time) — projet distinct, futur.

@@ -1,6 +1,6 @@
 # Caméra gameplay — `Camera` + `CameraManager` + `CameraSyncSystem` + `CameraApi` (`@atlasjs/gameplay`)
 
-> **Statut : ✅ implémenté** (cœur ; extensions V2 → [`../backlog.md`](../backlog.md) § *Gameplay — Caméra*). Introduit une caméra **gameplay** (entité Nexus) qui pilote la caméra de rendu de `@atlasjs/nebula`, plus `screenToWorld`/`worldToScreen`. La caméra gameplay est **un producteur de plus** qui écrit dans `renderer.camera`, exactement comme `SpriteRenderSystem` pousse les sprites ou `PhysicsPushSystem` pousse les transforms. Le modèle mono-caméra de nebula (une seule passe de rendu) est **inchangé**.
+> **Statut : ✅ implémenté** (cœur ; extensions V2 → [`../backlog/`](../backlog/)). Introduit une caméra **gameplay** (entité Nexus) qui pilote la caméra de rendu de `@atlasjs/nebula`, plus `screenToWorld`/`worldToScreen`. La caméra gameplay est **un producteur de plus** qui écrit dans `renderer.camera`, exactement comme `SpriteRenderSystem` pousse les sprites ou `PhysicsPushSystem` pousse les transforms. Le modèle mono-caméra de nebula (une seule passe de rendu) est **inchangé**.
 > Prérequis de lecture : `docs/gameplay/gameplay-redesign.md` (bridge par système, source de vérité unique), `docs/gameplay/scripting-components.md` (les deux niveaux de composants + façades de service), `docs/gameplay/input-scripting.md` (le pattern `ScriptService`/`InputApi` que `CameraApi` reprend), `docs/core/scheduling.md` (lanes/stages), `docs/rendering/renderer-architecture.md` (interface `Camera`, `Renderer.camera`).
 
 > **État d'implémentation** :
@@ -24,7 +24,7 @@
 - **`Renderer.camera: Camera`** — une caméra unique ; tout le `SceneRenderer` rend à travers elle, `getCameraViewport()` (backend) en dérive le culling.
 - **`NebulaRenderer.camera`** ré-expose ce `Camera2D` (ergonomie 2D).
 
-Aujourd'hui, cette caméra est pilotée **directement** (l'éditeur, `packages/editor`, fait pan/zoom dessus). Il manque :
+Aujourd'hui, cette caméra est pilotée **directement** (un ancien `packages/editor`, supprimé depuis, faisait pan/zoom dessus). Il manque :
 
 1. Une caméra **gameplay** : une entité Nexus (avec un `Transform2D`) dont la position/zoom pilotent la caméra de rendu — pour un follow-player, un switch de caméra, etc.
 2. `screenToWorld` / `worldToScreen` accessibles au code de jeu (picking souris → monde, placement d'UI monde → écran).
@@ -83,7 +83,7 @@ public worldToScreen(world: Vec2, out?: Vec2): Vec2;    // out = (world - positi
 
 - Modèle **top-left conservé** (aucune connaissance du centrage — c'est une affaire gameplay).
 - Pas de `Mat4.invert()` requis. `out` par défaut = nouveau `Vec2`.
-- Débloque une partie du backlog **B2** (« méthodes `Camera2D` manquantes » pour l'éditeur), sans faire la réconciliation éditeur ici.
+- Débloquait une partie de l'ancien item backlog « méthodes `Camera2D` manquantes » pour l'éditeur, sans faire la réconciliation éditeur ici. Cet item a été retiré du backlog avec la suppression de `packages/editor`.
 
 ### 4bis. Exposer `getCameraViewport()` sur `NebulaRenderer`
 
@@ -216,11 +216,18 @@ this.getComponent(Camera).zoom = 1.5;
 - **Cycle de vie** : retirer la caméra active → `getActive() === undefined`.
 - **Intégration harness** : entité `Transform2D + Camera`, `setActive`, `frame()` → la matrice de rendu reflète la caméra ; `screenToWorld` de la souris cohérent.
 
-## 14. Non-objectifs (v2 → `docs/backlog.md`)
+## 14. Comportements connus (par design, pas des bugs)
+
+Deux conséquences directes du flux par frame (§9), à connaître plutôt qu'à corriger :
+
+- **`screenToWorld`/`worldToScreen` lus dans un `onUpdate` reflètent la caméra de la frame précédente.** `CameraSyncSystem` est l'unique producteur de `renderer.camera`, et il tourne en lane `render`, synchronisé après `update`. Un script qui appelle ces méthodes pendant `onUpdate` lit donc encore la position/zoom laissés par le sync de la frame N-1, pas ceux calculés pour la frame N.
+- **`renderer.camera` reste à sa valeur par défaut en frame 0.** Tant que `CameraSyncSystem` n'a pas tourné une première fois — c'est-à-dire avant le premier passage de la lane `render` — `renderer.camera` est encore le `Camera2D` construit par défaut par `NebulaRenderer`, non centré sur la caméra active gameplay.
+
+## 15. Non-objectifs (v2 → `docs/backlog/`)
 
 Rendu simultané multi-caméras (split-screen / minimap / render-to-texture = une `RenderPass` par caméra, viewport rects distincts) ; rotation de caméra (exige `Mat4.invert`, `view` sans rotation) ; `clearColor` / `viewport rect` / `renderTarget` par caméra ; couches de rendu / culling mask par caméra ; système de « mode » edit↔play formel ; caméra à projection non-ortho (perspective, ouverture 3D).
 
-## 15. Ordre d'implémentation suggéré
+## 16. Ordre d'implémentation suggéré
 
 1. Nebula : `Camera2D.screenToWorld`/`worldToScreen` (+ `out?`) + tests ; exposer la taille logique du viewport sur `NebulaRenderer` (§4bis). Rebuild `dist`.
 2. Gameplay : composant `Camera` (LEVEL 1) + export + token `CAMERA_MANAGER`.

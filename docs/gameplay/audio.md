@@ -1,6 +1,6 @@
 # Système audio — `@atlasjs/audio`
 
-> **Statut : design validé, non implémenté.** Nouveau package plugin `@atlasjs/audio` : lecture de sons (SFX one-shots + musique/ambiance en boucle) avec volume par source et volume master. Spatial reporté en V2 (§10).
+> **Statut : implémenté.** Backend `@atlasjs/audio` (`AudioEngine`/`AudioLoader`/`AudioPlugin`) + intégration gameplay (`AudioSource`/`AudioSystem`/`AudioApi`), câblés dans `GameplayPlugin`. Lecture de sons (SFX one-shots + musique/ambiance en boucle) avec volume par source et volume master. Spatial reporté en V2 (§10, → backlog).
 > Prérequis de lecture : `docs/assets/asset-system.md` (le couple `Asset`/`Resource` + `AssetManager` + loaders par type, calqué ici), `docs/gameplay/sprite-animation.md` (le couple composant `Animator` + `AnimatorSystem`, calqué par `AudioSource` + `AudioSystem`), `docs/gameplay/input-scripting.md` (le split composant `PlayerInput` + service `InputApi`, calqué par `AudioSource` + `AudioApi`).
 
 ---
@@ -261,7 +261,7 @@ super("audio-plugin", { requires: [ASSET_MANAGER], provides: [AUDIO_ENGINE] });
 - **Environnement sans `AudioContext`** (jsdom/node en test) : contexte **injectable** dans le ctor → fake en test (aucun `new AudioContext()` implicite hors navigateur).
 - **Lecture same-frame de `isPlaying`** : un script qui fait `src.play()` puis lit `src.isPlaying` dans le **même** `onUpdate` voit encore `false` (le système réconcilie en `Late`, après `Logic`). Documenté, non bloquant (comportement analogue aux notes caméra 1-frame).
 
-## 10. Hors périmètre v1 → `docs/backlog.md` (section Audio)
+## 10. Hors périmètre v1 → `docs/backlog/_index.md#audio`
 
 - **Audio spatial 2D** : pan + atténuation par distance via `Transform2D` + un `AudioListener` (sur la caméra/joueur), `PannerNode` Web Audio. `AudioSource` est déjà forward-compat (le système pourra lire `Transform2D` sans casser le modèle de données). Ouvre la porte 3D.
 - **Pause/resume par source** : nécessite le tracking d'offset + recréation du `AudioBufferSourceNode` (les source nodes ne se pausent pas nativement). Le suspend global (`ctx.suspend()`, §8) couvre le besoin v1 (pause d'onglet / futur menu pause).

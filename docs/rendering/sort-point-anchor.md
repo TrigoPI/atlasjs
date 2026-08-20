@@ -1,6 +1,6 @@
 # Sort Point Anchor — tri Y-sort solidaire d'une entité porteuse
 
-> **Statut : 📋 design validé, non implémenté.** Extension ciblée de [`sorting-layers.md`](sorting-layers.md) (mode `ySorted`). Touche `@atlasjs/gameplay` uniquement (`SpriteRender` + `SpriteRenderSystem`) ; `@atlasjs/nebula` reste inchangé.
+> **Statut : ✅ implémenté.** Extension ciblée de [`sorting-layers.md`](sorting-layers.md) (mode `ySorted`). Touche `@atlasjs/gameplay` uniquement (`SpriteRender.sortPointEntity` + résolution dans `SpriteRenderSystem`, avec fallback silencieux via `world.exists`) ; `@atlasjs/nebula` reste inchangé. Voir §7 pour les extensions restées hors périmètre.
 
 ## 1. Problème
 

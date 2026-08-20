@@ -250,5 +250,5 @@ for (let i: number = 0; i < count; i++) {
 
 - [`prefab.md`](prefab.md) §10 : marquer « prefabs multi-entités avec enfants inline » **implémenté**
   (via `child()`), en gardant le **remap sérialisé** en V2.
-- [`../backlog.md`](../backlog.md) : entrées `child(subPrefab)`, propagation sans-transform, orbite
-  animée.
+- [`../backlog/`](../backlog/) : `child(subPrefab)` → voir [`GAMEPLAY-40`](../backlog/GAMEPLAY-40-prefab-child-subprefab.md) ;
+  propagation sans-transform, orbite animée.

@@ -1,8 +1,8 @@
 # Canvas resize — design (B3)
 
-> Statut : **validé**, prêt pour plan d'implémentation
+> Statut : **implémenté**. `Renderer.resize(w, h)` en pixels logiques (CSS), backing store physique `× devicePixelRatio` pour le HiDPI, auto-observe via `ResizeObserver` (opt-out `autoResize`) — voir `WebGPURenderer`/`WebGPUSurface` dans `@atlasjs/nebula-webgpu` et le passthrough `NebulaRenderer.resize`.
 > Portée : `@atlasjs/nebula` (interface `Renderer`), `@atlasjs/nebula-webgpu` (`WebGPURenderer`), apps `dino-brawl` + `webgpu`
-> Référence backlog : `docs/backlog.md` §B3
+> Ancienne référence backlog : item **B3** (implémenté, retiré du backlog). Ce libellé a depuis été réattribué à un autre item sans rapport ; ne pas suivre.
 
 ## Problème
 
@@ -114,7 +114,7 @@ Dans tous les cas on retire seulement le sizing manuel du canvas ; le content-bo
 - Resize des render targets plein écran (aucun n'existe ; A3 post-processing).
 - Politique "fixed design resolution / scale-to-fit" (letterbox) — modèle expand retenu.
 - Debounce du resize (reconfigure inutile, `canvas.width=` bon marché ; ajout trivial si besoin plus tard).
-- Réconciliation éditeur↔nebula (B2), indépendant.
+- Réconciliation éditeur↔nebula, indépendant. Ancien item backlog retiré avec la suppression de `packages/editor`.
 
 ## Vérification
 

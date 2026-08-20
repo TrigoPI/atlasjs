@@ -2,7 +2,7 @@
 
 > Statut : **implémenté** (backlog A1 clos). Le plan d'exécution détaillé (anciennement `shapes-primitives-plan.md`) a été fusionné ici une fois livré.
 > Portée : `@atlasjs/nebula` (core, backend-agnostic) + `@atlasjs/nebula-webgpu` (backend WebGPU) + `apps/webgpu` (démo/validation).
-> Contexte : suite directe de `docs/rendering/renderer-architecture.md`. Comblait le trou A1 : `Shape`/`Rect` existaient comme nœuds et `Shape.color` était déclaré, mais `SceneRenderer` ne dessinait que les `Sprite`. Ce design ajoute le rendu de **rects, cercles et lignes** en réutilisant l'infra batch instancié + shader library posée au refactor. Suites naturelles hors périmètre (strokes, coins arrondis, polygones, gradient) → `docs/backlog.md`.
+> Contexte : suite directe de `docs/rendering/renderer-architecture.md`. Comblait le trou A1 : `Shape`/`Rect` existaient comme nœuds et `Shape.color` était déclaré, mais `SceneRenderer` ne dessinait que les `Sprite`. Ce design ajoute le rendu de **rects, cercles et lignes** en réutilisant l'infra batch instancié + shader library posée au refactor. Suites naturelles hors périmètre (strokes, coins arrondis, polygones, gradient) → `docs/backlog/`.
 
 ---
 

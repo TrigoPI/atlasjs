@@ -1,8 +1,8 @@
 # Sorting Layers, Y-sorting & Sprite Pivot — Design (v1)
 
-> **Statut : 📋 design validé, non implémenté.** Chantier **transverse** (touche le sort de `@atlasjs/nebula` + la sémantique de `@atlasjs/gameplay`). Absorbe l'item backlog *« Sorting layers nommés + order-in-layer »* (listé sous [Gameplay — TileSet & TileMap](../backlog.md)) et le fix pivot de l'item *« Pivot par frame »* (sous [Animation — suites V2](../backlog.md)).
+> **Statut : ✅ implémenté.** Chantier **transverse** (touche le sort de `@atlasjs/nebula` + la sémantique de `@atlasjs/gameplay`). A absorbé l'item backlog *« Sorting layers nommés + order-in-layer »* et le fix pivot de l'item *« Pivot par frame »*, tous deux clos par ce design plutôt que trackés séparément dans le [backlog](../backlog/).
 >
-> **Prérequis vérifiés dans le code** (audits) : le sort key actuel est de l'arithmétique radix sur un double (`(z*16+kind)*65536+batch`), tri via un unique `RenderQueue.sort((a,b) => a.sortKey - b.sortKey)`, file **petite** (un command par sprite visible + un par calque tilemap batché — **pas** 10k). Le `WorldTransform2D` est final avant les render systems ; `updateWorldMatrices()` tourne avant `collect()`. Le **pivot existe déjà et est baké dans le quad** (`SpriteNode.anchor` → model matrix) ; il n'est cassé que sur deux chemins : `SpriteAsset.fromPath` (pas d'option) et l'animation (`Frame` n'a pas de pivot).
+> **Périmètre livré** : `Node.sortingLayer`/`sortPrimary`/`sortSecondary` (remplacent `zIndex`) et le comparateur multi-critères de `RenderQueue.sort` (remplace l'ancien sort key arithmétique packé) dans `@atlasjs/nebula` ; le registry `SortingLayers` nommé + `applySortFields` (collapse mode+valeur) et `sortingLayer`/`sortingOrder` sur `SpriteRender` dans `@atlasjs/gameplay`. Le pivot est authorable sur le chemin ergonomique (`SpriteAsset.fromPath(path, { rect?, pivot? })`) et préservé en animation (`Frame.pivot`, forwardé par `SpriteSheet` et `AnimatorSystem`). Voir §10 pour ce qui reste hors périmètre v1.
 
 ## 1. Vue d'ensemble
 
@@ -37,7 +37,7 @@ Overhead (tilemap, batché,  manual)   ← toits/canopée qu'on passe toujours d
 - **Pivot authorable sur le chemin ergonomique** (`SpriteAsset.fromPath(path, { rect?, pivot? })`) et **préservé en animation** (`Frame.pivot` → `AnimatorSystem`).
 - Rétro-compat : défaut `sortingLayer = "Default"` (index 0, `manual`) → comportement actuel préservé.
 
-**Non-objectifs v1 (→ [backlog](../backlog.md)) :**
+**Non-objectifs v1 (→ [backlog](../backlog/)) :**
 - Gros bâtiments **profonds en Y** nécessitant un tri par bandes (le cas « derrière une partie / devant une autre du même objet ») → split manuel ou layer Overhead.
 - (Dé)sérialisation / éditeur des sorting layers.
 - Axe de tri **custom** (vecteur arbitraire) ou **mode par-caméra** — on hardcode l'axe Y-down.
@@ -291,4 +291,4 @@ Barrels : réexport `SortingLayers` depuis `gameplay/src/index.ts`.
 
 ## 10. Non-objectifs / backlog
 
-Reportés (cf. §2) : bâtiments profonds à tri par bandes ; (dé)sérialisation + éditeur des sorting layers ; axe custom / mode par-caméra ; tuiles individuelles Y-triées (non supporté par design) ; override de pivot par-instance ; pivots distincts par frame ; colliders/footprint physique des occulteurs. À reverser dans [`docs/backlog.md`](../backlog.md) (fermer l'item *« Sorting layers nommés + order-in-layer »* et l'item pivot *« Pivot par frame »*, en pointant ici).
+Reportés (cf. §2) : bâtiments profonds à tri par bandes ; (dé)sérialisation + éditeur des sorting layers ; axe custom / mode par-caméra ; tuiles individuelles Y-triées (non supporté par design) ; override de pivot par-instance ; pivots distincts par frame ; colliders/footprint physique des occulteurs. Ces deux items backlog (« Sorting layers nommés + order-in-layer » et « Pivot par frame ») sont déjà fusionnés dans ce design plutôt que trackés séparément dans [`docs/backlog/`](../backlog/) — rien à y fermer une fois ce chantier implémenté.

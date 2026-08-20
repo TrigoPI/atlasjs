@@ -152,7 +152,7 @@ export class AnimatorSystem implements NexusSystem {
   - entité sans `Animator` → `SpriteRender` intouché.
 - **Intégration harness** : entité `Transform2D + SpriteRender + Animator` ; après `frame()`s, le nœud monté a le `sourceRect` de la frame courante (l'anim traverse jusqu'au rendu).
 
-## 10. Non-objectifs (V2 → `docs/backlog.md`)
+## 10. Non-objectifs (V2 → `docs/backlog/`)
 
 State machine / transitions, blend trees, **events de frame** (le stub existe), root motion, vitesse d'anim / timescale par clip, sérialisation d'un asset d'animation.
 
