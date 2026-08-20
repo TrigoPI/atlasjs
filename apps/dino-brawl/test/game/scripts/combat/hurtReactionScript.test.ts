@@ -61,8 +61,11 @@ class FakeAudioApi {
   }
 }
 
+type SpawnCall = { position: Vec2; rotation: number };
+
 type Rig = {
   hurtbox: HurtboxScript;
+  spawns: SpawnCall[];
   animator: FakeAnimator;
   audio: FakeAudioApi;
   character: FakeCharacter;
@@ -78,6 +81,7 @@ function createRig(overrides: Record<string, unknown> = {}): Rig {
   const animator: FakeAnimator = new FakeAnimator();
   const audio: FakeAudioApi = new FakeAudioApi();
   const character: FakeCharacter = new FakeCharacter();
+  const spawns: SpawnCall[] = [];
   const clip: AudioClip = {} as unknown as AudioClip;
 
   const injected: Record<string, unknown> = script as unknown as Record<
@@ -95,6 +99,12 @@ function createRig(overrides: Record<string, unknown> = {}): Rig {
 
   // onCreate() needs a bound script context, so resolve its lookups here.
   injected.animator = animator;
+  injected.transform = { worldPosition: new Vec2(7, -3) };
+  injected.target = { id: 1 };
+  injected.impactPrefab = { name: "impact" };
+  injected.instantiate = (_prefab: unknown, props: SpawnCall): void => {
+    spawns.push({ position: props.position, rotation: props.rotation });
+  };
   injected.character = character;
   injected.audio = audio;
   injected.wasInvincible = false;
@@ -105,6 +115,7 @@ function createRig(overrides: Record<string, unknown> = {}): Rig {
 
   return {
     hurtbox,
+    spawns,
     animator,
     audio,
     character,
@@ -353,6 +364,41 @@ describe("HurtReactionScript", () => {
     for (const call of rig.audio.calls) {
       expect(call.params?.pitch ?? 0).toBeGreaterThan(0);
     }
+  });
+
+  it("bursts an impact at its own position, turned to face the blow", () => {
+    const rig: Rig = createRig();
+
+    rig.hit();
+    rig.frame(0.01);
+
+    expect(rig.spawns).toHaveLength(1);
+    expect(rig.spawns[0].position.x).toBeCloseTo(7);
+    expect(rig.spawns[0].position.y).toBeCloseTo(-3);
+    // The rig always strikes from the left, so the blow points along +x.
+    expect(rig.spawns[0].rotation).toBeCloseTo(0);
+  });
+
+  it("bursts once per accepted hit, not once per frame", () => {
+    const rig: Rig = createRig();
+
+    rig.hit();
+
+    for (let i: number = 0; i < 6; i++) {
+      rig.frame(0.01);
+    }
+
+    expect(rig.spawns).toHaveLength(1);
+  });
+
+  it("reacts without a burst when no impact prefab was given", () => {
+    const rig: Rig = createRig({ impactPrefab: undefined });
+
+    rig.hit();
+    rig.frame(0.01);
+
+    expect(rig.spawns).toHaveLength(0);
+    expect(rig.animator.played).toEqual(["hurt"]);
   });
 
   it("honours overridden clip names", () => {

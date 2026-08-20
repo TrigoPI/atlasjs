@@ -1,4 +1,5 @@
 import type { AudioClip } from "@atlasjs/audio";
+import type { ImpactPrefabProps } from "../fx";
 import type { Vec2 } from "@atlasjs/math";
 import type { SpriteAnimation } from "@atlasjs/nebula";
 
@@ -16,6 +17,7 @@ import {
   SpriteRenderer,
   Transform2D,
   type EntityBuilder,
+  type Prefab,
 } from "@atlasjs/gameplay";
 
 export type EnemyPrefabProps = {
@@ -23,6 +25,7 @@ export type EnemyPrefabProps = {
   sprite: Sprite;
   clips: Record<string, SpriteAnimation>;
   hitClip?: AudioClip;
+  impactPrefab?: Prefab<ImpactPrefabProps>;
 };
 
 // prettier-ignore
@@ -74,6 +77,7 @@ export const createEnemyPrefab = () =>
           hurtbox,
           target: entity.entity,
           hitClip: props.hitClip,
+          impactPrefab: props.impactPrefab,
           knockbackDamping: 20,
         });
       });

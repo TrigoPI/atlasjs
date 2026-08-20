@@ -1,4 +1,5 @@
 import { DinoClips, DinoSheetBuilder } from "./sheets/DinoSheet";
+import { ImpactClips, ImpactSheetBuilder } from "./sheets/ImpactSheet";
 import {
   RunningParticleClips,
   RunningParticleSheetBuilder,
@@ -17,6 +18,12 @@ export const SheetList: SheetDescriptor[] = [
     texture: "texture:evil_dino",
     sheet: DinoSheetBuilder,
     clips: DinoClips,
+  },
+  {
+    name: "sheet:impact",
+    texture: "texture:impact",
+    sheet: ImpactSheetBuilder,
+    clips: ImpactClips,
   },
   {
     name: "sheet:running_particle",

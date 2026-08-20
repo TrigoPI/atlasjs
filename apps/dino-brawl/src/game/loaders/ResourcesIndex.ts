@@ -7,6 +7,7 @@ import YellowDino from "@assets/sprites/dinos/dino_yellow.png";
 import Shadow from "@assets/sprites/props/shadow.png";
 
 // Effect
+import Impact from "@assets/sprites/particles/impact.png";
 import RunningParticle from "@assets/sprites/particles/dust_cloud_run.png";
 
 // Sword
@@ -27,6 +28,7 @@ export const Textures = {
   YellowDino,
   Shadow,
   RunningParticle,
+  Impact,
   DefaultSword,
 } as const;
 

@@ -10,6 +10,7 @@ export const TextureList: ResourceDescriptor[] = [
   { name: "texture:yellow_dino", path: Textures.YellowDino },
   { name: "texture:shadow", path: Textures.Shadow },
   { name: "texture:running_particle", path: Textures.RunningParticle },
+  { name: "texture:impact", path: Textures.Impact },
 ];
 
 export const SpriteList: ResourceDescriptor[] = [
@@ -20,6 +21,7 @@ export const SpriteList: ResourceDescriptor[] = [
   { name: "sprite:yellow_dino", path: Textures.YellowDino },
   { name: "sprite:shadow", path: Textures.Shadow },
   { name: "sprite:running_particle", path: Textures.RunningParticle },
+  { name: "sprite:impact", path: Textures.Impact },
   { name: "sprite:default_sword", path: Textures.DefaultSword },
 ];
 

@@ -8,8 +8,12 @@ import {
   CharacterController,
   registerScriptMetadata,
   ScriptMetadata,
+  Transform,
   type GameEntity,
+  type Prefab,
 } from "@atlasjs/gameplay";
+
+import type { ImpactPrefabProps } from "../../prefabs";
 
 import { HurtboxScript } from "./HurtboxScript";
 
@@ -25,6 +29,7 @@ type HurtReactionScriptProps = {
   hitVolume?: number;
   knockbackScale?: number;
   knockbackDamping?: number;
+  impactPrefab?: Prefab<ImpactPrefabProps>;
 };
 
 export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
@@ -38,11 +43,13 @@ export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
   private readonly hitVolume: number = 1;
   private readonly knockbackScale: number = 1;
   private readonly knockbackDamping: number = 12;
+  private readonly impactPrefab?: Prefab<ImpactPrefabProps>;
 
   private readonly knockbackVelocity: Vec2 = new Vec2();
   private readonly knockbackDelta: Vec2 = new Vec2();
 
   private animator: Animator;
+  private transform: Transform;
   private character?: CharacterController;
   private audio?: AudioApi;
   private wasInvincible: boolean;
@@ -50,6 +57,7 @@ export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
 
   public onCreate(): void {
     this.animator = this.target.requireComponent(Animator);
+    this.transform = this.requireComponent(Transform);
     this.character = this.target.getComponent(CharacterController);
     this.audio = this.getService(AudioApi);
     this.wasInvincible = this.hurtbox.isInvincible;
@@ -95,6 +103,7 @@ export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
   private onHit(): void {
     this.animator.play(this.hurtClip);
     this.playHitSound();
+    this.spawnImpact();
 
     this.knockbackVelocity
       .copyFrom(this.hurtbox.hitDirection)
@@ -119,6 +128,19 @@ export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
     }
 
     this.knockbackVelocity.mult(Math.max(0, 1 - this.knockbackDamping * dt));
+  }
+
+  /** Bursts at the point of contact, turned to face the blow. */
+  private spawnImpact(): void {
+    if (this.impactPrefab === undefined) {
+      return;
+    }
+
+    this.instantiate(this.impactPrefab, {
+      position: this.transform.worldPosition.clone(),
+      rotation: this.hurtbox.hitDirection.angle(),
+      owner: this.target.id,
+    });
   }
 
   private playHitSound(): void {
@@ -147,5 +169,6 @@ registerScriptMetadata(HurtReactionScript, {
     hitVolume: ScriptMetadata.field(),
     knockbackScale: ScriptMetadata.field(),
     knockbackDamping: ScriptMetadata.field(),
+    impactPrefab: ScriptMetadata.field(),
   },
 });

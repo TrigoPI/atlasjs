@@ -16,8 +16,10 @@ import {
 
 import {
   type EnemyPrefabProps,
+  type ImpactPrefabProps,
   type ShadowPrefabProps,
   createEnemyPrefab,
+  createImpactPrefab,
   createShadowPrefab,
 } from "../prefabs";
 
@@ -34,6 +36,14 @@ export function spawnEnemy(
   const shadowSprite: Sprite = assetsLoader.getAsset("sprite:shadow");
   const hitSound: AudioClip = assetsLoader.getAsset("audio:hit");
 
+  const impactSprite: Sprite = assetsLoader.getAsset("sprite:impact");
+
+  const impactPrefab: Prefab<ImpactPrefabProps> = createImpactPrefab({
+    sprite: impactSprite,
+    clips: () => sheetLoader.createClips("sheet:impact"),
+    scale: 1.5,
+  });
+
   const shadowPrefab: Prefab<ShadowPrefabProps> = createShadowPrefab();
   const enemyPrefab: Prefab<EnemyPrefabProps> = createEnemyPrefab();
 
@@ -42,6 +52,7 @@ export function spawnEnemy(
     sprite: dinoSprite,
     clips: sheetLoader.createClips("sheet:evil_dino"),
     hitClip: hitSound,
+    impactPrefab,
   });
 
   instantiator.instantiate(

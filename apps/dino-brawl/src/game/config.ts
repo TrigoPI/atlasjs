@@ -12,6 +12,7 @@ export const SortingOrder = {
   Player: 10,
   Particle: 15,
   SwordFront: 20,
+  Impact: 25,
 } as const;
 
 export const CollisionLayers = defineCollisionLayers(
