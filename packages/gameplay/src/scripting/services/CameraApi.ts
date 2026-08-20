@@ -1,7 +1,7 @@
 import { Vec2 } from "@atlasjs/math";
 import { Entity } from "@atlasjs/nexus";
 
-import { CameraManager, CAMERA_MANAGER } from "../../camera";
+import { CameraManager, CAMERA_MANAGER, ShakeSpec } from "../../camera";
 
 import { ScriptService } from "../core";
 
@@ -20,8 +20,11 @@ export class CameraApi extends ScriptService<CameraManager> {
     this.provided.setActive(entity);
   }
 
-  /** Kicks the camera off-centre along `direction`; a spring pulls it back. */
-  public shake(strength: number, direction?: Vec2): void {
-    this.provided.shake(strength, direction);
+  /**
+   * Kicks the camera off-centre along `direction`. Pass a ShakePresets
+   * entry, or spread one to depart from it.
+   */
+  public shake(spec: ShakeSpec, direction?: Vec2): void {
+    this.provided.shake(spec, direction);
   }
 }
