@@ -11,7 +11,7 @@ import {
   type GameEntity,
 } from "@atlasjs/gameplay";
 
-import { HurtboxScript } from "../combat/HurtboxScript";
+import { type HitInfo, HurtboxScript } from "../combat/HurtboxScript";
 
 import { readAimAngle } from "./aim";
 import type { AttackPose, WeaponAttack } from "./attacks/WeaponAttack";
@@ -25,6 +25,7 @@ type SwordScriptProps = {
   hitbox: SwordHitboxScript;
   hitstopDuration?: number;
   targetInvincibility?: number;
+  knockback?: number;
 };
 
 type SwordState = "idle" | "attacking";
@@ -37,6 +38,10 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
   private readonly hitbox: SwordHitboxScript;
   private readonly hitstopDuration: number = 0.07;
   private readonly targetInvincibility?: number;
+  private readonly knockback: number = 220;
+
+  /** Reused so a swing overlapping a target allocates nothing per frame. */
+  private readonly hit: HitInfo = { direction: new Vec2() };
 
   private transform: Transform;
   private offsetAmplitude: number;
@@ -129,12 +134,14 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     this.attackClock += dt;
     this.attack.sample(this.attackClock, this.pose);
 
-    if (this.applyHits()) {
+    const aimAngle: number = this.getAimAngle();
+
+    if (this.applyHits(aimAngle)) {
       this.hitstopRemaining = this.hitstopDuration;
-      this.frozenAimAngle = this.getAimAngle();
+      this.frozenAimAngle = aimAngle;
     }
 
-    this.applyAttackPose(this.getAimAngle());
+    this.applyAttackPose(aimAngle);
 
     if (this.attackClock >= this.attackDuration) {
       this.state = "idle";
@@ -166,9 +173,13 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     this.attackDuration = this.attack.duration;
   }
 
-  private applyHits(): boolean {
+  private applyHits(aimAngle: number): boolean {
     const targets: readonly GameEntity[] = this.hitbox.getTargets();
     let landed: boolean = false;
+
+    this.hit.direction.set(Math.cos(aimAngle), Math.sin(aimAngle));
+    this.hit.knockback = this.knockback;
+    this.hit.invincibilityDuration = this.targetInvincibility;
 
     for (const target of targets) {
       const hurtbox: HurtboxScript | undefined =
@@ -178,7 +189,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
         continue;
       }
 
-      if (hurtbox.takeHit(this.targetInvincibility)) {
+      if (hurtbox.takeHit(this.hit)) {
         landed = true;
       }
     }
@@ -219,5 +230,6 @@ registerScriptMetadata(SwordScript, {
     hitbox: ScriptMetadata.field({ required: true }),
     hitstopDuration: ScriptMetadata.field(),
     targetInvincibility: ScriptMetadata.field(),
+    knockback: ScriptMetadata.field(),
   },
 });

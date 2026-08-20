@@ -3,7 +3,10 @@ import { describe, expect, it } from "vitest";
 import { Vec2 } from "@atlasjs/math";
 import type { CameraApi, GameEntity, InputApi } from "@atlasjs/gameplay";
 
-import { HurtboxScript } from "../../../../src/game/scripts/combat/HurtboxScript";
+import {
+  type HitInfo,
+  HurtboxScript,
+} from "../../../../src/game/scripts/combat/HurtboxScript";
 import { SwordScript } from "../../../../src/game/scripts/weapon/SwordScript";
 import type { AttackPose } from "../../../../src/game/scripts/weapon/attacks/WeaponAttack";
 
@@ -12,9 +15,16 @@ const DT: number = 0.05;
 /** A real hurtbox that records which hits it accepted. */
 class RecordingHurtbox extends HurtboxScript {
   public accepted: number = 0;
+  public lastDirectionX: number = 0;
+  public lastKnockback: number = 0;
 
-  public override takeHit(invincibilityDuration?: number): boolean {
-    const landed: boolean = super.takeHit(invincibilityDuration);
+  public override takeHit(hit: HitInfo): boolean {
+    const landed: boolean = super.takeHit(hit);
+
+    if (landed) {
+      this.lastDirectionX = hit.direction.x;
+      this.lastKnockback = hit.knockback ?? 0;
+    }
 
     if (landed) {
       this.accepted += 1;
@@ -207,6 +217,18 @@ describe("SwordScript impact resolution", () => {
         rig.frame();
       }
     }).not.toThrow();
+  });
+
+  it("describes the blow it deals: aim direction plus knockback", () => {
+    const rig: Rig = createRig();
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+
+    rig.hitbox.setTargets([createTarget(1, hurtbox)]);
+    rig.frame();
+
+    // The rig aims at (100, 0) from the origin, so straight to the right.
+    expect(hurtbox.lastDirectionX).toBeCloseTo(1);
+    expect(hurtbox.lastKnockback).toBeGreaterThan(0);
   });
 
   it("hits every target present in the hitbox on the same frame", () => {

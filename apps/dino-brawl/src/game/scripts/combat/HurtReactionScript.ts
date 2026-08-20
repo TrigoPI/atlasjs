@@ -1,15 +1,19 @@
+import { Vec2 } from "@atlasjs/math";
 import type { AudioClip } from "@atlasjs/audio";
 
 import {
   Animator,
   AtlasScript,
   AudioApi,
+  CharacterController,
   registerScriptMetadata,
   ScriptMetadata,
   type GameEntity,
 } from "@atlasjs/gameplay";
 
 import { HurtboxScript } from "./HurtboxScript";
+
+const MIN_KNOCKBACK_SPEED: number = 1;
 
 type HurtReactionScriptProps = {
   hurtbox: HurtboxScript;
@@ -19,6 +23,8 @@ type HurtReactionScriptProps = {
   hitClip?: AudioClip;
   hitPitch?: number;
   hitVolume?: number;
+  knockbackScale?: number;
+  knockbackDamping?: number;
 };
 
 export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
@@ -29,33 +35,61 @@ export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
   private readonly hitClip?: AudioClip;
   private readonly hitPitch: number = 1;
   private readonly hitVolume: number = 1;
+  private readonly knockbackScale: number = 1;
+  private readonly knockbackDamping: number = 12;
+
+  private readonly knockbackVelocity: Vec2 = new Vec2();
+  private readonly knockbackDelta: Vec2 = new Vec2();
 
   private animator: Animator;
+  private character?: CharacterController;
   private audio?: AudioApi;
   private wasInvincible: boolean;
 
   public onCreate(): void {
     this.animator = this.target.requireComponent(Animator);
+    this.character = this.target.getComponent(CharacterController);
     this.audio = this.getService(AudioApi);
     this.wasInvincible = this.hurtbox.isInvincible;
   }
 
-  public onUpdate(): void {
+  public onUpdate(dt: number): void {
     const invincible: boolean = this.hurtbox.isInvincible;
 
-    if (invincible === this.wasInvincible) {
-      return;
+    if (invincible !== this.wasInvincible) {
+      this.wasInvincible = invincible;
+
+      if (invincible) {
+        this.onHit();
+      } else {
+        this.animator.play(this.restClip);
+      }
     }
 
-    this.wasInvincible = invincible;
+    this.advanceKnockback(dt);
+  }
 
-    if (!invincible) {
-      this.animator.play(this.restClip);
-      return;
-    }
-
+  private onHit(): void {
     this.animator.play(this.hurtClip);
     this.playHitSound();
+
+    this.knockbackVelocity
+      .copyFrom(this.hurtbox.hitDirection)
+      .mult(this.hurtbox.hitKnockback * this.knockbackScale);
+  }
+
+  private advanceKnockback(dt: number): void {
+    if (this.knockbackVelocity.mag() < MIN_KNOCKBACK_SPEED) {
+      this.knockbackVelocity.set(0, 0);
+      return;
+    }
+
+    if (this.character !== undefined) {
+      this.knockbackDelta.copyFrom(this.knockbackVelocity).mult(dt);
+      this.character.move(this.knockbackDelta);
+    }
+
+    this.knockbackVelocity.mult(Math.max(0, 1 - this.knockbackDamping * dt));
   }
 
   private playHitSound(): void {
@@ -79,5 +113,7 @@ registerScriptMetadata(HurtReactionScript, {
     hitClip: ScriptMetadata.field(),
     hitPitch: ScriptMetadata.field(),
     hitVolume: ScriptMetadata.field(),
+    knockbackScale: ScriptMetadata.field(),
+    knockbackDamping: ScriptMetadata.field(),
   },
 });

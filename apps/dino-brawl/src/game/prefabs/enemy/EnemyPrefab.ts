@@ -8,6 +8,7 @@ import { HurtboxScript, HurtReactionScript } from "../../scripts";
 
 import {
   Animator,
+  CharacterController2D,
   Collider2D,
   definePrefab,
   RigidBody,
@@ -46,6 +47,7 @@ export const createEnemyPrefab = () =>
       collider.collidesWith = CollisionLayers.World;
 
       entity.add(Animator, props.clips, "idle");
+      entity.add(CharacterController2D);
 
       entity.child((e: EntityBuilder): void => {
         e.add(Transform2D);
