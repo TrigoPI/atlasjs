@@ -1,0 +1,28 @@
+filters:
+  and:
+    - file.inFolder("backlog")
+    - status != null
+views:
+  - type: table
+    name: Par statut
+    order:
+      - status
+      - domain
+      - id
+    columns:
+      - id
+      - status
+      - domain
+      - effort
+      - verified
+  - type: table
+    name: Par domaine
+    order:
+      - domain
+      - status
+      - id
+    columns:
+      - id
+      - domain
+      - status
+      - effort
