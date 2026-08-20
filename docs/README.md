@@ -6,12 +6,6 @@ Le backlog vit dans [`backlog/`](backlog/) — **103** items ouverts, index dans
 
 Les plans d'implémentation en cours vivent dans [`plans/`](plans/) et sont **transitoires** : ils sont supprimés à la clôture de la feature (`/atlas-done`).
 
-## racine
-
-| Document | Statut |
-| --- | --- |
-| [2026-08-19-docs-reorganisation-design.md](2026-08-19-docs-reorganisation-design.md) | design validé, à implémenter. |
-
 ## assets
 
 | Document | Statut |
