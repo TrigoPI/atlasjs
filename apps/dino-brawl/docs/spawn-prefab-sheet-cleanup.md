@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-12
 **Scope:** `apps/dino-brawl` only. No `@atlasjs/*` package changes.
-**Status:** design approved, ready for implementation plan.
+**Status:** implemented. `sheets/SheetList.ts`, `sheets/SheetLoader.ts`, `sheets/sheets/DinoSheet.ts` (`columns: 24`), `sheets/sheets/RunningParticleSheet.ts`, `prefabs/player/PlayerPrefab.ts`, `prefabs/fx/ShadowPrefab.ts`, `prefabs/fx/RunningParticlePrefab.ts`, `prefabs/fx/RunningAudioPrefab.ts`, and `spawn/spawnPlayer.ts` all exist per this design. One exception: `ResourcesPath.ts`, which this document expected to stay, no longer exists — replaced by `loaders/ResourcesIndex.ts`/`AssetList.ts`/`AssetsLoader.ts`, a later evolution beyond what this doc anticipated, not a gap.
 
 ## Context
 

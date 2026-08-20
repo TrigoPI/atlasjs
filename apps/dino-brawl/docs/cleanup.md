@@ -1,6 +1,6 @@
 # Dino Brawl — nettoyage & mise au propre de l'app
 
-> **Statut : design validé, à implémenter.**
+> **Statut : implémenté.** Le renommage `apps/sandbox` → `apps/dino-brawl`, le découpage `game/config.ts`/`controls.ts`/`spawn/`/`scripts/{player,camera,weapon,fx}/`, et le nettoyage du code mort annoncé sont en place. Seule exception : le `game/tiled/` décrit ici (avec ses bugs `TileSet.tileWidth`/`firstGid`) n'existe plus — remplacé par la refonte plus récente de [`tiled-bridge.md`](tiled-bridge.md), pas corrigé en place.
 > Chantier de nettoyage de l'app sandbox en préparation de la scalabilité du gameplay.
 > **Hors périmètre (chantiers séparés) :** système de prefab/factory générique, data-driven Tiled (spawns/objets déclarés dans la map), systèmes de combat (HP/dégâts/knockback).
 

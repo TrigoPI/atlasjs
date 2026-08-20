@@ -309,6 +309,7 @@ src/
 - **Dispatch par le brand, pas par la présence d'`engine`.** `isScriptComponentToken` teste le brand symbole — un objet quelconque portant `engine` reste raw. Ne pas re-tester une forme structurelle.
 - **Re-résolution + throw bruyant.** Un proxy détenu dont le composant moteur a été retiré **throw à l'accès** (`requireComponent`). C'est le contrat Unity (utiliser un composant détruit lève).
 - **`any[]` load-bearing** (cf. §8) — ne pas resserrer en `unknown[]`.
+- **Pas d'identité stable entre deux accès.** Chaque `getComponent`/`addComponent` sur un token comportemental mint un **nouveau** proxy : deux appels successifs sur la même donnée renvoient deux objets distincts. Concrètement, pas de comparaison `===` fiable entre deux résolutions du même composant, et un proxy ne peut pas servir de clé de `Map` ni d'identifiant de cache.
 
 ## 11. Asymétrie de staleness (raw vs proxy)
 

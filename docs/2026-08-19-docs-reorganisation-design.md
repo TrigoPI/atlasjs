@@ -154,7 +154,7 @@ Procédure :
 
 L'étape 2 est ajoutée après revue : sans elle, `/atlas-done` détruirait le plan sans que ses pièges aient été routés — exactement la perte que ce chantier corrige à la main en étape 0 (§11). C'est la seule étape irréversible de la procédure.
 
-Les étapes 5 et 7 dépendent d'une infrastructure posée par les étapes 4 et 5 du plan de migration (§11). Tant qu'elle n'existe pas, la commande opère sur `docs/backlog.md` et saute la régénération **en le signalant** — seule exception tolérée à la règle d'arrêt sur échec, et jamais pour un test qui échoue.
+Les étapes 5 et 7 dépendaient d'une infrastructure posée par les étapes 4 et 5 du plan de migration (§11). Cette infrastructure existe désormais — `docs/backlog/` et `pnpm docs:index` — et la clause de repli transitoire qui figurait ici n'a plus d'objet : la règle d'arrêt sur échec s'applique sans exception.
 
 ---
 

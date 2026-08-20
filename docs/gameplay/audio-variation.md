@@ -1,6 +1,6 @@
 # Audio V1.1 — variation (pitch appliqué + random côté code)
 
-> **Statut : design validé, non implémenté.** Suite du [système audio v1](audio.md). Ajoute le bouton **`pitch`** (playbackRate) au même niveau que `volume`, et deux helpers purs (`randomRange`, `pickRandom`) dans `@atlasjs/utils` pour rouler la variation **depuis le code de jeu** — pas en dur dans le composant.
+> **Statut : implémenté.** Suite du [système audio v1](audio.md). Le bouton **`pitch`** (playbackRate) existe au même niveau que `volume` (`AudioSource.pitch` → `AudioSystem` → `Voice`/`AudioEngine`), et les deux helpers purs (`randomRange`, `pickRandom`) existent dans `@atlasjs/utils`, consommés côté jeu par `apps/dino-brawl/src/game/prefabs/fx/RunningAudioPrefab.ts` pour rouler la variation **depuis le code de jeu** — pas en dur dans le composant.
 > Prérequis de lecture : [`audio.md`](audio.md) (le split backend `@atlasjs/audio` / intégration ECS `@atlasjs/gameplay`, `AudioSource` + `AudioSystem` + `AudioApi`, le couple `Voice`/`AudioVoice`).
 
 ---
@@ -96,7 +96,7 @@ Idem `AudioApi.playOneShot`. Rétro-compat en positionnel écartée : un objet d
 
 ## 7. Hors périmètre (assumé)
 
-Déjà au [backlog V2](../backlog.md#audio), on n'y touche pas ici :
+Déjà au [backlog V2](../backlog/_index.md#audio), on n'y touche pas ici :
 
 - `pan` / audio spatial 2D · fade / enveloppe (attaque-relâche) · filtres low/high-pass.
 - bus de mixage / ducking · crossfade musiques · pooling de voix / cap de concurrence.

@@ -21,5 +21,3 @@ Dérouler dans l'ordre. **Ne pas passer à l'étape suivante si la précédente 
 7. **Régénérer les index** : `pnpm docs:index`.
 8. **Clore les tâches** correspondantes, et consigner la clôture dans le journal de progression s'il en existe un.
 9. **S'arrêter.** Ne rien commiter : la revue et le commit appartiennent à l'utilisateur. Présenter un résumé de ce qui a changé.
-
-> **Tant que la réorganisation des docs n'est pas terminée**, `docs/backlog/` et le script `pnpm docs:index` peuvent ne pas exister encore. Dans ce cas : opérer sur `docs/backlog.md` à l'étape 5, et sauter l'étape 7 **en le signalant**. C'est la seule exception à la règle « ne pas passer à l'étape suivante si la précédente échoue » — elle ne vaut que pour une infrastructure absente, jamais pour un test qui échoue.

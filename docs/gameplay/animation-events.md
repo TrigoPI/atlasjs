@@ -68,6 +68,6 @@ public off<K extends keyof AnimatorEvents>(event: K, cb: (clip: string) => void)
 - `loop` émis à chaque wrap d'un clip en boucle ; **pas** pour un non-loop.
 - `off` désabonne ; plusieurs abonnés sur le même event sont tous appelés.
 
-## 7. Hors périmètre (reste V2 → `docs/backlog.md`)
+## 7. Hors périmètre (reste V2 → `docs/backlog/`)
 
 Events de **frame** (le stub nebula reste), state machine / transitions, blend trees, replay one-shot d'un clip non-loop terminé, payload enrichi (`{ clip, frame, loopCount }`).

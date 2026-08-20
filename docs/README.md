@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Le backlog vit dans [`backlog/`](backlog/) — **77** items ouverts, index dans [`backlog/_index.md`](backlog/_index.md).
+Le backlog vit dans [`backlog/`](backlog/) — **85** items ouverts, index dans [`backlog/_index.md`](backlog/_index.md).
 
 Les plans d'implémentation en cours vivent dans [`plans/`](plans/) et sont **transitoires** : ils sont supprimés à la clôture de la feature (`/atlas-done`).
 
@@ -11,7 +11,6 @@ Les plans d'implémentation en cours vivent dans [`plans/`](plans/) et sont **tr
 | Document | Statut |
 | --- | --- |
 | [2026-08-19-docs-reorganisation-design.md](2026-08-19-docs-reorganisation-design.md) | design validé, à implémenter. |
-| [backlog.md](backlog.md) | Convention de statut : 📋 non implémenté (design validé, à faire) · 🔶 partiel (commencé,  |
 
 ## assets
 
@@ -30,16 +29,16 @@ Les plans d'implémentation en cours vivent dans [`plans/`](plans/) et sont **tr
 
 | Document | Statut |
 | --- | --- |
-| [gizmos.md](debug/gizmos.md) | implémenté (v1). Les extensions V2 sont dans [../backlog.md](../backlog.md) § Debug — Gizm |
+| [gizmos.md](debug/gizmos.md) | implémenté (v1). Les extensions V2 sont dans le [backlog](../backlog/_index.md#debug) (dom |
 
 ## gameplay
 
 | Document | Statut |
 | --- | --- |
 | [animation-events.md](gameplay/animation-events.md) | implémenté. Ajoute trois events au composant Animator : started, finished, loop. Extension |
-| [audio-variation.md](gameplay/audio-variation.md) | design validé, non implémenté. Suite du [système audio v1](audio.md). Ajoute le bouton pit |
+| [audio-variation.md](gameplay/audio-variation.md) | implémenté. Suite du [système audio v1](audio.md). Le bouton pitch (playbackRate) existe a |
 | [audio.md](gameplay/audio.md) | implémenté. Backend @atlasjs/audio (AudioEngine/AudioLoader/AudioPlugin) + intégration gam |
-| [camera.md](gameplay/camera.md) | ✅ implémenté (cœur ; extensions V2 → [../backlog.md](../backlog.md) § Gameplay — Caméra).  |
+| [camera.md](gameplay/camera.md) | ✅ implémenté (cœur ; extensions V2 → [../backlog/](../backlog/)). Introduit une caméra gam |
 | [entity-hierarchy.md](gameplay/entity-hierarchy.md) | implémenté. Attacher des sous-entités à une entité parent façon Unity : au niveau scène (E |
 | [exposed-script-variables.md](gameplay/exposed-script-variables.md) | ✅ implémenté. Donne à la voie scripting un mécanisme d'injection de dépendances dans les s |
 | [gameplay-redesign.md](gameplay/gameplay-redesign.md) | implémenté (phases 0→6 terminées). Document de design + suivi. Voir la checklist en bas. |
@@ -49,7 +48,7 @@ Les plans d'implémentation en cours vivent dans [`plans/`](plans/) et sont **tr
 | [prefab.md](gameplay/prefab.md) | ✅ implémenté (shippé sur dev). |
 | [scripting-components.md](gameplay/scripting-components.md) | implémenté. État final de la saga d'unification de l'accès composant côté script. Ce docum |
 | [sprite-animation.md](gameplay/sprite-animation.md) | implémenté. Câble l'animation de sprite dans la voie gameplay : un composant Animator (cli |
-| [tilemap.md](gameplay/tilemap.md) | ✅ implémenté (mergé sur dev). Extensions reportées : [../backlog.md](../backlog.md) § Game |
+| [tilemap.md](gameplay/tilemap.md) | ✅ implémenté (mergé sur dev). Extensions reportées : [../backlog/](../backlog/). |
 
 ## physics
 

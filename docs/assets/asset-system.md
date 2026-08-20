@@ -1,6 +1,6 @@
 # Système d'assets — descripteur sérialisable ↔ handle runtime
 
-> Statut : **implémenté** (Tasks 1–7, branche `claude/feat/asset-manager`). Définit ce qu'est un « asset » dans AtlasJS et le chemin de chargement (`AssetManager` + loaders enregistrés par type). Premier package concerné : `@atlasjs/assets` (contrats + manager, feuille générique). Extensions différées (refcount/eviction/hot-reload, `AssetRef` par id + sérialisation de scènes, audio, éditeur) → `docs/backlog.md`.
+> Statut : **implémenté** (Tasks 1–7, branche `claude/feat/asset-manager`). Définit ce qu'est un « asset » dans AtlasJS et le chemin de chargement (`AssetManager` + loaders enregistrés par type). Premier package concerné : `@atlasjs/assets` (contrats + manager, feuille générique). Extensions différées (refcount/eviction/hot-reload, `AssetRef` par id + sérialisation de scènes, audio, éditeur) → `docs/backlog/`.
 
 ## Contexte
 
@@ -279,7 +279,7 @@ Auteur / futur compilateur :
 - `src/index.ts` : `Rect`/`Circle`/`Line` → `RectNode`/`CircleNode`/`LineNode` (renommage §7).
 
 **Racine**
-- `docs/backlog.md` + index docs du `CLAUDE.md` : référencer ce document.
+- `docs/backlog/` + index docs du `CLAUDE.md` : référencer ce document.
 
 ## Tests
 
@@ -307,4 +307,4 @@ Auteur / futur compilateur :
 - [x] `apps/dino-brawl` : migration `EcsScene` (mort au `loadTexture` manuel).
 - [x] Tests (`@atlasjs/assets` + intégration gameplay).
 - [x] `tsc --noEmit` sur les packages touchés + rebuild des `dist` dépendants (`assets`, `nebula`).
-- [x] `docs/backlog.md` + index `CLAUDE.md` : référencer ce doc.
+- [x] `docs/backlog/` + index `CLAUDE.md` : référencer ce doc.

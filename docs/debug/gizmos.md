@@ -1,6 +1,6 @@
 # Debug — Gizmos (colliders & pivots)
 
-> Statut : **implémenté** (v1). Les extensions V2 sont dans [`../backlog.md`](../backlog.md) § Debug — Gizmos.
+> Statut : **implémenté** (v1). Les extensions V2 sont dans le [backlog](../backlog/_index.md#debug) (domaine Debug).
 > Portée : nouveau package `@atlasjs/gizmos` + extension **stroke** de `@atlasjs/nebula` / `@atlasjs/nebula-webgpu`. Vérification dans `apps/webgpu` et `apps/dino-brawl`.
 > Contexte : avant cette feature, un collider était invisible et un pivot ne se devinait qu'en collant un sprite `debug.png` en enfant de l'entité (workaround qui vivait dans `apps/dino-brawl`, `SwordWithShadowPrefab`, **supprimé par cette feature**). Ce design remplace ce bricolage par des gizmos moteur, en posant la brique dont le futur éditeur aura besoin.
 
@@ -275,7 +275,7 @@ Trois propriétés qui font préférer ça au passage de la taille via `params.z
 
 **Ellipse** : un cercle sous scale non-uniforme est une ellipse, dont la SDF n'est pas analytique → l'épaisseur de l'anneau y devient approximative. Sans impact ici, `CircleNode` mappant `radius` sur `scale = (2r, 2r)` (toujours uniforme).
 
-**Shear sous hiérarchie** : `halfSize` est dérivé de la **longueur des colonnes** de la matrice model, ce qui est exact sous rotation (une rotation préserve la norme) mais seulement approximatif si un ancêtre combine **scale non-uniforme et rotation**, cas où la matrice composée cisaille. L'épaisseur de contour deviendrait alors légèrement inégale. Ce n'est pas introduit par le stroke — une forme *pleine* est déjà rendue de travers dans ce cas, c'est l'item backlog **H2 « Rendu exact du shear »** ([`../backlog.md`](../backlog.md)) — mais le stroke rend le problème visible là où il ne l'était pas. Aucun cas de reproduction dans le moteur aujourd'hui : il faut imbriquer une forme sous un parent à la fois rotaté et scalé non-uniformément.
+**Shear sous hiérarchie** : `halfSize` est dérivé de la **longueur des colonnes** de la matrice model, ce qui est exact sous rotation (une rotation préserve la norme) mais seulement approximatif si un ancêtre combine **scale non-uniforme et rotation**, cas où la matrice composée cisaille. L'épaisseur de contour deviendrait alors légèrement inégale. Ce n'est pas introduit par le stroke — une forme *pleine* est déjà rendue de travers dans ce cas, c'est l'item backlog **H2 « Rendu exact du shear »** ([`../backlog/GAMEPLAY-10-transform-exact-shear.md`](../backlog/GAMEPLAY-10-transform-exact-shear.md)) — mais le stroke rend le problème visible là où il ne l'était pas. Aucun cas de reproduction dans le moteur aujourd'hui : il faut imbriquer une forme sous un parent à la fois rotaté et scalé non-uniformément.
 
 `LineNode` compose son `lineMatrix` dans le model : la taille monde dérivée y vaut `(longueur, épaisseur)`, donc un stroke sur une ligne produirait une ligne creuse. `borderWidth` reste à `0` pour les lignes ; ce n'est pas un cas d'usage v1.
 

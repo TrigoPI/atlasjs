@@ -83,7 +83,7 @@ Lane `fixed`, stage `PhysicsWriteback`, dans l'ordre : `gameplay:physics-pull` (
 - **Un body kinematic détecte (les events partent) mais n'est pas physiquement bloqué** — la réponse « solide » pour un joueur piloté par script est le sujet de [`character-controller.md`](character-controller.md) (Phase 3).
 - **`ActiveCollisionTypes` par défaut de rapier (`DEFAULT`) n'active que les paires `DYNAMIC_*`.** Notre cas principal — un kinematic script-driven contre un statique/body-less (le joueur vs le décor) — n'émettait donc **aucun événement** tant que `mapColliderDesc` ne posait pas explicitement `setActiveCollisionTypes(ActiveCollisionTypes.ALL)` à côté de `setActiveEvents`. C'est exactement la classe de bug qu'un test unitaire sur fake ne peut pas attraper (le fake court-circuite rapier) — seul le browser-verify sur le vrai moteur l'a révélé. `ALL` active aussi `FIXED_FIXED`, superflu/bruyant pour une grande tilemap statique — à restreindre (ex. `DEFAULT | KINEMATIC_FIXED | KINEMATIC_KINEMATIC`) quand les colliders de tilemap arriveront.
 
-## 9. Non-objectifs / suite (→ `docs/backlog.md`)
+## 9. Non-objectifs / suite (→ `docs/backlog/`)
 
 - Sommeil/dirty-flag & command buffer « sync par intention » (perf).
 - Colliders composés/fusionnés pour tilemap (solidité du monde — feature dédiée).

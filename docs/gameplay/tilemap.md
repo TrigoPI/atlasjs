@@ -1,6 +1,6 @@
 # TileSet & TileMap — Design (v1)
 
-> **Statut : ✅ implémenté** (mergé sur `dev`). Extensions reportées : [`../backlog.md`](../backlog.md) § *Gameplay — TileSet & TileMap*.
+> **Statut : ✅ implémenté** (mergé sur `dev`). Extensions reportées : [`../backlog/`](../backlog/).
 >
 > **Note de rendu (piège vérifié en vrai)** : une tuile est dessinée à la **taille native** de son sprite, positionnée à l'origine de sa cellule. Pour un tiling **sans trou**, `Grid.cellSize` doit **égaler la taille native de la tuile** (ex. `128`) ; pour agrandir le rendu, on **scale l'entité `Grid`** (son `Transform2D`), ce qui se propage au calque — on ne gonfle **pas** `cellSize`. Mettre `cellSize` = taille × facteur tout en dessinant à taille native laisse des trous (le *fit-to-cell scaling* qui lèverait cette contrainte est au backlog).
 
@@ -35,7 +35,7 @@ Objectif : un système de tuiles façon Unity, en trois couches empilées.
 - Rendu instancié via `TileMapNode` dédié, avec culling au viewport.
 - Tri par un unique `sortingOrder: int` (cohérent avec `SpriteRender`).
 
-**Non-objectifs v1 (→ [backlog](../backlog.md)) :** (dé)sérialisation JSON + référence de tuile par id ; multi-tileset par tilemap & `Tile` riche (couleur / collider / animation par tuile) ; sorting layers nommés + order-in-layer ; colliders de tilemap ; layouts isométrique / hexagonal + cell swizzle ; palette / éditeur ; optimisations de rendu (buffer d'instances persistant, cache par `revision`, chunking).
+**Non-objectifs v1 (→ [backlog](../backlog/)) :** (dé)sérialisation JSON + référence de tuile par id ; multi-tileset par tilemap & `Tile` riche (couleur / collider / animation par tuile) ; sorting layers nommés + order-in-layer ; colliders de tilemap ; layouts isométrique / hexagonal + cell swizzle ; palette / éditeur ; optimisations de rendu (buffer d'instances persistant, cache par `revision`, chunking).
 
 ## 3. Décisions d'architecture
 
@@ -250,4 +250,4 @@ Remplace la double-boucle de ~15 lignes de [`apps/dino-brawl/src/game/EcsScene.t
 
 ## 11. Non-objectifs / backlog
 
-Voir la section **Gameplay — TileSet & TileMap** de [`docs/backlog.md`](../backlog.md) pour la liste complète des reports (JSON/sérialisation, multi-tileset & `Tile` riche, sorting layers nommés, colliders de tilemap, iso/hex, palette/éditeur, optimisations de rendu, util de slicing partagé, tile anchor / fit-to-cell).
+Voir le [backlog](../backlog/) pour la liste complète des reports (JSON/sérialisation, multi-tileset & `Tile` riche, sorting layers nommés, colliders de tilemap, iso/hex, palette/éditeur, optimisations de rendu, util de slicing partagé, tile anchor / fit-to-cell).

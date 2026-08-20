@@ -2,7 +2,13 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **77** items.
+Total : **85** items.
+
+## app
+
+| ID | Item | Statut | Effort | Vérifié |
+| --- | --- | --- | --- | --- |
+| APP-01 | [APP-01-dino-brawl-typecheck-debt](APP-01-dino-brawl-typecheck-debt.md) | 📋 à faire | S | 2026-08-19 |
 
 ## assets
 
@@ -10,6 +16,18 @@ Total : **77** items.
 | --- | --- | --- | --- | --- |
 | ASSETS-01 | [ASSETS-01-asset-manager-hardening](ASSETS-01-asset-manager-hardening.md) | 🔶 partiel | S | 2026-08-19 |
 | ASSETS-02 | [ASSETS-02-animation-asset-serialization](ASSETS-02-animation-asset-serialization.md) | 💭 vision | M | 2026-08-19 |
+
+## audio
+
+| ID | Item | Statut | Effort | Vérifié |
+| --- | --- | --- | --- | --- |
+| AUDIO-01 | [AUDIO-01-spatial-2d-audio](AUDIO-01-spatial-2d-audio.md) | 📋 à faire | L | 2026-08-19 |
+| AUDIO-02 | [AUDIO-02-per-source-pause-resume](AUDIO-02-per-source-pause-resume.md) | 📋 à faire | M | 2026-08-19 |
+| AUDIO-03 | [AUDIO-03-mixer-buses-ducking](AUDIO-03-mixer-buses-ducking.md) | 📋 à faire | M | 2026-08-19 |
+| AUDIO-04 | [AUDIO-04-music-crossfade](AUDIO-04-music-crossfade.md) | 📋 à faire | S | 2026-08-19 |
+| AUDIO-05 | [AUDIO-05-voice-pooling-concurrency-cap](AUDIO-05-voice-pooling-concurrency-cap.md) | 📋 à faire | S | 2026-08-19 |
+| AUDIO-06 | [AUDIO-06-audioclip-refcount-eviction](AUDIO-06-audioclip-refcount-eviction.md) | 💭 vision | M | 2026-08-19 |
+| AUDIO-07 | [AUDIO-07-audioclip-assetref-serialization](AUDIO-07-audioclip-assetref-serialization.md) | 💭 vision | M | 2026-08-19 |
 
 ## core
 

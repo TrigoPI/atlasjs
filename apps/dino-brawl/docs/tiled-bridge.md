@@ -1,6 +1,6 @@
 # Bridge Tiled → Atlas (dino-brawl) — Design
 
-> **Statut : ✅ design validé, non implémenté.** App-local (`apps/dino-brawl`). Feature préalable au futur *tilemap collision* (world solidity + colliders occludeurs). Ce document fige l'architecture ; l'implémentation passera par un plan dédié.
+> **Statut : ✅ implémenté**, et allant au-delà du périmètre fixé en §2. App-local (`apps/dino-brawl`). Le bridge (`TiledDocument`, `gid.ts`, `MapBuilder`, `TiledAssetResolver`, `sorting.ts`) est en place dans `src/game/tiled/` ; `ingestColliders.ts`/`ingestOccluders.ts` (+ leurs tests) consomment déjà les rects de collision/occlusion pour spawner du monde solide et des occluders — un périmètre que §2 classait pourtant en « non-objectif, backlog suivant ».
 >
 > **Contexte** : un proto de bridge existe déjà dans `apps/dino-brawl/src/game/tiled/` (`MapLoader` + `LayerManager` + `TileSetManager` + `MapObjectManager` + `TileMapBuilderScript`). Il fonctionne mais porte plusieurs bugs et hypothèses fragiles (voir §10). Ce design **refond** ce proto proprement.
 
