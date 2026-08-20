@@ -69,9 +69,10 @@ export const createEnemyPrefab = () =>
         hitboxCollider.isSensor = true;
         hitboxCollider.offset.set(0, -28);
 
-        const hurtbox: HurtboxScript = e.attach(HurtboxScript, {
-          invincibilityDuration: 0.3,
-        });
+        // No invincibility: the sword already lands one blow per swing, so
+        // the three-step combo deals three. Give a specific enemy an
+        // invincibilityDuration here to make it shrug blows off as well.
+        const hurtbox: HurtboxScript = e.attach(HurtboxScript);
 
         e.attach(HurtReactionScript, {
           hurtbox,

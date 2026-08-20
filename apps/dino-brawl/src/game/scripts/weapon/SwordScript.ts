@@ -1,4 +1,10 @@
 import { Vec2 } from "@atlasjs/math";
+import type { Entity } from "@atlasjs/nexus";
+
+import { readAimAngle } from "./aim";
+import { type HitInfo, HurtboxScript } from "../combat/HurtboxScript";
+import type { AttackPose, WeaponAttack } from "./attacks/WeaponAttack";
+import type { SwordHitboxScript } from "./SwordHitboxScript";
 
 import {
   type GameEntity,
@@ -12,12 +18,6 @@ import {
   Transform,
 } from "@atlasjs/gameplay";
 
-import { type HitInfo, HurtboxScript } from "../combat/HurtboxScript";
-
-import { readAimAngle } from "./aim";
-import type { AttackPose, WeaponAttack } from "./attacks/WeaponAttack";
-import type { SwordHitboxScript } from "./SwordHitboxScript";
-
 type SwordScriptProps = {
   playerAnchor: GameEntity;
   radius: number;
@@ -25,7 +25,6 @@ type SwordScriptProps = {
   attack: WeaponAttack;
   hitbox: SwordHitboxScript;
   hitstopDuration?: number;
-  targetInvincibility?: number;
   knockback?: number;
   shake?: ShakeSpec;
 };
@@ -45,11 +44,13 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
   private readonly attack: WeaponAttack;
   private readonly hitbox: SwordHitboxScript;
   private readonly hitstopDuration: number = 0.15;
-  private readonly targetInvincibility?: number;
   private readonly knockback: number = 220;
   private readonly shake: ShakeSpec = shake;
 
   private readonly hit: HitInfo = { direction: new Vec2() };
+
+  /** Targets this swing has already struck, so one swing lands one blow. */
+  private readonly struck: Set<Entity> = new Set<Entity>();
 
   private transform: Transform;
   private offsetAmplitude: number;
@@ -174,6 +175,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     this.attackClock = 0;
     this.swingDirection = Math.cos(this.getAimAngle()) >= 0 ? -1 : 1;
     this.hitstopRemaining = 0;
+    this.struck.clear();
     this.pose.angleOffset = 0;
     this.pose.radiusScale = 1;
     this.pose.scale = 1;
@@ -188,9 +190,12 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     this.hit.direction.set(Math.cos(aimAngle), Math.sin(aimAngle));
     this.hit.knockback = this.knockback;
     this.hit.hitstop = this.hitstopDuration;
-    this.hit.invincibilityDuration = this.targetInvincibility;
 
     for (const target of targets) {
+      if (this.struck.has(target.id)) {
+        continue;
+      }
+
       const hurtbox: HurtboxScript | undefined =
         target.getScript(HurtboxScript);
 
@@ -199,6 +204,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
       }
 
       if (hurtbox.takeHit(this.hit)) {
+        this.struck.add(target.id);
         landed = true;
       }
     }
@@ -238,7 +244,6 @@ registerScriptMetadata(SwordScript, {
     attack: ScriptMetadata.field({ required: true }),
     hitbox: ScriptMetadata.field({ required: true }),
     hitstopDuration: ScriptMetadata.field(),
-    targetInvincibility: ScriptMetadata.field(),
     knockback: ScriptMetadata.field(),
     shake: ScriptMetadata.field(),
   },

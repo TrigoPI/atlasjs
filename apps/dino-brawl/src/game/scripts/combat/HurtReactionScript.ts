@@ -1,5 +1,6 @@
 import { Vec2 } from "@atlasjs/math";
 import type { AudioClip } from "@atlasjs/audio";
+import type { Unsubscribe } from "@atlasjs/core";
 
 import {
   Animator,
@@ -52,7 +53,8 @@ export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
   private transform: Transform;
   private character?: CharacterController;
   private audio?: AudioApi;
-  private wasInvincible: boolean;
+  private unsubscribe: Unsubscribe;
+  private lastHitCount: number = 0;
   private hitstopRemaining: number = 0;
 
   public onCreate(): void {
@@ -60,21 +62,22 @@ export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
     this.transform = this.requireComponent(Transform);
     this.character = this.target.getComponent(CharacterController);
     this.audio = this.getService(AudioApi);
-    this.wasInvincible = this.hurtbox.isInvincible;
+    this.lastHitCount = this.hurtbox.hitCount;
     this.hitstopRemaining = 0;
+
+    this.unsubscribe = this.animator.on("finished", (clip: string) =>
+      this.onClipFinished(clip),
+    );
+  }
+
+  public onDestroy(): void {
+    this.unsubscribe();
   }
 
   public onUpdate(dt: number): void {
-    const invincible: boolean = this.hurtbox.isInvincible;
-
-    if (invincible !== this.wasInvincible) {
-      this.wasInvincible = invincible;
-
-      if (invincible) {
-        this.onHit();
-      } else {
-        this.animator.play(this.restClip);
-      }
+    if (this.hurtbox.hitCount !== this.lastHitCount) {
+      this.lastHitCount = this.hurtbox.hitCount;
+      this.onHit();
     }
 
     if (this.advanceHitstop(dt)) {
@@ -100,8 +103,16 @@ export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
     return false;
   }
 
+  /** The hurt clip does not loop, so its end is the cue to stand back up. */
+  private onClipFinished(clip: string): void {
+    if (clip === this.hurtClip) {
+      this.animator.play(this.restClip);
+    }
+  }
+
   private onHit(): void {
-    this.animator.play(this.hurtClip);
+    // Restarts even if the previous blow is still playing out.
+    this.animator.play(this.hurtClip, true);
     this.playHitSound();
     this.spawnImpact();
 

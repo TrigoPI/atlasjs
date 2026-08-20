@@ -89,6 +89,8 @@ function createTransform(): object {
 
 type Rig = {
   sword: SwordScript;
+  /** Begins a fresh swing, as clicking again would. */
+  swing: () => void;
   hitbox: FakeHitbox;
   shakes: ShakeCall[];
   frame: () => void;
@@ -98,10 +100,7 @@ type Rig = {
  * Puts a SwordScript straight into its "attacking" state without an ECS world,
  * mirroring how the other weapon test files inject private fields.
  */
-function createRig(
-  targetInvincibility?: number,
-  overrides: Record<string, unknown> = {},
-): Rig {
+function createRig(overrides: Record<string, unknown> = {}): Rig {
   const sword: SwordScript = new SwordScript();
   const hitbox: FakeHitbox = new FakeHitbox();
   const shakes: ShakeCall[] = [];
@@ -117,7 +116,6 @@ function createRig(
   injected.attack = new FakeAttack();
   injected.hitbox = hitbox;
   injected.hitstopDuration = 0.07;
-  injected.targetInvincibility = targetInvincibility;
 
   injected.transform = createTransform();
   injected.baseScale = new Vec2(1, 1);
@@ -151,6 +149,8 @@ function createRig(
 
   return {
     sword,
+    swing: (): void =>
+      (sword as unknown as { startAttack: () => void }).startAttack(),
     hitbox,
     shakes,
     frame: (): void => sword.onUpdate(DT),
@@ -181,16 +181,16 @@ describe("SwordScript impact resolution", () => {
     rig.frame();
 
     expect(hurtbox.accepted).toBe(1);
-    expect(hurtbox.isInvincible).toBe(true);
   });
 
-  it("does not hit the same target again while it is still invincible", () => {
+  it("lands exactly one blow per swing, however long contact lasts", () => {
     const rig: Rig = createRig();
     const hurtbox: RecordingHurtbox = new RecordingHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
-    for (let i: number = 0; i < 6; i++) {
+    // The target has no invincibility at all: only the swing limits itself.
+    for (let i: number = 0; i < 30; i++) {
       rig.frame();
       hurtbox.onUpdate(DT);
     }
@@ -198,30 +198,58 @@ describe("SwordScript impact resolution", () => {
     expect(hurtbox.accepted).toBe(1);
   });
 
-  it("hits again once the target's invincibility has elapsed", () => {
+  it("lands one blow per swing, so a three-step combo deals three", () => {
     const rig: Rig = createRig();
     const hurtbox: RecordingHurtbox = new RecordingHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
-    for (let i: number = 0; i < 12; i++) {
+    for (let swing: number = 0; swing < 3; swing++) {
+      rig.swing();
+
+      for (let i: number = 0; i < 6; i++) {
+        rig.frame();
+        hurtbox.onUpdate(DT);
+      }
+    }
+
+    expect(hurtbox.accepted).toBe(3);
+  });
+
+  it("still respects a target that has its own invincibility", () => {
+    const rig: Rig = createRig();
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+
+    (hurtbox as unknown as Record<string, unknown>).invincibilityDuration = 10;
+
+    rig.hitbox.setTargets([createTarget(1, hurtbox)]);
+
+    for (let swing: number = 0; swing < 3; swing++) {
+      rig.swing();
+
+      for (let i: number = 0; i < 6; i++) {
+        rig.frame();
+        hurtbox.onUpdate(DT);
+      }
+    }
+
+    // Three swings, but the target shrugs the last two off.
+    expect(hurtbox.accepted).toBe(1);
+  });
+
+  it("only shakes the camera on the swing that actually connects", () => {
+    const rig: Rig = createRig();
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+
+    rig.hitbox.setTargets([createTarget(1, hurtbox)]);
+
+    for (let i: number = 0; i < 20; i++) {
       rig.frame();
       hurtbox.onUpdate(DT);
     }
 
-    expect(hurtbox.accepted).toBe(2);
-  });
-
-  it("hands its targetInvincibility override to the target's hurtbox", () => {
-    const rig: Rig = createRig(0.1);
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
-
-    rig.hitbox.setTargets([createTarget(1, hurtbox)]);
-    rig.frame();
-
-    hurtbox.onUpdate(0.1);
-
-    expect(hurtbox.isInvincible).toBe(false);
+    // One blow, one hitstop, one camera punch.
+    expect(rig.shakes).toHaveLength(1);
   });
 
   it("ignores a target that carries no hurtbox", () => {

@@ -10,6 +10,7 @@ import { HurtReactionScript } from "../../../../src/game/scripts/combat/HurtReac
 class FakeAnimator {
   public readonly played: string[] = [];
   public paused: boolean = false;
+  public restarts: number = 0;
   private current: string = "idle";
 
   public pause(): void {
@@ -20,7 +21,11 @@ class FakeAnimator {
     this.paused = false;
   }
 
-  public play(name: string): void {
+  public play(name: string, restart: boolean = false): void {
+    if (restart) {
+      this.restarts += 1;
+    }
+
     if (name === this.current) {
       return;
     }
@@ -64,6 +69,7 @@ class FakeAudioApi {
 type SpawnCall = { position: Vec2; rotation: number };
 
 type Rig = {
+  script: HurtReactionScript;
   hurtbox: HurtboxScript;
   spawns: SpawnCall[];
   animator: FakeAnimator;
@@ -74,6 +80,13 @@ type Rig = {
   /** Advances the hurtbox timer then the observer, as the runtime does. */
   frame: (dt: number) => void;
 };
+
+/** Fires the script's own "finished" handler, as the Animator would. */
+function finishClip(rig: Rig, clip: string): void {
+  (
+    rig.script as unknown as { onClipFinished: (clip: string) => void }
+  ).onClipFinished(clip);
+}
 
 function createRig(overrides: Record<string, unknown> = {}): Rig {
   const script: HurtReactionScript = new HurtReactionScript();
@@ -107,13 +120,14 @@ function createRig(overrides: Record<string, unknown> = {}): Rig {
   };
   injected.character = character;
   injected.audio = audio;
-  injected.wasInvincible = false;
+  injected.lastHitCount = 0;
 
   for (const key of Object.keys(overrides)) {
     injected[key] = overrides[key];
   }
 
   return {
+    script,
     hurtbox,
     spawns,
     animator,
@@ -177,34 +191,57 @@ describe("HurtReactionScript", () => {
     expect(rig.audio.calls).toHaveLength(1);
   });
 
-  it("returns to the rest clip once the invincibility expires, without a second sound", () => {
+  it("stands back up when the hurt clip ends, without a second sound", () => {
     const rig: Rig = createRig();
 
     rig.hit();
+    rig.frame(0.05);
 
-    for (let i: number = 0; i < 9; i++) {
-      rig.frame(0.05);
-    }
+    finishClip(rig, "hurt");
 
     expect(rig.animator.played).toEqual(["hurt", "idle"]);
     expect(rig.animator.playing).toBe("idle");
     expect(rig.audio.calls).toHaveLength(1);
   });
 
-  it("replays the hurt clip and the sound on a second hit", () => {
+  it("ignores another clip finishing", () => {
     const rig: Rig = createRig();
-
-    rig.hit();
-
-    for (let i: number = 0; i < 9; i++) {
-      rig.frame(0.05);
-    }
 
     rig.hit();
     rig.frame(0.05);
 
-    expect(rig.animator.played).toEqual(["hurt", "idle", "hurt"]);
-    expect(rig.audio.calls).toHaveLength(2);
+    finishClip(rig, "run");
+
+    expect(rig.animator.playing).toBe("hurt");
+  });
+
+  it("reacts to every blow, back to back, with no window between them", () => {
+    const rig: Rig = createRig();
+
+    rig.hit();
+    rig.frame(0.05);
+    rig.hit();
+    rig.frame(0.05);
+    rig.hit();
+    rig.frame(0.05);
+
+    // Three blows, three sounds, three bursts: nothing is swallowed.
+    expect(rig.audio.calls).toHaveLength(3);
+    expect(rig.spawns).toHaveLength(3);
+    expect(rig.animator.restarts).toBe(3);
+  });
+
+  it("reacts once per blow even if several frames pass", () => {
+    const rig: Rig = createRig();
+
+    rig.hit();
+
+    for (let i: number = 0; i < 8; i++) {
+      rig.frame(0.05);
+    }
+
+    expect(rig.audio.calls).toHaveLength(1);
+    expect(rig.spawns).toHaveLength(1);
   });
 
   it("still animates when no hit clip was provided", () => {
