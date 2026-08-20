@@ -17,7 +17,9 @@ export class CameraSyncSystem implements NexusSystem {
   }
 
   // prettier-ignore
-  public update({ world }: NexusSystemContext): void {
+  public update({ world, dt }: NexusSystemContext): void {
+    this.manager.advanceShake(dt);
+
     const active: Entity | undefined = this.manager.getActive();
     if (active === undefined) return;
 
@@ -32,9 +34,11 @@ export class CameraSyncSystem implements NexusSystem {
     camera.zoom = cam.zoom;
     const viewport: Bound = this.renderer.getCameraViewport();
 
+    const shake: Vec2 = this.manager.getShakeOffset();
+
     camera.position.set(
-      center.x - viewport.width / 2,
-      center.y - viewport.height / 2,
+      center.x - viewport.width / 2 + shake.x,
+      center.y - viewport.height / 2 + shake.y,
     );
   }
 }

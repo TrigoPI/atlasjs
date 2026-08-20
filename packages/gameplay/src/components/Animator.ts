@@ -43,6 +43,17 @@ export class Animator {
     return this;
   }
 
+  /** Holds the current frame; the clip resumes where it left off. */
+  public pause(): this {
+    this.player.pause();
+    return this;
+  }
+
+  public resume(): this {
+    this.player.resume();
+    return this;
+  }
+
   public on<K extends keyof AnimatorEvents>(
     event: K,
     cb: (clip: string) => void,

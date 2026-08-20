@@ -19,4 +19,9 @@ export class CameraApi extends ScriptService<CameraManager> {
   public setMain(entity: Entity): void {
     this.provided.setActive(entity);
   }
+
+  /** Kicks the camera off-centre along `direction`; a spring pulls it back. */
+  public shake(strength: number, direction?: Vec2): void {
+    this.provided.shake(strength, direction);
+  }
 }
