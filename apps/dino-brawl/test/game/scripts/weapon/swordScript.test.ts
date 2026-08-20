@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import { Vec2 } from "@atlasjs/math";
-import type { AudioClip } from "@atlasjs/audio";
 import type { CameraApi, GameEntity, InputApi } from "@atlasjs/gameplay";
 
 import { HurtboxScript } from "../../../../src/game/scripts/combat/HurtboxScript";
@@ -10,19 +9,18 @@ import type { AttackPose } from "../../../../src/game/scripts/weapon/attacks/Wea
 
 const DT: number = 0.05;
 
-type PlayOneShotCall = {
-  clip: AudioClip;
-  params: { pitch?: number; volume?: number } | undefined;
-};
+/** A real hurtbox that records which hits it accepted. */
+class RecordingHurtbox extends HurtboxScript {
+  public accepted: number = 0;
 
-class FakeAudioApi {
-  public readonly calls: PlayOneShotCall[] = [];
+  public override takeHit(invincibilityDuration?: number): boolean {
+    const landed: boolean = super.takeHit(invincibilityDuration);
 
-  public playOneShot(
-    clip: AudioClip,
-    params?: { pitch?: number; volume?: number },
-  ): void {
-    this.calls.push({ clip, params });
+    if (landed) {
+      this.accepted += 1;
+    }
+
+    return landed;
   }
 }
 
@@ -52,10 +50,10 @@ class FakeAttack {
   }
 }
 
-function createTarget(id: number, hurtbox?: HurtboxScript): GameEntity {
+function createTarget(id: number, hurtbox?: RecordingHurtbox): GameEntity {
   return {
     id,
-    getScript: (): HurtboxScript | undefined => hurtbox,
+    getScript: (): RecordingHurtbox | undefined => hurtbox,
   } as unknown as GameEntity;
 }
 
@@ -78,8 +76,6 @@ function createTransform(): object {
 type Rig = {
   sword: SwordScript;
   hitbox: FakeHitbox;
-  audio: FakeAudioApi;
-  clip: AudioClip;
   frame: () => void;
 };
 
@@ -90,8 +86,6 @@ type Rig = {
 function createRig(targetInvincibility?: number): Rig {
   const sword: SwordScript = new SwordScript();
   const hitbox: FakeHitbox = new FakeHitbox();
-  const audio: FakeAudioApi = new FakeAudioApi();
-  const clip: AudioClip = {} as unknown as AudioClip;
 
   const injected: Record<string, unknown> = sword as unknown as Record<
     string,
@@ -105,9 +99,6 @@ function createRig(targetInvincibility?: number): Rig {
   injected.hitbox = hitbox;
   injected.hitstopDuration = 0.07;
   injected.targetInvincibility = targetInvincibility;
-  injected.hitClip = clip;
-  injected.hitPitch = 1;
-  injected.hitVolume = 1;
 
   injected.transform = createTransform();
   injected.baseScale = new Vec2(1, 1);
@@ -128,7 +119,6 @@ function createRig(targetInvincibility?: number): Rig {
     screenToWorld: (): Vec2 => new Vec2(100, 0),
   } as unknown as CameraApi;
 
-  injected.audio = audio;
   injected.state = "attacking";
   injected.buffered = false;
   injected.hitstopRemaining = 0;
@@ -136,43 +126,40 @@ function createRig(targetInvincibility?: number): Rig {
   return {
     sword,
     hitbox,
-    audio,
-    clip,
     frame: (): void => sword.onUpdate(DT),
   };
 }
 
 describe("SwordScript impact resolution", () => {
-  it("plays no impact sound while the hitbox stays empty for the whole swing", () => {
+  it("lands no hit while the hitbox stays empty for the whole swing", () => {
     const rig: Rig = createRig();
 
     for (let i: number = 0; i < 10; i++) {
       rig.frame();
     }
 
-    expect(rig.audio.calls).toHaveLength(0);
+    expect(rig.hitbox.getTargets()).toHaveLength(0);
   });
 
-  it("plays the impact sound when a target enters the hitbox mid-swing, not only on the first frame", () => {
+  it("hits a target that enters the hitbox mid-swing, not only on the first frame", () => {
     const rig: Rig = createRig();
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
 
     rig.frame();
     rig.frame();
     rig.frame();
-    expect(rig.audio.calls).toHaveLength(0);
+    expect(hurtbox.accepted).toBe(0);
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
     rig.frame();
 
-    expect(rig.audio.calls).toHaveLength(1);
-    expect(rig.audio.calls[0].clip).toBe(rig.clip);
+    expect(hurtbox.accepted).toBe(1);
     expect(hurtbox.isInvincible).toBe(true);
   });
 
-  it("does not play the sound again while the same target stays inside its invincibility window", () => {
+  it("does not hit the same target again while it is still invincible", () => {
     const rig: Rig = createRig();
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
@@ -181,12 +168,12 @@ describe("SwordScript impact resolution", () => {
       hurtbox.onUpdate(DT);
     }
 
-    expect(rig.audio.calls).toHaveLength(1);
+    expect(hurtbox.accepted).toBe(1);
   });
 
-  it("plays the sound a second time once the target's invincibility has elapsed", () => {
+  it("hits again once the target's invincibility has elapsed", () => {
     const rig: Rig = createRig();
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
@@ -195,12 +182,12 @@ describe("SwordScript impact resolution", () => {
       hurtbox.onUpdate(DT);
     }
 
-    expect(rig.audio.calls).toHaveLength(2);
+    expect(hurtbox.accepted).toBe(2);
   });
 
   it("hands its targetInvincibility override to the target's hurtbox", () => {
     const rig: Rig = createRig(0.1);
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
     rig.frame();
@@ -215,23 +202,22 @@ describe("SwordScript impact resolution", () => {
 
     rig.hitbox.setTargets([createTarget(1)]);
 
-    for (let i: number = 0; i < 5; i++) {
-      rig.frame();
-    }
-
-    expect(rig.audio.calls).toHaveLength(0);
+    expect(() => {
+      for (let i: number = 0; i < 5; i++) {
+        rig.frame();
+      }
+    }).not.toThrow();
   });
 
   it("hits every target present in the hitbox on the same frame", () => {
     const rig: Rig = createRig();
-    const first: HurtboxScript = new HurtboxScript();
-    const second: HurtboxScript = new HurtboxScript();
+    const first: RecordingHurtbox = new RecordingHurtbox();
+    const second: RecordingHurtbox = new RecordingHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, first), createTarget(2, second)]);
     rig.frame();
 
-    expect(first.isInvincible).toBe(true);
-    expect(second.isInvincible).toBe(true);
-    expect(rig.audio.calls).toHaveLength(1);
+    expect(first.accepted).toBe(1);
+    expect(second.accepted).toBe(1);
   });
 });

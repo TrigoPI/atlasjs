@@ -1,9 +1,7 @@
 import { Vec2 } from "@atlasjs/math";
-import type { AudioClip } from "@atlasjs/audio";
 
 import {
   AtlasScript,
-  AudioApi,
   CameraApi,
   InputApi,
   Key,
@@ -27,9 +25,6 @@ type SwordScriptProps = {
   hitbox: SwordHitboxScript;
   hitstopDuration?: number;
   targetInvincibility?: number;
-  hitClip?: AudioClip;
-  hitPitch?: number;
-  hitVolume?: number;
 };
 
 type SwordState = "idle" | "attacking";
@@ -42,9 +37,6 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
   private readonly hitbox: SwordHitboxScript;
   private readonly hitstopDuration: number = 0.07;
   private readonly targetInvincibility?: number;
-  private readonly hitClip?: AudioClip;
-  private readonly hitPitch: number = 1;
-  private readonly hitVolume: number = 1;
 
   private transform: Transform;
   private offsetAmplitude: number;
@@ -65,7 +57,6 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
 
   private input: InputApi;
   private camera: CameraApi;
-  private audio?: AudioApi;
 
   private state: SwordState;
   private buffered: boolean;
@@ -76,7 +67,6 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
 
     this.input = this.getService(InputApi);
     this.camera = this.getService(CameraApi);
-    this.audio = this.getService(AudioApi);
 
     this.clock = 0;
     this.offsetAmplitude = 8;
@@ -142,7 +132,6 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     if (this.applyHits()) {
       this.hitstopRemaining = this.hitstopDuration;
       this.frozenAimAngle = this.getAimAngle();
-      this.playImpactSound();
     }
 
     this.applyAttackPose(this.getAimAngle());
@@ -219,17 +208,6 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
   private getWorldPosition(entity: GameEntity): Vec2 {
     return entity.requireComponent(Transform).worldPosition;
   }
-
-  private playImpactSound(): void {
-    if (this.audio === undefined || this.hitClip === undefined) {
-      return;
-    }
-
-    this.audio.playOneShot(this.hitClip, {
-      pitch: this.hitPitch,
-      volume: this.hitVolume,
-    });
-  }
 }
 
 registerScriptMetadata(SwordScript, {
@@ -241,8 +219,5 @@ registerScriptMetadata(SwordScript, {
     hitbox: ScriptMetadata.field({ required: true }),
     hitstopDuration: ScriptMetadata.field(),
     targetInvincibility: ScriptMetadata.field(),
-    hitClip: ScriptMetadata.field(),
-    hitPitch: ScriptMetadata.field(),
-    hitVolume: ScriptMetadata.field(),
   },
 });

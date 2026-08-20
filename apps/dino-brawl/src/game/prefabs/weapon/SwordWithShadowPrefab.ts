@@ -1,4 +1,3 @@
-import type { AudioClip } from "@atlasjs/audio";
 import type { Entity } from "@atlasjs/nexus";
 
 import { CollisionLayers, SortingLayer, SortingOrder } from "../../config";
@@ -28,7 +27,6 @@ export type SwordWithShadowPrefabProps = {
   angle: number;
   swordSprite: Sprite;
   shadowSprite: Sprite;
-  hitClip?: AudioClip;
   colliderRotation?: number;
   attack: (entity: EntityBuilder) => WeaponAttack;
 };
@@ -87,7 +85,6 @@ export const createSwordWithShadowPrefab = () =>
           angleOffset: props.angle,
           attack,
           hitbox,
-          hitClip: props.hitClip,
         });
 
         e.attach(SwordSortingScript, {

@@ -29,6 +29,12 @@ export const DinoClips: ClipBuilder = (
     loop: true,
     autoPlay: true,
   }),
+  hurt: new SpriteAnimation({
+    frames: sheet.getManyInRange("dino_", 14, 16),
+    fps: 12,
+    loop: false,
+    autoPlay: true,
+  }),
   pre_sprint: new SpriteAnimation({
     frames: sheet.getManyInRange("dino_", 17, 17),
     fps: 1,

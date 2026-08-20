@@ -51,7 +51,6 @@ export function spawnPlayer(
   const particleSprite: Sprite = assetsLoader.getAsset("sprite:running_particle");
   const swordSprite: Sprite = assetsLoader.getAsset("sprite:default_sword");
   const grassSound: AudioClip = assetsLoader.getAsset("audio:grass_audio");
-  const hitSound: AudioClip = assetsLoader.getAsset("audio:hit");
   const woosh1Sound: AudioClip = assetsLoader.getAsset("audio:woosh_1");
   const woosh2Sound: AudioClip = assetsLoader.getAsset("audio:woosh_2");
   const woosh3Sound: AudioClip = assetsLoader.getAsset("audio:woosh_3");
@@ -95,7 +94,6 @@ export function spawnPlayer(
     anchor: anchor.id,
     angle: 0,
     r: 40,
-    hitClip: hitSound,
     attack: (e: EntityBuilder): WeaponAttack =>
       e.attach(AttackChain, {
         attacks: [

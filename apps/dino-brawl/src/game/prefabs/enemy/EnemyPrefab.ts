@@ -1,9 +1,10 @@
+import type { AudioClip } from "@atlasjs/audio";
 import type { Vec2 } from "@atlasjs/math";
 import type { SpriteAnimation } from "@atlasjs/nebula";
 
 import { CollisionLayers, SortingLayer, SortingOrder } from "../../config";
 
-import { HurtboxScript } from "../../scripts";
+import { HurtboxScript, HurtReactionScript } from "../../scripts";
 
 import {
   Animator,
@@ -20,6 +21,7 @@ export type EnemyPrefabProps = {
   position: Vec2;
   sprite: Sprite;
   clips: Record<string, SpriteAnimation>;
+  hitClip?: AudioClip;
 };
 
 // prettier-ignore
@@ -62,7 +64,15 @@ export const createEnemyPrefab = () =>
         hitboxCollider.isSensor = true;
         hitboxCollider.offset.set(0, -28);
 
-        e.attach(HurtboxScript);
+        const hurtbox: HurtboxScript = e.attach(HurtboxScript, {
+          invincibilityDuration: 0.6,
+        });
+
+        e.attach(HurtReactionScript, {
+          hurtbox,
+          target: entity.entity,
+          hitClip: props.hitClip,
+        });
       });
     },
   });

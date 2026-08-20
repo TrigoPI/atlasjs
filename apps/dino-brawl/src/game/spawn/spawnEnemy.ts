@@ -1,4 +1,5 @@
 import { Vec2 } from "@atlasjs/math";
+import type { AudioClip } from "@atlasjs/audio";
 import type { SceneContext } from "@atlasjs/core";
 import type { GameEntity } from "@atlasjs/gameplay";
 import type { Entity } from "@atlasjs/nexus";
@@ -31,6 +32,7 @@ export function spawnEnemy(
 
   const dinoSprite: Sprite = assetsLoader.getAsset("sprite:evil_dino");
   const shadowSprite: Sprite = assetsLoader.getAsset("sprite:shadow");
+  const hitSound: AudioClip = assetsLoader.getAsset("audio:hit");
 
   const shadowPrefab: Prefab<ShadowPrefabProps> = createShadowPrefab();
   const enemyPrefab: Prefab<EnemyPrefabProps> = createEnemyPrefab();
@@ -39,6 +41,7 @@ export function spawnEnemy(
     position: spawnPosition,
     sprite: dinoSprite,
     clips: sheetLoader.createClips("sheet:evil_dino"),
+    hitClip: hitSound,
   });
 
   instantiator.instantiate(
