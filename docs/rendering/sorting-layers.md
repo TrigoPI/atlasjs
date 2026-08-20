@@ -1,8 +1,8 @@
 # Sorting Layers, Y-sorting & Sprite Pivot — Design (v1)
 
-> **Statut : 📋 design validé, non implémenté.** Chantier **transverse** (touche le sort de `@atlasjs/nebula` + la sémantique de `@atlasjs/gameplay`). Absorbe l'item backlog *« Sorting layers nommés + order-in-layer »* et le fix pivot de l'item *« Pivot par frame »* — les deux sont couverts par ce design plutôt que par des notes séparées du [backlog](../backlog/).
+> **Statut : ✅ implémenté.** Chantier **transverse** (touche le sort de `@atlasjs/nebula` + la sémantique de `@atlasjs/gameplay`). A absorbé l'item backlog *« Sorting layers nommés + order-in-layer »* et le fix pivot de l'item *« Pivot par frame »*, tous deux clos par ce design plutôt que trackés séparément dans le [backlog](../backlog/).
 >
-> **Prérequis vérifiés dans le code** (audits) : le sort key actuel est de l'arithmétique radix sur un double (`(z*16+kind)*65536+batch`), tri via un unique `RenderQueue.sort((a,b) => a.sortKey - b.sortKey)`, file **petite** (un command par sprite visible + un par calque tilemap batché — **pas** 10k). Le `WorldTransform2D` est final avant les render systems ; `updateWorldMatrices()` tourne avant `collect()`. Le **pivot existe déjà et est baké dans le quad** (`SpriteNode.anchor` → model matrix) ; il n'est cassé que sur deux chemins : `SpriteAsset.fromPath` (pas d'option) et l'animation (`Frame` n'a pas de pivot).
+> **Périmètre livré** : `Node.sortingLayer`/`sortPrimary`/`sortSecondary` (remplacent `zIndex`) et le comparateur multi-critères de `RenderQueue.sort` (remplace l'ancien sort key arithmétique packé) dans `@atlasjs/nebula` ; le registry `SortingLayers` nommé + `applySortFields` (collapse mode+valeur) et `sortingLayer`/`sortingOrder` sur `SpriteRender` dans `@atlasjs/gameplay`. Le pivot est authorable sur le chemin ergonomique (`SpriteAsset.fromPath(path, { rect?, pivot? })`) et préservé en animation (`Frame.pivot`, forwardé par `SpriteSheet` et `AnimatorSystem`). Voir §10 pour ce qui reste hors périmètre v1.
 
 ## 1. Vue d'ensemble
 

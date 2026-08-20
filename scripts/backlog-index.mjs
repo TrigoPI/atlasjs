@@ -72,11 +72,46 @@ export function renderBacklogIndex(items) {
   return lines.join("\n");
 }
 
-function describeDoc(fullPath, name) {
+const MAX_STATUS_LENGTH = 90;
+// Matches a markdown link `[text](url)` so truncation never lands inside one.
+const LINK_PATTERN = /\[[^\]]*\]\([^)]*\)/g;
+
+// A raw "|" in a status value would otherwise be read as a table-cell separator,
+// silently corrupting the row it appears in.
+function escapeTableCell(value) {
+  return value.replace(/\|/g, "\\|");
+}
+
+// Cuts on a word boundary, and backs off before any markdown link the naive cut
+// point would otherwise land inside — a cut inside `[text](url)` produces a
+// dangling `[` or an unterminated `(...` in the generated table.
+function truncateStatus(text, maxLength) {
+  if (text.length <= maxLength) return text;
+
+  let cut = maxLength;
+
+  LINK_PATTERN.lastIndex = 0;
+  let match;
+  while ((match = LINK_PATTERN.exec(text)) !== null) {
+    const start = match.index;
+    const end = start + match[0].length;
+    if (cut > start && cut < end) {
+      cut = start;
+      break;
+    }
+  }
+
+  const lastSpace = text.lastIndexOf(" ", cut);
+  if (lastSpace > 0) cut = lastSpace;
+
+  return text.slice(0, cut).trimEnd();
+}
+
+export function describeDoc(fullPath, name) {
   const head = readFileSync(fullPath, "utf8").split("\n").slice(0, 8);
   const statusLine = head.find((line) => /statut|status/i.test(line)) ?? "";
   const status = statusLine.replace(/[>*`]/g, "").replace(/^\s*statut\s*:\s*/i, "").trim();
-  return { name, status: status.slice(0, 90) || "—" };
+  return { name, status: truncateStatus(escapeTableCell(status), MAX_STATUS_LENGTH) || "—" };
 }
 
 export function readDesignDocs() {

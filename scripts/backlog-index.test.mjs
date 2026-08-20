@@ -1,6 +1,16 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { renderBacklogIndex } from "./backlog-index.mjs";
+import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { renderBacklogIndex, describeDoc } from "./backlog-index.mjs";
+
+function writeTempDoc(content) {
+  const dir = mkdtempSync(join(tmpdir(), "backlog-index-test-"));
+  const fullPath = join(dir, "doc.md");
+  writeFileSync(fullPath, content);
+  return fullPath;
+}
 
 test("un item sans domain apparaît comme ligne de tableau, pas seulement comme en-tête de section", () => {
   const out = renderBacklogIndex([
@@ -46,4 +56,29 @@ test("le total compte tous les items, y compris ceux sans domain", () => {
     { file: "b.md", id: "B-01", status: "todo" },
   ]);
   assert.match(out, /Total : \*\*2\*\* items\./);
+});
+
+test("un statut contenant un | est échappé pour ne pas casser la ligne de tableau", () => {
+  const fullPath = writeTempDoc("# Doc\n\n> Statut : implémenté (a | b).\n");
+  try {
+    const doc = describeDoc(fullPath, "doc.md");
+    assert.doesNotMatch(doc.status, /(?<!\\)\|/);
+    assert.match(doc.status, /a \\\| b/);
+  } finally {
+    rmSync(fullPath);
+  }
+});
+
+test("une troncature qui tomberait au milieu d'un lien markdown recule avant le lien plutôt que de le couper", () => {
+  const long =
+    "x".repeat(70) + " voir [sorting-layers.md](sorting-layers.md) pour le détail complet ici.";
+  const fullPath = writeTempDoc(`# Doc\n\n> Statut : ${long}\n`);
+  try {
+    const doc = describeDoc(fullPath, "doc.md");
+    assert.ok(doc.status.length <= 90, `attendu <= 90 caractères, reçu ${doc.status.length}`);
+    assert.ok(!doc.status.includes("["), "le lien markdown ne doit pas apparaître partiellement coupé");
+    assert.ok(!doc.status.endsWith(" "), "la troncature doit tomber sur une frontière de mot, sans espace final");
+  } finally {
+    rmSync(fullPath);
+  }
 });

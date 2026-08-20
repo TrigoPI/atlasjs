@@ -114,7 +114,7 @@ Dans tous les cas on retire seulement le sizing manuel du canvas ; le content-bo
 - Resize des render targets plein écran (aucun n'existe ; A3 post-processing).
 - Politique "fixed design resolution / scale-to-fit" (letterbox) — modèle expand retenu.
 - Debounce du resize (reconfigure inutile, `canvas.width=` bon marché ; ajout trivial si besoin plus tard).
-- Réconciliation éditeur↔nebula (B2), indépendant.
+- Réconciliation éditeur↔nebula, indépendant. Ancien item backlog retiré avec la suppression de `packages/editor`.
 
 ## Vérification
 

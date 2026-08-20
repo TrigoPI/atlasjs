@@ -83,7 +83,7 @@ public worldToScreen(world: Vec2, out?: Vec2): Vec2;    // out = (world - positi
 
 - Modèle **top-left conservé** (aucune connaissance du centrage — c'est une affaire gameplay).
 - Pas de `Mat4.invert()` requis. `out` par défaut = nouveau `Vec2`.
-- Débloque une partie du backlog **B2** (« méthodes `Camera2D` manquantes » pour l'éditeur), sans faire la réconciliation éditeur ici.
+- Débloquait une partie de l'ancien item backlog « méthodes `Camera2D` manquantes » pour l'éditeur, sans faire la réconciliation éditeur ici. Cet item a été retiré du backlog avec la suppression de `packages/editor`.
 
 ### 4bis. Exposer `getCameraViewport()` sur `NebulaRenderer`
 

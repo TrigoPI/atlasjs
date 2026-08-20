@@ -15,7 +15,7 @@ Dérouler dans l'ordre. **Ne pas passer à l'étape suivante si la précédente 
 
    Si le plan n'en contient aucun, le dire explicitement plutôt que de sauter l'étape en silence. C'est la seule étape irréversible de cette procédure : ce qui n'est pas extrait ici disparaît avec le plan.
 3. **Corriger le doc de design** de la feature : statut → implémenté, avec la portée réelle livrée et ce qui reste hors périmètre.
-4. **Créer les notes** correspondant aux V2 et hors-périmètre annoncés par la feature, avec `status`, `domain`, `source`, `effort` et `verified` à la date du jour. On crée **avant** de fermer, pour qu'aucun instant ne voie l'ancien contenu disparu et le nouveau pas encore écrit.
+4. **Créer les notes** correspondant aux V2 et hors-périmètre annoncés par la feature, selon le schéma complet du §8 de `docs/2026-08-19-docs-reorganisation-design.md` : `id` (`<DOMAIN>-<nn>`, cohérent avec le nom de fichier `DOMAIN-NN-slug.md`), `status`, `domain`, `source`, `effort` et `verified` à la date du jour. On crée **avant** de fermer, pour qu'aucun instant ne voie l'ancien contenu disparu et le nouveau pas encore écrit.
 5. **Fermer les notes de backlog couvertes** : les supprimer de `docs/backlog/`. Le vocabulaire de statut n'a pas de valeur `done` — un item terminé quitte le backlog. Si une partie seulement est livrée, le reste vit dans une note `todo` distincte (créée à l'étape 4), jamais en reliquat dans une note fermée.
 6. **Supprimer le plan** dans `docs/plans/`.
 7. **Régénérer les index** : `pnpm docs:index`.

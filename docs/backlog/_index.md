@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **85** items.
+Total : **103** items.
 
 ## app
 
@@ -86,6 +86,10 @@ Total : **85** items.
 | GAMEPLAY-48 | [GAMEPLAY-48-shared-grid-slicing-util](GAMEPLAY-48-shared-grid-slicing-util.md) | 📋 à faire | S | 2026-08-19 |
 | GAMEPLAY-49 | [GAMEPLAY-49-tile-anchor-fit-to-cell](GAMEPLAY-49-tile-anchor-fit-to-cell.md) | 📋 à faire | M | 2026-08-19 |
 | GAMEPLAY-50 | [GAMEPLAY-50-tilemap-hardening-minors](GAMEPLAY-50-tilemap-hardening-minors.md) | 📋 à faire | S | 2026-08-19 |
+| GAMEPLAY-52 | [GAMEPLAY-52-occluder-rich-slicing](GAMEPLAY-52-occluder-rich-slicing.md) | 📋 à faire | M | 2026-08-20 |
+| GAMEPLAY-53 | [GAMEPLAY-53-occluder-render-perf](GAMEPLAY-53-occluder-render-perf.md) | 📋 à faire | M | 2026-08-20 |
+| GAMEPLAY-55 | [GAMEPLAY-55-occluder-collider-generation](GAMEPLAY-55-occluder-collider-generation.md) | 📋 à faire | M | 2026-08-20 |
+| GAMEPLAY-59 | [GAMEPLAY-59-sort-point-customization](GAMEPLAY-59-sort-point-customization.md) | 📋 à faire | M | 2026-08-20 |
 | GAMEPLAY-35 | [GAMEPLAY-35-addcomponent-overload-duplication](GAMEPLAY-35-addcomponent-overload-duplication.md) | 🔶 partiel | S | 2026-08-19 |
 | GAMEPLAY-47 | [GAMEPLAY-47-tilemap-render-persistent-buffer-chunking](GAMEPLAY-47-tilemap-render-persistent-buffer-chunking.md) | 🔶 partiel | M | 2026-08-19 |
 | GAMEPLAY-03 | [GAMEPLAY-03-animator-state-machine](GAMEPLAY-03-animator-state-machine.md) | 💭 vision | L | 2026-08-19 |
@@ -104,6 +108,24 @@ Total : **85** items.
 | GAMEPLAY-33 | [GAMEPLAY-33-exposed-values-deserialization](GAMEPLAY-33-exposed-values-deserialization.md) | 💭 vision | M | 2026-08-19 |
 | GAMEPLAY-37 | [GAMEPLAY-37-transform-pure-data-changed](GAMEPLAY-37-transform-pure-data-changed.md) | 💭 vision | L | 2026-08-19 |
 | GAMEPLAY-46 | [GAMEPLAY-46-tile-palette-editor](GAMEPLAY-46-tile-palette-editor.md) | 💭 vision | M | 2026-08-19 |
+| GAMEPLAY-51 | [GAMEPLAY-51-occluder-alternative-strategies](GAMEPLAY-51-occluder-alternative-strategies.md) | 💭 vision | L | 2026-08-20 |
+| GAMEPLAY-54 | [GAMEPLAY-54-dynamic-occluders](GAMEPLAY-54-dynamic-occluders.md) | 💭 vision | L | 2026-08-20 |
+| GAMEPLAY-56 | [GAMEPLAY-56-deep-sprite-occluder-banding](GAMEPLAY-56-deep-sprite-occluder-banding.md) | 💭 vision | M | 2026-08-20 |
+| GAMEPLAY-57 | [GAMEPLAY-57-sorting-layers-serialization-editor](GAMEPLAY-57-sorting-layers-serialization-editor.md) | 💭 vision | M | 2026-08-20 |
+| GAMEPLAY-58 | [GAMEPLAY-58-sort-axis-configurable](GAMEPLAY-58-sort-axis-configurable.md) | 💭 vision | M | 2026-08-20 |
+
+## physics
+
+| ID | Item | Statut | Effort | Vérifié |
+| --- | --- | --- | --- | --- |
+| PHYSICS-01 | [PHYSICS-01-character-controller-advanced-settings](PHYSICS-01-character-controller-advanced-settings.md) | 📋 à faire | L | 2026-08-20 |
+| PHYSICS-02 | [PHYSICS-02-tiled-collider-ingestion-shapes](PHYSICS-02-tiled-collider-ingestion-shapes.md) | 📋 à faire | M | 2026-08-20 |
+| PHYSICS-04 | [PHYSICS-04-spawn-overlap-depenetration](PHYSICS-04-spawn-overlap-depenetration.md) | 📋 à faire | S | 2026-08-20 |
+| PHYSICS-05 | [PHYSICS-05-static-world-physics-perf](PHYSICS-05-static-world-physics-perf.md) | 📋 à faire | M | 2026-08-20 |
+| PHYSICS-07 | [PHYSICS-07-rapier-package-hygiene](PHYSICS-07-rapier-package-hygiene.md) | 📋 à faire | S | 2026-08-20 |
+| PHYSICS-03 | [PHYSICS-03-system-driven-character-controller](PHYSICS-03-system-driven-character-controller.md) | 💭 vision | M | 2026-08-20 |
+| PHYSICS-06 | [PHYSICS-06-joints](PHYSICS-06-joints.md) | 💭 vision | M | 2026-08-20 |
+| PHYSICS-08 | [PHYSICS-08-character-controller-tuning-remarks](PHYSICS-08-character-controller-tuning-remarks.md) | 💭 vision | S | 2026-08-20 |
 
 ## rendering
 
@@ -118,6 +140,7 @@ Total : **85** items.
 | RENDER-11 | [RENDER-11-shapes-configurable-anchor](RENDER-11-shapes-configurable-anchor.md) | 📋 à faire | S | 2026-08-19 |
 | RENDER-12 | [RENDER-12-vite-plugin-shader-codegen](RENDER-12-vite-plugin-shader-codegen.md) | 📋 à faire | M | 2026-08-19 |
 | RENDER-13 | [RENDER-13-ivec-support](RENDER-13-ivec-support.md) | 📋 à faire | S | 2026-08-19 |
+| RENDER-15 | [RENDER-15-per-frame-pivot](RENDER-15-per-frame-pivot.md) | 📋 à faire | S | 2026-08-20 |
 | RENDER-04 | [RENDER-04-resource-lifecycle-eviction](RENDER-04-resource-lifecycle-eviction.md) | 🔶 partiel | M | 2026-08-19 |
 | RENDER-01 | [RENDER-01-text-rendering](RENDER-01-text-rendering.md) | 💭 vision | L | 2026-08-19 |
 | RENDER-09 | [RENDER-09-shapes-arbitrary-polygons](RENDER-09-shapes-arbitrary-polygons.md) | 💭 vision | L | 2026-08-19 |
