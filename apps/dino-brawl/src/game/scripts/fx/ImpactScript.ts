@@ -1,6 +1,12 @@
 import type { Unsubscribe } from "@atlasjs/core";
 import { randomRange } from "@atlasjs/utils";
-import { Animator, AtlasScript, Transform } from "@atlasjs/gameplay";
+import {
+  Animator,
+  AtlasScript,
+  registerScriptMetadata,
+  ScriptMetadata,
+  Transform,
+} from "@atlasjs/gameplay";
 
 /** A one-shot burst: it varies a little, then takes itself off screen. */
 export class ImpactScript extends AtlasScript<{ scale?: number }> {
@@ -23,3 +29,9 @@ export class ImpactScript extends AtlasScript<{ scale?: number }> {
     this.unsubscribe();
   }
 }
+
+registerScriptMetadata(ImpactScript, {
+  exposed: {
+    scale: ScriptMetadata.field({ required: true }),
+  },
+});

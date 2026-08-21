@@ -1,4 +1,4 @@
-import type { Vec2 } from "@atlasjs/math";
+import { Vec2 } from "@atlasjs/math";
 import type { SpriteAnimation } from "@atlasjs/nebula";
 import type { Entity } from "@atlasjs/nexus";
 
@@ -38,7 +38,7 @@ export const createImpactPrefab = (opt: ImpactPrefabOptions) =>
       renderer.sortPointEntity = props.owner;
 
       const transform: Transform2D = entity.add(Transform2D);
-      transform.position.copyFrom(props.position);
+      transform.position.copyFrom(props.position).sub(new Vec2(0, 0));
       transform.rotation = props.rotation;
 
       entity.attach(ImpactScript, { scale: opt.scale });

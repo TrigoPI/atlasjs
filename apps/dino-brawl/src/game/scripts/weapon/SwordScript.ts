@@ -43,7 +43,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
   private readonly angleOffset: number;
   private readonly attack: WeaponAttack;
   private readonly hitbox: SwordHitboxScript;
-  private readonly hitstopDuration: number = 0.15;
+  private readonly hitstopDuration: number = 0;
   private readonly knockback: number = 220;
   private readonly shake: ShakeSpec = shake;
 

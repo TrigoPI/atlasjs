@@ -41,11 +41,12 @@ export function GameCanvas({
     const rendererPlugin: NebulaPlugin = new NebulaPlugin(renderer);
     const nexusPlugin: NexusPlugin = new NexusPlugin();
     const gameplayPlugin: GameplayPlugin = new GameplayPlugin();
-    const gizmoPlugin: GizmoPlugin = new GizmoPlugin({ showColliders: true });
-
-    const rapierWorld: RapierPhysicsWorld = new RapierPhysicsWorld({
-      unitsPerMeter: 100,
+    const gizmoPlugin: GizmoPlugin = new GizmoPlugin({
+      showColliders: false,
     });
+
+    // prettier-ignore
+    const rapierWorld: RapierPhysicsWorld = new RapierPhysicsWorld({ unitsPerMeter: 100 });
     const inertiaPlugin: InertialPlugin = new InertialPlugin(rapierWorld);
 
     const inputPlugin: InputPlugin = new InputPlugin({

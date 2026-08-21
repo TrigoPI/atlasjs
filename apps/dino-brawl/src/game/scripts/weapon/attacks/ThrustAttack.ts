@@ -18,7 +18,6 @@ type ThrustAttackProps = WeaponAttackAudioProps & {
 };
 
 export class ThrustAttack extends WeaponAttack<ThrustAttackProps> {
-  private readonly pullbackDuration: number = 0.22;
   private readonly thrustDuration: number = 0.07;
   private readonly holdDuration: number = 0.05;
   private readonly recoverDuration: number = 0.2;
@@ -26,12 +25,7 @@ export class ThrustAttack extends WeaponAttack<ThrustAttackProps> {
   private readonly thrustRadius: number = 1.85;
 
   public get duration(): number {
-    return (
-      this.pullbackDuration +
-      this.thrustDuration +
-      this.holdDuration +
-      this.recoverDuration
-    );
+    return this.thrustDuration + this.holdDuration + this.recoverDuration;
   }
 
   public begin(): void {
@@ -43,15 +37,7 @@ export class ThrustAttack extends WeaponAttack<ThrustAttackProps> {
     out.angleOffset = 0;
     out.scale = 1;
 
-    const pullbackTime: number = t;
-
-    if (pullbackTime < this.pullbackDuration) {
-      const eased: number = Easing.inOutQuad(pullbackTime / this.pullbackDuration);
-      out.radiusScale = MathUtils.lerp(1, this.pullbackRadius, eased);
-      return;
-    }
-
-    const thrustTime: number = pullbackTime - this.pullbackDuration;
+    const thrustTime: number = t;
 
     if (thrustTime < this.thrustDuration) {
       const eased: number = Easing.outCubic(thrustTime / this.thrustDuration);

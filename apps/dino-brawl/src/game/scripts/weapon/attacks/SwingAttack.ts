@@ -18,15 +18,13 @@ type SwingAttackProps = WeaponAttackAudioProps & {
 };
 
 export class SwingAttack extends WeaponAttack<SwingAttackProps> {
-  private readonly windupDuration: number = 0.3;
   private readonly strikeDuration: number = 0.09;
   private readonly recoverDuration: number = 0.18;
   private readonly windupAngle: number = Math.PI * 0.3;
   private readonly strikeAngle: number = Math.PI * 0.55;
-  private readonly strikeScale: number = 1.5;
 
   public get duration(): number {
-    return this.windupDuration + this.strikeDuration + this.recoverDuration;
+    return this.strikeDuration + this.recoverDuration;
   }
 
   public begin(): void {
@@ -35,23 +33,12 @@ export class SwingAttack extends WeaponAttack<SwingAttackProps> {
 
   // prettier-ignore
   public sample(t: number, out: AttackPose): void {
-    const windupTime: number = t;
-
-    if (windupTime < this.windupDuration) {
-      const eased: number = Easing.inOutQuad(windupTime / this.windupDuration);
-      out.angleOffset = MathUtils.lerp(0, this.windupAngle, eased);
-      out.radiusScale = 1;
-      out.scale = 1;
-      return;
-    }
-
-    const strikeTime: number = windupTime - this.windupDuration;
+    const strikeTime: number = t;
 
     if (strikeTime < this.strikeDuration) {
       const eased: number = Easing.outCubic(strikeTime / this.strikeDuration);
       out.angleOffset = MathUtils.lerp(this.windupAngle, -this.strikeAngle, eased);
       out.radiusScale = 1;
-      out.scale = MathUtils.lerp(1, this.strikeScale, eased);
       return;
     }
 
@@ -61,7 +48,6 @@ export class SwingAttack extends WeaponAttack<SwingAttackProps> {
 
     out.angleOffset = MathUtils.lerp(-this.strikeAngle, 0, eased);
     out.radiusScale = 1;
-    out.scale = MathUtils.lerp(this.strikeScale, 1, eased);
   }
 }
 

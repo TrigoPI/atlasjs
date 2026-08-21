@@ -18,11 +18,6 @@ type HurtboxScriptProps = {
 };
 
 export class HurtboxScript extends AtlasScript<HurtboxScriptProps> {
-  /**
-   * Opt-in: 0 means every blow that reaches this hurtbox lands. Weapons
-   * already strike a given target at most once per attack, so this exists
-   * for targets that should also shrug off *other* blows for a moment.
-   */
   private readonly invincibilityDuration: number = 0;
 
   private readonly lastDirection: Vec2 = new Vec2();
@@ -36,7 +31,6 @@ export class HurtboxScript extends AtlasScript<HurtboxScriptProps> {
     return this.invincibilityRemaining > 0;
   }
 
-  /** Monotonic; changes exactly once per landed blow. */
   public get hitCount(): number {
     return this.hits;
   }
