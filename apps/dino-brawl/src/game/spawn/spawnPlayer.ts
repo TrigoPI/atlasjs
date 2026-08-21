@@ -8,7 +8,6 @@ import type { AssetsLoader } from "../loaders";
 import type { SheetLoader } from "../sheets";
 
 import {
-  type EntityBuilder,
   type Instantiator,
   type Prefab,
   INSTANTIATOR,
@@ -29,13 +28,7 @@ import {
   createSwordAnchorPrefab,
 } from "../prefabs";
 
-import {
-  AttackChain,
-  SpinAttack,
-  SwingAttack,
-  ThrustAttack,
-  type WeaponAttack,
-} from "../scripts";
+import { createSwordCombo } from "../content";
 
 // prettier-ignore
 export function spawnPlayer(
@@ -93,14 +86,11 @@ export function spawnPlayer(
     anchor: anchor.id,
     angle: 0,
     r: 40,
-    attack: (e: EntityBuilder): WeaponAttack =>
-      e.attach(AttackChain, {
-        attacks: [
-          e.attach(ThrustAttack, { clip: woosh1Sound, pitch: 1 }),
-          e.attach(SwingAttack, { clip: woosh2Sound, pitch: 1.1 }),
-          e.attach(SpinAttack, { clip: woosh3Sound, pitch: 1.2 }),
-        ],
-      }),
+    attack: createSwordCombo({
+      thrust: woosh1Sound,
+      swing: woosh2Sound,
+      spin: woosh3Sound,
+    }),
   });
 
   instantiator.instantiate(

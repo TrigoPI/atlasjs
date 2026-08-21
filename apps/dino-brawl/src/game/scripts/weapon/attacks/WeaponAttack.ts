@@ -6,11 +6,14 @@ import {
   AudioApi,
   registerScriptMetadata,
   ScriptMetadata,
+  type EntityBuilder,
 } from "@atlasjs/gameplay";
 
 import type { AttackPose } from "./AttackPose";
 
 export type { AttackPose } from "./AttackPose";
+
+export type WeaponAttackFactory = (entity: EntityBuilder) => WeaponAttack;
 
 export type WeaponAttackAudioProps = {
   clip?: AudioClip;

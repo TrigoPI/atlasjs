@@ -7,6 +7,7 @@ import {
   SwordScript,
   SwordSortingScript,
   type WeaponAttack,
+  type WeaponAttackFactory,
 } from "../../scripts";
 
 import {
@@ -26,7 +27,7 @@ export type SwordPrefabProps = {
   angle: number;
   swordSprite: Sprite;
   colliderRotation?: number;
-  attack: (entity: EntityBuilder) => WeaponAttack;
+  attack: WeaponAttackFactory;
 };
 
 const DEFAULT_COLLIDER_ROTATION: number = Math.PI / 4;

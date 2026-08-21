@@ -5,9 +5,9 @@ description: Use when verifying a change in the browser for AtlasJS (apps/webgpu
 
 # Browser verification (AtlasJS)
 
-Nine pitfalls make browser verification misleading on this project. Ignoring them produces either a false negative, or an unfounded "it works".
+Ten pitfalls make browser verification misleading on this project. Ignoring them produces either a false negative, or an unfounded "it works".
 
-Pitfalls 1-6 are about what the preview _shows_; 7-9 are about _driving_ the app to check behaviour, where a lost click looks exactly like a broken feature.
+Pitfalls 1-6 are about what the preview _shows_; 7-10 are about _driving_ the app to check behaviour, where a lost click looks exactly like a broken feature.
 
 ## 1. Rebuild the backend after any `.wgsl` edit
 
@@ -52,6 +52,12 @@ Each `javascript_tool` call tends to un-front the tab, so RAF re-throttles and t
 - **Never read verification state through `javascript_tool`.** Inject a `position: fixed` HUD `<div>`, have the instrumented code render into it, and read the value off the **screenshot**. That keeps `javascript_tool` out of the critical path entirely.
 - The tab also silently flips back to the harness proxy URL, which serves a blank page. When a screenshot comes back blank, re-`navigate` to the port from `preview_logs` and `tabs_select` before concluding anything.
 
+### A synthetic pointer press never survives
+
+`javascript_tool` **stops the RAF loop entirely** (instrument a frame counter: it stays at 0 for the whole call), and un-fronting the tab fires `blur` on `window`, which `DomInputBackend` handles with `input.clearAll()`. So a `pointerdown` dispatched from `javascript_tool` is wiped before a single frame observes it — holding the button across hovers doesn't help.
+
+`isPressed` is an **edge** (`current && !previous`, flipped in `endFrame`), so a real `computer left_click` is also lost whenever no frame lands between its down and its up — at 4 fps, most of them are. The recipe that lands: `hover` → `left_click` → `hover`, on the same coordinates, **retried two or three times**. A lost click and a broken attack look identical, so never conclude from one attempt.
+
 ## 8. `computer key` cannot hold a key down
 
 `repeat: 40` sends forty instant keydown/keyup pairs, and `duration` sends one instant pair. Movement is `dt`-based, so the character barely budges either way — this is not an input-binding bug.
@@ -63,6 +69,10 @@ To actually walk, dispatch a bare `keydown` (no `keyup`) on `[window, document, 
 At 4 fps, `dt` is ~250 ms: a weapon hitbox teleports past its target between physics steps and `onTriggerEnter` never fires. Attacks read as misses even when the gizmos look like they overlap mid-swing.
 
 Get the target overlapping the hitbox in its **resting** pose before attacking, or put the assertion in a unit test and use the browser only to confirm the wiring.
+
+## 10. The console buffer outlives the page
+
+`read_console_messages` keeps history across reloads, and `console.clear()` does not empty it — a log line from a previous bundle reads exactly like a fresh one. Before driving anything, log a unique marker (`console.log("[Probe] ...")`) and only trust lines that appear **after** it. Also check the format of what you read: a probe line in an older shape means the browser is running a stale module, even when `curl http://localhost:<port>/src/…` shows the server serving the new one.
 
 ## Verification order
 
