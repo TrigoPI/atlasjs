@@ -223,3 +223,97 @@ describe("MeleeHitResolver", () => {
     expect(direction.y).toBe(4);
   });
 });
+
+describe("MeleeHitResolver per-swing impact override", () => {
+  it("uses the constructor values when beginSwing is called bare", () => {
+    const hitbox: FakeHitbox = new FakeHitbox();
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const resolver: MeleeHitResolver = new MeleeHitResolver(
+      hitbox,
+      KNOCKBACK,
+      HITSTOP,
+    );
+
+    hitbox.setTargets([createTarget(1, hurtbox)]);
+    resolver.beginSwing();
+    resolver.resolve(new Vec2(1, 0));
+
+    expect(hurtbox.lastKnockback).toBe(KNOCKBACK);
+    expect(hurtbox.lastHitstop).toBe(HITSTOP);
+  });
+
+  it("applies the values handed to beginSwing for that swing", () => {
+    const hitbox: FakeHitbox = new FakeHitbox();
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const resolver: MeleeHitResolver = new MeleeHitResolver(
+      hitbox,
+      KNOCKBACK,
+      HITSTOP,
+    );
+
+    hitbox.setTargets([createTarget(1, hurtbox)]);
+    resolver.beginSwing(2200, 0.2);
+    resolver.resolve(new Vec2(1, 0));
+
+    expect(hurtbox.lastKnockback).toBe(2200);
+    expect(hurtbox.lastHitstop).toBe(0.2);
+  });
+
+  it("falls back per field, not all-or-nothing", () => {
+    const hitbox: FakeHitbox = new FakeHitbox();
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const resolver: MeleeHitResolver = new MeleeHitResolver(
+      hitbox,
+      KNOCKBACK,
+      HITSTOP,
+    );
+
+    hitbox.setTargets([createTarget(1, hurtbox)]);
+    resolver.beginSwing(2200, undefined);
+    resolver.resolve(new Vec2(1, 0));
+
+    expect(hurtbox.lastKnockback).toBe(2200);
+    expect(hurtbox.lastHitstop).toBe(HITSTOP);
+  });
+
+  it("reverts to the constructor values on the next bare beginSwing", () => {
+    const hitbox: FakeHitbox = new FakeHitbox();
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const resolver: MeleeHitResolver = new MeleeHitResolver(
+      hitbox,
+      KNOCKBACK,
+      HITSTOP,
+    );
+
+    hitbox.setTargets([createTarget(1, hurtbox)]);
+
+    resolver.beginSwing(2200, 0.2);
+    resolver.resolve(new Vec2(1, 0));
+
+    hurtbox.onUpdate(DT);
+    resolver.beginSwing();
+    resolver.resolve(new Vec2(1, 0));
+
+    expect(hurtbox.lastKnockback).toBe(KNOCKBACK);
+    expect(hurtbox.lastHitstop).toBe(HITSTOP);
+  });
+
+  // An explicit 0 is a legitimate authoring choice, so the fallback must be
+  // nullish (??) and not truthiness (||), which would silently discard it.
+  it("honours an explicit 0 instead of falling back to the default", () => {
+    const hitbox: FakeHitbox = new FakeHitbox();
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const resolver: MeleeHitResolver = new MeleeHitResolver(
+      hitbox,
+      KNOCKBACK,
+      HITSTOP,
+    );
+
+    hitbox.setTargets([createTarget(1, hurtbox)]);
+    resolver.beginSwing(0, 0);
+    resolver.resolve(new Vec2(1, 0));
+
+    expect(hurtbox.lastKnockback).toBe(0);
+    expect(hurtbox.lastHitstop).toBe(0);
+  });
+});

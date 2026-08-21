@@ -21,12 +21,19 @@ export type WeaponAttackAudioProps = {
   volume?: number;
 };
 
+export type WeaponAttackImpactProps = {
+  knockback?: number;
+  hitstop?: number;
+};
+
 export abstract class WeaponAttack<
   TProps extends object = {},
 > extends AtlasScript<TProps> {
   protected clip?: AudioClip;
   protected pitch: number = 1;
   protected volume: number = 1;
+  protected knockback?: number;
+  protected hitstop?: number;
 
   private audio?: AudioApi;
 
@@ -35,6 +42,14 @@ export abstract class WeaponAttack<
 
   public get rearmsHits(): boolean {
     return false;
+  }
+
+  public get impactKnockback(): number | undefined {
+    return this.knockback;
+  }
+
+  public get impactHitstop(): number | undefined {
+    return this.hitstop;
   }
 
   public onCreate(): void {
@@ -75,5 +90,7 @@ registerScriptMetadata(WeaponAttack, {
     clip: ScriptMetadata.field(),
     pitch: ScriptMetadata.field(),
     volume: ScriptMetadata.field(),
+    knockback: ScriptMetadata.field(),
+    hitstop: ScriptMetadata.field(),
   },
 });

@@ -148,7 +148,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     this.blowDirection.set(Math.cos(aimAngle), Math.sin(aimAngle));
 
     if (this.getResolver().resolve(this.blowDirection)) {
-      this.hitstopRemaining = this.hitstopDuration;
+      this.hitstopRemaining = this.attack.impactHitstop ?? this.hitstopDuration;
       this.frozenAimAngle = aimAngle;
       this.camera.shake(this.shake, this.blowDirection);
     }
@@ -187,7 +187,10 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
   }
 
   private armResolver(): void {
-    this.getResolver().beginSwing();
+    this.getResolver().beginSwing(
+      this.attack.impactKnockback,
+      this.attack.impactHitstop,
+    );
   }
 
   private getResolver(): MeleeHitResolver {
