@@ -4,5 +4,6 @@ export * from "./AttackTimeline";
 export * from "./SpinAttack";
 export * from "./SwingAttack";
 export * from "./ThrustAttack";
+export * from "./ThrustChainAttack";
 export * from "./TimelineAttack";
 export * from "./WeaponAttack";
