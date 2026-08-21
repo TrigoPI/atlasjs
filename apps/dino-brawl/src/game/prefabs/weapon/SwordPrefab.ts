@@ -21,9 +21,9 @@ import {
 } from "@atlasjs/gameplay";
 
 export type SwordPrefabProps = {
+  r: number;
   owner: Entity;
   anchor: Entity;
-  r: number;
   angle: number;
   swordSprite: Sprite;
   colliderRotation?: number;

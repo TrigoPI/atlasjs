@@ -44,12 +44,21 @@ At the slightest doubt about what is on screen after a change, restart the dev s
 
 When the port is already taken, Vite silently picks another one while the harness still announces the first. Read `preview_logs` for the effective port before navigating, instead of trusting the port reported at startup.
 
+`navigate` to that effective port is then **refused** ("navigation was denied or failed") unless you pass `force: true`. The refusal is not a sign the port is wrong — retry the same URL with the flag before doubting the port.
+
+## 6b. The pane must be *displayed*, not merely fronted
+
+`tabs_select` fronts a tab; it does not display the Browser pane. While the pane is hidden, `computer{action:"screenshot"}` fails outright with "the Browser pane is not displayed, so the page is not compositing frames" — an explicit error, so it can't be mistaken for a broken render.
+
+The subtler state is a pane that is displayed but small: the app renders, yet sits at **4 fps**. Nothing behavioural is observable there. A dino-brawl attack lasts ~0.23 s, so at 250 ms per frame an entire attack — wind-up, strike and recovery — completes *between two frames*. Once the pane is properly displayed the loop reaches 60 fps and `dt` drops to ~16 ms, which is the only regime where hit counts, phase motion and per-phase events mean anything. **Read the on-screen fps counter before trusting any behavioural observation**, and treat anything measured at 4 fps as unverified.
+
 ## 7. `javascript_tool` drops the pane out of the foreground
 
 Each `javascript_tool` call tends to un-front the tab, so RAF re-throttles and the **next** simulated click is never consumed by an update tick — the input edge is polled per frame, and there is no frame. The click looks like it did nothing; nothing is broken.
 
 - Sandwich every `javascript_tool` call between real `computer` `hover`/`click` calls to keep the loop running.
 - **Never read verification state through `javascript_tool`.** Inject a `position: fixed` HUD `<div>`, have the instrumented code render into it, and read the value off the **screenshot**. That keeps `javascript_tool` out of the critical path entirely.
+- **Prefer instrumenting the source over injecting a probe.** `javascript_tool` sometimes detaches the page from the tab outright — subsequent `computer` calls fail with "No site is open in this tab", and the only recovery is a `navigate` reload, which destroys any injected HUD or monkey-patch. An injected probe can therefore become unrecoverable. A temporary `console.log` added to the **source file**, read back with `read_console_messages`, survives every reload, never touches the tab, and costs one revert at the end. Tag it with a unique marker (pitfall 10) and confirm the dev server is really serving it — `curl http://localhost:<vite-port>/src/<path>.ts | grep <marker>` — before concluding from its absence that the code did not run.
 - The tab also silently flips back to the harness proxy URL, which serves a blank page. When a screenshot comes back blank, re-`navigate` to the port from `preview_logs` and `tabs_select` before concluding anything.
 
 ### A synthetic pointer press never survives

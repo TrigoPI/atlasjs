@@ -21,34 +21,66 @@ export type WeaponAttackAudioProps = {
   volume?: number;
 };
 
+export type WeaponAttackImpactProps = {
+  knockback?: number;
+  hitstop?: number;
+};
+
 export abstract class WeaponAttack<
   TProps extends object = {},
 > extends AtlasScript<TProps> {
   protected clip?: AudioClip;
   protected pitch: number = 1;
   protected volume: number = 1;
+  protected knockback?: number;
+  protected hitstop?: number;
 
   private audio?: AudioApi;
 
   public abstract get duration(): number;
   public abstract sample(t: number, out: AttackPose): void;
 
+  public get rearmsHits(): boolean {
+    return false;
+  }
+
+  public get impactKnockback(): number | undefined {
+    return this.knockback;
+  }
+
+  public get impactHitstop(): number | undefined {
+    return this.hitstop;
+  }
+
   public onCreate(): void {
     this.audio = this.getService(AudioApi);
   }
 
   public begin(): void {
-    this.playClip();
-  }
-
-  protected playClip(): void {
-    if (this.audio === undefined || this.clip === undefined) {
+    if (!this.playsClipOnBegin()) {
       return;
     }
 
-    this.audio.playOneShot(this.clip, {
-      pitch: this.pitch,
-      volume: this.volume,
+    this.playClip();
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public advance(_t: number): void {}
+
+  protected playsClipOnBegin(): boolean {
+    return true;
+  }
+
+  protected playClip(clip?: AudioClip, pitch?: number, volume?: number): void {
+    const resolvedClip: AudioClip | undefined = clip ?? this.clip;
+
+    if (this.audio === undefined || resolvedClip === undefined) {
+      return;
+    }
+
+    this.audio.playOneShot(resolvedClip, {
+      pitch: pitch ?? this.pitch,
+      volume: volume ?? this.volume,
     });
   }
 }
@@ -58,5 +90,7 @@ registerScriptMetadata(WeaponAttack, {
     clip: ScriptMetadata.field(),
     pitch: ScriptMetadata.field(),
     volume: ScriptMetadata.field(),
+    knockback: ScriptMetadata.field(),
+    hitstop: ScriptMetadata.field(),
   },
 });

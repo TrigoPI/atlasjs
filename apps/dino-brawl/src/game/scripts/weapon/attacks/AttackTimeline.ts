@@ -1,5 +1,6 @@
 import { MathUtils } from "@atlasjs/math";
 
+import type { AudioClip } from "@atlasjs/audio";
 import type { AttackPose } from "./AttackPose";
 
 export type AttackTween = {
@@ -8,12 +9,24 @@ export type AttackTween = {
   easing?: (t: number) => number;
 };
 
+export type AttackCueSound = {
+  clip?: AudioClip;
+  pitch?: number;
+  volume?: number;
+};
+
+export type AttackCue = {
+  sound?: AttackCueSound;
+  rearmHits?: boolean;
+};
+
 export type AttackPhase = {
   name: string;
   duration: number;
   angleOffset?: AttackTween;
   radiusScale?: AttackTween;
   scale?: AttackTween;
+  cue?: AttackCue;
 };
 
 type ResolvedChannel = {
@@ -28,6 +41,7 @@ type ResolvedPhase = {
   angleOffset: ResolvedChannel;
   radiusScale: ResolvedChannel;
   scale: ResolvedChannel;
+  cue?: AttackCue;
 };
 
 const IDENTITY_ANGLE_OFFSET: number = 0;
@@ -61,6 +75,7 @@ function evaluate(channel: ResolvedChannel, progress: number): number {
 export class AttackTimeline {
   private readonly phases: readonly ResolvedPhase[];
   private readonly totalDuration: number;
+  private readonly soundCuePresent: boolean;
 
   public constructor(phases: readonly AttackPhase[]) {
     const resolved: ResolvedPhase[] = [];
@@ -69,6 +84,7 @@ export class AttackTimeline {
     let carriedRadiusScale: number = IDENTITY_RADIUS_SCALE;
     let carriedScale: number = IDENTITY_SCALE;
     let elapsed: number = 0;
+    let soundCue: boolean = false;
 
     for (let index: number = 0; index < phases.length; index += 1) {
       const phase: AttackPhase = phases[index];
@@ -92,17 +108,52 @@ export class AttackTimeline {
         angleOffset,
         radiusScale,
         scale,
+        cue: phase.cue,
       });
+
+      if (phase.cue?.sound !== undefined) {
+        soundCue = true;
+      }
 
       elapsed += phase.duration;
     }
 
     this.phases = resolved;
     this.totalDuration = elapsed;
+    this.soundCuePresent = soundCue;
   }
 
   public get duration(): number {
     return this.totalDuration;
+  }
+
+  public get hasSoundCue(): boolean {
+    return this.soundCuePresent;
+  }
+
+  /**
+   * Collects cues whose phase starts strictly after `fromT` and at or before `toT`.
+   *
+   * The low bound is exclusive and the high bound is inclusive, enabling per-frame
+   * callers advancing their clock to neither replay nor skip cues.
+   *
+   * Cues are appended to `out` without clearing it; the caller owns the array.
+   *
+   * To capture a cue on the phase starting at `t = 0`, seed the first call with
+   * `fromT < 0` (e.g., `fromT = -1`).
+   */
+  public collectCues(fromT: number, toT: number, out: AttackCue[]): void {
+    for (let index: number = 0; index < this.phases.length; index += 1) {
+      const phase: ResolvedPhase = this.phases[index];
+
+      if (phase.cue === undefined) {
+        continue;
+      }
+
+      if (phase.start > fromT && phase.start <= toT) {
+        out.push(phase.cue);
+      }
+    }
   }
 
   public sample(t: number, out: AttackPose): void {

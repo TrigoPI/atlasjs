@@ -17,6 +17,7 @@ class RecordingHurtbox extends HurtboxScript {
   public accepted: number = 0;
   public lastDirectionX: number = 0;
   public lastKnockback: number = 0;
+  public lastHitstop: number = 0;
 
   public override takeHit(hit: HitInfo): boolean {
     const landed: boolean = super.takeHit(hit);
@@ -24,6 +25,7 @@ class RecordingHurtbox extends HurtboxScript {
     if (landed) {
       this.lastDirectionX = hit.direction.x;
       this.lastKnockback = hit.knockback ?? 0;
+      this.lastHitstop = hit.hitstop ?? 0;
     }
 
     if (landed) {
@@ -47,11 +49,32 @@ class FakeHitbox {
 }
 
 class FakeAttack {
+  public rearm: boolean = false;
+  public knockbackOverride: number | undefined = undefined;
+  public hitstopOverride: number | undefined = undefined;
+  public readonly advanceCalls: number[] = [];
+
   public get duration(): number {
     return 1;
   }
 
+  public get rearmsHits(): boolean {
+    return this.rearm;
+  }
+
+  public get impactKnockback(): number | undefined {
+    return this.knockbackOverride;
+  }
+
+  public get impactHitstop(): number | undefined {
+    return this.hitstopOverride;
+  }
+
   public begin(): void {}
+
+  public advance(t: number): void {
+    this.advanceCalls.push(t);
+  }
 
   public sample(_t: number, out: AttackPose): void {
     out.angleOffset = 0;
@@ -312,5 +335,138 @@ describe("SwordScript impact resolution", () => {
 
     expect(first.accepted).toBe(1);
     expect(second.accepted).toBe(1);
+  });
+});
+
+describe("SwordScript hit-window rearming", () => {
+  it("advances the attack with the swing clock every frame", () => {
+    const attack: FakeAttack = new FakeAttack();
+    const rig: Rig = createRig({ attack });
+
+    rig.frame();
+    rig.frame();
+
+    expect(attack.advanceCalls).toHaveLength(2);
+    expect(attack.advanceCalls[0]).toBeCloseTo(DT);
+    expect(attack.advanceCalls[1]).toBeCloseTo(DT * 2);
+  });
+
+  it("hits the same target again once the attack signals a rearm", () => {
+    const attack: FakeAttack = new FakeAttack();
+    const rig: Rig = createRig({ attack });
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+
+    rig.hitbox.setTargets([createTarget(1, hurtbox)]);
+
+    rig.frame();
+    expect(hurtbox.accepted).toBe(1);
+
+    // Those two frames burn the 0.07 hitstop; no rearm, so no second blow.
+    rig.frame();
+    rig.frame();
+    expect(hurtbox.accepted).toBe(1);
+
+    attack.rearm = true;
+    rig.frame();
+    expect(hurtbox.accepted).toBe(2);
+
+    // The second blow re-armed the hitstop: burn it off before checking, or
+    // the early return would pass this assertion without ever reaching the
+    // rearm gate.
+    attack.rearm = false;
+    rig.frame();
+    rig.frame();
+    rig.frame();
+    expect(hurtbox.accepted).toBe(2);
+  });
+
+  it("still lands exactly one blow per swing when nothing ever rearms", () => {
+    const rig: Rig = createRig({ attack: new FakeAttack() });
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+
+    rig.hitbox.setTargets([createTarget(1, hurtbox)]);
+
+    for (let i: number = 0; i < 30; i++) {
+      rig.frame();
+      hurtbox.onUpdate(DT);
+    }
+
+    expect(hurtbox.accepted).toBe(1);
+  });
+});
+
+describe("SwordScript per-attack impact override", () => {
+  it("passes the attack knockback to the hurtbox instead of its own", () => {
+    const attack: FakeAttack = new FakeAttack();
+    attack.knockbackOverride = 2200;
+
+    const rig: Rig = createRig({ attack, knockback: 500 });
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+
+    rig.hitbox.setTargets([createTarget(1, hurtbox)]);
+    rig.swing();
+    rig.frame();
+
+    expect(hurtbox.lastKnockback).toBe(2200);
+  });
+
+  it("keeps its own knockback when the attack overrides nothing", () => {
+    const rig: Rig = createRig({
+      attack: new FakeAttack(),
+      knockback: 500,
+    });
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+
+    rig.hitbox.setTargets([createTarget(1, hurtbox)]);
+    rig.swing();
+    rig.frame();
+
+    expect(hurtbox.lastKnockback).toBe(500);
+  });
+
+  it("freezes for the attack hitstop rather than its own", () => {
+    const attack: FakeAttack = new FakeAttack();
+    attack.hitstopOverride = 0.3;
+
+    const rig: Rig = createRig({ attack, hitstopDuration: 0.07 });
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const injected: Record<string, unknown> = rig.sword as unknown as Record<
+      string,
+      unknown
+    >;
+
+    rig.hitbox.setTargets([createTarget(1, hurtbox)]);
+    rig.swing();
+    rig.frame();
+
+    expect(injected.hitstopRemaining).toBeCloseTo(0.3);
+  });
+
+  it("hands the attack hitstop to the victim, not only to the sword", () => {
+    const attack: FakeAttack = new FakeAttack();
+    attack.hitstopOverride = 0.3;
+
+    const rig: Rig = createRig({ attack, hitstopDuration: 0.07 });
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+
+    rig.hitbox.setTargets([createTarget(1, hurtbox)]);
+    rig.swing();
+    rig.frame();
+
+    expect(hurtbox.lastHitstop).toBe(0.3);
+  });
+
+  it("hands its own hitstop to the victim when the attack overrides nothing", () => {
+    const rig: Rig = createRig({
+      attack: new FakeAttack(),
+      hitstopDuration: 0.07,
+    });
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+
+    rig.hitbox.setTargets([createTarget(1, hurtbox)]);
+    rig.swing();
+    rig.frame();
+
+    expect(hurtbox.lastHitstop).toBe(0.07);
   });
 });

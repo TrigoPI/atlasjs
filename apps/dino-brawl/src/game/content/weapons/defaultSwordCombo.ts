@@ -20,14 +20,12 @@ const THRUST_PITCH: number = 1;
 const SWING_PITCH: number = 1.1;
 const SPIN_PITCH: number = 1.2;
 
-export function createSwordCombo(clips: SwordComboClips): WeaponAttackFactory {
+// prettier-ignore
+export function defaultSwordCombo(clips: SwordComboClips): WeaponAttackFactory {
   return (entity: EntityBuilder): WeaponAttack =>
     entity.attach(AttackChain, {
       attacks: [
-        entity.attach(ThrustAttack, {
-          clip: clips.thrust,
-          pitch: THRUST_PITCH,
-        }),
+        entity.attach(ThrustAttack, { clip: clips.thrust, pitch: THRUST_PITCH }),
         entity.attach(SwingAttack, { clip: clips.swing, pitch: SWING_PITCH }),
         entity.attach(SpinAttack, { clip: clips.spin, pitch: SPIN_PITCH }),
       ],

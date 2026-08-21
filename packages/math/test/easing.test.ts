@@ -60,3 +60,42 @@ describe("Easing.outCubic", () => {
     }
   });
 });
+
+describe("Easing.outQuint", () => {
+  it("is anchored at 0 and 1", () => {
+    expect(Easing.outQuint(0)).toBe(0);
+    expect(Easing.outQuint(1)).toBe(1);
+  });
+
+  it("front-loads harder than outCubic", () => {
+    expect(Easing.outQuint(0.25)).toBeGreaterThan(Easing.outCubic(0.25));
+    expect(Easing.outQuint(0.5)).toBeCloseTo(0.96875);
+  });
+
+  it("stays monotonic over [0, 1]", () => {
+    let previous: number = Easing.outQuint(0);
+
+    for (let i = 1; i <= 20; i++) {
+      const current: number = Easing.outQuint(i / 20);
+      expect(current).toBeGreaterThan(previous);
+      previous = current;
+    }
+  });
+});
+
+describe("Easing.outBack", () => {
+  it("is anchored at 0 and 1", () => {
+    expect(Easing.outBack(0)).toBeCloseTo(0);
+    expect(Easing.outBack(1)).toBeCloseTo(1);
+  });
+
+  it("overshoots past 1 before settling", () => {
+    expect(Easing.outBack(0.5)).toBeGreaterThan(1);
+    expect(Easing.outBack(0.7)).toBeGreaterThan(1);
+  });
+
+  it("comes back down to 1 at the end of the curve", () => {
+    expect(Easing.outBack(0.95)).toBeGreaterThan(1);
+    expect(Easing.outBack(1)).toBeLessThanOrEqual(1.0000001);
+  });
+});

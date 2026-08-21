@@ -10,11 +10,14 @@ export type MeleeTargetSource = {
 
 export class MeleeHitResolver {
   private readonly targets: MeleeTargetSource;
-  private readonly knockback: number;
-  private readonly hitstop: number;
+  private readonly defaultKnockback: number;
+  private readonly defaultHitstop: number;
 
   private readonly struck: Set<Entity> = new Set<Entity>();
   private readonly hit: HitInfo = { direction: new Vec2() };
+
+  private knockback: number;
+  private hitstop: number;
 
   public constructor(
     targets: MeleeTargetSource,
@@ -22,12 +25,16 @@ export class MeleeHitResolver {
     hitstop: number,
   ) {
     this.targets = targets;
+    this.defaultKnockback = knockback;
+    this.defaultHitstop = hitstop;
     this.knockback = knockback;
     this.hitstop = hitstop;
   }
 
-  public beginSwing(): void {
+  public beginSwing(knockback?: number, hitstop?: number): void {
     this.struck.clear();
+    this.knockback = knockback ?? this.defaultKnockback;
+    this.hitstop = hitstop ?? this.defaultHitstop;
   }
 
   public resolve(direction: Vec2): boolean {
