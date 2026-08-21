@@ -3,7 +3,10 @@ import { describe, expect, it } from "vitest";
 import { Easing, MathUtils } from "@atlasjs/math";
 
 import type { AttackPose } from "../../../../../src/game/scripts/weapon/attacks/AttackPose";
-import type { AttackPhase } from "../../../../../src/game/scripts/weapon/attacks/AttackTimeline";
+import type {
+  AttackCue,
+  AttackPhase,
+} from "../../../../../src/game/scripts/weapon/attacks/AttackTimeline";
 import { AttackTimeline } from "../../../../../src/game/scripts/weapon/attacks/AttackTimeline";
 
 function createPose(): AttackPose {
@@ -426,6 +429,130 @@ describe("AttackTimeline", () => {
 
     expect(tween.from).toBeUndefined();
     expect(phases[0].duration).toBe(1);
+  });
+
+  describe("AttackTimeline cues", () => {
+    function cuedTimeline(): AttackTimeline {
+      return new AttackTimeline([
+        { name: "a", duration: 0.1, cue: { rearmHits: true } },
+        { name: "b", duration: 0.1 },
+        { name: "c", duration: 0.1, cue: { sound: { pitch: 1.5 } } },
+      ]);
+    }
+
+    it("pushes nothing when no phase carries a cue", () => {
+      const timeline: AttackTimeline = new AttackTimeline([
+        { name: "a", duration: 0.1 },
+        { name: "b", duration: 0.1 },
+      ]);
+      const out: AttackCue[] = [];
+
+      timeline.collectCues(-1, 10, out);
+
+      expect(out).toHaveLength(0);
+    });
+
+    it("fires the phase starting at 0 only when fromT is below 0", () => {
+      const timeline: AttackTimeline = cuedTimeline();
+      const out: AttackCue[] = [];
+
+      timeline.collectCues(-1, 0.01, out);
+      expect(out).toHaveLength(1);
+      expect(out[0].rearmHits).toBe(true);
+
+      out.length = 0;
+      timeline.collectCues(0, 0.01, out);
+      expect(out).toHaveLength(0);
+    });
+
+    it("does not re-fire a cue already consumed by an earlier window", () => {
+      const timeline: AttackTimeline = cuedTimeline();
+      const out: AttackCue[] = [];
+
+      timeline.collectCues(-1, 0.05, out);
+      expect(out).toHaveLength(1);
+      expect(out[0].rearmHits).toBe(true);
+
+      out.length = 0;
+      timeline.collectCues(0.0, 0.25, out);
+      expect(out).toHaveLength(1);
+      expect(out[0].sound?.pitch).toBe(1.5);
+    });
+
+    it("fires phases with identical start times in declaration order within a single collectCues call", () => {
+      const timeline: AttackTimeline = new AttackTimeline([
+        { name: "start-only", duration: 0, cue: { rearmHits: true } },
+        {
+          name: "immediate-next",
+          duration: 0,
+          cue: { sound: { volume: 0.5 } },
+        },
+        { name: "normal", duration: 0.1 },
+      ]);
+      const out: AttackCue[] = [];
+
+      timeline.collectCues(-0.1, 0.05, out);
+
+      expect(out).toHaveLength(2);
+      expect(out[0].rearmHits).toBe(true);
+      expect(out[1].sound?.volume).toBe(0.5);
+    });
+
+    it("treats the low bound as exclusive and the high bound as inclusive", () => {
+      const timeline: AttackTimeline = cuedTimeline();
+      const out: AttackCue[] = [];
+
+      // phase "c" starts at 0.2 exactly.
+      timeline.collectCues(0.1, 0.2, out);
+      expect(out).toHaveLength(1);
+      expect(out[0].sound?.pitch).toBe(1.5);
+
+      out.length = 0;
+      timeline.collectCues(0.2, 0.3, out);
+      expect(out).toHaveLength(0);
+    });
+
+    it("pushes every cue crossed by a long frame, in chronological order", () => {
+      const timeline: AttackTimeline = cuedTimeline();
+      const out: AttackCue[] = [];
+
+      timeline.collectCues(-1, 10, out);
+
+      expect(out).toHaveLength(2);
+      expect(out[0].rearmHits).toBe(true);
+      expect(out[1].sound?.pitch).toBe(1.5);
+    });
+
+    it("appends to the array without clearing it — the caller owns it", () => {
+      const timeline: AttackTimeline = cuedTimeline();
+      const out: AttackCue[] = [{ rearmHits: false }];
+
+      timeline.collectCues(-1, 0.01, out);
+
+      expect(out).toHaveLength(2);
+    });
+
+    it("is safe on an empty phase list", () => {
+      const timeline: AttackTimeline = new AttackTimeline([]);
+      const out: AttackCue[] = [];
+
+      expect(() => timeline.collectCues(-1, 10, out)).not.toThrow();
+      expect(out).toHaveLength(0);
+    });
+
+    it("hasSoundCue is true only when at least one cue carries a sound", () => {
+      expect(cuedTimeline().hasSoundCue).toBe(true);
+
+      const rearmOnly: AttackTimeline = new AttackTimeline([
+        { name: "a", duration: 0.1, cue: { rearmHits: true } },
+      ]);
+      expect(rearmOnly.hasSoundCue).toBe(false);
+
+      const bare: AttackTimeline = new AttackTimeline([
+        { name: "a", duration: 0.1 },
+      ]);
+      expect(bare.hasSoundCue).toBe(false);
+    });
   });
 
   describe("expressing the shipped ThrustAttack as a timeline", () => {
