@@ -1,8 +1,7 @@
 import { Vec2 } from "@atlasjs/math";
-import type { Entity } from "@atlasjs/nexus";
 
 import { readAimAngle } from "./aim";
-import { type HitInfo, HurtboxScript } from "../combat/HurtboxScript";
+import { MeleeHitResolver } from "../combat/MeleeHitResolver";
 import type { AttackPose, WeaponAttack } from "./attacks/WeaponAttack";
 import type { SwordHitboxScript } from "./SwordHitboxScript";
 
@@ -47,10 +46,9 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
   private readonly knockback: number = 220;
   private readonly shake: ShakeSpec = shake;
 
-  private readonly hit: HitInfo = { direction: new Vec2() };
+  private readonly blowDirection: Vec2 = new Vec2();
 
-  /** Targets this swing has already struck, so one swing lands one blow. */
-  private readonly struck: Set<Entity> = new Set<Entity>();
+  private resolver: MeleeHitResolver | undefined;
 
   private transform: Transform;
   private offsetAmplitude: number;
@@ -144,10 +142,12 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
 
     const aimAngle: number = this.getAimAngle();
 
-    if (this.applyHits(aimAngle)) {
+    this.blowDirection.set(Math.cos(aimAngle), Math.sin(aimAngle));
+
+    if (this.getResolver().resolve(this.blowDirection)) {
       this.hitstopRemaining = this.hitstopDuration;
       this.frozenAimAngle = aimAngle;
-      this.camera.shake(this.shake, this.hit.direction);
+      this.camera.shake(this.shake, this.blowDirection);
     }
 
     this.applyAttackPose(aimAngle);
@@ -175,7 +175,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     this.attackClock = 0;
     this.swingDirection = Math.cos(this.getAimAngle()) >= 0 ? -1 : 1;
     this.hitstopRemaining = 0;
-    this.struck.clear();
+    this.getResolver().beginSwing();
     this.pose.angleOffset = 0;
     this.pose.radiusScale = 1;
     this.pose.scale = 1;
@@ -183,33 +183,16 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     this.attackDuration = this.attack.duration;
   }
 
-  private applyHits(aimAngle: number): boolean {
-    const targets: readonly GameEntity[] = this.hitbox.getTargets();
-    let landed: boolean = false;
-
-    this.hit.direction.set(Math.cos(aimAngle), Math.sin(aimAngle));
-    this.hit.knockback = this.knockback;
-    this.hit.hitstop = this.hitstopDuration;
-
-    for (const target of targets) {
-      if (this.struck.has(target.id)) {
-        continue;
-      }
-
-      const hurtbox: HurtboxScript | undefined =
-        target.getScript(HurtboxScript);
-
-      if (hurtbox === undefined) {
-        continue;
-      }
-
-      if (hurtbox.takeHit(this.hit)) {
-        this.struck.add(target.id);
-        landed = true;
-      }
+  private getResolver(): MeleeHitResolver {
+    if (this.resolver === undefined) {
+      this.resolver = new MeleeHitResolver(
+        this.hitbox,
+        this.knockback,
+        this.hitstopDuration,
+      );
     }
 
-    return landed;
+    return this.resolver;
   }
 
   private getFloatingOffset(): Vec2 {

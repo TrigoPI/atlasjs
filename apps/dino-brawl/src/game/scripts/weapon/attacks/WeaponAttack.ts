@@ -28,11 +28,14 @@ export abstract class WeaponAttack<
   private audio?: AudioApi;
 
   public abstract get duration(): number;
-  public abstract begin(): void;
   public abstract sample(t: number, out: AttackPose): void;
 
   public onCreate(): void {
     this.audio = this.getService(AudioApi);
+  }
+
+  public begin(): void {
+    this.playClip();
   }
 
   protected playClip(): void {
