@@ -12,6 +12,7 @@ import RunningParticle from "@assets/sprites/particles/dust_cloud_run.png";
 
 // Sword
 import DefaultSword from "@assets/sprites/swords/default_sword.png";
+import RappierSword from "@assets/sprites/swords/rappier_sword.png";
 
 // Audio
 import Grass from "@assets/audio/grass.wav";
@@ -30,6 +31,7 @@ export const Textures = {
   RunningParticle,
   Impact,
   DefaultSword,
+  RappierSword,
 } as const;
 
 export const Audios = {

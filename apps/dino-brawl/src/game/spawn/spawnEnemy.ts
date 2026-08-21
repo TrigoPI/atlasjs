@@ -1,16 +1,18 @@
 import { Vec2 } from "@atlasjs/math";
 import type { AudioClip } from "@atlasjs/audio";
 import type { SceneContext } from "@atlasjs/core";
-import type { GameEntity } from "@atlasjs/gameplay";
-import type { Entity } from "@atlasjs/nexus";
+import type { GameEntity, ScriptManager } from "@atlasjs/gameplay";
+import { NEXUS, type Entity, type NexusWorld } from "@atlasjs/nexus";
 
 import type { AssetsLoader } from "../loaders";
 import type { SheetLoader } from "../sheets";
+import { SpawnEnemyScript } from "../scripts/enemy";
 
 import {
   type Instantiator,
   type Prefab,
   INSTANTIATOR,
+  SCRIPT_MANAGER,
   Sprite,
 } from "@atlasjs/gameplay";
 
@@ -31,6 +33,8 @@ export function spawnEnemy(
   sheetLoader: SheetLoader,
 ): Entity {
   const instantiator: Instantiator = ctx.services.get(INSTANTIATOR);
+  const nexus: NexusWorld = ctx.services.get(NEXUS);
+  const script: ScriptManager = ctx.services.get(SCRIPT_MANAGER);
 
   const dinoSprite: Sprite = assetsLoader.getAsset("sprite:evil_dino");
   const shadowSprite: Sprite = assetsLoader.getAsset("sprite:shadow");
@@ -45,11 +49,21 @@ export function spawnEnemy(
   const shadowPrefab: Prefab<ShadowPrefabProps> = createShadowPrefab();
   const enemyPrefab: Prefab<EnemyPrefabProps> = createEnemyPrefab();
 
+  const spawner: Entity = nexus.createEntity();
+  script.attach(spawner, SpawnEnemyScript, {
+    impactPrefab,
+    sprite: dinoSprite,
+    enemy: enemyPrefab,
+    hitClip: hitSound,
+    clips: () => sheetLoader.createClips("sheet:evil_dino"),
+  });
+
+
   const enemy: GameEntity = instantiator.instantiate(enemyPrefab, {
+    impactPrefab,
     position: spawnPosition,
     sprite: dinoSprite,
     hitClip: hitSound,
-    impactPrefab,
     clips: sheetLoader.createClips("sheet:evil_dino"),
   });
 

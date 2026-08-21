@@ -1,1 +1,2 @@
-export * from "./swordCombo";
+export * from "./defaultSwordCombo";
+export * from "./rappierSwordCombo";

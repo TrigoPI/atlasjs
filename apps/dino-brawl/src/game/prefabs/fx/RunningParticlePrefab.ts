@@ -40,7 +40,6 @@ export const createRunningParticlePrefab = (
       const renderer: SpriteRenderer = entity.add(SpriteRenderer, opt.sprite);
       renderer.sortingLayer = SortingLayer.Entities;
       renderer.sortingOrder = SortingOrder.Particle;
-      renderer.sortPointEntity = props.owner;
 
       const transform: Transform2D = entity.add(Transform2D);
       transform.scale.set(2, 2);

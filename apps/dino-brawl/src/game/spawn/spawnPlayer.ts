@@ -7,6 +7,8 @@ import type { Entity } from "@atlasjs/nexus";
 import type { AssetsLoader } from "../loaders";
 import type { SheetLoader } from "../sheets";
 
+import { rappierSwordCombo } from "../content";
+
 import {
   type Instantiator,
   type Prefab,
@@ -28,8 +30,6 @@ import {
   createSwordAnchorPrefab,
 } from "../prefabs";
 
-import { createSwordCombo } from "../content";
-
 // prettier-ignore
 export function spawnPlayer(
   ctx: SceneContext,
@@ -42,11 +42,12 @@ export function spawnPlayer(
   const dinoSprite: Sprite = assetsLoader.getAsset("sprite:yellow_dino");
   const shadowSprite: Sprite = assetsLoader.getAsset("sprite:shadow");
   const particleSprite: Sprite = assetsLoader.getAsset("sprite:running_particle");
-  const swordSprite: Sprite = assetsLoader.getAsset("sprite:default_sword");
   const grassSound: AudioClip = assetsLoader.getAsset("audio:grass_audio");
   const woosh1Sound: AudioClip = assetsLoader.getAsset("audio:woosh_1");
   const woosh2Sound: AudioClip = assetsLoader.getAsset("audio:woosh_2");
   const woosh3Sound: AudioClip = assetsLoader.getAsset("audio:woosh_3");
+
+  const swordSprite: Sprite = assetsLoader.getAsset("sprite:rappier_sword");
 
   const shadowPrefab: Prefab<ShadowPrefabProps> = createShadowPrefab();
   const swordPrefab: Prefab<SwordPrefabProps> = createSwordPrefab();
@@ -86,10 +87,10 @@ export function spawnPlayer(
     anchor: anchor.id,
     angle: 0,
     r: 40,
-    attack: createSwordCombo({
+    attack: rappierSwordCombo({
       thrust: woosh1Sound,
       swing: woosh2Sound,
-      spin: woosh3Sound,
+      lunge: woosh3Sound,
     }),
   });
 

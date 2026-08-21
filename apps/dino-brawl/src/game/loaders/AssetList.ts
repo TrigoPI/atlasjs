@@ -23,6 +23,7 @@ export const SpriteList: ResourceDescriptor[] = [
   { name: "sprite:running_particle", path: Textures.RunningParticle },
   { name: "sprite:impact", path: Textures.Impact },
   { name: "sprite:default_sword", path: Textures.DefaultSword },
+  { name: "sprite:rappier_sword", path: Textures.RappierSword },
 ];
 
 export const AudioList: ResourceDescriptor[] = [
