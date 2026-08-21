@@ -9,7 +9,6 @@ import {
 } from "./WeaponAttack";
 
 type ThrustAttackProps = WeaponAttackAudioProps & {
-  pullbackDuration?: number;
   thrustDuration?: number;
   holdDuration?: number;
   recoverDuration?: number;
@@ -62,7 +61,6 @@ export class ThrustAttack extends WeaponAttack<ThrustAttackProps> {
 
 registerScriptMetadata(ThrustAttack, {
   exposed: {
-    pullbackDuration: ScriptMetadata.field(),
     thrustDuration: ScriptMetadata.field(),
     holdDuration: ScriptMetadata.field(),
     recoverDuration: ScriptMetadata.field(),

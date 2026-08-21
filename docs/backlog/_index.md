@@ -2,13 +2,15 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **103** items.
+Total : **105** items.
 
 ## app
 
 | ID | Item | Statut | Effort | Vérifié |
 | --- | --- | --- | --- | --- |
-| APP-01 | [APP-01-dino-brawl-typecheck-debt](APP-01-dino-brawl-typecheck-debt.md) | 📋 à faire | S | 2026-08-19 |
+| APP-02 | [APP-02-dino-brawl-dead-react-screens](APP-02-dino-brawl-dead-react-screens.md) | 📋 à faire | S | 2026-08-21 |
+| APP-03 | [APP-03-running-particle-clock-uninitialised](APP-03-running-particle-clock-uninitialised.md) | 📋 à faire | S | 2026-08-21 |
+| APP-04 | [APP-04-dino-brawl-specs-not-typechecked](APP-04-dino-brawl-specs-not-typechecked.md) | 📋 à faire | S | 2026-08-21 |
 
 ## assets
 

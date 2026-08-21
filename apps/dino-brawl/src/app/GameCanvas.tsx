@@ -21,8 +21,8 @@ export function GameCanvas({
   onError,
 }: {
   onFps: (fps: number) => void;
-  onReady: () => void;
-  onError: (error: unknown) => void;
+  onReady?: () => void;
+  onError?: (error: unknown) => void;
 }): ReactNode {
   const mountRef: RefObject<HTMLCanvasElement | null> =
     useRef<HTMLCanvasElement | null>(null);
@@ -70,11 +70,11 @@ export function GameCanvas({
           onFps(Math.round(frame));
         }, 500);
 
-        engine.scene.set(new ArenaScene(cb, onReady));
+        engine.scene.set(new ArenaScene(cb, () => onReady?.()));
       })
       .catch((error: unknown) => {
         console.error("Failed to start the engine", error);
-        onError(error);
+        onError?.(error);
       });
 
     return () => engine.stop();

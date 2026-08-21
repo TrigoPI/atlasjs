@@ -49,6 +49,7 @@ export class RunningParticleSpawnerScript extends AtlasScript<{
       this.clock = 0;
       this.instantiate(this.runningParticlePrefab, {
         position: this.transform.worldPosition.clone(),
+        owner: this.entityId,
       });
     }
   }

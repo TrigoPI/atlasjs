@@ -9,12 +9,10 @@ import {
 } from "./WeaponAttack";
 
 type SwingAttackProps = WeaponAttackAudioProps & {
-  windupDuration?: number;
   strikeDuration?: number;
   recoverDuration?: number;
   windupAngle?: number;
   strikeAngle?: number;
-  strikeScale?: number;
 };
 
 export class SwingAttack extends WeaponAttack<SwingAttackProps> {
@@ -39,6 +37,7 @@ export class SwingAttack extends WeaponAttack<SwingAttackProps> {
       const eased: number = Easing.outCubic(strikeTime / this.strikeDuration);
       out.angleOffset = MathUtils.lerp(this.windupAngle, -this.strikeAngle, eased);
       out.radiusScale = 1;
+      out.scale = 1;
       return;
     }
 
@@ -48,16 +47,15 @@ export class SwingAttack extends WeaponAttack<SwingAttackProps> {
 
     out.angleOffset = MathUtils.lerp(-this.strikeAngle, 0, eased);
     out.radiusScale = 1;
+    out.scale = 1;
   }
 }
 
 registerScriptMetadata(SwingAttack, {
   exposed: {
-    windupDuration: ScriptMetadata.field(),
     strikeDuration: ScriptMetadata.field(),
     recoverDuration: ScriptMetadata.field(),
     windupAngle: ScriptMetadata.field(),
     strikeAngle: ScriptMetadata.field(),
-    strikeScale: ScriptMetadata.field(),
   },
 });

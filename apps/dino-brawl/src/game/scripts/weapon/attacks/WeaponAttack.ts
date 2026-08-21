@@ -8,11 +8,9 @@ import {
   ScriptMetadata,
 } from "@atlasjs/gameplay";
 
-export type AttackPose = {
-  angleOffset: number;
-  radiusScale: number;
-  scale: number;
-};
+import type { AttackPose } from "./AttackPose";
+
+export type { AttackPose } from "./AttackPose";
 
 export type WeaponAttackAudioProps = {
   clip?: AudioClip;

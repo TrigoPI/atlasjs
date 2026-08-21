@@ -1,7 +1,18 @@
 import { describe, expect, it } from "vitest";
 
+import { Easing, MathUtils } from "@atlasjs/math";
+
 import type { AttackPose } from "../../../../../src/game/scripts/weapon/attacks/WeaponAttack";
 import { ThrustAttack } from "../../../../../src/game/scripts/weapon/attacks/ThrustAttack";
+
+const THRUST_DURATION: number = 0.07;
+const HOLD_DURATION: number = 0.05;
+const RECOVER_DURATION: number = 0.2;
+const PULLBACK_RADIUS: number = 0.55;
+const THRUST_RADIUS: number = 1.85;
+
+const HOLD_START: number = THRUST_DURATION;
+const RECOVER_START: number = THRUST_DURATION + HOLD_DURATION;
 
 function createPose(): AttackPose {
   return { angleOffset: 0, radiusScale: 0, scale: 0 };
@@ -12,9 +23,11 @@ describe("ThrustAttack", () => {
     expect(() => new ThrustAttack()).not.toThrow();
   });
 
-  it("duration is the sum of the four phases", () => {
+  it("duration is the sum of the three phases", () => {
     const attack: ThrustAttack = new ThrustAttack();
-    expect(attack.duration).toBeCloseTo(0.22 + 0.07 + 0.05 + 0.2);
+    expect(attack.duration).toBeCloseTo(
+      THRUST_DURATION + HOLD_DURATION + RECOVER_DURATION,
+    );
   });
 
   it("keeps angleOffset at 0 and scale at 1 across the whole timeline", () => {
@@ -23,126 +36,79 @@ describe("ThrustAttack", () => {
 
     attack.begin();
 
-    for (let t: number = 0; t <= attack.duration + 1; t += 0.03) {
+    for (let t: number = 0; t <= attack.duration + 1; t += 0.01) {
       attack.sample(t, pose);
       expect(pose.angleOffset).toBe(0);
       expect(pose.scale).toBe(1);
     }
-
-    attack.sample(0.22, pose);
-    expect(pose.angleOffset).toBe(0);
-    expect(pose.scale).toBe(1);
-
-    attack.sample(0.22 + 0.07, pose);
-    expect(pose.angleOffset).toBe(0);
-    expect(pose.scale).toBe(1);
-
-    attack.sample(0.22 + 0.07 + 0.05, pose);
-    expect(pose.angleOffset).toBe(0);
-    expect(pose.scale).toBe(1);
-
-    attack.sample(attack.duration, pose);
-    expect(pose.angleOffset).toBe(0);
-    expect(pose.scale).toBe(1);
   });
 
-  it("is neutral at t=0", () => {
+  it("starts the thrust already pulled back to pullbackRadius", () => {
     const attack: ThrustAttack = new ThrustAttack();
     const pose: AttackPose = createPose();
 
     attack.begin();
     attack.sample(0, pose);
 
-    expect(pose.radiusScale).toBeCloseTo(1);
-  });
-
-  it("pullback phase moves radiusScale from 1 toward pullbackRadius", () => {
-    const attack: ThrustAttack = new ThrustAttack();
-    const pose: AttackPose = createPose();
-    const pullbackRadius: number = 0.55;
-
-    attack.begin();
-
-    attack.sample(0.05, pose);
-    expect(pose.radiusScale).toBeLessThan(1);
-    expect(pose.radiusScale).toBeGreaterThan(pullbackRadius);
-
-    attack.sample(0.22 - 1e-6, pose);
-    expect(pose.radiusScale).toBeCloseTo(pullbackRadius, 2);
-  });
-
-  it("pullback phase mid-point locks the inOutQuad curve identity", () => {
-    const attack: ThrustAttack = new ThrustAttack();
-    const pose: AttackPose = createPose();
-    const pullbackDuration: number = 0.22;
-    const pullbackRadius: number = 0.55;
-    const easedMidpoint: number = 0.5;
-    const expectedRadiusScale: number =
-      1 + (pullbackRadius - 1) * easedMidpoint;
-
-    attack.begin();
-    attack.sample(pullbackDuration / 2, pose);
-
-    expect(pose.radiusScale).toBeCloseTo(expectedRadiusScale);
+    expect(pose.radiusScale).toBeCloseTo(PULLBACK_RADIUS);
   });
 
   it("thrust phase moves radiusScale from pullbackRadius toward thrustRadius", () => {
     const attack: ThrustAttack = new ThrustAttack();
     const pose: AttackPose = createPose();
-    const pullbackDuration: number = 0.22;
-    const thrustDuration: number = 0.07;
-    const pullbackRadius: number = 0.55;
-    const thrustRadius: number = 1.85;
 
     attack.begin();
 
-    attack.sample(pullbackDuration, pose);
-    expect(pose.radiusScale).toBeCloseTo(pullbackRadius, 2);
+    attack.sample(THRUST_DURATION / 2, pose);
+    expect(pose.radiusScale).toBeGreaterThan(PULLBACK_RADIUS);
+    expect(pose.radiusScale).toBeLessThan(THRUST_RADIUS);
 
-    attack.sample(pullbackDuration + thrustDuration / 2, pose);
-    expect(pose.radiusScale).toBeGreaterThan(pullbackRadius);
-    expect(pose.radiusScale).toBeLessThan(thrustRadius);
-
-    attack.sample(pullbackDuration + thrustDuration - 1e-6, pose);
-    expect(pose.radiusScale).toBeCloseTo(thrustRadius, 2);
+    attack.sample(THRUST_DURATION - 1e-6, pose);
+    expect(pose.radiusScale).toBeCloseTo(THRUST_RADIUS, 2);
   });
 
   it("thrust phase mid-point locks the outCubic curve identity", () => {
     const attack: ThrustAttack = new ThrustAttack();
     const pose: AttackPose = createPose();
-    const pullbackDuration: number = 0.22;
-    const thrustDuration: number = 0.07;
-    const pullbackRadius: number = 0.55;
-    const thrustRadius: number = 1.85;
-    const easedMidpoint: number = 0.875;
-    const expectedRadiusScale: number =
-      pullbackRadius + (thrustRadius - pullbackRadius) * easedMidpoint;
+    const eased: number = Easing.outCubic(0.5);
+    const expected: number = MathUtils.lerp(
+      PULLBACK_RADIUS,
+      THRUST_RADIUS,
+      eased,
+    );
 
     attack.begin();
-    attack.sample(pullbackDuration + thrustDuration / 2, pose);
+    attack.sample(THRUST_DURATION / 2, pose);
 
-    expect(pose.radiusScale).toBeCloseTo(expectedRadiusScale);
+    expect(pose.radiusScale).toBeCloseTo(expected);
   });
 
   it("hold phase keeps radiusScale exactly at thrustRadius", () => {
     const attack: ThrustAttack = new ThrustAttack();
     const pose: AttackPose = createPose();
-    const pullbackDuration: number = 0.22;
-    const thrustDuration: number = 0.07;
-    const holdDuration: number = 0.05;
-    const thrustRadius: number = 1.85;
-    const holdStart: number = pullbackDuration + thrustDuration;
 
     attack.begin();
 
-    attack.sample(holdStart, pose);
-    expect(pose.radiusScale).toBe(thrustRadius);
+    attack.sample(HOLD_START, pose);
+    expect(pose.radiusScale).toBe(THRUST_RADIUS);
 
-    attack.sample(holdStart + holdDuration / 2, pose);
-    expect(pose.radiusScale).toBe(thrustRadius);
+    attack.sample(HOLD_START + HOLD_DURATION / 2, pose);
+    expect(pose.radiusScale).toBe(THRUST_RADIUS);
 
-    attack.sample(holdStart + holdDuration - 1e-6, pose);
-    expect(pose.radiusScale).toBe(thrustRadius);
+    attack.sample(RECOVER_START - 1e-6, pose);
+    expect(pose.radiusScale).toBe(THRUST_RADIUS);
+  });
+
+  it("recover phase mid-point locks the inOutQuad curve identity", () => {
+    const attack: ThrustAttack = new ThrustAttack();
+    const pose: AttackPose = createPose();
+    const eased: number = Easing.inOutQuad(0.5);
+    const expected: number = MathUtils.lerp(THRUST_RADIUS, 1, eased);
+
+    attack.begin();
+    attack.sample(RECOVER_START + RECOVER_DURATION / 2, pose);
+
+    expect(pose.radiusScale).toBeCloseTo(expected);
   });
 
   it("recover phase returns radiusScale to 1 by t=duration", () => {
@@ -166,6 +132,25 @@ describe("ThrustAttack", () => {
     expect(pose.radiusScale).toBeCloseTo(1);
   });
 
+  it("writes every pose channel on every sample", () => {
+    const attack: ThrustAttack = new ThrustAttack();
+    const pose: AttackPose = createPose();
+
+    attack.begin();
+
+    for (let t: number = 0; t <= attack.duration + 1; t += 0.01) {
+      pose.angleOffset = Number.NaN;
+      pose.radiusScale = Number.NaN;
+      pose.scale = Number.NaN;
+
+      attack.sample(t, pose);
+
+      expect(pose.angleOffset).toBe(0);
+      expect(Number.isNaN(pose.radiusScale)).toBe(false);
+      expect(pose.scale).toBe(1);
+    }
+  });
+
   it("lets injected values override the defaults", () => {
     const attack: ThrustAttack = new ThrustAttack();
     const injected: Record<string, unknown> = attack as unknown as Record<
@@ -173,28 +158,27 @@ describe("ThrustAttack", () => {
       unknown
     >;
 
-    injected.pullbackDuration = 1;
     injected.thrustDuration = 1;
     injected.holdDuration = 1;
     injected.recoverDuration = 1;
     injected.pullbackRadius = 0.2;
     injected.thrustRadius = 3;
 
-    expect(attack.duration).toBeCloseTo(4);
+    expect(attack.duration).toBeCloseTo(3);
 
     const pose: AttackPose = createPose();
     attack.begin();
 
-    attack.sample(1 - 1e-6, pose);
-    expect(pose.radiusScale).toBeCloseTo(0.2, 2);
+    attack.sample(0, pose);
+    expect(pose.radiusScale).toBeCloseTo(0.2);
 
-    attack.sample(2 - 1e-6, pose);
+    attack.sample(1 - 1e-6, pose);
     expect(pose.radiusScale).toBeCloseTo(3, 2);
 
-    attack.sample(2.5, pose);
+    attack.sample(1.5, pose);
     expect(pose.radiusScale).toBe(3);
 
-    attack.sample(4, pose);
+    attack.sample(3, pose);
     expect(pose.radiusScale).toBeCloseTo(1);
   });
 });
