@@ -3,6 +3,7 @@ import { Vec2 } from "@atlasjs/math";
 import { readAimAngle } from "./aim";
 import { AimScript } from "./AimScript";
 import { MeleeHitResolver } from "../combat/MeleeHitResolver";
+import { SWORD_IMPACT_SHAKE } from "../../config";
 import type { AttackPose, WeaponAttack } from "./attacks/WeaponAttack";
 import type { SwordHitboxScript } from "./SwordHitboxScript";
 
@@ -31,12 +32,6 @@ type SwordScriptProps = {
 
 type SwordState = "idle" | "attacking";
 
-const shake: ShakeSpec = {
-  strength: 300,
-  stiffness: 240,
-  damping: 17,
-};
-
 export class SwordScript extends AtlasScript<SwordScriptProps> {
   private readonly playerAnchor: GameEntity;
   private readonly radius: number;
@@ -45,9 +40,10 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
   private readonly hitbox: SwordHitboxScript;
   private readonly hitstopDuration: number = 0;
   private readonly knockback: number = 220;
-  private readonly shake: ShakeSpec = shake;
+  private readonly shake: ShakeSpec = SWORD_IMPACT_SHAKE;
 
   private readonly blowDirection: Vec2 = new Vec2();
+  private readonly orbitOffset: Vec2 = new Vec2();
 
   private resolver: MeleeHitResolver | undefined;
 
@@ -122,13 +118,11 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
   private updateIdleState(): void {
     const playerAnchorWorld: Vec2 = this.getWorldPosition(this.playerAnchor);
     const aimAngle: number = this.getAimAngle();
-    const orbitOffset: Vec2 = Vec2.fromAngle(aimAngle).mult(this.radius);
-    const offset: Vec2 = this.getFloatingOffset();
 
-    this.transform.position
-      .copyFrom(playerAnchorWorld)
-      .add(orbitOffset)
-      .add(offset);
+    this.setOrbitOffset(aimAngle, this.radius);
+    this.orbitOffset.y += this.getFloatingOffset();
+
+    this.transform.position.copyFrom(playerAnchorWorld).add(this.orbitOffset);
     this.transform.rotation = this.getSwordRotation();
   }
 
@@ -166,9 +160,9 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
 
     const angle: number = aimAngle + this.pose.angleOffset * this.swingDirection;
 
-    const offset: Vec2 = Vec2.fromAngle(angle).mult(this.radius * this.pose.radiusScale);
+    this.setOrbitOffset(angle, this.radius * this.pose.radiusScale);
 
-    this.transform.position.copyFrom(playerAnchorWorld).add(offset);
+    this.transform.position.copyFrom(playerAnchorWorld).add(this.orbitOffset);
     this.transform.rotation = angle + Math.PI / 4;
     this.transform.setScale(this.baseScale.x * this.pose.scale, this.baseScale.y * this.pose.scale);
   }
@@ -198,10 +192,13 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     return this.resolver;
   }
 
-  private getFloatingOffset(): Vec2 {
+  private setOrbitOffset(angle: number, radius: number): void {
+    this.orbitOffset.set(Math.cos(angle) * radius, Math.sin(angle) * radius);
+  }
+
+  private getFloatingOffset(): number {
     const w: number = 2 * Math.PI * this.offsetFrequency;
-    const offset: number = Math.sin(w * this.clock) * this.offsetAmplitude;
-    return new Vec2(0, offset);
+    return Math.sin(w * this.clock) * this.offsetAmplitude;
   }
 
   private getSwordRotation(): number {

@@ -1,4 +1,4 @@
-import { defineCollisionLayers } from "@atlasjs/gameplay";
+import { defineCollisionLayers, type ShakeSpec } from "@atlasjs/gameplay";
 
 export const SortingLayer = {
   Ground: "Ground",
@@ -24,3 +24,9 @@ export const CollisionLayers = defineCollisionLayers(
 );
 
 export const MAP_SCALE: number = 2;
+
+export const SWORD_IMPACT_SHAKE: ShakeSpec = {
+  strength: 300,
+  stiffness: 240,
+  damping: 17,
+};
