@@ -1,5 +1,7 @@
 import type { Vec2 } from "@atlasjs/math";
 
+import { AimScript } from "../../scripts";
+
 import {
   definePrefab,
   Transform2D,
@@ -16,5 +18,7 @@ export const createSwordAnchorPrefab = () =>
     build: (entity: EntityBuilder, props: SwordAnchorPrefabProps): void => {
       const transform: Transform2D = entity.add(Transform2D);
       transform.position.copyFrom(props.anchor);
+
+      entity.attach(AimScript);
     },
   });

@@ -1,18 +1,14 @@
-import type { Vec2 } from "@atlasjs/math";
 import type { Entity } from "@atlasjs/nexus";
 
 import {
   AtlasScript,
-  CameraApi,
-  InputApi,
   registerScriptMetadata,
   ScriptMetadata,
   SpriteRender,
-  Transform,
   type GameEntity,
 } from "@atlasjs/gameplay";
 
-import { readAimAngle } from "./aim";
+import { AimScript } from "./AimScript";
 
 type SwordSortingScriptProps = {
   anchor: Entity;
@@ -27,27 +23,34 @@ export class SwordSortingScript extends AtlasScript<SwordSortingScriptProps> {
 
   private renderer: SpriteRender;
 
-  private input: InputApi;
-  private camera: CameraApi;
+  private aim: AimScript;
 
   public onCreate(): void {
     this.renderer = this.requireComponent(SpriteRender);
 
-    this.input = this.getService(InputApi);
-    this.camera = this.getService(CameraApi);
+    this.aim = this.requireAnchorAim();
   }
 
   public onUpdate(): void {
-    const anchorTransform: Transform = this.anchor.requireComponent(Transform);
-    const anchorWorldPos: Vec2 = anchorTransform.worldPosition;
-
-    const angle: number = readAimAngle(this.input, this.camera, anchorWorldPos);
+    const angle: number = this.aim.angle;
 
     if (angle < 0) {
       this.renderer.sortingOrder = this.sortingBehind;
     } else {
       this.renderer.sortingOrder = this.sortingFront;
     }
+  }
+
+  private requireAnchorAim(): AimScript {
+    const aim: AimScript | undefined = this.anchor.getScript(AimScript);
+
+    if (aim === undefined) {
+      throw new Error(
+        `[SwordSortingScript] The anchor entity "${this.anchor.id}" carries no AimScript.`,
+      );
+    }
+
+    return aim;
   }
 }
 

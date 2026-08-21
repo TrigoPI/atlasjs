@@ -19,13 +19,13 @@ import {
   type PlayerPrefabProps,
   type RunningParticlePrefabProps,
   type ShadowPrefabProps,
-  type SwordWithShadowPrefabProps,
+  type SwordPrefabProps,
   type SwordAnchorPrefabProps,
   createRunningAudioPrefab,
   createRunningParticlePrefab,
   createPlayerPrefab,
   createShadowPrefab,
-  createSwordWithShadowPrefab,
+  createSwordPrefab,
   createSwordAnchorPrefab,
 } from "../prefabs";
 
@@ -56,7 +56,7 @@ export function spawnPlayer(
   const woosh3Sound: AudioClip = assetsLoader.getAsset("audio:woosh_3");
 
   const shadowPrefab: Prefab<ShadowPrefabProps> = createShadowPrefab();
-  const swordWithShadowPrefab: Prefab<SwordWithShadowPrefabProps> = createSwordWithShadowPrefab();
+  const swordPrefab: Prefab<SwordPrefabProps> = createSwordPrefab();
   const swordAnchorPrefab: Prefab<SwordAnchorPrefabProps> = createSwordAnchorPrefab();
 
   const runningParticlePrefab: Prefab<RunningParticlePrefabProps> =
@@ -87,9 +87,8 @@ export function spawnPlayer(
     { parent: player.id }
   );
 
-  instantiator.instantiate(swordWithShadowPrefab, {
+  instantiator.instantiate(swordPrefab, {
     swordSprite,
-    shadowSprite,
     owner: player.id,
     anchor: anchor.id,
     angle: 0,

@@ -116,6 +116,7 @@ function createRig(overrides: Record<string, unknown> = {}): Rig {
   injected.attack = new FakeAttack();
   injected.hitbox = hitbox;
   injected.hitstopDuration = 0.07;
+  injected.aim = { angle: 0 };
 
   injected.transform = createTransform();
   injected.baseScale = new Vec2(1, 1);

@@ -1,6 +1,7 @@
 import { Vec2 } from "@atlasjs/math";
 
 import { readAimAngle } from "./aim";
+import { AimScript } from "./AimScript";
 import { MeleeHitResolver } from "../combat/MeleeHitResolver";
 import type { AttackPose, WeaponAttack } from "./attacks/WeaponAttack";
 import type { SwordHitboxScript } from "./SwordHitboxScript";
@@ -69,6 +70,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
 
   private input: InputApi;
   private camera: CameraApi;
+  private aim: AimScript;
 
   private state: SwordState;
   private buffered: boolean;
@@ -79,6 +81,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
 
     this.input = this.getService(InputApi);
     this.camera = this.getService(CameraApi);
+    this.aim = this.requireAnchorAim();
 
     this.clock = 0;
     this.offsetAmplitude = 8;
@@ -207,11 +210,19 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
   }
 
   private getAimAngle(): number {
-    const playerAnchorWorld: Vec2 = this.getWorldPosition(this.playerAnchor);
-    return (
-      readAimAngle(this.input, this.camera, playerAnchorWorld) +
-      this.angleOffset
-    );
+    return this.aim.angle + this.angleOffset;
+  }
+
+  private requireAnchorAim(): AimScript {
+    const aim: AimScript | undefined = this.playerAnchor.getScript(AimScript);
+
+    if (aim === undefined) {
+      throw new Error(
+        `[SwordScript] The player anchor entity "${this.playerAnchor.id}" carries no AimScript.`,
+      );
+    }
+
+    return aim;
   }
 
   private getWorldPosition(entity: GameEntity): Vec2 {

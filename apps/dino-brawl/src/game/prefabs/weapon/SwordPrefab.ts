@@ -3,7 +3,6 @@ import type { Entity } from "@atlasjs/nexus";
 import { CollisionLayers, SortingLayer, SortingOrder } from "../../config";
 
 import {
-  SwordAnchorScript,
   SwordHitboxScript,
   SwordScript,
   SwordSortingScript,
@@ -20,35 +19,23 @@ import {
   type EntityBuilder,
 } from "@atlasjs/gameplay";
 
-export type SwordWithShadowPrefabProps = {
+export type SwordPrefabProps = {
   owner: Entity;
   anchor: Entity;
   r: number;
   angle: number;
   swordSprite: Sprite;
-  shadowSprite: Sprite;
   colliderRotation?: number;
   attack: (entity: EntityBuilder) => WeaponAttack;
 };
 
 const DEFAULT_COLLIDER_ROTATION: number = Math.PI / 4;
 
-export const createSwordWithShadowPrefab = () =>
-  definePrefab<SwordWithShadowPrefabProps>({
-    name: "sword_with_shadow",
-    build: (entity: EntityBuilder, props: SwordWithShadowPrefabProps): void => {
+export const createSwordPrefab = () =>
+  definePrefab<SwordPrefabProps>({
+    name: "sword",
+    build: (entity: EntityBuilder, props: SwordPrefabProps): void => {
       entity.add(Transform2D);
-
-      entity.child((e: EntityBuilder): void => {
-        const transform: Transform2D = e.add(Transform2D);
-        transform.scale.set(0.2, 0.2);
-
-        e.attach(SwordAnchorScript, {
-          anchor: props.anchor,
-          angle: props.angle,
-          r: props.r,
-        });
-      });
 
       entity.child((e: EntityBuilder): void => {
         const renderer: SpriteRender = e.add(SpriteRender, props.swordSprite);
@@ -93,22 +80,5 @@ export const createSwordWithShadowPrefab = () =>
           sortingBehind: SortingOrder.SwordBehind,
         });
       });
-
-      // entity.child((e: EntityBuilder): void => {
-      //   const renderer: SpriteRender = e.add(SpriteRender, props.shadowSprite);
-      //   renderer.sortingLayer = SortingLayer.Entities;
-      //   renderer.sortingOrder = SortingOrder.Shadow;
-      //   renderer.sortPointEntity = props.owner;
-      //   renderer.color = new Color(0, 0, 0, 0.4);
-
-      //   e.add(Transform2D);
-
-      //   e.attach(SwordShadowScript, {
-      //     anchor: swordAnchor.entity,
-      //     sword: sword.entity,
-      //     shadowOffset: new Vec2(16, 20),
-      //     scale: new Vec2(0.5, 0.5),
-      //   });
-      // });
     },
   });

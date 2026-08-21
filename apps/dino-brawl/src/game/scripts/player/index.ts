@@ -1,3 +1,4 @@
+export * from "./MovementEmitterScript";
 export * from "./PlayerAnimationScript";
 export * from "./PlayerMovementScript";
 export * from "./RunningAudioPlayerScript";
