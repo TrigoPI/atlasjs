@@ -1,16 +1,51 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 import type { AttackPose } from "./AttackPose";
-import type { AttackPhase } from "./AttackTimeline";
+import type { AttackCue, AttackPhase } from "./AttackTimeline";
 import { AttackTimeline } from "./AttackTimeline";
 import { WeaponAttack } from "./WeaponAttack";
 
 export abstract class TimelineAttack<
   TProps extends object = {},
 > extends WeaponAttack<TProps> {
+  private readonly cues: AttackCue[] = [];
+
   private timeline?: AttackTimeline;
+  private cursor: number = -1;
+  private rearm: boolean = false;
 
   public get duration(): number {
     return this.getTimeline().duration;
+  }
+
+  public override get rearmsHits(): boolean {
+    return this.rearm;
+  }
+
+  public override begin(): void {
+    this.cursor = -1;
+    this.rearm = false;
+    super.begin();
+  }
+
+  /**
+   * The cursor is monotonic within a `begin()` cycle: it only ever moves
+   * forward. A `t` at or below the current cursor is ignored — no cues are
+   * collected and the cursor is left untouched. Only `begin()` rewinds it.
+   */
+  public override advance(t: number): void {
+    this.cues.length = 0;
+    this.rearm = false;
+
+    if (t <= this.cursor) {
+      return;
+    }
+
+    this.getTimeline().collectCues(this.cursor, t, this.cues);
+    this.cursor = t;
+
+    for (let index: number = 0; index < this.cues.length; index += 1) {
+      this.fireCue(this.cues[index]);
+    }
   }
 
   public sample(t: number, out: AttackPose): void {
@@ -18,6 +53,22 @@ export abstract class TimelineAttack<
   }
 
   protected abstract buildPhases(): AttackPhase[];
+
+  protected override playsClipOnBegin(): boolean {
+    return !this.getTimeline().hasSoundCue;
+  }
+
+  private fireCue(cue: AttackCue): void {
+    if (cue.rearmHits === true) {
+      this.rearm = true;
+    }
+
+    if (cue.sound === undefined) {
+      return;
+    }
+
+    this.playClip(cue.sound.clip, cue.sound.pitch, cue.sound.volume);
+  }
 
   private getTimeline(): AttackTimeline {
     if (this.timeline === undefined) {
