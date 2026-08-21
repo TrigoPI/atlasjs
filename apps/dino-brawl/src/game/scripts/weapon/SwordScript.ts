@@ -135,6 +135,12 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     }
 
     this.attackClock += dt;
+    this.attack.advance(this.attackClock);
+
+    if (this.attack.rearmsHits) {
+      this.armResolver();
+    }
+
     this.attack.sample(this.attackClock, this.pose);
 
     const aimAngle: number = this.getAimAngle();
@@ -172,12 +178,16 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     this.attackClock = 0;
     this.swingDirection = Math.cos(this.getAimAngle()) >= 0 ? -1 : 1;
     this.hitstopRemaining = 0;
-    this.getResolver().beginSwing();
     this.pose.angleOffset = 0;
     this.pose.radiusScale = 1;
     this.pose.scale = 1;
     this.attack.begin();
     this.attackDuration = this.attack.duration;
+    this.armResolver();
+  }
+
+  private armResolver(): void {
+    this.getResolver().beginSwing();
   }
 
   private getResolver(): MeleeHitResolver {

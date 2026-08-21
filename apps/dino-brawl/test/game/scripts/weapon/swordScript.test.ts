@@ -47,11 +47,22 @@ class FakeHitbox {
 }
 
 class FakeAttack {
+  public rearm: boolean = false;
+  public readonly advanceCalls: number[] = [];
+
   public get duration(): number {
     return 1;
   }
 
+  public get rearmsHits(): boolean {
+    return this.rearm;
+  }
+
   public begin(): void {}
+
+  public advance(t: number): void {
+    this.advanceCalls.push(t);
+  }
 
   public sample(_t: number, out: AttackPose): void {
     out.angleOffset = 0;
@@ -312,5 +323,62 @@ describe("SwordScript impact resolution", () => {
 
     expect(first.accepted).toBe(1);
     expect(second.accepted).toBe(1);
+  });
+});
+
+describe("SwordScript hit-window rearming", () => {
+  it("advances the attack with the swing clock every frame", () => {
+    const attack: FakeAttack = new FakeAttack();
+    const rig: Rig = createRig({ attack });
+
+    rig.frame();
+    rig.frame();
+
+    expect(attack.advanceCalls).toHaveLength(2);
+    expect(attack.advanceCalls[0]).toBeCloseTo(DT);
+    expect(attack.advanceCalls[1]).toBeCloseTo(DT * 2);
+  });
+
+  it("hits the same target again once the attack signals a rearm", () => {
+    const attack: FakeAttack = new FakeAttack();
+    const rig: Rig = createRig({ attack });
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+
+    rig.hitbox.setTargets([createTarget(1, hurtbox)]);
+
+    rig.frame();
+    expect(hurtbox.accepted).toBe(1);
+
+    // Those two frames burn the 0.07 hitstop; no rearm, so no second blow.
+    rig.frame();
+    rig.frame();
+    expect(hurtbox.accepted).toBe(1);
+
+    attack.rearm = true;
+    rig.frame();
+    expect(hurtbox.accepted).toBe(2);
+
+    // The second blow re-armed the hitstop: burn it off before checking, or
+    // the early return would pass this assertion without ever reaching the
+    // rearm gate.
+    attack.rearm = false;
+    rig.frame();
+    rig.frame();
+    rig.frame();
+    expect(hurtbox.accepted).toBe(2);
+  });
+
+  it("still lands exactly one blow per swing when nothing ever rearms", () => {
+    const rig: Rig = createRig({ attack: new FakeAttack() });
+    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+
+    rig.hitbox.setTargets([createTarget(1, hurtbox)]);
+
+    for (let i: number = 0; i < 30; i++) {
+      rig.frame();
+      hurtbox.onUpdate(DT);
+    }
+
+    expect(hurtbox.accepted).toBe(1);
   });
 });
