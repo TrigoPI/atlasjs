@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **104** items.
+Total : **108** items.
 
 ## app
 
@@ -10,6 +10,9 @@ Total : **104** items.
 | --- | --- | --- | --- | --- |
 | APP-02 | [APP-02-dino-brawl-dead-react-screens](APP-02-dino-brawl-dead-react-screens.md) | 📋 à faire | S | 2026-08-21 |
 | APP-04 | [APP-04-dino-brawl-specs-not-typechecked](APP-04-dino-brawl-specs-not-typechecked.md) | 📋 à faire | S | 2026-08-21 |
+| APP-05 | [APP-05-per-attack-camera-shake](APP-05-per-attack-camera-shake.md) | 📋 à faire | S | 2026-08-21 |
+| APP-06 | [APP-06-richer-attack-cues](APP-06-richer-attack-cues.md) | 📋 à faire | M | 2026-08-21 |
+| APP-07 | [APP-07-timeline-attack-props-validation](APP-07-timeline-attack-props-validation.md) | 📋 à faire | S | 2026-08-21 |
 
 ## assets
 
@@ -114,6 +117,7 @@ Total : **104** items.
 | GAMEPLAY-56 | [GAMEPLAY-56-deep-sprite-occluder-banding](GAMEPLAY-56-deep-sprite-occluder-banding.md) | 💭 vision | M | 2026-08-20 |
 | GAMEPLAY-57 | [GAMEPLAY-57-sorting-layers-serialization-editor](GAMEPLAY-57-sorting-layers-serialization-editor.md) | 💭 vision | M | 2026-08-20 |
 | GAMEPLAY-58 | [GAMEPLAY-58-sort-axis-configurable](GAMEPLAY-58-sort-axis-configurable.md) | 💭 vision | M | 2026-08-20 |
+| GAMEPLAY-60 | [GAMEPLAY-60-promote-weapon-attacks-to-package](GAMEPLAY-60-promote-weapon-attacks-to-package.md) | 💭 vision | L | 2026-08-21 |
 
 ## physics
 

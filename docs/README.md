@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Le backlog vit dans [`backlog/`](backlog/) — **104** items ouverts, index dans [`backlog/_index.md`](backlog/_index.md).
+Le backlog vit dans [`backlog/`](backlog/) — **108** items ouverts, index dans [`backlog/_index.md`](backlog/_index.md).
 
 Les plans d'implémentation en cours vivent dans [`plans/`](plans/) et sont **transitoires** : ils sont supprimés à la clôture de la feature (`/atlas-done`).
 
@@ -43,6 +43,7 @@ Les plans d'implémentation en cours vivent dans [`plans/`](plans/) et sont **tr
 | [scripting-components.md](gameplay/scripting-components.md) | implémenté. État final de la saga d'unification de l'accès composant côté script. Ce |
 | [sprite-animation.md](gameplay/sprite-animation.md) | implémenté. Câble l'animation de sprite dans la voie gameplay : un composant Animator |
 | [tilemap.md](gameplay/tilemap.md) | ✅ implémenté (mergé sur dev). Extensions reportées : [../backlog/](../backlog/). |
+| [weapon-attack-cues.md](gameplay/weapon-attack-cues.md) | ✅ implémenté & vérifié navigateur. Donne à AttackTimeline un canal d'événements (« cue ») |
 
 ## physics
 
