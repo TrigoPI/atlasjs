@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **104** items.
+Total : **105** items.
 
 ## app
 
@@ -10,6 +10,7 @@ Total : **104** items.
 | --- | --- | --- | --- | --- |
 | APP-02 | [APP-02-dino-brawl-dead-react-screens](APP-02-dino-brawl-dead-react-screens.md) | 📋 à faire | S | 2026-08-21 |
 | APP-04 | [APP-04-dino-brawl-specs-not-typechecked](APP-04-dino-brawl-specs-not-typechecked.md) | 📋 à faire | S | 2026-08-21 |
+| APP-05 | [APP-05-sword-combo-declaration-in-spawn](APP-05-sword-combo-declaration-in-spawn.md) | 📋 à faire | S | 2026-08-21 |
 
 ## assets
 
