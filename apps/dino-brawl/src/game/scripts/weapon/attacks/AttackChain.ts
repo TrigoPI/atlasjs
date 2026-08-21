@@ -20,6 +20,11 @@ export class AttackChain extends WeaponAttack<AttackChainProps> {
     return current === undefined ? 0 : current.duration;
   }
 
+  public override get rearmsHits(): boolean {
+    const current: WeaponAttack | undefined = this.getCurrentAttack();
+    return current === undefined ? false : current.rearmsHits;
+  }
+
   public begin(): void {
     const next: WeaponAttack | undefined = this.selectNextAttack();
 
@@ -40,6 +45,16 @@ export class AttackChain extends WeaponAttack<AttackChainProps> {
     }
 
     current.sample(t, out);
+  }
+
+  public override advance(t: number): void {
+    const current: WeaponAttack | undefined = this.getCurrentAttack();
+
+    if (current === undefined) {
+      return;
+    }
+
+    current.advance(t);
   }
 
   public onUpdate(dt: number): void {

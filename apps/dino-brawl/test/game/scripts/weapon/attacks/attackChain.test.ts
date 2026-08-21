@@ -11,6 +11,8 @@ function createPose(): AttackPose {
 class FakeAttack extends WeaponAttack {
   public beginCount: number = 0;
   public readonly sampleCalls: Array<{ t: number; out: AttackPose }> = [];
+  public readonly advanceCalls: number[] = [];
+  public rearm: boolean = false;
   private readonly fixedDuration: number;
 
   public constructor(fixedDuration: number) {
@@ -22,8 +24,16 @@ class FakeAttack extends WeaponAttack {
     return this.fixedDuration;
   }
 
+  public override get rearmsHits(): boolean {
+    return this.rearm;
+  }
+
   public begin(): void {
     this.beginCount += 1;
+  }
+
+  public override advance(t: number): void {
+    this.advanceCalls.push(t);
   }
 
   public sample(t: number, out: AttackPose): void {
@@ -185,5 +195,55 @@ describe("AttackChain", () => {
 
     const pose: AttackPose = createPose();
     expect(() => chain.sample(0, pose)).not.toThrow();
+  });
+});
+
+describe("AttackChain cue forwarding", () => {
+  it("forwards advance to the current attack only", () => {
+    const chain: AttackChain = new AttackChain();
+    const first: FakeAttack = new FakeAttack(0.5);
+    const second: FakeAttack = new FakeAttack(0.5);
+
+    injectAttacks(chain, [first, second]);
+
+    chain.begin();
+    chain.advance(0.3);
+
+    expect(first.advanceCalls).toEqual([0.3]);
+    expect(second.advanceCalls).toHaveLength(0);
+
+    chain.begin();
+    chain.advance(0.4);
+
+    expect(first.advanceCalls).toEqual([0.3]);
+    expect(second.advanceCalls).toEqual([0.4]);
+  });
+
+  it("forwards rearmsHits from the current attack", () => {
+    const chain: AttackChain = new AttackChain();
+    const first: FakeAttack = new FakeAttack(0.5);
+    const second: FakeAttack = new FakeAttack(0.5);
+
+    injectAttacks(chain, [first, second]);
+
+    chain.begin();
+    expect(chain.rearmsHits).toBe(false);
+
+    first.rearm = true;
+    expect(chain.rearmsHits).toBe(true);
+
+    chain.begin();
+    expect(chain.rearmsHits).toBe(false);
+
+    second.rearm = true;
+    expect(chain.rearmsHits).toBe(true);
+  });
+
+  it("is safe to advance an empty chain", () => {
+    const chain: AttackChain = new AttackChain();
+    injectAttacks(chain, []);
+
+    expect(() => chain.advance(0.2)).not.toThrow();
+    expect(chain.rearmsHits).toBe(false);
   });
 });
