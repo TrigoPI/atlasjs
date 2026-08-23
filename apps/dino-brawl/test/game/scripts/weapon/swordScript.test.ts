@@ -163,6 +163,8 @@ function createRig(overrides: Record<string, unknown> = {}): Rig {
     },
   } as unknown as CameraApi;
 
+  injected.trail = { emitting: false };
+
   for (const key of Object.keys(overrides)) {
     injected[key] = overrides[key];
   }
@@ -468,5 +470,25 @@ describe("SwordScript per-attack impact override", () => {
     rig.frame();
 
     expect(hurtbox.lastHitstop).toBe(0.07);
+  });
+});
+
+describe("SwordScript trail", () => {
+  it("turns the trail on when the swing starts", () => {
+    const trail: { emitting: boolean } = { emitting: false };
+    const rig: Rig = createRig({ trail });
+
+    rig.swing();
+
+    expect(trail.emitting).toBe(true);
+  });
+
+  it("turns the trail off once the swing ends", () => {
+    const trail: { emitting: boolean } = { emitting: true };
+    const rig: Rig = createRig({ trail, attackDuration: DT });
+
+    rig.frame();
+
+    expect(trail.emitting).toBe(false);
   });
 });

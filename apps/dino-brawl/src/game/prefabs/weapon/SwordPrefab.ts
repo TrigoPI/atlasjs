@@ -12,11 +12,13 @@ import {
 
 import {
   Collider2D,
+  Color,
   definePrefab,
   RigidBody,
   Sprite,
   SpriteRender,
   Transform2D,
+  TrailRenderer,
   type EntityBuilder,
 } from "@atlasjs/gameplay";
 
@@ -66,12 +68,33 @@ export const createSwordPrefab = () =>
         const attack: WeaponAttack = props.attack(e);
         const hitbox: SwordHitboxScript = e.attach(SwordHitboxScript);
 
+        let trail!: TrailRenderer;
+
+        e.child((tip: EntityBuilder): void => {
+          tip.add(Transform2D).position.set(44, -44);
+
+          trail = tip.add(TrailRenderer, {
+            time: 0.14,
+            minVertexDistance: 3,
+            startWidth: 10,
+            endWidth: 0,
+            startColor: new Color(1, 1, 1, 0.9),
+            endColor: new Color(0.6, 0.85, 1, 0),
+            emitting: false,
+            maxPoints: 48,
+            blend: "additive",
+            sortingLayer: SortingLayer.Entities,
+            sortingOrder: SortingOrder.SwordFront,
+          });
+        });
+
         e.attach(SwordScript, {
           playerAnchor: props.anchor,
           radius: props.r,
           angleOffset: props.angle,
           attack,
           hitbox,
+          trail,
           knockback: 1000,
         });
 

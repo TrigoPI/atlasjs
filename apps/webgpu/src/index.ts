@@ -15,10 +15,12 @@ import {
   SpriteAnimation,
   AnimationPlayer,
   NebulaRenderer,
+  TrailNode,
 } from "@atlasjs/nebula";
 
 declare global {
   var animator: AnimationPlayer;
+  var trail: TrailNode;
 }
 
 function getCanvas(): HTMLCanvasElement {
@@ -162,7 +164,34 @@ async function getImage(src: string): Promise<ImageBitmap> {
   nebula.scene.addChild(filledCircle);
   nebula.scene.addChild(ring);
 
+  const trail: TrailNode = new TrailNode(128);
+  trail.time = 1.2;
+  trail.minVertexDistance = 4;
+  trail.startWidth = 36;
+  trail.endWidth = 4;
+  trail.startColor.set(1, 0.85, 0.3, 1);
+  trail.endColor.set(1, 0.2, 0.1, 0);
+  trail.blend = "additive";
+  nebula.scene.addChild(trail);
+
+  globalThis.trail = trail;
+
+  let trailClock: number = 0;
+  let emitting: boolean = true;
+  const TRAIL_DT: number = 1 / 60;
+
   setInterval(() => {
+    trailClock += TRAIL_DT;
+
+    if (emitting) {
+      const phase: number = trailClock * 1.6;
+      trail.emit(
+        320 + 220 * Math.cos(phase),
+        240 + 150 * Math.sin(phase) * Math.cos(phase),
+      );
+    }
+
+    trail.advance(TRAIL_DT);
     nebula.render();
   }, 1000 / 60);
 
@@ -173,6 +202,10 @@ async function getImage(src: string): Promise<ImageBitmap> {
 
     if (event.code === "KeyW") {
       animator.play("run");
+    }
+
+    if (event.code === "KeyT") {
+      emitting = !emitting;
     }
   });
 })();

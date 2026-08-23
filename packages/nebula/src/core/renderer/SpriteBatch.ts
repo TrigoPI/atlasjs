@@ -1,4 +1,4 @@
-import { Mat4, Vec4 } from "@atlasjs/math";
+import { Mat4, Vec2, Vec4 } from "@atlasjs/math";
 
 import { Disposable } from "../utils";
 import { RenderState } from "../core-types";
@@ -18,4 +18,16 @@ export interface SpriteBatch extends InstancedBatch {
 export interface ShapeBatch extends InstancedBatch {
   begin(renderState: RenderState): void;
   add(model: Mat4, color: Vec4, params: Vec4): void;
+}
+
+export interface TrailBatch extends InstancedBatch {
+  begin(renderState: RenderState): void;
+  add(
+    posA: Vec2,
+    posB: Vec2,
+    edgeA: Vec2,
+    edgeB: Vec2,
+    colorA: Vec4,
+    colorB: Vec4,
+  ): void;
 }

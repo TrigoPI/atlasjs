@@ -7,6 +7,7 @@ import { RenderQueue } from "./RenderQueue";
 import { SpriteRenderer } from "./SpriteRenderer";
 import { ShapeRenderer } from "./ShapeRenderer";
 import { TileMapNodeRenderer } from "./TileMapNodeRenderer";
+import { TrailNodeRenderer } from "./TrailNodeRenderer";
 import { NodeRenderer } from "./NodeRenderer";
 import { DrawCommand } from "./DrawCommand";
 
@@ -28,6 +29,7 @@ export class SceneRenderer {
       new SpriteRenderer(renderer),
       new ShapeRenderer(),
       new TileMapNodeRenderer(renderer),
+      new TrailNodeRenderer(),
     ];
 
     for (let i: number = 0; i < this.nodeRenderers.length; i++) {

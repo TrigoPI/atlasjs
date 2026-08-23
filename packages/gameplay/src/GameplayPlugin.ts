@@ -32,6 +32,7 @@ import {
   PlayerInputSystem,
   SpriteRenderSystem,
   TileMapRenderSystem,
+  TrailRenderSystem,
   TransformPropagationSystem,
 } from "./systems";
 
@@ -50,6 +51,7 @@ import {
   SpriteRender,
   TileMap,
   TileMapRenderer,
+  TrailRenderer,
   Transform2D,
   WorldTransform2D,
 } from "./components";
@@ -59,6 +61,7 @@ export class GameplayPlugin extends Plugin {
   private readonly logger: Logger;
 
   private scriptManager!: ScriptManager;
+  private trailRenderSystem?: TrailRenderSystem;
   private handles: StepHandle[];
   private unsubscribers: Unsubscribe[];
 
@@ -99,6 +102,8 @@ export class GameplayPlugin extends Plugin {
     const spriteRenderSystem: SpriteRenderSystem = new SpriteRenderSystem(nebula, sortingLayers);
     const tileMapRenderSystem: TileMapRenderSystem = new TileMapRenderSystem(nebula, sortingLayers);
     const occluderRenderSystem: OccluderRenderSystem = new OccluderRenderSystem(nebula, sortingLayers);
+    const trailRenderSystem: TrailRenderSystem = new TrailRenderSystem(nebula, sortingLayers);
+    this.trailRenderSystem = trailRenderSystem;
     const playerInputSystem: PlayerInputSystem = new PlayerInputSystem(engine.services);
     const animatorSystem: AnimatorSystem = new AnimatorSystem();
     const audioSystem: AudioSystem = new AudioSystem(audio);
@@ -108,7 +113,7 @@ export class GameplayPlugin extends Plugin {
 
     this.defineComponents(world);
 
-    this.registerCleanup(world, inertia, spriteRenderSystem, tileMapRenderSystem, occluderRenderSystem, cameraManager);
+    this.registerCleanup(world, inertia, spriteRenderSystem, tileMapRenderSystem, occluderRenderSystem, cameraManager, trailRenderSystem);
 
     this.unsubscribers.push(
       world.onAdd(AudioSource, (_entity: Entity, source: AudioSource) => {
@@ -135,6 +140,7 @@ export class GameplayPlugin extends Plugin {
       spriteRenderSystem,
       tileMapRenderSystem,
       occluderRenderSystem,
+      trailRenderSystem,
     );
 
     this.logger.log("GameplayPlugin installed.");
@@ -164,6 +170,7 @@ export class GameplayPlugin extends Plugin {
       .defineComponent(Grid)
       .defineComponent(TileMap)
       .defineComponent(TileMapRenderer)
+      .defineComponent(TrailRenderer)
       .defineComponent(OccluderStrip);
   }
 
@@ -175,6 +182,7 @@ export class GameplayPlugin extends Plugin {
     tileMapRenderSystem: TileMapRenderSystem,
     occluderRenderSystem: OccluderRenderSystem,
     cameraManager: CameraManager,
+    trailRenderSystem: TrailRenderSystem,
   ): void {
     this.unsubscribers.push(
       world.onRemove(PhysicsBodyRef, (_entity: Entity, ref: PhysicsBodyRef) => {
@@ -219,6 +227,10 @@ export class GameplayPlugin extends Plugin {
         occluderRenderSystem.unmount(entity);
       }),
 
+      world.onRemove(TrailRenderer, (entity: Entity) => {
+        trailRenderSystem.detach(entity);
+      }),
+
       world.onRemove(Transform2D, (entity: Entity) => {
         if (world.hasComponent(entity, WorldTransform2D)) {
           world.removeComponent(entity, WorldTransform2D);
@@ -247,6 +259,7 @@ export class GameplayPlugin extends Plugin {
     spriteRenderSystem: SpriteRenderSystem,
     tileMapRenderSystem: TileMapRenderSystem,
     occluderRenderSystem: OccluderRenderSystem,
+    trailRenderSystem: TrailRenderSystem,
   ): void {
     const { fixed, update, render } = scheduler;
 
@@ -339,12 +352,21 @@ export class GameplayPlugin extends Plugin {
         after: "gameplay:tilemap-render",
       }),
     );
+
+    this.handles.push(
+      registerSystem(render, world, trailRenderSystem, {
+        name: "gameplay:trail-render",
+        stage: "PreRender",
+        after: "gameplay:occluder-render",
+      }),
+    );
   }
 
   public uninstall(): void {
     this.logger.log("Uninstalling GameplayPlugin.");
     for (const handle of this.handles) handle.remove();
     for (const off of this.unsubscribers) off();
+    this.trailRenderSystem?.clear();
     this.scriptManager.dispose();
     this.handles = [];
     this.unsubscribers = [];
