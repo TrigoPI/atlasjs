@@ -13,5 +13,6 @@ export * from "./ScriptHost";
 export * from "./SpriteRender";
 export * from "./TileMap";
 export * from "./TileMapRenderer";
+export * from "./TrailRenderer";
 export * from "./Transform2D";
 export * from "./WorldTransform2D";

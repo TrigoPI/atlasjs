@@ -16,6 +16,7 @@ import { WebGPUReflection, WebGPUReflectedGroup } from "./reflect";
 import {
   WebGPUSpriteBatch,
   WebGPUShapeBatch,
+  WebGPUTrailBatch,
   WebGPUInstancedBatch,
   WebGPUInstanceBufferPool,
 } from "./batch";
@@ -194,6 +195,11 @@ export class WebGPURenderer implements Renderer {
   public createShapeBatch(): WebGPUShapeBatch {
     const shader: WebGPUShader = this.getBuiltinShader("shape");
     return new WebGPUShapeBatch(shader);
+  }
+
+  public createTrailBatch(): WebGPUTrailBatch {
+    const shader: WebGPUShader = this.getBuiltinShader("trail");
+    return new WebGPUTrailBatch(shader);
   }
 
   public createGeometry(primitive: Primitive): WebGPUGeometry {

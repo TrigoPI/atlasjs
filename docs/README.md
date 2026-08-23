@@ -64,4 +64,5 @@ Les plans d'implémentation en cours vivent dans [`plans/`](plans/) et sont **tr
 | [sort-point-anchor.md](rendering/sort-point-anchor.md) | ✅ implémenté. Extension ciblée de [sorting-layers.md](sorting-layers.md) (mode ySorted). |
 | [sorting-layers.md](rendering/sorting-layers.md) | ✅ implémenté. Chantier transverse (touche le sort de @atlasjs/nebula + la sémantique de |
 | [sprites.md](rendering/sprites.md) | implémenté. Refonte du système de rendu de sprite du package @atlasjs/gameplay, avec |
+| [trails.md](rendering/trails.md) | conçu, non implémenté (design validé le 2026-08-23). |
 

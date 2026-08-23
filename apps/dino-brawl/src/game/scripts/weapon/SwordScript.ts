@@ -17,6 +17,7 @@ import {
   registerScriptMetadata,
   ScriptMetadata,
   Transform,
+  TrailRenderer,
 } from "@atlasjs/gameplay";
 
 type SwordScriptProps = {
@@ -25,6 +26,7 @@ type SwordScriptProps = {
   angleOffset: number;
   attack: WeaponAttack;
   hitbox: SwordHitboxScript;
+  trail: TrailRenderer;
   hitstopDuration?: number;
   knockback?: number;
   shake?: ShakeSpec;
@@ -38,6 +40,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
   private readonly angleOffset: number;
   private readonly attack: WeaponAttack;
   private readonly hitbox: SwordHitboxScript;
+  private readonly trail: TrailRenderer;
   private readonly hitstopDuration: number = 0;
   private readonly knockback: number = 220;
   private readonly shake: ShakeSpec = SWORD_IMPACT_SHAKE;
@@ -157,6 +160,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
 
     if (this.attackClock >= this.attackDuration) {
       this.state = "idle";
+      this.trail.emitting = false;
     }
   }
 
@@ -175,6 +179,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
 
   private startAttack(): void {
     this.state = "attacking";
+    this.trail.emitting = true;
     this.attackClock = 0;
     this.swingDirection = Math.cos(this.getAimAngle()) >= 0 ? -1 : 1;
     this.hitstopRemaining = 0;
@@ -247,6 +252,7 @@ registerScriptMetadata(SwordScript, {
     angleOffset: ScriptMetadata.field({ required: true }),
     attack: ScriptMetadata.field({ required: true }),
     hitbox: ScriptMetadata.field({ required: true }),
+    trail: ScriptMetadata.field({ required: true }),
     hitstopDuration: ScriptMetadata.field(),
     knockback: ScriptMetadata.field(),
     shake: ScriptMetadata.field(),

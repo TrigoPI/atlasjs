@@ -1,5 +1,10 @@
 import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { defineConfig, type Plugin } from "vitest/config";
+
+const wgslReflectEntry: string = createRequire(import.meta.url)
+  .resolve("wgsl_reflect")
+  .replace("wgsl_reflect.node.js", "wgsl_reflect.module.js");
 
 function wgslTextPlugin(): Plugin {
   return {
@@ -17,6 +22,11 @@ function wgslTextPlugin(): Plugin {
 
 export default defineConfig({
   plugins: [wgslTextPlugin()],
+  resolve: {
+    alias: {
+      wgsl_reflect: wgslReflectEntry,
+    },
+  },
   define: {
     __DEV__: "false",
     __CONSOLE_TRANSPORT__: "false",

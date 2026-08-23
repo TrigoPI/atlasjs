@@ -7,7 +7,7 @@ import type { Entity } from "@atlasjs/nexus";
 import type { AssetsLoader } from "../loaders";
 import type { SheetLoader } from "../sheets";
 
-import { rappierSwordCombo } from "../content";
+import { defaultSwordCombo } from "../content";
 
 import {
   type Instantiator,
@@ -47,7 +47,7 @@ export function spawnPlayer(
   const woosh2Sound: AudioClip = assetsLoader.getAsset("audio:woosh_2");
   const woosh3Sound: AudioClip = assetsLoader.getAsset("audio:woosh_3");
 
-  const swordSprite: Sprite = assetsLoader.getAsset("sprite:rappier_sword");
+  const swordSprite: Sprite = assetsLoader.getAsset("sprite:default_sword");
 
   const shadowPrefab: Prefab<ShadowPrefabProps> = createShadowPrefab();
   const swordPrefab: Prefab<SwordPrefabProps> = createSwordPrefab();
@@ -87,10 +87,10 @@ export function spawnPlayer(
     anchor: anchor.id,
     angle: 0,
     r: 40,
-    attack: rappierSwordCombo({
+    attack: defaultSwordCombo({
       thrust: woosh1Sound,
       swing: woosh2Sound,
-      lunge: woosh3Sound,
+      spin: woosh3Sound,
     }),
   });
 

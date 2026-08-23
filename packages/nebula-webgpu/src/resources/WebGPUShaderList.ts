@@ -4,6 +4,7 @@ import TextureShader from "../shaders/texture.wgsl";
 import GlobalShader from "../shaders/global.wgsl";
 import SpriteInstancedShader from "../shaders/sprite_instanced.wgsl";
 import ShapeInstancedShader from "../shaders/shape_instanced.wgsl";
+import TrailShader from "../shaders/trail.wgsl";
 
 export const WebGPUShaders = (<T extends Record<string, ShaderDescriptor>>(
   list: T,
@@ -32,10 +33,17 @@ export const WebGPUShaders = (<T extends Record<string, ShaderDescriptor>>(
     fragmentEntryPoint: "fs_main",
     source: ShapeInstancedShader,
   },
+  Trail: {
+    id: "atlas.webgpu.trail",
+    vertexEntryPoint: "vs_main",
+    fragmentEntryPoint: "fs_main",
+    source: TrailShader,
+  },
 });
 
 export const WebGPUBuiltinShaders: Record<string, ShaderDescriptor> = {
   sprite: WebGPUShaders.SpriteInstanced,
   texture: WebGPUShaders.Texture2D,
   shape: WebGPUShaders.ShapeInstanced,
+  trail: WebGPUShaders.Trail,
 };

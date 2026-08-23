@@ -1,4 +1,4 @@
-import { Mat4, Vec4 } from "@atlasjs/math";
+import { Mat4, Vec2, Vec4 } from "@atlasjs/math";
 
 import { RenderState } from "../core/core-types";
 import { Texture2D, Sampler } from "../core/resources";
@@ -47,4 +47,22 @@ export type TileMapDrawCommand = {
   readonly count: number;
 };
 
-export type DrawCommand = SpriteDrawCommand | ShapeDrawCommand | TileMapDrawCommand;
+export type TrailDrawCommand = {
+  readonly kind: "trail";
+  readonly sortingLayer: number;
+  readonly sortPrimary: number;
+  readonly sortSecondary: number;
+  readonly kindOrder: number;
+  readonly batchKey: number;
+  readonly renderState: RenderState;
+  readonly positions: ReadonlyArray<Vec2>;
+  readonly edges: ReadonlyArray<Vec2>;
+  readonly colors: ReadonlyArray<Vec4>;
+  readonly pointCount: number;
+};
+
+export type DrawCommand =
+  | SpriteDrawCommand
+  | ShapeDrawCommand
+  | TileMapDrawCommand
+  | TrailDrawCommand;

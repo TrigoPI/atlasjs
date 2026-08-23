@@ -2,7 +2,7 @@ import { Geometry, Primitive } from "../geometry";
 import { Texture2D, Sampler } from "../resources";
 import { Shader, Material } from "../material";
 import { BindingGroup, BindingGroupDefinition } from "../bindings";
-import { SpriteBatch, ShapeBatch } from "./SpriteBatch";
+import { SpriteBatch, ShapeBatch, TrailBatch } from "./SpriteBatch";
 import { RenderTarget, RenderTargetDescriptor } from "./RenderTarget";
 
 import {
@@ -23,5 +23,6 @@ export interface ResourceFactory {
   createBindingGroup(definition: BindingGroupDefinition): BindingGroup;
   createSpriteBatch(): SpriteBatch;
   createShapeBatch(): ShapeBatch;
+  createTrailBatch(): TrailBatch;
   createRenderTarget(descriptor: RenderTargetDescriptor): RenderTarget;
 }
