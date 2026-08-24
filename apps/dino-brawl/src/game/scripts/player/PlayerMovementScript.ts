@@ -11,12 +11,16 @@ import {
   Vector2Action,
 } from "@atlasjs/gameplay";
 
+import type { PlayerDashScript } from "./PlayerDashScript";
+
 export class PlayerMovementScript extends AtlasScript<{
   walkingSpeed: number;
   runningSpeed: number;
+  dash: PlayerDashScript;
 }> {
   private readonly walkingSpeed: number;
   private readonly runningSpeed: number;
+  private readonly dash: PlayerDashScript;
 
   private character: CharacterController;
 
@@ -36,6 +40,10 @@ export class PlayerMovementScript extends AtlasScript<{
   }
 
   public onUpdate(dt: number): void {
+    if (this.dash.isDashing) {
+      return;
+    }
+
     const v: Vec2 = this.move.readValue();
     const vn: Vec2 = v.clone().normalize();
 
@@ -54,5 +62,6 @@ registerScriptMetadata(PlayerMovementScript, {
   exposed: {
     walkingSpeed: ScriptMetadata.field({ required: true }),
     runningSpeed: ScriptMetadata.field({ required: true }),
+    dash: ScriptMetadata.field({ required: true }),
   },
 });

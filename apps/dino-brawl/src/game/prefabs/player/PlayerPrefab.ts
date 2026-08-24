@@ -1,8 +1,10 @@
+import type { AudioClip } from "@atlasjs/audio";
 import type { Vec2 } from "@atlasjs/math";
 import type { SpriteAnimation } from "@atlasjs/nebula";
 
 import {
   PlayerAnimationScript,
+  PlayerDashScript,
   PlayerMovementScript,
   RunningAudioPlayerScript,
   RunningParticleSpawnerScript,
@@ -13,9 +15,11 @@ import { dinoControls } from "../../controls";
 import type { RunningParticlePrefabProps } from "../fx/RunningParticlePrefab";
 
 import {
+  AfterimageRenderer,
   Animator,
   CharacterController2D,
   Collider2D,
+  Color,
   definePrefab,
   PlayerInput,
   RigidBody,
@@ -29,6 +33,7 @@ import {
 export type PlayerPrefabOptions = {
   runningParticlePrefab: Prefab<RunningParticlePrefabProps>;
   runningAudioPrefab: Prefab;
+  dashWooshClip: AudioClip;
 };
 
 export type PlayerPrefabProps = {
@@ -50,6 +55,17 @@ export const createPlayerPrefab = (options: PlayerPrefabOptions) =>
       renderer.sortingLayer = SortingLayer.Entities;
       renderer.sortingOrder = SortingOrder.Player;
 
+      const afterimages: AfterimageRenderer = entity.add(AfterimageRenderer, {
+        interval: 0.04,
+        time: 0.22,
+        startColor: new Color(1, 1, 1, 0.45),
+        endColor: new Color(1, 1, 1, 0),
+        emitting: false,
+        maxImages: 8,
+        sortingLayer: SortingLayer.Entities,
+        sortingOrder: SortingOrder.Afterimage,
+      });
+
       const body: RigidBody = entity.add(RigidBody);
       body.type = "kinematic";
 
@@ -62,11 +78,18 @@ export const createPlayerPrefab = (options: PlayerPrefabOptions) =>
       entity.add(CharacterController2D);
       entity.add(PlayerInput, dinoControls);
 
-      entity.attach(PlayerAnimationScript);
+      /** Attached first: ScriptManager runs scripts in insertion order, keeping isDashing fresh for the scripts attached after it this frame. */
+      const dash: PlayerDashScript = entity.attach(PlayerDashScript, {
+        afterimages,
+        woosh: options.dashWooshClip,
+      });
+
+      entity.attach(PlayerAnimationScript, { dash });
       
       entity.attach(PlayerMovementScript, {
         walkingSpeed: 200,
         runningSpeed: 205,
+        dash,
       });
 
       entity.attach(RunningParticleSpawnerScript, {

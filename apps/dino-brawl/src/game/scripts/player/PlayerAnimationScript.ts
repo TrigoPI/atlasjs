@@ -5,13 +5,21 @@ import {
   AtlasScript,
   ButtonAction,
   PlayerInput,
+  registerScriptMetadata,
+  ScriptMetadata,
   SpriteRenderer,
   Vector2Action,
 } from "@atlasjs/gameplay";
 
 import type { DinoControls } from "../../controls";
 
-export class PlayerAnimationScript extends AtlasScript {
+import type { PlayerDashScript } from "./PlayerDashScript";
+
+export class PlayerAnimationScript extends AtlasScript<{
+  dash: PlayerDashScript;
+}> {
+  private readonly dash: PlayerDashScript;
+
   private animator: Animator;
   private spriteRenderer: SpriteRenderer;
 
@@ -33,6 +41,11 @@ export class PlayerAnimationScript extends AtlasScript {
   }
 
   public onUpdate(dt: number): void {
+    if (this.dash.isDashing) {
+      this.playDash();
+      return;
+    }
+
     this.clock += dt;
 
     const v: Vec2 = this.move.readValue();
@@ -53,4 +66,21 @@ export class PlayerAnimationScript extends AtlasScript {
       this.spriteRenderer.flipX = v.x < 0;
     }
   }
+
+  /** Faces the locked dash direction, not the move input, which may differ. */
+  private playDash(): void {
+    this.animator.play("dash");
+
+    const direction: Vec2 = this.dash.dashDirection;
+
+    if (direction.x !== 0) {
+      this.spriteRenderer.flipX = direction.x < 0;
+    }
+  }
 }
+
+registerScriptMetadata(PlayerAnimationScript, {
+  exposed: {
+    dash: ScriptMetadata.field({ required: true }),
+  },
+});
