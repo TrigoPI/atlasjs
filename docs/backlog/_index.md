@@ -2,17 +2,17 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **122** items.
+Total : **123** items.
 
 ## app
 
 | ID | Item | Statut | Effort | Vérifié |
 | --- | --- | --- | --- | --- |
 | APP-02 | [APP-02-dino-brawl-dead-react-screens](APP-02-dino-brawl-dead-react-screens.md) | 📋 à faire | S | 2026-08-21 |
-| APP-04 | [APP-04-dino-brawl-specs-not-typechecked](APP-04-dino-brawl-specs-not-typechecked.md) | 📋 à faire | S | 2026-08-21 |
+| APP-04 | [APP-04-dino-brawl-specs-not-typechecked](APP-04-dino-brawl-specs-not-typechecked.md) | 📋 à faire | S | 2026-08-24 |
 | APP-05 | [APP-05-per-attack-camera-shake](APP-05-per-attack-camera-shake.md) | 📋 à faire | S | 2026-08-21 |
 | APP-06 | [APP-06-richer-attack-cues](APP-06-richer-attack-cues.md) | 📋 à faire | M | 2026-08-21 |
-| APP-07 | [APP-07-timeline-attack-props-validation](APP-07-timeline-attack-props-validation.md) | 📋 à faire | S | 2026-08-21 |
+| APP-07 | [APP-07-timeline-attack-props-validation](APP-07-timeline-attack-props-validation.md) | 📋 à faire | S | 2026-08-24 |
 | APP-08 | [APP-08-player-dash](APP-08-player-dash.md) | 📋 à faire | M | 2026-08-24 |
 | APP-09 | [APP-09-dash-iframes](APP-09-dash-iframes.md) | 💭 vision | S | 2026-08-24 |
 
@@ -99,6 +99,7 @@ Total : **122** items.
 | GAMEPLAY-59 | [GAMEPLAY-59-sort-point-customization](GAMEPLAY-59-sort-point-customization.md) | 📋 à faire | M | 2026-08-20 |
 | GAMEPLAY-61 | [GAMEPLAY-61-render-systems-unmount-lifecycle](GAMEPLAY-61-render-systems-unmount-lifecycle.md) | 📋 à faire | M | 2026-08-23 |
 | GAMEPLAY-62 | [GAMEPLAY-62-trail-defaults-single-source](GAMEPLAY-62-trail-defaults-single-source.md) | 📋 à faire | S | 2026-08-23 |
+| GAMEPLAY-63 | [GAMEPLAY-63-modifier-keys-left-only](GAMEPLAY-63-modifier-keys-left-only.md) | 📋 à faire | S | 2026-08-24 |
 | GAMEPLAY-35 | [GAMEPLAY-35-addcomponent-overload-duplication](GAMEPLAY-35-addcomponent-overload-duplication.md) | 🔶 partiel | S | 2026-08-19 |
 | GAMEPLAY-47 | [GAMEPLAY-47-tilemap-render-persistent-buffer-chunking](GAMEPLAY-47-tilemap-render-persistent-buffer-chunking.md) | 🔶 partiel | M | 2026-08-19 |
 | GAMEPLAY-03 | [GAMEPLAY-03-animator-state-machine](GAMEPLAY-03-animator-state-machine.md) | 💭 vision | L | 2026-08-19 |
