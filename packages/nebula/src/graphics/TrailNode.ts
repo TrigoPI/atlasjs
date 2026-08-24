@@ -13,6 +13,7 @@ export class TrailNode extends Node {
   public startColor: Color;
   public endColor: Color;
   public blend: BlendMode;
+  public smoothing: number;
 
   private xs: Float32Array;
   private ys: Float32Array;
@@ -35,6 +36,7 @@ export class TrailNode extends Node {
     this.startColor = new Color(1, 1, 1, 1);
     this.endColor = new Color(1, 1, 1, 0);
     this.blend = "alpha";
+    this.smoothing = 3;
 
     this.xs = new Float32Array(size);
     this.ys = new Float32Array(size);

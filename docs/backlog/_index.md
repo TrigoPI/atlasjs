@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **108** items.
+Total : **118** items.
 
 ## app
 
@@ -94,6 +94,8 @@ Total : **108** items.
 | GAMEPLAY-53 | [GAMEPLAY-53-occluder-render-perf](GAMEPLAY-53-occluder-render-perf.md) | 📋 à faire | M | 2026-08-20 |
 | GAMEPLAY-55 | [GAMEPLAY-55-occluder-collider-generation](GAMEPLAY-55-occluder-collider-generation.md) | 📋 à faire | M | 2026-08-20 |
 | GAMEPLAY-59 | [GAMEPLAY-59-sort-point-customization](GAMEPLAY-59-sort-point-customization.md) | 📋 à faire | M | 2026-08-20 |
+| GAMEPLAY-61 | [GAMEPLAY-61-render-systems-unmount-lifecycle](GAMEPLAY-61-render-systems-unmount-lifecycle.md) | 📋 à faire | M | 2026-08-23 |
+| GAMEPLAY-62 | [GAMEPLAY-62-trail-defaults-single-source](GAMEPLAY-62-trail-defaults-single-source.md) | 📋 à faire | S | 2026-08-23 |
 | GAMEPLAY-35 | [GAMEPLAY-35-addcomponent-overload-duplication](GAMEPLAY-35-addcomponent-overload-duplication.md) | 🔶 partiel | S | 2026-08-19 |
 | GAMEPLAY-47 | [GAMEPLAY-47-tilemap-render-persistent-buffer-chunking](GAMEPLAY-47-tilemap-render-persistent-buffer-chunking.md) | 🔶 partiel | M | 2026-08-19 |
 | GAMEPLAY-03 | [GAMEPLAY-03-animator-state-machine](GAMEPLAY-03-animator-state-machine.md) | 💭 vision | L | 2026-08-19 |
@@ -146,9 +148,17 @@ Total : **108** items.
 | RENDER-12 | [RENDER-12-vite-plugin-shader-codegen](RENDER-12-vite-plugin-shader-codegen.md) | 📋 à faire | M | 2026-08-19 |
 | RENDER-13 | [RENDER-13-ivec-support](RENDER-13-ivec-support.md) | 📋 à faire | S | 2026-08-19 |
 | RENDER-15 | [RENDER-15-per-frame-pivot](RENDER-15-per-frame-pivot.md) | 📋 à faire | S | 2026-08-20 |
+| RENDER-16 | [RENDER-16-trail-textured](RENDER-16-trail-textured.md) | 📋 à faire | M | 2026-08-23 |
+| RENDER-17 | [RENDER-17-trail-round-caps](RENDER-17-trail-round-caps.md) | 📋 à faire | S | 2026-08-23 |
+| RENDER-18 | [RENDER-18-trail-width-color-curves](RENDER-18-trail-width-color-curves.md) | 📋 à faire | M | 2026-08-23 |
+| RENDER-20 | [RENDER-20-shared-blend-batch-ids](RENDER-20-shared-blend-batch-ids.md) | 📋 à faire | S | 2026-08-23 |
+| RENDER-21 | [RENDER-21-trail-temporal-interpolation](RENDER-21-trail-temporal-interpolation.md) | 📋 à faire | S | 2026-08-23 |
+| RENDER-22 | [RENDER-22-instance-buffer-pool-shrink](RENDER-22-instance-buffer-pool-shrink.md) | 📋 à faire | S | 2026-08-23 |
+| RENDER-23 | [RENDER-23-trail-spline-smoothing](RENDER-23-trail-spline-smoothing.md) | 📋 à faire | M | 2026-08-23 |
 | RENDER-04 | [RENDER-04-resource-lifecycle-eviction](RENDER-04-resource-lifecycle-eviction.md) | 🔶 partiel | M | 2026-08-19 |
 | RENDER-01 | [RENDER-01-text-rendering](RENDER-01-text-rendering.md) | 💭 vision | L | 2026-08-19 |
 | RENDER-09 | [RENDER-09-shapes-arbitrary-polygons](RENDER-09-shapes-arbitrary-polygons.md) | 💭 vision | L | 2026-08-19 |
 | RENDER-10 | [RENDER-10-shapes-gradient-texture-fill](RENDER-10-shapes-gradient-texture-fill.md) | 💭 vision | M | 2026-08-19 |
 | RENDER-14 | [RENDER-14-material-graph](RENDER-14-material-graph.md) | 💭 vision | L | 2026-08-19 |
+| RENDER-19 | [RENDER-19-afterimage-renderer](RENDER-19-afterimage-renderer.md) | 💭 vision | M | 2026-08-23 |
 

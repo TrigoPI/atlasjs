@@ -5,6 +5,7 @@ export type TrailRendererCommand = "none" | "clear";
 export interface TrailRendererOptions {
   time?: number;
   minVertexDistance?: number;
+  smoothing?: number;
   startWidth?: number;
   endWidth?: number;
   startColor?: Color;
@@ -20,6 +21,7 @@ export interface TrailRendererOptions {
 export class TrailRenderer {
   public time: number;
   public minVertexDistance: number;
+  public smoothing: number;
   public startWidth: number;
   public endWidth: number;
   public startColor: Color;
@@ -35,6 +37,7 @@ export class TrailRenderer {
   public constructor(options?: TrailRendererOptions) {
     this.time = options?.time ?? 0.2;
     this.minVertexDistance = options?.minVertexDistance ?? 2;
+    this.smoothing = options?.smoothing ?? 3;
     this.startWidth = options?.startWidth ?? 8;
     this.endWidth = options?.endWidth ?? 0;
     this.startColor = options?.startColor ?? new Color(1, 1, 1, 1);

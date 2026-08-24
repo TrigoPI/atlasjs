@@ -77,6 +77,7 @@ describe("TrailRenderSystem", () => {
     component.endWidth = 3;
     component.blend = "additive";
     component.maxPoints = 8;
+    component.smoothing = 5;
 
     system.update({ world, dt: DT });
 
@@ -85,6 +86,7 @@ describe("TrailRenderSystem", () => {
     expect(node.endWidth).toBe(3);
     expect(node.blend).toBe("additive");
     expect(node.capacity).toBe(8);
+    expect(node.smoothing).toBe(5);
   });
 
   it("samples the world transform's position when it emits", () => {
