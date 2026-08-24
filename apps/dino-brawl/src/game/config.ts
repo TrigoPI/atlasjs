@@ -7,6 +7,7 @@ export const SortingLayer = {
 } as const;
 
 export const SortingOrder = {
+  Afterimage: 7,
   Shadow: 8,
   SwordBehind: 9,
   Player: 10,
