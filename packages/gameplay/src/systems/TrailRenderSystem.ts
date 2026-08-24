@@ -112,6 +112,7 @@ export class TrailRenderSystem implements NexusSystem {
 
     node.time = trailRenderer.time;
     node.minVertexDistance = trailRenderer.minVertexDistance;
+    node.smoothing = trailRenderer.smoothing;
     node.startWidth = trailRenderer.startWidth;
     node.endWidth = trailRenderer.endWidth;
     node.startColor.set(start.r, start.g, start.b, start.a);

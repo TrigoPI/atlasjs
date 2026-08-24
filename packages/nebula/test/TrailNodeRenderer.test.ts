@@ -53,6 +53,7 @@ function trailOf(points: ReadonlyArray<readonly [number, number]>): TrailNode {
   const node: TrailNode = new TrailNode();
   node.minVertexDistance = 1;
   node.time = 100;
+  node.smoothing = 1;
 
   for (const [x, y] of points) {
     node.emit(x, y);
@@ -128,6 +129,23 @@ describe("TrailNodeRenderer.collect", () => {
     expect(collect(node, viewport)).not.toBeNull();
   });
 
+  it("does not cull a densified trail whose spline overshoot reaches past the source-point AABB", () => {
+    const node: TrailNode = new TrailNode();
+    node.minVertexDistance = 0;
+    node.time = 100;
+    node.smoothing = 8;
+    node.startWidth = 2;
+    node.endWidth = 2;
+    node.emit(0, 0);
+    node.emit(100, 0);
+    node.emit(100, 100);
+    node.updateWorldMatrix();
+
+    const viewport: Bound = new Bound(80, -8, 15, 5);
+
+    expect(collect(node, viewport)).not.toBeNull();
+  });
+
   it("carries the start half-width onto the head's edge", () => {
     const node: TrailNode = trailOf([
       [0, 0],
@@ -192,6 +210,26 @@ describe("TrailNodeRenderer.collect", () => {
 
     const cmd: TrailDrawCommand = collect(node) as TrailDrawCommand;
 
+    for (const edge of cmd.edges) {
+      expect(Number.isFinite(edge.x)).toBe(true);
+      expect(Number.isFinite(edge.y)).toBe(true);
+    }
+  });
+
+  it("stays finite and densifies at smoothing 3 on a zero-length segment (coincident points)", () => {
+    const node: TrailNode = new TrailNode();
+    node.minVertexDistance = 0;
+    node.time = 100;
+    node.smoothing = 3;
+    node.emit(5, 5);
+    node.emit(5, 5);
+    node.updateWorldMatrix();
+
+    expect(node.pointCount).toBe(2);
+
+    const cmd: TrailDrawCommand = collect(node) as TrailDrawCommand;
+
+    expect(cmd.pointCount).toBe((2 - 1) * 3 + 1);
     for (const edge of cmd.edges) {
       expect(Number.isFinite(edge.x)).toBe(true);
       expect(Number.isFinite(edge.y)).toBe(true);
@@ -282,5 +320,196 @@ describe("TrailBatcher", () => {
     expect(entries[0].edgeB).toBe(entries[1].edgeA);
     expect(entries[0].posB).toBe(entries[1].posA);
     expect(entries[0].colorB).toBe(entries[1].colorA);
+  });
+
+  it("shares the joint edge between every neighboring pair of densified segments", () => {
+    const node: TrailNode = trailOf([
+      [0, 0],
+      [20, 0],
+      [20, 20],
+    ]);
+    node.smoothing = 3;
+
+    const cmd: TrailDrawCommand = collect(node) as TrailDrawCommand;
+    const entries: Entry[] = record(cmd).entries;
+
+    expect(entries.length).toBeGreaterThan(1);
+
+    for (let i: number = 0; i < entries.length - 1; i++) {
+      expect(entries[i].edgeB).toBe(entries[i + 1].edgeA);
+      expect(entries[i].posB).toBe(entries[i + 1].posA);
+      expect(entries[i].colorB).toBe(entries[i + 1].colorA);
+    }
+  });
+});
+
+describe("TrailNodeRenderer smoothing", () => {
+  it("densifies at the node's default smoothing of 3 when left untouched", () => {
+    const node: TrailNode = new TrailNode();
+    node.minVertexDistance = 0;
+    node.time = 100;
+    node.emit(0, 0);
+    node.emit(10, 0);
+    node.emit(10, 10);
+    node.updateWorldMatrix();
+
+    const cmd: TrailDrawCommand = collect(node) as TrailDrawCommand;
+
+    expect(cmd.pointCount).toBe((3 - 1) * 3 + 1);
+  });
+
+  it("reproduces exactly today's un-subdivided geometry for smoothing 0 or 1", () => {
+    const points: ReadonlyArray<readonly [number, number]> = [
+      [0, 0],
+      [10, 0],
+      [20, 0],
+    ];
+
+    for (const smoothing of [0, 1]) {
+      const node: TrailNode = trailOf(points);
+      node.smoothing = smoothing;
+      node.startWidth = 8;
+      node.endWidth = 0;
+
+      const cmd: TrailDrawCommand = collect(node) as TrailDrawCommand;
+
+      expect(cmd.pointCount).toBe(3);
+      expect(cmd.positions[0].x).toBe(20);
+      expect(cmd.positions[1].x).toBe(10);
+      expect(cmd.positions[2].x).toBe(0);
+      expect(Math.hypot(cmd.edges[0].x, cmd.edges[0].y)).toBeCloseTo(4);
+      expect(Math.hypot(cmd.edges[2].x, cmd.edges[2].y)).toBeCloseTo(0);
+    }
+  });
+
+  it("subdivides every source segment into smoothing sub-segments", () => {
+    const node: TrailNode = trailOf([
+      [0, 0],
+      [10, 0],
+      [10, 10],
+    ]);
+    node.smoothing = 4;
+
+    const sourceSegments: number = 2;
+    const subdivisions: number = 4;
+    const cmd: TrailDrawCommand = collect(node) as TrailDrawCommand;
+
+    expect(cmd.pointCount).toBe(sourceSegments * subdivisions + 1);
+    expect(record(cmd).entries).toHaveLength(sourceSegments * subdivisions);
+  });
+
+  it("keeps an unevenly-sampled straight line straight, introducing no wobble", () => {
+    const node: TrailNode = trailOf([
+      [0, 0],
+      [5, 0],
+      [9, 0],
+      [20, 0],
+    ]);
+    node.smoothing = 5;
+
+    const cmd: TrailDrawCommand = collect(node) as TrailDrawCommand;
+
+    for (let i: number = 0; i < cmd.pointCount; i++) {
+      expect(cmd.positions[i].y).toBe(0);
+    }
+
+    for (let i: number = 0; i < cmd.pointCount - 1; i++) {
+      expect(cmd.positions[i + 1].x).toBeLessThanOrEqual(
+        cmd.positions[i].x + 1e-6,
+      );
+    }
+  });
+
+  it("keeps the width and colour gradient linear in the densified index despite wildly uneven source spacing", () => {
+    const node: TrailNode = trailOf([
+      [0, 0],
+      [100, 0],
+      [101, 0],
+    ]);
+    node.smoothing = 4;
+    node.startWidth = 0;
+    node.endWidth = 80;
+    node.startColor.set(1, 0, 0, 1);
+    node.endColor.set(0, 0, 1, 0);
+
+    const cmd: TrailDrawCommand = collect(node) as TrailDrawCommand;
+
+    const halfWidthAtQuarterOfFirstSegment: number = Math.hypot(
+      cmd.edges[1].x,
+      cmd.edges[1].y,
+    );
+    expect(halfWidthAtQuarterOfFirstSegment).toBeCloseTo(5);
+    expect(cmd.colors[1].x).toBeCloseTo(0.875);
+
+    const halfWidthAtQuarterOfSecondSegment: number = Math.hypot(
+      cmd.edges[5].x,
+      cmd.edges[5].y,
+    );
+    expect(halfWidthAtQuarterOfSecondSegment).toBeCloseTo(25);
+    expect(cmd.colors[5].x).toBeCloseTo(0.375);
+  });
+
+  it("clamps a non-finite or negative smoothing to 1 (no subdivision)", () => {
+    for (const bad of [NaN, Infinity, -Infinity, -5]) {
+      const node: TrailNode = trailOf([
+        [0, 0],
+        [10, 0],
+        [20, 0],
+      ]);
+      node.smoothing = bad;
+
+      const cmd: TrailDrawCommand = collect(node) as TrailDrawCommand;
+
+      expect(cmd.pointCount).toBe(3);
+      expect(cmd.positions[0].x).toBe(20);
+      expect(cmd.positions[2].x).toBe(0);
+    }
+  });
+
+  it("clamps a smoothing far above the useful range to MAX_SMOOTHING", () => {
+    const node: TrailNode = trailOf([
+      [0, 0],
+      [10, 0],
+      [20, 0],
+    ]);
+    node.smoothing = 1_000_000;
+
+    const cmd: TrailDrawCommand = collect(node) as TrailDrawCommand;
+
+    expect(cmd.pointCount).toBe(2 * 8 + 1);
+  });
+
+  it("does not allocate on a steady-state frame", () => {
+    const node: TrailNode = trailOf([
+      [0, 0],
+      [10, 0],
+      [20, 0],
+    ]);
+    node.smoothing = 4;
+
+    const renderer: TrailNodeRenderer = new TrailNodeRenderer();
+
+    const first: TrailDrawCommand = renderer.collect(
+      node,
+      WIDE,
+      new Bound(),
+    ) as TrailDrawCommand;
+    const firstCount: number = first.pointCount;
+    const head: Vec2 = first.positions[0];
+    const tail: Vec2 = first.positions[firstCount - 1];
+    const headEdge: Vec2 = first.edges[0];
+    const headColor: Vec4 = first.colors[0];
+
+    const second: TrailDrawCommand = renderer.collect(
+      node,
+      WIDE,
+      new Bound(),
+    ) as TrailDrawCommand;
+
+    expect(second.pointCount).toBe(firstCount);
+    expect(second.positions[0]).toBe(head);
+    expect(second.positions[firstCount - 1]).toBe(tail);
+    expect(second.edges[0]).toBe(headEdge);
+    expect(second.colors[0]).toBe(headColor);
   });
 });

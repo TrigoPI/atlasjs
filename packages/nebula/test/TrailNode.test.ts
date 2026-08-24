@@ -147,3 +147,18 @@ describe("TrailNode capacity", () => {
     expect(node.getPointY(0)).toBe(2);
   });
 });
+
+describe("TrailNode.smoothing", () => {
+  it("defaults to 3", () => {
+    const node: TrailNode = new TrailNode();
+
+    expect(node.smoothing).toBe(3);
+  });
+
+  it("is a plain settable field", () => {
+    const node: TrailNode = new TrailNode();
+    node.smoothing = 6;
+
+    expect(node.smoothing).toBe(6);
+  });
+});

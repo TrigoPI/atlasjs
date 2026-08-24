@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Le backlog vit dans [`backlog/`](backlog/) — **108** items ouverts, index dans [`backlog/_index.md`](backlog/_index.md).
+Le backlog vit dans [`backlog/`](backlog/) — **118** items ouverts, index dans [`backlog/_index.md`](backlog/_index.md).
 
 Les plans d'implémentation en cours vivent dans [`plans/`](plans/) et sont **transitoires** : ils sont supprimés à la clôture de la feature (`/atlas-done`).
 
@@ -64,5 +64,5 @@ Les plans d'implémentation en cours vivent dans [`plans/`](plans/) et sont **tr
 | [sort-point-anchor.md](rendering/sort-point-anchor.md) | ✅ implémenté. Extension ciblée de [sorting-layers.md](sorting-layers.md) (mode ySorted). |
 | [sorting-layers.md](rendering/sorting-layers.md) | ✅ implémenté. Chantier transverse (touche le sort de @atlasjs/nebula + la sémantique de |
 | [sprites.md](rendering/sprites.md) | implémenté. Refonte du système de rendu de sprite du package @atlasjs/gameplay, avec |
-| [trails.md](rendering/trails.md) | conçu, non implémenté (design validé le 2026-08-23). |
+| [trails.md](rendering/trails.md) | implémenté (design validé et livré le 2026-08-23, mergé dans dev). |
 
