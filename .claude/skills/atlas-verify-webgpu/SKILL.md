@@ -30,7 +30,7 @@ It comes out as **`warn`** (`Error while parsing WGSL:`), then gets drowned unde
 
 Its loop runs on RAF: if the browser panel isn't in the foreground, you get a **black canvas at 0 fps with no error at all**. Bring the tab to the front before judging anything.
 
-Programmatic canvas readback (`drawImage`/`getImageData`) returns empty for the same reason. It works on `apps/webgpu`, whose loop is a `setInterval`.
+Programmatic canvas readback (`drawImage`/`getImageData`) returns empty for the same reason. It works on `apps/webgpu`, whose loop is a `setInterval` — but **`setInterval` is throttled too**, to roughly 1 Hz, whenever the tab does not really have focus. The canvas keeps rendering, so nothing looks broken; what breaks is anything that *accumulates* over frames. A trail sampled once per tick built 2 points instead of 50 and read as "the feature doesn't work". Click inside the page to give it focus, and treat any accumulated quantity measured otherwise as unverified. Static geometry is still trustworthy at 1 Hz; growth over time is not.
 
 ## 4. `fwidth` and non-uniform control flow
 
@@ -82,6 +82,37 @@ Get the target overlapping the hitbox in its **resting** pose before attacking, 
 ## 10. The console buffer outlives the page
 
 `read_console_messages` keeps history across reloads, and `console.clear()` does not empty it — a log line from a previous bundle reads exactly like a fresh one. Before driving anything, log a unique marker (`console.log("[Probe] ...")`) and only trust lines that appear **after** it. Also check the format of what you read: a probe line in an older shape means the browser is running a stale module, even when `curl http://localhost:<port>/src/…` shows the server serving the new one.
+
+## 11. Two ways to interrogate the engine without touching a source file
+
+Both avoid the rebuild-and-revert cycle of a source probe (pitfall 7), and neither can leave the tree dirty.
+
+**Import the built dist into the page.** Vite serves workspace packages from `/@fs/<abs path>/packages/<pkg>/dist/index.mjs` — the exact URL the app itself imports, so it is the *same module instance*, and `instanceof` holds against the app's own objects. From `javascript_tool` you can therefore construct an engine class and run it against live state:
+
+```js
+(async () => {
+  const N = await import("/@fs/<abs>/packages/nebula/dist/index.mjs");
+  const M = await import("/@fs/<abs>/packages/math/dist/index.mjs");
+  const cmd = new N.TrailNodeRenderer().collect(globalThis.trail, new M.Bound(-1e5, -1e5, 2e5, 2e5), new M.Bound());
+  return JSON.stringify({ cull: cmd === null, count: cmd && cmd.pointCount });
+})()
+```
+
+That single call separates "the CPU side produced nothing" from "the GPU side drew nothing" — the question that otherwise costs a shader probe and two rebuilds. Note the async IIFE: `javascript_tool` rejects a bare top-level `await`. And beware `JSON.stringify` turning `NaN` into `null`, which reads exactly like a missing field.
+
+**Inject a second node to exercise a path the app never hits.** Get the scene root off any stashed node (`node.getParent()`), build a sibling with a lifetime long enough to be static (`time = 1e9`), and hand-emit a polyline. This exercised, in one call and with no source edit: multi-node batch merging (two nodes sharing a blend mode → one draw), and a geometry case far harsher than the app produces (a 12-point zigzag = 11 consecutive ~90° reversals, every corner checkable at once). Remove it with `removeFromParent()` when done.
+
+## 12. `computer key` does not reach a document-level listener
+
+`computer {action: "key"}` delivers to the focused element. A `document.addEventListener("keydown", …)` — the shape most demo scaffolding uses — never sees it, even after clicking into the page. The keypress silently does nothing, which looks exactly like a broken key binding.
+
+Dispatch a real event instead:
+
+```js
+document.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyT", key: "t", bubbles: true }))
+```
+
+This is the opposite of pitfall 8, where `javascript_tool` is the wrong tool for *held* keys because it stops the loop. For a one-shot toggle read off `document`, it is the only thing that lands.
 
 ## Verification order
 
