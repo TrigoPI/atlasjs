@@ -27,11 +27,6 @@ export abstract class TimelineAttack<
     super.begin();
   }
 
-  /**
-   * The cursor is monotonic within a `begin()` cycle: it only ever moves
-   * forward. A `t` at or below the current cursor is ignored — no cues are
-   * collected and the cursor is left untouched. Only `begin()` rewinds it.
-   */
   public override advance(t: number): void {
     this.cues.length = 0;
     this.rearm = false;

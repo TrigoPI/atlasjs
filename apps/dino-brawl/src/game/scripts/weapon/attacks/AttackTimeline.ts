@@ -131,17 +131,6 @@ export class AttackTimeline {
     return this.soundCuePresent;
   }
 
-  /**
-   * Collects cues whose phase starts strictly after `fromT` and at or before `toT`.
-   *
-   * The low bound is exclusive and the high bound is inclusive, enabling per-frame
-   * callers advancing their clock to neither replay nor skip cues.
-   *
-   * Cues are appended to `out` without clearing it; the caller owns the array.
-   *
-   * To capture a cue on the phase starting at `t = 0`, seed the first call with
-   * `fromT < 0` (e.g., `fromT = -1`).
-   */
   public collectCues(fromT: number, toT: number, out: AttackCue[]): void {
     for (let index: number = 0; index < this.phases.length; index += 1) {
       const phase: ResolvedPhase = this.phases[index];

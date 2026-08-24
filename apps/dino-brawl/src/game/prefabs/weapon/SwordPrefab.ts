@@ -71,16 +71,16 @@ export const createSwordPrefab = () =>
         let trail!: TrailRenderer;
 
         e.child((tip: EntityBuilder): void => {
-          tip.add(Transform2D).position.set(44, -44);
+          tip.add(Transform2D).position.set(20, -20);
 
           trail = tip.add(TrailRenderer, {
-            time: 0.14,
+            time: 0.2,
             minVertexDistance: 3,
-            startWidth: 10,
+            startWidth: 48,
             endWidth: 0,
-            startColor: new Color(1, 1, 1, 0.9),
+            startColor: new Color(1, 1, 1, 0.45),
             endColor: new Color(0.6, 0.85, 1, 0),
-            emitting: false,
+            emitting: true,
             maxPoints: 48,
             blend: "additive",
             sortingLayer: SortingLayer.Entities,
