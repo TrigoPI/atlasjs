@@ -100,7 +100,7 @@ Fichier : `packages/gameplay/src/systems/AfterimageRenderSystem.ts`. Même squel
 
 ```ts
 interface AfterimageSlot {
-  sprite: Sprite;
+  sprite: Sprite | null;
   x: number;
   y: number;
   rotation: number;
@@ -115,14 +115,23 @@ interface MountedAfterimages {
   count: number;
   head: number;
   sinceLastStamp: number;
+  stampDue: boolean;
   lastStampX: number;
   lastStampY: number;
   hasLastStamp: boolean;
   emitting: boolean;
+  time: number;
+  startColor: Color;
+  endColor: Color;
+  visible: boolean;
+  sortingLayer: string;
+  sortingOrder: number;
 }
 ```
 
-`slots` est un ring buffer de `maxImages` entrées **pré-allouées** ; `nodes` est un pool parallèle de la même taille, chaque nœud monté paresseusement à la première utilisation de son emplacement. Un instantané ne contient que des nombres plus une référence de `Sprite` : aucune allocation à l'estampe.
+`slots` est un ring buffer de `maxImages` entrées **pré-allouées** ; `nodes` est un pool parallèle de la même taille, chaque nœud monté paresseusement à la première utilisation de son emplacement. Un instantané ne contient que des nombres plus une référence de `Sprite` : aucune allocation à l'estampe. `sprite` est nullable parce que les emplacements sont pré-alloués : la vérité d'un emplacement jamais estampé est « pas de sprite », et le chemin de dessin le narrow.
+
+**Le monté porte une copie des réglages de fade** (`time`, les deux couleurs, `visible`, les deux champs de tri), rafraîchie chaque frame depuis le composant. Ce n'est pas de la redondance : §4.3 exige qu'un émetteur **détaché** continue de s'afficher et de fader, or à ce moment-là le composant n'existe plus. `TrailRenderSystem` n'a pas ce problème parce que `TrailNode` possède ses propres réglages ; ici c'est le monté qui les possède. Les deux `Color` sont alloués au montage et écrits par `.set()`, donc l'invariant zéro-allocation-par-frame tient, et attaché comme détaché partagent une seule routine de dessin.
 
 ### 4.2 Boucle de mise à jour
 
@@ -134,6 +143,7 @@ Par entité, dans cet ordre :
 2. **Front montant de `emitting`** → vider le buffer.
 3. **`command === "clear"`** → vider le buffer, remettre `command = "none"`.
 4. **Estamper**, si `emitting` : `sinceLastStamp += dt` ; si `sinceLastStamp >= interval` **et** (aucune estampe précédente **ou** distance à la dernière estampe `>= minDistance`), écrire un instantané à `head`, remettre `sinceLastStamp` à `0` et mémoriser la position d'estampe. Si la garde de distance bloque, **`sinceLastStamp` n'est pas remis à zéro** : l'estampe part dès que l'entité bouge assez, sans rafale de rattrapage.
+   **Après un vidage du buffer, la première frame émettrice estampe immédiatement**, quel que soit l'historique — c'est le rôle de `stampDue`, levé par le vidage et consommé par l'estampe. Sans ça, l'accumulateur garde la valeur héritée de l'émission précédente et la première image d'un dash tombe entre `0` et `interval` plus tard, soit 0 à 3 frames à 60 Hz de façon non déterministe. Sur un dash de 0.18 s à `interval` 0.04 il n'y a que quatre estampes à prendre : en perdre la première se voit.
    L'instantané fige la position, la rotation et l'échelle **monde**, avec `flipX`/`flipY` déjà repliés en signe de l'échelle — le même calcul que `SpriteRenderSystem` — plus la référence de `Sprite` courante, qui porte la texture, le pivot et la source rect (donc la frame d'animation du moment).
 5. **Vieillir puis expirer** : `age += dt` sur toutes les images vivantes, et retirer par la queue celles dont `age >= time`. La queue est le plus ancien élément du ring, donc l'expiration est monotone et se fait en avançant un index.
 6. **Dessiner** : pour chaque image vivante, `t = age / time`, tint = interpolation linéaire composante par composante de `startColor` vers `endColor`. Le tint **remplace** celui du `SpriteRender` source, il ne le multiplie pas. Le nœud reçoit position, rotation, échelle et source rect figées, `setVisible(renderer.visible)`, puis `applySortFields(node, layers, renderer.sortingLayer, renderer.sortingOrder, image.y)` — **la position Y de l'image**, pas celle de l'émetteur, de sorte qu'une image estampée plus bas se trie devant celles du dessus.
@@ -172,7 +182,7 @@ Consommateur de validation, dans `apps/dino-brawl`. Le détail de gameplay vit d
 - **Par frame et par émetteur** : un parcours des images vivantes, un `setTint`/`setPosition`/`setScale`/`setSourceRect` par image, plus le `applySortFields` que paie déjà chaque sprite. Aucune allocation : slots et nœuds sont pré-alloués, l'interpolation de couleur écrit dans le nœud sans construire de `Color`.
 - **Coût GPU** : `maxImages` instances de plus au maximum dans le batch sprite existant, sur la même texture que l'émetteur — donc dans le même batch, sans changement de pipeline. Aux réglages du dash (5 images), c'est 5 quads.
 - **Coût à l'arrêt** : un émetteur avec `emitting = false` et zéro image vivante fait un parcours de requête et rien d'autre. Les nœuds du pool restent montés mais invisibles.
-- Non mesuré : le surcoût d'un émetteur à `maxImages = 64`, raisonné mais pas chiffré.
+- Non mesuré : le surcoût d'un émetteur à `maxImages = 64`, raisonné mais pas chiffré. Deux écarts connus au coût annoncé ci-dessus sont suivis par [`RENDER-24`](../backlog/RENDER-24-afterimage-idle-cost.md) — le parcours de dessin balaie toute la capacité même au repos, et l'ancre comme la source rect sont réappliquées chaque frame sur un instantané qui ne change jamais.
 
 ## 7. Tests et validation
 

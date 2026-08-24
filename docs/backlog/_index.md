@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **120** items.
+Total : **122** items.
 
 ## app
 
@@ -41,6 +41,7 @@ Total : **120** items.
 | --- | --- | --- | --- | --- |
 | CORE-01 | [CORE-01-archetype-soa-storage](CORE-01-archetype-soa-storage.md) | 📋 à faire | L | 2026-08-19 |
 | CORE-02 | [CORE-02-changed-t-detection](CORE-02-changed-t-detection.md) | 📋 à faire | L | 2026-08-19 |
+| CORE-05 | [CORE-05-scheduler-step-introspection](CORE-05-scheduler-step-introspection.md) | 📋 à faire | S | 2026-08-24 |
 | CORE-03 | [CORE-03-component-registry-by-name](CORE-03-component-registry-by-name.md) | 💭 vision | S | 2026-08-19 |
 | CORE-04 | [CORE-04-rollback-driver](CORE-04-rollback-driver.md) | 💭 vision | L | 2026-08-19 |
 
@@ -158,6 +159,7 @@ Total : **120** items.
 | RENDER-21 | [RENDER-21-trail-temporal-interpolation](RENDER-21-trail-temporal-interpolation.md) | 📋 à faire | S | 2026-08-23 |
 | RENDER-22 | [RENDER-22-instance-buffer-pool-shrink](RENDER-22-instance-buffer-pool-shrink.md) | 📋 à faire | S | 2026-08-23 |
 | RENDER-23 | [RENDER-23-trail-spline-smoothing](RENDER-23-trail-spline-smoothing.md) | 📋 à faire | M | 2026-08-23 |
+| RENDER-24 | [RENDER-24-afterimage-idle-cost](RENDER-24-afterimage-idle-cost.md) | 📋 à faire | S | 2026-08-24 |
 | RENDER-04 | [RENDER-04-resource-lifecycle-eviction](RENDER-04-resource-lifecycle-eviction.md) | 🔶 partiel | M | 2026-08-19 |
 | RENDER-01 | [RENDER-01-text-rendering](RENDER-01-text-rendering.md) | 💭 vision | L | 2026-08-19 |
 | RENDER-09 | [RENDER-09-shapes-arbitrary-polygons](RENDER-09-shapes-arbitrary-polygons.md) | 💭 vision | L | 2026-08-19 |

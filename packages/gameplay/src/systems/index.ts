@@ -1,3 +1,4 @@
+export * from "./AfterimageRenderSystem";
 export * from "./AnimatorSystem";
 export * from "./AudioSystem";
 export * from "./CameraSyncSystem";
