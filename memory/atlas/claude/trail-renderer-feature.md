@@ -4,7 +4,7 @@ description: TrailRenderer shipped to a branch (not merged); the emission-resume
 type: project
 ---
 
-TrailRenderer (Unity-style trails) built and **merged into dev 2026-08-23** (eb89339). Design: `docs/rendering/trails.md`; closed via `/atlas-done`, which opened RENDER-16..22 and GAMEPLAY-61/62.
+TrailRenderer (Unity-style trails) built and **merged into dev 2026-08-23** (eb89339). Design: `memory/atlas/rendering/trails.md`; closed via `/atlas-done`, which opened RENDER-16..22 and GAMEPLAY-61/62.
 
 Two things that were NOT obvious and cost real work:
 

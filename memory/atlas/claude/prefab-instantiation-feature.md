@@ -5,7 +5,7 @@ type: project
 modified: 2026-08-08
 ---
 
-Merged to `dev` (merge dc1f81e, branch feat/claude/prefab, 2026-08-06) — the feature after collisions ([[next-feature-collisions]]). Design: `docs/gameplay/prefab.md`. In `@atlasjs/gameplay/src/prefab/`.
+Merged to `dev` (merge dc1f81e, branch feat/claude/prefab, 2026-08-06) — the feature after collisions ([[next-feature-collisions]]). Design: `memory/atlas/gameplay/prefab.md`. In `@atlasjs/gameplay/src/prefab/`.
 
 - **Model**: code-first typed, mono-racine. `definePrefab<TParams>({ name?, build(entity, params) })` returns a pure value (no I/O). `EntityBuilder.add(...)` reuses the `GameEntity.addComponent` dispatch (token→API, raw→instance, you mutate the returned instance); `.attach(Script, props)` = `ScriptManager.attach`. A `Prefab` is captured by an app factory (closure over already-loaded assets) and passed to scripts as an exposed prop via `ScriptMetadata.field` (traverses `injectProps` intact).
 - **Runtime API**: `this.instantiate(prefab, params, { parent? })` → `GameEntity`; `this.destroy()` / `GameEntity.destroy()`. Exposed on `AtlasScript` + `ScriptContext`; `RuntimeScriptContext` resolves `INSTANTIATOR` **lazily** via `services.get` (breaks the `ScriptManager ↔ Instantiator` cycle — no ctor injection). `INSTANTIATOR` provided by `GameplayPlugin`.

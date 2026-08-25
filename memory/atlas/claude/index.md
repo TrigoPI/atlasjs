@@ -9,7 +9,7 @@ Corrige librement : une note fausse ici vaut une erreur répétée à chaque ses
 - [[execution-cadence-preference]] — subagent-driven, one task at a time, user commits each step
 - [[verify-against-committed-head]] — user edits at commit time; re-run task tests on the committed state, don't trust the reviewed diff
 - [[vite-type-only-imports]] — app/script files must `import type` type-only symbols; tsc passes but Vite runtime breaks (black screen) — browser-verify
-- [[run-prettier-before-staging]] — repo HAS a .prettierrc; format touched .ts/.tsx before staging (scoped, never repo-wide). But docs/*.md are NOT prettier-maintained → edit them semantic-only, do NOT reformat (tables/code churn)
+- [[run-prettier-before-staging]] — repo HAS a .prettierrc; format touched .ts/.tsx before staging (scoped, never repo-wide). But the vault's *.md are NOT prettier-maintained → edit them semantic-only, do NOT reformat (tables/code churn)
 - [[sandbox-browser-verify-gotchas]] — WebGPU pane slow/flaky + HMR serves stale scene; restart dev server, use a window.__scene stash to inspect nodes
 - [[occluder-ysort-feature]] — implemented & browser-verified; large occluders = strips sorted by footY (Tiled `occluder_regions` rects); shares that rectangle with Phase-3 colliders
 - [[next-feature-collisions]] — collision layer (Phase 1) shipped; Phase 3 world-solidity now done (see below, on a branch)
@@ -19,7 +19,8 @@ Corrige librement : une note fausse ici vaut une erreur répétée à chaque ses
 - [[dino-brawl-typecheck-command]] — bare `tsc --noEmit` in the app is a NO-OP; must use `-p tsconfig.app.json`
 - [[weapon-attacks-feature]] — merged in dev; declarative AttackTimeline phases + MeleeHitResolver (2026-08-21); props inject AFTER construction → build lazily; hitstop inert by default
 - [[debug-gizmos-feature]] — SHIPPED to dev 2026-08-19: @atlasjs/gizmos immediate-mode collider/pivot gizmos; exposed a latent core ServiceRegistry bug; killed packages/editor
-- [[docs-reorganisation]] — shipped 2026-08-19: 85 atomic backlog notes, 3 hooks, /atlas-done; never trust a status line in docs/
+- [[vault-reorganisation]] — docs/ → memory/atlas (2026-08-25) : index générés remplacés par des Bases, mémoire agent dans le dépôt derrière un hook SessionStart
+- [[docs-reorganisation]] — shipped 2026-08-19: 85 atomic backlog notes, 3 hooks, /atlas-done; never trust a status line in the vault
 - [[trail-renderer-feature]] — merged to dev 2026-08-23; emission-resume must clear the ribbon; 2 reusable browser-verify techniques
 - [[player-dash-afterimages-feature]] — MERGÉ dans dev le 2026-08-24 (non poussé) ; vérifier un effet sub-seconde demande un A/B exagéré ; 2 propriétés porteuses de ScriptManager documentées
 - [[node-test-directory-arg]] — `node --test <dossier>` ne découvre rien sous Node 26.3 ; il charge le dossier comme un module et échoue sur un `'test failed'` trompeur — passer les fichiers ou un glob quoté

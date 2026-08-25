@@ -38,4 +38,4 @@ Two framework gaps found along the way, both still true: exposed-field inheritan
 
 Measured in game (60 fps, temporary `console.log` in `fireCue`): `ThrustChainAttack` → 3 cues at pitch 2.50 / 2.62 / 2.74, all `rearm=true`; `LungeAttack` → 1 cue at 1.60, `rearm=false`.
 
-Full design + caveats: `docs/gameplay/weapon-attack-cues.md` §9. Backlog opened: APP-05 (per-attack shake), APP-06 (richer cues), APP-07 (props validation), GAMEPLAY-60 (promote to a package).
+Full design + caveats: `memory/atlas/gameplay/weapon-attack-cues.md` §9. Backlog opened: APP-05 (per-attack shake), APP-06 (richer cues), APP-07 (props validation), GAMEPLAY-60 (promote to a package).

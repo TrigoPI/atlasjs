@@ -5,7 +5,7 @@ type: project
 ---
 
 Merged into `dev` on 2026-08-19 (12 commits, branch `feat/claude/debug-gizmos`). Spec and plan:
-`docs/debug/gizmos.md` + `docs/debug/gizmos-plan.md`.
+`memory/atlas/debug/gizmos.md` + `memory/atlas/debug/gizmos-plan.md`.
 
 New package `@atlasjs/gizmos`: an **immediate-mode** `Gizmos` service (`drawRect`/`drawCircle`, a
 mutable shared pen) over a pool of recycled nebula nodes, flushed by a single `gizmos:flush` step in
