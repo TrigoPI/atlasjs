@@ -15,7 +15,7 @@ import {
 
 export class FakeRigidBody implements RigidBody {
   public readonly id: string;
-  public type: RigidBodyType;
+  public readonly type: RigidBodyType;
 
   private readonly translation: Vec2;
   private readonly linearVelocity: Vec2;
@@ -286,6 +286,8 @@ export class FakePhysicsWorld implements PhysicsWorld {
   public readonly colliders: Set<FakeCollider>;
   public readonly characterControllers: Set<FakeCharacterController>;
   public stepCount: number;
+  public createdBodyCount: number;
+  public createdColliderCount: number;
 
   private readonly gravity: Vec2;
   private readonly events: Array<{
@@ -300,6 +302,8 @@ export class FakePhysicsWorld implements PhysicsWorld {
     this.colliders = new Set();
     this.characterControllers = new Set();
     this.stepCount = 0;
+    this.createdBodyCount = 0;
+    this.createdColliderCount = 0;
     this.gravity = new Vec2(0, 0);
     this.events = [];
     this.nextId = 0;
@@ -349,6 +353,7 @@ export class FakePhysicsWorld implements PhysicsWorld {
       descriptor,
     );
     this.bodies.add(body);
+    this.createdBodyCount++;
     return body;
   }
 
@@ -369,6 +374,7 @@ export class FakePhysicsWorld implements PhysicsWorld {
       body ?? null,
     );
     this.colliders.add(collider);
+    this.createdColliderCount++;
     return collider;
   }
 
@@ -402,5 +408,7 @@ export class FakePhysicsWorld implements PhysicsWorld {
     this.characterControllers.clear();
     this.events.length = 0;
     this.stepCount = 0;
+    this.createdBodyCount = 0;
+    this.createdColliderCount = 0;
   }
 }
