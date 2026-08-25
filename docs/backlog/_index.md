@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **149** items.
+Total : **150** items.
 
 ## app
 
@@ -119,6 +119,7 @@ Total : **149** items.
 | GAMEPLAY-83 | [GAMEPLAY-83-core-coverage-gaps](GAMEPLAY-83-core-coverage-gaps.md) | 📋 à faire | M | 2026-08-25 |
 | GAMEPLAY-84 | [GAMEPLAY-84-test-suite-hygiene](GAMEPLAY-84-test-suite-hygiene.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-85 | [GAMEPLAY-85-gameplay-docs-drift](GAMEPLAY-85-gameplay-docs-drift.md) | 📋 à faire | M | 2026-08-25 |
+| GAMEPLAY-87 | [GAMEPLAY-87-world-transform-one-frame-stale](GAMEPLAY-87-world-transform-one-frame-stale.md) | 📋 à faire | M | 2026-08-25 |
 | GAMEPLAY-35 | [GAMEPLAY-35-addcomponent-overload-duplication](GAMEPLAY-35-addcomponent-overload-duplication.md) | 🔶 partiel | S | 2026-08-25 |
 | GAMEPLAY-47 | [GAMEPLAY-47-tilemap-render-persistent-buffer-chunking](GAMEPLAY-47-tilemap-render-persistent-buffer-chunking.md) | 🔶 partiel | M | 2026-08-25 |
 | GAMEPLAY-03 | [GAMEPLAY-03-animator-state-machine](GAMEPLAY-03-animator-state-machine.md) | 💭 vision | L | 2026-08-19 |
