@@ -29,6 +29,10 @@ class Provide extends Plugin {
   public uninstall(): void {}
 }
 
+export interface HarnessOptions {
+  audio?: boolean;
+}
+
 export interface Harness {
   world: NexusWorld;
   physics: FakePhysicsWorld;
@@ -39,8 +43,11 @@ export interface Harness {
   frame(ticks?: number): void;
 }
 
-export async function createHarness(): Promise<Harness> {
+export async function createHarness(
+  options?: HarnessOptions,
+): Promise<Harness> {
   let onTick: ((dt: number) => void) | null = null;
+  const provideAudio: boolean = options?.audio ?? true;
 
   const physics: FakePhysicsWorld = new FakePhysicsWorld();
   const audio: FakeAudioEngine = new FakeAudioEngine();
@@ -61,9 +68,11 @@ export async function createHarness(): Promise<Harness> {
   engine.use(new Provide("stub-nebula", NEBULA_RENDERER, fakeNebula));
   engine.use(new InertialPlugin(physics));
   engine.use(new AssetPlugin());
-  engine.use(
-    new Provide("stub-audio", AUDIO_ENGINE, audio as unknown as AudioEngine),
-  );
+  if (provideAudio) {
+    engine.use(
+      new Provide("stub-audio", AUDIO_ENGINE, audio as unknown as AudioEngine),
+    );
+  }
   engine.use(new GameplayPlugin());
 
   await engine.start();

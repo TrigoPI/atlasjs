@@ -10,7 +10,6 @@ import { NEBULA_RENDERER, NebulaRenderer } from "@atlasjs/nebula";
 import { INERTIAL_ENGINE, PhysicsWorld } from "@atlasjs/inertia";
 import { Entity, NEXUS, NexusWorld, Unsubscribe } from "@atlasjs/nexus";
 import { ASSET_MANAGER, AssetManager } from "@atlasjs/assets";
-import { AUDIO_ENGINE, AudioEngine } from "@atlasjs/audio";
 
 import { SCRIPT_MANAGER, INSTANTIATOR } from "./tokens";
 import { CameraManager, CAMERA_MANAGER } from "./camera";
@@ -70,13 +69,7 @@ export class GameplayPlugin extends Plugin {
 
   public constructor() {
     super("gameplay-plugin", {
-      requires: [
-        NEXUS,
-        NEBULA_RENDERER,
-        INERTIAL_ENGINE,
-        ASSET_MANAGER,
-        AUDIO_ENGINE,
-      ],
+      requires: [NEXUS, NEBULA_RENDERER, INERTIAL_ENGINE, ASSET_MANAGER],
       provides: [SCRIPT_MANAGER, INSTANTIATOR, CAMERA_MANAGER, SORTING_LAYERS],
     });
     this.logger = createLogger(GameplayPlugin.name);
@@ -90,7 +83,6 @@ export class GameplayPlugin extends Plugin {
     const nebula: NebulaRenderer = await engine.services.wait(NEBULA_RENDERER);
     const inertia: PhysicsWorld = await engine.services.wait(INERTIAL_ENGINE);
     const assets: AssetManager = await engine.services.wait(ASSET_MANAGER);
-    const audio: AudioEngine = await engine.services.wait(AUDIO_ENGINE);
 
     assets.register(new SpriteLoader());
     assets.register(new TileSetLoader());
@@ -111,7 +103,7 @@ export class GameplayPlugin extends Plugin {
     this.afterimageRenderSystem = afterimageRenderSystem;
     const playerInputSystem: PlayerInputSystem = new PlayerInputSystem(engine.services);
     const animatorSystem: AnimatorSystem = new AnimatorSystem();
-    const audioSystem: AudioSystem = new AudioSystem(audio);
+    const audioSystem: AudioSystem = new AudioSystem(engine.services);
     const cameraManager: CameraManager = new CameraManager(nebula);
     const transformPropagationSystem: TransformPropagationSystem = new TransformPropagationSystem();
     const cameraSyncSystem: CameraSyncSystem = new CameraSyncSystem(cameraManager, nebula);
