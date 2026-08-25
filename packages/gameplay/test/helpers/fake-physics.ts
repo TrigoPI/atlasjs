@@ -194,6 +194,7 @@ export class FakeCollider implements Collider {
   private readonly body: RigidBody | null;
   private readonly translation: Vec2;
   private readonly worldTranslation: Vec2;
+  private readonly bodyTranslation: Vec2;
   private rotation: number;
 
   public constructor(
@@ -214,7 +215,17 @@ export class FakeCollider implements Collider {
     this.body = body;
     this.translation = descriptor.translation?.clone() ?? new Vec2(0, 0);
     this.worldTranslation = new Vec2(0, 0);
+    this.bodyTranslation = body?.getTranslation().clone() ?? new Vec2(0, 0);
     this.rotation = descriptor.rotation ?? 0;
+  }
+
+  public syncWithBody(): void {
+    if (this.body === null) {
+      return;
+    }
+
+    const origin: Vec2 = this.body.getTranslation();
+    this.bodyTranslation.set(origin.x, origin.y);
   }
 
   public isSensor(): boolean {
@@ -302,15 +313,9 @@ export class FakeCollider implements Collider {
   }
 
   public getTranslation(): Vec2 {
-    if (this.body === null) {
-      return this.worldTranslation.set(this.translation.x, this.translation.y);
-    }
-
-    const origin: Vec2 = this.body.getTranslation();
-
     return this.worldTranslation.set(
-      origin.x + this.translation.x,
-      origin.y + this.translation.y,
+      this.bodyTranslation.x + this.translation.x,
+      this.bodyTranslation.y + this.translation.y,
     );
   }
 
@@ -402,6 +407,13 @@ export class FakePhysicsWorld implements PhysicsWorld {
     this.stepCount++;
     for (const body of this.bodies) {
       body.integrate(dt);
+    }
+    this.syncCollidersWithBodies();
+  }
+
+  public syncCollidersWithBodies(): void {
+    for (const collider of this.colliders) {
+      collider.syncWithBody();
     }
   }
 

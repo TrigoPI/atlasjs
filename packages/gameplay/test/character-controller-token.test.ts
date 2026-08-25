@@ -12,6 +12,7 @@ import { CharacterController } from "../src/scripting/components/CharacterContro
 import {
   FakeCharacterController,
   FakeCollider,
+  FakePhysicsWorld,
   FakeRigidBody,
 } from "./helpers/fake-physics";
 import type { CharacterController as CharacterControllerApi } from "../src/scripting/components/CharacterController";
@@ -30,14 +31,17 @@ describe("CharacterController token move()", () => {
     world.addComponent(e, Transform2D);
     world.addComponent(e, CharacterController2D);
 
-    const body: FakeRigidBody = new FakeRigidBody("b", { type: "kinematic" });
+    const physics: FakePhysicsWorld = new FakePhysicsWorld();
+
+    const body: FakeRigidBody = physics.createRigidBody({
+      type: "kinematic",
+    }) as FakeRigidBody;
     world.addComponent(e, PhysicsBodyRef, body);
 
-    const collider: FakeCollider = new FakeCollider(
-      "c",
+    const collider: FakeCollider = physics.createCollider(
       { shape: { type: "circle", radius: 1 } },
       body,
-    );
+    ) as FakeCollider;
     world.addComponent(
       e,
       PhysicsColliderRef,
@@ -47,7 +51,7 @@ describe("CharacterController token move()", () => {
 
     const controller: FakeCharacterController = new FakeCharacterController();
     controller.factor = 0.5;
-    world.addComponent(e, CharacterControllerRef, controller);
+    world.addComponent(e, CharacterControllerRef, controller, physics);
 
     const api: CharacterControllerApi = CharacterController.create(world, e);
     const moved: Vec2 = api.move(new Vec2(10, 4));

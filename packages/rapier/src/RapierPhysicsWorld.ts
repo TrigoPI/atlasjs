@@ -118,6 +118,11 @@ export class RapierPhysicsWorld implements PhysicsWorld {
   public destroyRigidBody(body: RigidBody): void {
     this.assertRapierBody(body);
     const rb: RAPIER.RigidBody = body.rapierBody;
+
+    if (!this.bodies.has(rb.handle)) {
+      return;
+    }
+
     const count: number = rb.numColliders();
 
     for (let i: number = 0; i < count; i++) {
@@ -169,6 +174,10 @@ export class RapierPhysicsWorld implements PhysicsWorld {
     this.world.removeCollider(collider.rapierCollider, true);
   }
 
+  public syncCollidersWithBodies(): void {
+    this.world.propagateModifiedBodyPositionsToColliders();
+  }
+
   public createCharacterController(
     options: CharacterControllerOptions = {},
   ): CharacterController {
@@ -187,8 +196,13 @@ export class RapierPhysicsWorld implements PhysicsWorld {
 
   public destroyCharacterController(controller: CharacterController): void {
     this.assertRapierCharacterController(controller);
-    this.world.removeCharacterController(controller.raw);
+
+    if (!this.controllers.has(controller)) {
+      return;
+    }
+
     this.controllers.delete(controller);
+    this.world.removeCharacterController(controller.raw);
   }
 
   public query(): PhysicsQuery {
