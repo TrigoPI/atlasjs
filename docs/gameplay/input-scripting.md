@@ -244,7 +244,7 @@ export class InputActionMap<T extends ActionKinds> {
 
 - `ButtonAction` : `current`/`previous: boolean`. `isDown() = current`, `isPressed() = current && !previous`, `isReleased() = !current && previous`. Actuation = OR des touches liées.
 - `ValueAction` : `current`/`previous: number`. `readValue() = current`.
-- `Vector2Action` : `current`/`previous: Vec2`. `readValue() = current`, `get x()`, `get y()`. Composite brut : `x = right−left`, `y = up−down`.
+- `Vector2Action` : `current`/`previous: Vec2`. `readValue() = current`, `get x()`, `get y()`. Composite brut : `x = right−left`, `y = down−up` (convention **Y-down** du moteur : W → `-1`, S → `+1`).
 
 > `dt` est passé dès maintenant à `sample`/`update` (inutilisé en V1) : couture pour les interactions temporelles (hold/tap) sans changer la signature plus tard.
 
@@ -356,7 +356,7 @@ packages/input/src/public/
 - **`getService`/`getComponent` mintent un wrapper frais à chaque appel.** Sans conséquence au pattern visé (appel unique en `onCreate`, l'utilisateur détient l'instance). Acceptable (apatride).
 - **Ré-export de `Key` depuis gameplay** crée un point d'accès dupliqué (gameplay + input). Assumé : simplifie l'import côté script ; `Key` reste défini une seule fois dans `@atlasjs/input`.
 - **Caveat `onFixedUpdate` (les deux phases).** Lire l'input/les actions dans `onFixedUpdate` a le même problème : les fronts (`isPressed`/`isReleased`) sont par-frame `update` (fiables au stage `Logic`, avant `endFrame` au stage `Late`). En lane `fixed` (0..N passes/frame), les fronts sont ambigus. Recommander la lecture dans `onUpdate`. Documenté, pas de garde runtime. Réévaluer si un besoin réel d'input déterministe en lane `fixed` émerge (netcode).
-- **Sens de l'axe Y du composite** — `up = +y`. Le sens monde (Y haut/bas) dépend du renderer ; laissé au consommateur (comme dans `TestScript`).
+- **Sens de l'axe Y du composite** — `y = down−up`, donc `up = -y` : la convention **Y-down** du moteur, cohérente avec la caméra, le rendu et le tilemap. W renvoie `-1`, S renvoie `+1` ; un script peut donc appliquer `v.y` directement au monde sans l'inverser (comme dans `TestScript`).
 - **`value().axis(neg, pos)` quand les deux touches sont pressées** — convention : `pos` et `neg` s'annulent → `0` (comme le composite).
 - **Typage de `get` via composant générique** — `PlayerInput<T>` propage `T` à travers `addComponent` ; repli identifié si les génériques de composant se heurtent au registre Nexus (`get(name: string)` non typé + helper typé dérivé du descripteur).
 

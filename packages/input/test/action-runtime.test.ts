@@ -110,21 +110,24 @@ describe("Input — action runtime (InputActionMap sampling)", () => {
     expect(map.get("steer").readValue()).toBe(-1);
   });
 
-  it("vector2: composite is raw (diagonal is not normalized)", () => {
-    const map = new InputActionMap(
-      defineActions({ move: vector2().wasd() }),
-    );
+  it("vector2: composite is raw (diagonal is not normalized); W maps to -1 in the engine's Y-down convention", () => {
+    const map = new InputActionMap(defineActions({ move: vector2().wasd() }));
     const move: Vector2Action = map.get("move");
 
     backend.downKeys.add(Key.W);
     map.update(input, 0);
-    expect(move.readValue()).toEqual(new Vec2(0, 1));
+    expect(move.readValue()).toEqual(new Vec2(0, -1));
 
     backend.downKeys.add(Key.D);
     map.update(input, 0);
-    expect(move.readValue()).toEqual(new Vec2(1, 1));
+    expect(move.readValue()).toEqual(new Vec2(1, -1));
     expect(move.x).toBe(1);
-    expect(move.y).toBe(1);
+    expect(move.y).toBe(-1);
+
+    backend.downKeys.clear();
+    backend.downKeys.add(Key.S);
+    map.update(input, 0);
+    expect(move.readValue()).toEqual(new Vec2(0, 1));
 
     backend.downKeys.clear();
     backend.downKeys.add(Key.A);
