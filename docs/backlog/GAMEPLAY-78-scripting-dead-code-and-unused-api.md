@@ -2,23 +2,19 @@
 id: GAMEPLAY-78
 status: todo
 domain: gameplay
-source: "[[scripting-components]]"
+source: "[[exposed-script-variables]]"
 effort: S
 verified: 2026-08-25
 ---
 
-# Code mort et surface publique inutilisée dans le scripting (note groupée, trois points)
+# Trancher le sort de `getExposedFields`
 
-1. `ScriptManager.setEnabled(scriptId, enabled)` (`src/scripting/runtime/ScriptManager.ts:139-147`) n'a **aucun appelant possible** dans le monorepo — vérifié : `attach` retourne l'instance (`:113`), jamais le `ScriptID`, donc un consommateur n'a aucun moyen d'obtenir l'argument.
-2. `ScriptInstanceRecord.scriptType` (`ScriptManager.ts:91`, déclaré `src/scripting/core/core-types.ts:10`) est écrit et **jamais relu** : ce sont les deux seules occurrences du symbole dans tout le repo.
-3. `getExposedFields` (`src/scripting/core/ScriptMetadata.ts:55-62`) n'est plus utilisé que par `test/script-metadata.test.ts`, le paquet `editor` ayant été supprimé.
+`getExposedFields` (`packages/gameplay/src/scripting/core/ScriptMetadata.ts:55`) est exporté par le barrel `scripting/core/index.ts`, donc par `@atlasjs/gameplay`, et son **seul consommateur du monorepo est `packages/gameplay/test/script-metadata.test.ts`** (12 usages) — aucun appel dans `src/`, aucun dans `apps/`. `ScriptManager.injectProps` consomme directement `getScriptMetadata`, pas ce helper.
 
-**Mise à jour du 2026-08-25 : les points 1 et 2 sont partiellement caducs depuis le commit `162b89a`.** L'isolation d'erreur de la boucle de scripts pose désormais `record.isEnabled = false` pour mettre en quarantaine un script qui a levé, et lit `record.scriptType.name` pour le nommer dans le message d'erreur. Donc : le champ `isEnabled` n'est plus constant et le garde `!record.isEnabled` de `runLifecycle` n'est plus mort ; `scriptType` a un lecteur. **L'option « supprimer `isEnabled` + `scriptType` » est donc morte** — ces deux champs portent maintenant un vrai comportement.
+`docs/gameplay/exposed-script-variables.md:82` le décrit explicitement comme une commodité pour « les tests et les consommateurs externes (futur éditeur) », retournant une copie `Map` pour isoler l'appelant. Ce n'est donc pas du code mort par accident : c'est une API d'outillage posée en avance, dont il faut décider si on la garde en vue d'un éditeur ou si on la retire de la surface publique en attendant qu'un besoin réel apparaisse. Le paquet `editor` ayant été supprimé, personne ne la réclame aujourd'hui.
 
-Ce qui reste, et qui a changé de nature : `setEnabled` est toujours inatteignable, mais c'est devenu un **manque** plutôt qu'un surplus. Un script mis en quarantaine par cette isolation d'erreur l'est **définitivement** — il n'existe aucune voie de retour, puisque la seule méthode capable de le réactiver exige un `ScriptID` que personne ne peut obtenir. Le correctif n'est plus « supprimer ou exposer », c'est **exposer** : retourner un handle depuis `attach`, ou ajouter une surcharge `setEnabled(instance, enabled)`.
+**C'est une décision produit, pas une correction.** À trancher explicitement plutôt qu'à laisser dériver.
 
-Reste inchangé : décider explicitement pour `getExposedFields` — API d'outillage à conserver en vue d'un éditeur, ou à retirer du barrel.
+**Note du 2026-08-25 : les deux autres points de cette note sont clos.** Elle en groupait trois à l'origine. Les points 1 et 2 (`setEnabled` inatteignable, `ScriptInstanceRecord.scriptType` jamais relu) ne sont plus valides : le commit `162b89a` a donné un vrai rôle à `isEnabled` et à `scriptType` en mettant en quarantaine les scripts qui lèvent, et un commit ultérieur a exposé `setEnabled(instance, enabled)` en surcharge plus un lecteur `isEnabled`, ce qui referme la question. Seul le point 3 reste ouvert, et il est reproduit ci-dessus.
 
-**Accroche :** `ScriptManager.ts:139-147` — donner à `setEnabled` un argument que l'appelant peut réellement obtenir ; le point 3 se tranche séparément.
-
-**À rapprocher de :** le commit `162b89a` (`fix(gameplay): isolate script failures so one throw cannot kill the frame`) — c'est lui qui a rendu `isEnabled` vivant et créé le besoin de réactivation.
+**Accroche :** `packages/gameplay/src/scripting/core/index.ts` — soit on assume l'export public, soit on le retire et `script-metadata.test.ts` importe le symbole par son chemin de fichier.

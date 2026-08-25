@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **145** items.
+Total : **144** items.
 
 ## app
 
@@ -105,7 +105,6 @@ Total : **145** items.
 | GAMEPLAY-63 | [GAMEPLAY-63-modifier-keys-left-only](GAMEPLAY-63-modifier-keys-left-only.md) | 📋 à faire | S | 2026-08-24 |
 | GAMEPLAY-64 | [GAMEPLAY-64-movement-arbitration](GAMEPLAY-64-movement-arbitration.md) | 📋 à faire | M | 2026-08-24 |
 | GAMEPLAY-75 | [GAMEPLAY-75-render-transform-sync-duplication](GAMEPLAY-75-render-transform-sync-duplication.md) | 📋 à faire | M | 2026-08-25 |
-| GAMEPLAY-76 | [GAMEPLAY-76-scriptmanager-dispose-leaks-scripts](GAMEPLAY-76-scriptmanager-dispose-leaks-scripts.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-77 | [GAMEPLAY-77-scripting-hot-path-allocations](GAMEPLAY-77-scripting-hot-path-allocations.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-78 | [GAMEPLAY-78-scripting-dead-code-and-unused-api](GAMEPLAY-78-scripting-dead-code-and-unused-api.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-80 | [GAMEPLAY-80-barrels-and-authoring-helper-placement](GAMEPLAY-80-barrels-and-authoring-helper-placement.md) | 📋 à faire | S | 2026-08-25 |
