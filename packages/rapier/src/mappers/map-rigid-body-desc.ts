@@ -1,19 +1,12 @@
 import RAPIER from "@dimforge/rapier2d-compat";
 import { RigidBodyDesc, RigidBodyType } from "@atlasjs/inertia";
 import { PhysicsUnitConverter } from "../PhysicsUnitConverter";
+import { mapRigidBodyType } from "./map-rigid-body-type";
 
 function createRapierRigidBodyDesc(
   type: RigidBodyType = "dynamic",
 ): RAPIER.RigidBodyDesc {
-  switch (type) {
-    case "static":
-      return RAPIER.RigidBodyDesc.fixed();
-    case "kinematic":
-      return RAPIER.RigidBodyDesc.kinematicPositionBased();
-    case "dynamic":
-    default:
-      return RAPIER.RigidBodyDesc.dynamic();
-  }
+  return new RAPIER.RigidBodyDesc(mapRigidBodyType(type));
 }
 
 function scaleDesc(

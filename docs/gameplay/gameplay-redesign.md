@@ -150,13 +150,16 @@ On **garde la forme** du pipeline (déjà alignée sur les stages du core : `Phy
 | Type de corps | Autorité sur la position | Mécanisme par step |
 |---|---|---|
 | `dynamic` | **physique** | writeback `body → Transform2D` ; `setPosition` script = **téléport explicite** |
-| `kinematic` | **script / `Transform2D`** | push `Transform2D → body` (`body.setTranslation`/`setRotation` chaque step) |
-| `static` | `Transform2D` | poussé à la création, quasi jamais ensuite |
+| `kinematic` | **script / `Transform2D`** | push `Transform2D → body` (`setNextKinematicTranslation`) : le body atteint la cible **au `step()`**, et rapier en dérive une vélocité de contact — c'est ce qui fait qu'une plateforme kinematic **pousse** les corps `dynamic` posés dessus |
+| `kinematic` + `CharacterController2D` | **script / `Transform2D`** | push `Transform2D → body` (`setTranslation`, **immédiat**) : le contrôleur a déjà résolu ses collisions par collide-and-slide et doit observer sa propre position dans la frame (plusieurs `move()` par frame, `syncCollidersWithBodies()` juste après). Une cible différée laisserait le collider à la position précédente et le personnage traverserait les murs (PHYSICS-19) |
+| `static` | `Transform2D` | poussé à la création, quasi jamais ensuite (`setTranslation`) |
 | *(pas de `RigidBody2D`)* | script (`Transform2D`) | le script écrit `Transform2D` directement, aucun pont |
+
+> Les deux mécanismes ne se marchent pas dessus : dans rapier, `setTranslation` sur un corps kinematic écrit **à la fois** la position courante et la cible « prochaine position ». Le dernier appel gagne, il n'y a ni double déplacement ni vélocité de contact aberrante quand les deux chemins touchent le même body dans un même step.
 
 **`PhysicsPushSystem`** — stage `PhysicsRequest` (avant `PhysicsStep`) :
 - `query(RigidBody2D, Transform2D).without(PhysicsBodyRef)` → crée le body inertia depuis `Transform2D`+`RigidBody2D`, ajoute `PhysicsBodyRef`. Remplace la création de `RigidBody2DSystem`. *(Les entités sont collectées dans un tableau réutilisé pendant l'itération, puis mutées **après** la query — pas via `world.commands` comme prévu ici.)*
-- `query(RigidBody2D, Transform2D, PhysicsBodyRef)` → pousse dans le body : vélocité/angular depuis `RigidBody2D` ; pour `kinematic`/`static`, pousse aussi la position/rotation depuis `Transform2D` ; sync `mass`. Un `type` qui ne correspond plus à celui du body **reconstruit** le body (retrait de `PhysicsBodyRef`, recréé au passage suivant) plutôt que de le muter en place.
+- `query(RigidBody2D, Transform2D, PhysicsBodyRef)` → pousse dans le body : vélocité/angular depuis `RigidBody2D` ; pour `kinematic`/`static`, pousse aussi la position/rotation depuis `Transform2D` — via `setNextKinematicTranslation` pour un `kinematic` sans `CharacterController2D`, via `setTranslation` sinon ; sync `mass` ; sync `type` **par synchronisation** — sur divergence uniquement, `body.setBodyType(rigidBody.type)` (primitive `RigidBody.setBodyType` d'inertia). Le body **garde son identité, son handle, ses colliders et son état** (`gravityScale`, damping, `userData`) : il n'y a **aucune destruction/recréation** sur ce chemin.
 - Ajout depuis : le même système mint aussi les `PhysicsColliderRef` (depuis `Collider2D`) et les `CharacterControllerRef` (depuis `CharacterController2D`), et re-synchronise les colliders existants sur leur `Collider2D`. Pour une entité parentée, la position poussée vient du `WorldTransform2D` et non du `Transform2D` local.
 
 **`PhysicsPullSystem`** — stage `PhysicsWriteback` (après `PhysicsStep`) :

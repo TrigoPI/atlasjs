@@ -18,6 +18,7 @@ export interface RigidBody {
   getUserData<T = unknown>(): T | undefined;
 
   setTranslation(x: number, y: number): this;
+  setNextKinematicTranslation(x: number, y: number): this;
   setLinearVelocity(x: number, y: number): this;
   setRotation(angleRad: number): this;
   setAngularVelocity(value: number): this;
@@ -27,6 +28,7 @@ export interface RigidBody {
   setMass(value: number): this;
   setEnabled(value: boolean): this;
   setUserData(data: unknown): this;
+  setBodyType(type: RigidBodyType): this;
 
   applyForce(x: number, y: number, wake?: boolean): void;
   applyImpulse(x: number, y: number, wake?: boolean): void;

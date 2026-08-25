@@ -3,7 +3,7 @@ import { Vec2 } from "@atlasjs/math";
 
 import { mapColliderDesc, mapRigidBodyDesc } from "./mappers";
 import { ensureRapierInit } from "./ensure-rapier-init";
-import { EARTH_GRAVITY } from "./rapier-const";
+import { DEFAULT_CONTROLLER_OFFSET, EARTH_GRAVITY } from "./rapier-const";
 
 import { RapierCollider } from "./RapierCollider";
 import { RapierRigidBody } from "./RapierRigidBody";
@@ -51,9 +51,14 @@ export class RapierPhysicsWorld implements PhysicsWorld {
   public async init(): Promise<void> {
     await ensureRapierInit();
 
+    const configured: Vec2 | undefined = this.options.gravity;
+
     const gravity: RAPIER.Vector = {
-      x: this.options?.gravity?.x ?? 0,
-      y: this.options?.gravity?.y ?? EARTH_GRAVITY,
+      x: configured !== undefined ? this.converter.toPhysics(configured.x) : 0,
+      y:
+        configured !== undefined
+          ? this.converter.toPhysics(configured.y)
+          : EARTH_GRAVITY,
     };
 
     this.world = new RAPIER.World(gravity);
@@ -87,11 +92,15 @@ export class RapierPhysicsWorld implements PhysicsWorld {
   }
 
   public setGravity(x: number, y: number): void {
-    this.world.gravity = { x, y };
+    this.world.gravity = {
+      x: this.converter.toPhysics(x),
+      y: this.converter.toPhysics(y),
+    };
   }
 
   public getGravity(): Vec2 {
-    return new Vec2(this.world.gravity.x, this.world.gravity.y);
+    const { x, y }: RAPIER.Vector = this.world.gravity;
+    return new Vec2(this.converter.toWorld(x), this.converter.toWorld(y));
   }
 
   public createRigidBody(descriptor: RigidBodyDesc): RigidBody {
@@ -181,8 +190,13 @@ export class RapierPhysicsWorld implements PhysicsWorld {
   public createCharacterController(
     options: CharacterControllerOptions = {},
   ): CharacterController {
+    const offset: number =
+      options.offset !== undefined
+        ? this.converter.toPhysics(options.offset)
+        : DEFAULT_CONTROLLER_OFFSET;
+
     const raw: RAPIER.KinematicCharacterController =
-      this.world.createCharacterController(options.offset ?? 0.01);
+      this.world.createCharacterController(offset);
     raw.setSlideEnabled(options.slide ?? true);
 
     const wrapper: RapierCharacterController = new RapierCharacterController(

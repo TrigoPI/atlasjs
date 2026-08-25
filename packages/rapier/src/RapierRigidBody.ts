@@ -5,11 +5,13 @@ import { RigidBody, RigidBodyType } from "@atlasjs/inertia";
 
 import { PhysicsUnitConverter } from "./PhysicsUnitConverter";
 import { RapierRigidBodyOption } from "./rapier-types";
+import { mapRigidBodyType } from "./mappers/map-rigid-body-type";
 
 export class RapierRigidBody implements RigidBody {
   public readonly id: string;
-  public readonly type: RigidBodyType;
   public readonly rapierBody: RAPIER.RigidBody;
+
+  private bodyType: RigidBodyType;
 
   private readonly translation: Vec2;
   private readonly velocity: Vec2;
@@ -22,13 +24,17 @@ export class RapierRigidBody implements RigidBody {
     options: RapierRigidBodyOption,
   ) {
     this.id = options.id;
-    this.type = options.type;
+    this.bodyType = options.type;
     this.rapierBody = rapierBody;
 
     this.converter = new PhysicsUnitConverter(options.unitScale);
     this.translation = new Vec2();
     this.velocity = new Vec2();
     this.tmpVec2 = new Vec2();
+  }
+
+  public get type(): RigidBodyType {
+    return this.bodyType;
   }
 
   public isEnabled(): boolean {
@@ -89,6 +95,20 @@ export class RapierRigidBody implements RigidBody {
     return this;
   }
 
+  public setNextKinematicTranslation(x: number, y: number): this {
+    const translation: RAPIER.Vector = new RAPIER.Vector2(0, 0);
+
+    this.tmpVec2.set(x, y);
+    this.converter.vecToPhysicsInto(this.tmpVec2);
+
+    translation.x = this.tmpVec2.x;
+    translation.y = this.tmpVec2.y;
+
+    this.rapierBody.setNextKinematicTranslation(translation);
+
+    return this;
+  }
+
   public setLinearVelocity(x: number, y: number): this {
     const velocity: RAPIER.Vector = new RAPIER.Vector2(0, 0);
 
@@ -140,6 +160,12 @@ export class RapierRigidBody implements RigidBody {
 
   public setUserData(data: unknown): this {
     this.rapierBody.userData = data;
+    return this;
+  }
+
+  public setBodyType(type: RigidBodyType): this {
+    this.rapierBody.setBodyType(mapRigidBodyType(type), true);
+    this.bodyType = type;
     return this;
   }
 

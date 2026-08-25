@@ -15,9 +15,15 @@ import {
 
 export class FakeRigidBody implements RigidBody {
   public readonly id: string;
-  public readonly type: RigidBodyType;
+  public setBodyTypeCount: number;
+  public setTranslationCount: number;
+  public setNextKinematicTranslationCount: number;
+
+  private bodyType: RigidBodyType;
 
   private readonly translation: Vec2;
+  private readonly nextKinematicTranslation: Vec2;
+  private hasNextKinematicTranslation: boolean;
   private readonly linearVelocity: Vec2;
   private rotation: number;
   private angularVelocity: number;
@@ -27,9 +33,14 @@ export class FakeRigidBody implements RigidBody {
 
   public constructor(id: string, descriptor: RigidBodyDesc) {
     this.id = id;
-    this.type = descriptor.type ?? "dynamic";
+    this.bodyType = descriptor.type ?? "dynamic";
+    this.setBodyTypeCount = 0;
+    this.setTranslationCount = 0;
+    this.setNextKinematicTranslationCount = 0;
 
     this.translation = descriptor.translation?.clone() ?? new Vec2(0, 0);
+    this.nextKinematicTranslation = this.translation.clone();
+    this.hasNextKinematicTranslation = false;
     this.linearVelocity = descriptor.linearVelocity?.clone() ?? new Vec2(0, 0);
     this.rotation = descriptor.rotation ?? 0;
     this.angularVelocity = descriptor.angularVelocity ?? 0;
@@ -38,7 +49,16 @@ export class FakeRigidBody implements RigidBody {
     this.userData = descriptor.userData;
   }
 
+  public get type(): RigidBodyType {
+    return this.bodyType;
+  }
+
   public integrate(dt: number): void {
+    if (this.hasNextKinematicTranslation) {
+      this.translation.copyFrom(this.nextKinematicTranslation);
+      this.hasNextKinematicTranslation = false;
+    }
+
     this.translation.x += this.linearVelocity.x * dt;
     this.translation.y += this.linearVelocity.y * dt;
     this.rotation += this.angularVelocity * dt;
@@ -89,7 +109,17 @@ export class FakeRigidBody implements RigidBody {
   }
 
   public setTranslation(x: number, y: number): this {
+    this.setTranslationCount++;
     this.translation.set(x, y);
+    this.nextKinematicTranslation.set(x, y);
+    this.hasNextKinematicTranslation = false;
+    return this;
+  }
+
+  public setNextKinematicTranslation(x: number, y: number): this {
+    this.setNextKinematicTranslationCount++;
+    this.nextKinematicTranslation.set(x, y);
+    this.hasNextKinematicTranslation = true;
     return this;
   }
 
@@ -132,6 +162,12 @@ export class FakeRigidBody implements RigidBody {
 
   public setUserData(data: unknown): this {
     this.userData = data;
+    return this;
+  }
+
+  public setBodyType(type: RigidBodyType): this {
+    this.bodyType = type;
+    this.setBodyTypeCount++;
     return this;
   }
 

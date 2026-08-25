@@ -21,6 +21,7 @@ import {
 } from "../src/components";
 
 import { createHarness, Harness } from "./helpers/harness";
+import { FakeRigidBody } from "./helpers/fake-physics";
 
 const BOX: ColliderShapeDesc = { type: "box", width: 10, height: 10 };
 
@@ -109,22 +110,23 @@ describe("Gameplay — RigidBody2D.type change after creation", () => {
     expect(h.physics.bodyCount).toBe(1);
   });
 
-  it("the stale body is destroyed, not leaked, when the type changes", () => {
+  it("keeps the very same body instance across the type change", () => {
     const e: Entity = h.world.createEntity();
     h.world.addComponent(e, Transform2D);
     const rigidBody: RigidBody2D = h.world.addComponent(e, RigidBody2D);
 
     h.frame();
-    const stale: RigidBody = h.world.requireComponent(e, PhysicsBodyRef).body;
+    const before: RigidBody = h.world.requireComponent(e, PhysicsBodyRef).body;
 
     rigidBody.type = "static";
     h.frame();
 
-    const rebuilt: RigidBody = h.world.requireComponent(e, PhysicsBodyRef).body;
+    const after: RigidBody = h.world.requireComponent(e, PhysicsBodyRef).body;
 
-    expect(rebuilt).not.toBe(stale);
+    expect(after).toBe(before);
+    expect(after.id).toBe(before.id);
     expect(h.physics.bodyCount).toBe(1);
-    expect([...h.physics.bodies][0]).toBe(rebuilt);
+    expect([...h.physics.bodies][0]).toBe(after);
   });
 
   it("preserves the velocity across the transition", () => {
@@ -142,13 +144,10 @@ describe("Gameplay — RigidBody2D.type change after creation", () => {
     rigidBody.type = "kinematic";
     h.frame();
 
-    expect(recorded).toHaveLength(1);
-    expect(recorded[0].type).toBe("kinematic");
-    expect(recorded[0].velocityX).toBeCloseTo(5, 5);
-    expect(recorded[0].velocityY).toBeCloseTo(-2, 5);
-    expect(recorded[0].angularVelocity).toBeCloseTo(1.5, 5);
+    expect(recorded).toHaveLength(0);
 
     const body: RigidBody = h.world.requireComponent(e, PhysicsBodyRef).body;
+    expect(body.type).toBe("kinematic");
     expect(body.getLinearVelocity().x).toBeCloseTo(5, 5);
     expect(body.getLinearVelocity().y).toBeCloseTo(-2, 5);
     expect(body.getAngularVelocity()).toBeCloseTo(1.5, 5);
@@ -170,12 +169,10 @@ describe("Gameplay — RigidBody2D.type change after creation", () => {
     rigidBody.type = "dynamic";
     h.frame();
 
-    expect(recorded).toHaveLength(1);
-    expect(recorded[0].x).toBeCloseTo(12, 5);
-    expect(recorded[0].y).toBeCloseTo(-4, 5);
-    expect(recorded[0].rotation).toBeCloseTo(0.75, 5);
+    expect(recorded).toHaveLength(0);
 
     const body: RigidBody = h.world.requireComponent(e, PhysicsBodyRef).body;
+    expect(body.type).toBe("dynamic");
     expect(body.getTranslation().x).toBeCloseTo(12, 5);
     expect(body.getTranslation().y).toBeCloseTo(-4, 5);
 
@@ -184,7 +181,7 @@ describe("Gameplay — RigidBody2D.type change after creation", () => {
     expect(after.position.y).toBeCloseTo(-4, 5);
   });
 
-  it("rebuilds the collider and reattaches it to the new body", () => {
+  it("leaves the collider untouched and still attached to the same body", () => {
     const e: Entity = h.world.createEntity();
     h.world.addComponent(e, Transform2D);
     const rigidBody: RigidBody2D = h.world.addComponent(e, RigidBody2D);
@@ -192,7 +189,7 @@ describe("Gameplay — RigidBody2D.type change after creation", () => {
 
     h.frame();
 
-    const staleCollider: Collider = h.world.requireComponent(
+    const before: Collider = h.world.requireComponent(
       e,
       PhysicsColliderRef,
     ).collider;
@@ -200,20 +197,18 @@ describe("Gameplay — RigidBody2D.type change after creation", () => {
     rigidBody.type = "kinematic";
     h.frame();
 
-    const rebuiltCollider: Collider = h.world.requireComponent(
+    const after: Collider = h.world.requireComponent(
       e,
       PhysicsColliderRef,
     ).collider;
 
-    const rebuiltBody: RigidBody = h.world.requireComponent(
-      e,
-      PhysicsBodyRef,
-    ).body;
+    const body: RigidBody = h.world.requireComponent(e, PhysicsBodyRef).body;
 
-    expect(rebuiltCollider).not.toBe(staleCollider);
-    expect(rebuiltCollider.getRigidBody()).toBe(rebuiltBody);
+    expect(after).toBe(before);
+    expect(after.getRigidBody()).toBe(body);
+    expect(h.physics.createdColliderCount).toBe(1);
     expect(h.physics.colliderCount).toBe(1);
-    expect([...h.physics.colliders][0]).toBe(rebuiltCollider);
+    expect([...h.physics.colliders][0]).toBe(after);
   });
 
   it("keeps the character controller across the transition", () => {
@@ -267,9 +262,13 @@ describe("Gameplay — RigidBody2D.type change after creation", () => {
     expect(h.physics.createdColliderCount).toBe(3);
     expect(h.physics.bodyCount).toBe(3);
     expect(h.physics.colliderCount).toBe(3);
+
+    for (const body of h.physics.bodies) {
+      expect(body.setBodyTypeCount).toBe(0);
+    }
   });
 
-  it("recreates exactly once per type change, not once per frame", () => {
+  it("syncs the type once per change and never recreates anything", () => {
     const e: Entity = h.world.createEntity();
     h.world.addComponent(e, Transform2D);
     const rigidBody: RigidBody2D = h.world.addComponent(e, RigidBody2D);
@@ -279,17 +278,23 @@ describe("Gameplay — RigidBody2D.type change after creation", () => {
     expect(h.physics.createdBodyCount).toBe(1);
     expect(h.physics.createdColliderCount).toBe(1);
 
+    const body: FakeRigidBody = h.world.requireComponent(e, PhysicsBodyRef)
+      .body as FakeRigidBody;
+
+    expect(body.setBodyTypeCount).toBe(0);
+
     rigidBody.type = "kinematic";
     h.frame();
-    expect(h.physics.createdBodyCount).toBe(2);
-    expect(h.physics.createdColliderCount).toBe(2);
+
+    expect(body.setBodyTypeCount).toBe(1);
 
     h.frame();
     h.frame();
     h.frame();
 
-    expect(h.physics.createdBodyCount).toBe(2);
-    expect(h.physics.createdColliderCount).toBe(2);
+    expect(body.setBodyTypeCount).toBe(1);
+    expect(h.physics.createdBodyCount).toBe(1);
+    expect(h.physics.createdColliderCount).toBe(1);
     expect(h.physics.bodyCount).toBe(1);
     expect(h.physics.colliderCount).toBe(1);
   });
