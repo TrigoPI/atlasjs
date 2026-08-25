@@ -28,22 +28,7 @@ export function worldBoundToLocalBound(
   invWorld: Mat3,
   worldBound: Bound,
 ): Bound {
-  const x0: number = worldBound.x;
-  const y0: number = worldBound.y;
-  const x1: number = worldBound.x + worldBound.width;
-  const y1: number = worldBound.y + worldBound.height;
-
-  const c0: Vec2 = invWorld.transformPoint2(x0, y0);
-  const c1: Vec2 = invWorld.transformPoint2(x1, y0);
-  const c2: Vec2 = invWorld.transformPoint2(x0, y1);
-  const c3: Vec2 = invWorld.transformPoint2(x1, y1);
-
-  const minX: number = Math.min(c0.x, c1.x, c2.x, c3.x);
-  const minY: number = Math.min(c0.y, c1.y, c2.y, c3.y);
-  const maxX: number = Math.max(c0.x, c1.x, c2.x, c3.x);
-  const maxY: number = Math.max(c0.y, c1.y, c2.y, c3.y);
-
-  return new Bound(minX, minY, maxX - minX, maxY - minY);
+  return invWorld.transformBound(worldBound, new Bound());
 }
 
 export function visibleCellRange(
