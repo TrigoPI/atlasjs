@@ -133,7 +133,7 @@ export class PhysicsPushSystem implements NexusSystem {
         offset: cfg.offset,
         slide: cfg.slide,
       });
-      world.addComponent(entity, CharacterControllerRef, controller);
+      world.addComponent(entity, CharacterControllerRef, controller, this.inertia);
     }
 
     this.pendingControllers.length = 0;

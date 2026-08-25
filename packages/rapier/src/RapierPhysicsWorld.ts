@@ -169,6 +169,10 @@ export class RapierPhysicsWorld implements PhysicsWorld {
     this.world.removeCollider(collider.rapierCollider, true);
   }
 
+  public syncCollidersWithBodies(): void {
+    this.world.propagateModifiedBodyPositionsToColliders();
+  }
+
   public createCharacterController(
     options: CharacterControllerOptions = {},
   ): CharacterController {

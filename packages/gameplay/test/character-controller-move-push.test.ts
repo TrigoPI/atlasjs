@@ -8,6 +8,7 @@ import {
   CharacterController2D,
   Collider2D,
   PhysicsBodyRef,
+  PhysicsColliderRef,
   RigidBody2D,
   Transform2D,
 } from "../src/components";
@@ -103,6 +104,29 @@ describe("CharacterController move() pushes the body immediately", () => {
 
     expect(ref.body.getTranslation().x).toBeCloseTo(t.position.x, 5);
     expect(ref.body.getTranslation().y).toBeCloseTo(t.position.y, 5);
+  });
+
+  it("keeps the collider in step with its body inside a single frame", () => {
+    const e: Entity = spawnWalker(h, true);
+    h.frame();
+
+    const api: CharacterControllerApi = CharacterController.create(h.world, e);
+    api.move(new Vec2(30, -12));
+
+    const bodyRef: PhysicsBodyRef = h.world.requireComponent(e, PhysicsBodyRef);
+    const colliderRef: PhysicsColliderRef = h.world.requireComponent(
+      e,
+      PhysicsColliderRef,
+    );
+
+    expect(colliderRef.collider.getTranslation().x).toBeCloseTo(
+      bodyRef.body.getTranslation().x,
+      5,
+    );
+    expect(colliderRef.collider.getTranslation().y).toBeCloseTo(
+      bodyRef.body.getTranslation().y,
+      5,
+    );
   });
 
   it("refuses to move an entity that carries no RigidBody2D", () => {

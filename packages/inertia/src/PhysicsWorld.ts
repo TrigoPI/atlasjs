@@ -20,6 +20,7 @@ export interface PhysicsWorld {
   destroyRigidBody(body: RigidBody): void;
   createCollider(descriptor: ColliderDesc, body?: RigidBody): Collider;
   destroyCollider(collider: Collider): void;
+  syncCollidersWithBodies(): void;
   createCharacterController(
     options?: CharacterControllerOptions,
   ): CharacterController;

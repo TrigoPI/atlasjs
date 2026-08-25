@@ -91,6 +91,7 @@ function createCharacterController(
       const origin: Vec2 = body.getTranslation();
 
       body.setTranslation(origin.x + moved.x, origin.y + moved.y);
+      ref.physics.syncCollidersWithBodies();
 
       return moved;
     },
