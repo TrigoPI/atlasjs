@@ -3,8 +3,8 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseFrontmatter } from "./lib/frontmatter.mjs";
 
-const BACKLOG_DIR = "docs/backlog";
-const DOCS_DIR = "docs";
+const BACKLOG_DIR = "memory/atlas/backlog";
+const DOCS_DIR = "memory/atlas";
 const STATUS_ORDER = ["todo", "partial", "vision"];
 const STATUS_LABEL = { todo: "📋 à faire", partial: "🔶 partiel", vision: "💭 vision" };
 

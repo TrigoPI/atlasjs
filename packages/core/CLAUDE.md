@@ -2,7 +2,7 @@
 
 The engine foundation of AtlasJS: the game loop, the scheduler, the plugin system, service DI, the event bus, and scene management. Everything else (rendering, physics, ECS, gameplay, input, editor) is a **plugin** that composes onto this core. The core is **standalone** — it depends only on `@atlasjs/utils` and knows nothing about any specific renderer, physics engine, or ECS.
 
-> The scheduling/loop design is documented in **`docs/core/scheduling.md`** at the repo root. Read it before changing the scheduler, the loop, or plugin boot.
+> The scheduling/loop design is documented in **`memory/atlas/core/scheduling.md`** at the repo root. Read it before changing the scheduler, the loop, or plugin boot.
 
 ## Layout
 

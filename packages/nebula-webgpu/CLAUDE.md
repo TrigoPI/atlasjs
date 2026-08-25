@@ -2,7 +2,7 @@
 
 The **WebGPU implementation** of the `@atlasjs/nebula` rendering interfaces. All WGSL, `@webgpu/types`, and GPU resource handling live here — never in `nebula` core.
 
-> Read `docs/rendering/shaders-materials.md` (implemented) and `docs/rendering/material-graph.md` (planned) at the repo root before touching the shader/material system.
+> Read `memory/atlas/rendering/shaders-materials.md` (implemented) and `memory/atlas/rendering/material-graph.md` (planned) at the repo root before touching the shader/material system.
 
 ## Responsibility
 
@@ -30,7 +30,7 @@ This bites **Vitest** too, and `vitest.config.ts` carries the fix: a `resolve.al
 
 ## WGSL
 
-- **No `if` depending on `params` before a call to `fwidth`.** `fwidth` is a derivative builtin: WGSL forbids calling it from non-uniform control flow (`error: 'fwidth' must only be called from uniform control flow`). Compute the SDF and the derivative **unconditionally**, and express any decision that depends on `params` only through `select`. Applies to any future extension of the shapes shader (rounded corners, feather). Full detail: `docs/debug/gizmos.md` §6.2.
+- **No `if` depending on `params` before a call to `fwidth`.** `fwidth` is a derivative builtin: WGSL forbids calling it from non-uniform control flow (`error: 'fwidth' must only be called from uniform control flow`). Compute the SDF and the derivative **unconditionally**, and express any decision that depends on `params` only through `select`. Applies to any future extension of the shapes shader (rounded corners, feather). Full detail: `memory/atlas/debug/gizmos.md` §6.2.
 - After any `.wgsl` edit, `dist` must be rebuilt — a `PostToolUse` hook takes care of this.
 
 ## Build

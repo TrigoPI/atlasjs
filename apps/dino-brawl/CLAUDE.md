@@ -8,7 +8,7 @@ A bare `tsc --noEmit` **is a no-op in this app**: it doesn't pick up the right c
 pnpm exec tsc --noEmit -p tsconfig.app.json
 ```
 
-**Cette commande ne couvre pas `test/`.** `tsconfig.app.json` déclare `include: ["src"]`, et vitest efface les types sans les vérifier : **aucune configuration ne type-check les specs** (dette suivie par `docs/backlog/APP-04-dino-brawl-specs-not-typechecked.md`). Une spec peut donc être rouge au compilateur tout en passant `pnpm --filter dino-brawl test`. Pour vérifier un fichier de test, créer une configuration temporaire, la lancer, puis **la supprimer** :
+**Cette commande ne couvre pas `test/`.** `tsconfig.app.json` déclare `include: ["src"]`, et vitest efface les types sans les vérifier : **aucune configuration ne type-check les specs** (dette suivie par `memory/atlas/backlog/APP-04-dino-brawl-specs-not-typechecked.md`). Une spec peut donc être rouge au compilateur tout en passant `pnpm --filter dino-brawl test`. Pour vérifier un fichier de test, créer une configuration temporaire, la lancer, puis **la supprimer** :
 
 ```bash
 cd apps/dino-brawl && printf '{"extends":"./tsconfig.app.json","include":["test"]}' > tsconfig.tmp.json && npx tsc --noEmit -p tsconfig.tmp.json; rm tsconfig.tmp.json
