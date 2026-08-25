@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Refonte du scheduling implémentée : phases 0 à 8 terminées, Physics dt compris."
+---
 # Refonte du scheduling d'AtlasJS
 
 > **Statut : implémenté** — phases 0 à 8 + vitest terminées, y compris la Phase 3 (Physics dt), livrée au commit `efa3f1e`. Document de design + suivi. Voir la checklist en bas.

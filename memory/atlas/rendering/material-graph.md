@@ -1,3 +1,7 @@
+---
+status: planned
+summary: "Sérialisation et éditeur de graphe de materials : design cadré, non implémenté, document de vision."
+---
 # Materials — Sérialisation & éditeur de graphe (vision long terme)
 
 > Statut : **design cadré, non implémenté.** Document de vision.

@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Variation audio implémentée : pitch sur AudioSource et helpers de random côté code de jeu."
+---
 # Audio V1.1 — variation (pitch appliqué + random côté code)
 
 > **Statut : implémenté.** Suite du [système audio v1](audio.md). Le bouton **`pitch`** (playbackRate) existe au même niveau que `volume` (`AudioSource.pitch` → `AudioSystem` → `Voice`/`AudioEngine`), et les deux helpers purs (`randomRange`, `pickRandom`) existent dans `@atlasjs/utils`, consommés côté jeu par `apps/dino-brawl/src/game/prefabs/fx/RunningAudioPrefab.ts` pour rouler la variation **depuis le code de jeu** — pas en dur dans le composant.

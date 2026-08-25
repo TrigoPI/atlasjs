@@ -1,3 +1,8 @@
+---
+status: implemented
+shipped: 2026-08-23
+summary: "Ribbon de trail livré et mergé dans dev."
+---
 # Nebula — Trails (ruban miter instancié)
 
 > Statut : **implémenté** (design validé et livré le 2026-08-23, mergé dans `dev`).

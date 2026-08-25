@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Variables exposées aux scripts implémentées : registerScriptMetadata et handle GameEntity."
+---
 # Variables exposées & références d'entités dans les scripts — `registerScriptMetadata` + `GameEntity` (`@atlasjs/gameplay`)
 
 > **Statut : ✅ implémenté.** Donne à la voie scripting un mécanisme d'injection de dépendances dans les scripts, façon Unity `[SerializeField]` : le script déclare ses champs injectables via un **registre plain-JS** `registerScriptMetadata(Script, { … })`, et la composition root (scène aujourd'hui, `AssetManager`/éditeur demain) fabrique les valeurs et les fournit à `scriptManager.attach(entity, Script, props)`. Débloque la création de `SpriteRender`/`Animator` **depuis un script** (sans jamais toucher le GPU) et le passage d'**autres entités** en paramètre via le handle `GameEntity` (`sword.getComponent(Transform)`, `sword.getScript(SwordScript)`).

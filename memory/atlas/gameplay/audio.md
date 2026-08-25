@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Système audio implémenté : backend et intégration gameplay ; spatial reporté en V2."
+---
 # Système audio — `@atlasjs/audio`
 
 > **Statut : implémenté.** Backend `@atlasjs/audio` (`AudioEngine`/`AudioLoader`/`AudioPlugin`) + intégration gameplay (`AudioSource`/`AudioSystem`/`AudioApi`), câblés dans `GameplayPlugin`. Lecture de sons (SFX one-shots + musique/ambiance en boucle) avec volume par source et volume master. Spatial reporté en V2 (§10, → backlog).

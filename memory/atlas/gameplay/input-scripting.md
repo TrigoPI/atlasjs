@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Input dans le scripting implémenté : façade InputApi et actions nommées, les deux phases livrées."
+---
 # Input dans le scripting — façade de service `InputApi` (Phase 1) + actions nommées (Phase 2)
 
 > **Statut : implémenté** (les deux phases livrées).

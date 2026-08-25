@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Gizmos de debug (colliders et pivots) implémentés en v1 ; extensions V2 au backlog."
+---
 # Debug — Gizmos (colliders & pivots)
 
 > Statut : **implémenté** (v1). Les extensions V2 sont dans le [backlog](../backlog/_index.md#debug) (domaine Debug).

@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Cues d'attaque implémentés et vérifiés en navigateur : sons multiples et multi-hit par phase."
+---
 # Cues d'attaque — sons multiples & multi-hit par phase (`apps/dino-brawl`)
 
 > **Statut : ✅ implémenté & vérifié navigateur.** Donne à `AttackTimeline` un canal d'événements (« cue ») posé sur les phases, avec deux consommateurs : l'audio (plusieurs sons dans une même attaque) et le re-armement de la fenêtre de touche de `MeleeHitResolver` (toucher le même ennemi plusieurs fois dans une même attaque). Ajoute au passage l'override d'impact par attaque, deux easings à `@atlasjs/math`, une attaque `LungeAttack`, et corrige un bug de `ThrustAttack`.

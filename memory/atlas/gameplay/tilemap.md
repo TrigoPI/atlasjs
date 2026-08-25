@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "TileSet et TileMap implémentés et mergés sur dev ; extensions reportées au backlog."
+---
 # TileSet & TileMap — Design (v1)
 
 > **Statut : ✅ implémenté** (mergé sur `dev`). Extensions reportées : [`../backlog/`](../backlog/).

@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Sort point anchor implémenté côté gameplay seul ; extensions restées hors périmètre."
+---
 # Sort Point Anchor — tri Y-sort solidaire d'une entité porteuse
 
 > **Statut : ✅ implémenté.** Extension ciblée de [`sorting-layers.md`](sorting-layers.md) (mode `ySorted`). Touche `@atlasjs/gameplay` uniquement (`SpriteRender.sortPointEntity` + résolution dans `SpriteRenderSystem`, avec fallback silencieux via `world.exists`) ; `@atlasjs/nebula` reste inchangé. Voir §7 pour les extensions restées hors périmètre.

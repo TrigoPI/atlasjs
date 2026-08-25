@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Refonte de l'architecture du renderer implémentée : phases 0 à 5 ; reste ouvert au backlog."
+---
 # Nebula — Refonte Architecture du Renderer
 
 > Statut : **implémenté** (6 phases 0→5 + dirty-flag + tint/blend par sprite). Durcissement post-refactor : voir l'appendice « Refactor plans » en bas. Reste ouvert (text, post-process, depth 3D, resource lifecycle) → `memory/atlas/backlog/`.

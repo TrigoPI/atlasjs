@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Occluders et Y-sort implémentés, vérifiés en navigateur et mergés sur dev."
+---
 # occluders & Y-sort — Design (v1)
 
 > **Statut : ✅ implémenté & vérifié navigateur (mergé sur `dev`).**

@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Events d'animation implémentés : started, finished et loop sur le composant Animator."
+---
 # Events d'animation — `Animator` (`@atlasjs/gameplay`)
 
 > **Statut : implémenté.** Ajoute trois events au composant `Animator` : `started`, `finished`, `loop`. Extension incrémentale de `memory/atlas/gameplay/sprite-animation.md` (sort `onComplete` de sa liste V2 §10).

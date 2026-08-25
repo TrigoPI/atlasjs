@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Refonte du gameplay et du scripting implémentée : phases 0 à 6 terminées."
+---
 # Refonte du gameplay & scripting (`@atlasjs/gameplay`)
 
 > **Statut : implémenté (phases 0→6 terminées).** Document de design + suivi. Voir la checklist en bas.

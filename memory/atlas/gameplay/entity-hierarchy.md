@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Hiérarchie d'entités implémentée : parent/enfant dans Nexus, composition de transform côté gameplay."
+---
 # Hiérarchie d'entités — parent/enfant + composition de transform (`@atlasjs/nexus` + `@atlasjs/gameplay`)
 
 > **Statut : implémenté.** Attacher des sous-entités à une entité parent façon Unity : au niveau scène (`EcsScene`) d'abord, depuis les scripts ensuite, et de façon exploitable par un futur éditeur. La **structure** (parent/enfant) est une primitive générique de Nexus ; la **composition de transform** est une couche gameplay par-dessus.

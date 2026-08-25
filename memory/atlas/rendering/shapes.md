@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Rendu de formes et primitives implémenté ; l'item de backlog A1 est clos."
+---
 # Nebula — Rendu de formes / primitives (backlog A1)
 
 > Statut : **implémenté** (backlog A1 clos). Le plan d'exécution détaillé (anciennement `shapes-primitives-plan.md`) a été fusionné ici une fois livré.

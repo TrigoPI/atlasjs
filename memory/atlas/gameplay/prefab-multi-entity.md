@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Prefabs multi-entités implémentés : enfants inline et références internes."
+---
 # Prefab multi-entités — enfants inline + références internes (design)
 
 > **Statut : ✅ implémenté.**

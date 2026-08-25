@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Animation de sprite implémentée : composant Animator et AnimatorSystem poussant la frame courante."
+---
 # Animation de sprite — `Animator` + `AnimatorSystem` (`@atlasjs/gameplay`)
 
 > **Statut : implémenté.** Câble l'animation de sprite dans la voie gameplay : un composant `Animator` (clips nommés, `play(name)`) piloté par un `AnimatorSystem` qui pousse la frame courante dans `SpriteRender`. Réutilise `SpriteSheet`/`Frame`/`SpriteAnimation` de `@atlasjs/nebula` ; la seule modif nebula est de rendre `SpriteAnimation` piloté par `dt`.

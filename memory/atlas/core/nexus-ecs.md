@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Refonte de l'ECS Nexus implémentée : phases 0 à 7 et migration de gameplay terminées."
+---
 # Refonte de l'ECS Nexus (`@atlasjs/nexus`)
 
 > **Statut : implémenté (phases 0→7 + migration `gameplay` terminées).** Document de design + suivi. Voir la checklist en bas.

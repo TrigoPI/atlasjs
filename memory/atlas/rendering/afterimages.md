@@ -1,3 +1,8 @@
+---
+status: implemented
+shipped: 2026-08-24
+summary: "Afterimages implémentées et livrées sur la branche feat/app-08-player-dash, non mergée."
+---
 # Gameplay — Afterimages (rémanence de sprite)
 
 > Statut : **✅ implémenté** (livré le 2026-08-24 sur la branche `feat/app-08-player-dash`, non mergée).

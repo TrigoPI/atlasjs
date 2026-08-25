@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Sorting layers, Y-sorting et pivot de sprite implémentés ; chantier transverse nebula et gameplay."
+---
 # Sorting Layers, Y-sorting & Sprite Pivot — Design (v1)
 
 > **Statut : ✅ implémenté.** Chantier **transverse** (touche le sort de `@atlasjs/nebula` + la sémantique de `@atlasjs/gameplay`). A absorbé l'item backlog *« Sorting layers nommés + order-in-layer »* et le fix pivot de l'item *« Pivot par frame »*, tous deux clos par ce design plutôt que trackés séparément dans le [backlog](../backlog/).

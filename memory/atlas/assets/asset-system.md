@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Système d'assets (descripteur sérialisable + AssetManager) implémenté ; extensions différées au backlog."
+---
 # Système d'assets — descripteur sérialisable ↔ handle runtime
 
 > Statut : **implémenté** (Tasks 1–7, branche `claude/feat/asset-manager`). Définit ce qu'est un « asset » dans AtlasJS et le chemin de chargement (`AssetManager` + loaders enregistrés par type). Premier package concerné : `@atlasjs/assets` (contrats + manager, feuille générique). Extensions différées (refcount/eviction/hot-reload, `AssetRef` par id + sérialisation de scènes, audio, éditeur) → `memory/atlas/backlog/`.

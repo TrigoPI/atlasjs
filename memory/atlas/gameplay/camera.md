@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Caméra gameplay implémentée dans son cœur ; extensions V2 renvoyées au backlog."
+---
 # Caméra gameplay — `Camera` + `CameraManager` + `CameraSyncSystem` + `CameraApi` (`@atlasjs/gameplay`)
 
 > **Statut : ✅ implémenté** (cœur ; extensions V2 → [`../backlog/`](../backlog/)). Introduit une caméra **gameplay** (entité Nexus) qui pilote la caméra de rendu de `@atlasjs/nebula`, plus `screenToWorld`/`worldToScreen`. La caméra gameplay est **un producteur de plus** qui écrit dans `renderer.camera`, exactement comme `SpriteRenderSystem` pousse les sprites ou `PhysicsPushSystem` pousse les transforms. Le modèle mono-caméra de nebula (une seule passe de rendu) est **inchangé**.

@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "API composants de script implémentée : modèle token defineScriptComponent, qui supersède les précédents."
+---
 # API composants de script (`@atlasjs/gameplay`) — modèle token `defineScriptComponent`
 
 > **Statut : implémenté.** État final de la saga d'unification de l'accès composant côté script. Ce document décrit le **modèle token** (`defineScriptComponent`), qui **supersède** successivement le modèle façade-classe (`ScriptComponent<TEngine>` + getters magiques) puis le nommage/alias de Phase A. Suite directe de `memory/atlas/gameplay/gameplay-redesign.md` (phases 0→6 : source unique + autorité par type de corps). Ce document raffine **uniquement la couche d'accès aux composants côté script** ; le pont physique, l'autorité déclarée et la source unique restent inchangés.

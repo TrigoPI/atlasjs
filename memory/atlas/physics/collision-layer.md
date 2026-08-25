@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Collision layer implémenté en Phase 1 et mergé dans dev ; la solidité du monde suit ailleurs."
+---
 # Collision Layer — Design (v1)
 
 > **Statut : implémenté (Phase 1), mergé dans `dev`.** `CollisionLayers` (membership/filtre nommés) dans `@atlasjs/inertia`, backend rapier correct (filtrage par groupes, drain d'événements, `userData`) dans `@atlasjs/rapier`, bridge ECS (`Collider2D`, `PhysicsColliderRef`, `PhysicsCollisionSystem` → `onCollisionEnter/Exit`/`onTriggerEnter/Exit` sur les scripts) dans `@atlasjs/gameplay`. Suite : la solidité du monde (Phase 3) → [`character-controller.md`](character-controller.md).

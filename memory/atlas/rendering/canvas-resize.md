@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Canvas resize implémenté : resize en pixels logiques, HiDPI et auto-observe via ResizeObserver."
+---
 # Canvas resize — design (B3)
 
 > Statut : **implémenté**. `Renderer.resize(w, h)` en pixels logiques (CSS), backing store physique `× devicePixelRatio` pour le HiDPI, auto-observe via `ResizeObserver` (opt-out `autoResize`) — voir `WebGPURenderer`/`WebGPUSurface` dans `@atlasjs/nebula-webgpu` et le passthrough `NebulaRenderer.resize`.

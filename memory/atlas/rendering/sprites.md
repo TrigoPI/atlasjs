@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Refonte du SpriteRenderer implémentée avec une couche d'asset minimale ; extensions différées."
+---
 # SpriteRenderer redesign — Sprite asset + façade Unity-style
 
 > Statut : **implémenté**. Refonte du système de rendu de sprite du package `@atlasjs/gameplay`, avec introduction d'une couche d'asset minimale dans `@atlasjs/assets`. Le plan d'exécution détaillé (anciennement `sprite-renderer-implementation-plan.md`) a été fusionné ici une fois livré. Extensions différées (AssetManager, animation, blend/sampler configurables) → `memory/atlas/backlog/`.

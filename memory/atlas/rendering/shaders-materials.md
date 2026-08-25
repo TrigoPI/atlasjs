@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Refonte shader/material implémentée : 4 phases livrées ; pistes futures renvoyées au backlog."
+---
 # Nebula — Refonte Shader / Material
 
 > Statut : **implémenté** (4 phases livrées + correctif versioning). Reste des pistes futures (plugin Vite, `Sprite.material`) → voir `memory/atlas/backlog/`.

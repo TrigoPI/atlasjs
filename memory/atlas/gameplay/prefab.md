@@ -1,3 +1,7 @@
+---
+status: implemented
+summary: "Prefabs et instanciation implémentés et shippés sur dev."
+---
 # Prefab & Instantiation — design
 
 > **Statut : ✅ implémenté** (shippé sur `dev`).
