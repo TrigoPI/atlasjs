@@ -356,8 +356,9 @@ views:
   - type: table
     name: "À faire"
     filters:
-      and:
+      or:
         - 'status == "todo"'
+        - 'status == "partial"'
     groupBy:
       property: effort
       direction: ASC
