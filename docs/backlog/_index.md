@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **141** items.
+Total : **142** items.
 
 ## app
 
@@ -112,6 +112,7 @@ Total : **141** items.
 | GAMEPLAY-85 | [GAMEPLAY-85-gameplay-docs-drift](GAMEPLAY-85-gameplay-docs-drift.md) | 📋 à faire | M | 2026-08-25 |
 | GAMEPLAY-87 | [GAMEPLAY-87-world-transform-one-frame-stale](GAMEPLAY-87-world-transform-one-frame-stale.md) | 📋 à faire | M | 2026-08-25 |
 | GAMEPLAY-88 | [GAMEPLAY-88-script-service-missing-token-message](GAMEPLAY-88-script-service-missing-token-message.md) | 📋 à faire | S | 2026-08-25 |
+| GAMEPLAY-89 | [GAMEPLAY-89-collision-dispatch-mints-a-handle-per-contact](GAMEPLAY-89-collision-dispatch-mints-a-handle-per-contact.md) | 📋 à faire | M | 2026-08-25 |
 | GAMEPLAY-35 | [GAMEPLAY-35-addcomponent-overload-duplication](GAMEPLAY-35-addcomponent-overload-duplication.md) | 🔶 partiel | S | 2026-08-25 |
 | GAMEPLAY-47 | [GAMEPLAY-47-tilemap-render-persistent-buffer-chunking](GAMEPLAY-47-tilemap-render-persistent-buffer-chunking.md) | 🔶 partiel | M | 2026-08-25 |
 | GAMEPLAY-03 | [GAMEPLAY-03-animator-state-machine](GAMEPLAY-03-animator-state-machine.md) | 💭 vision | L | 2026-08-19 |
