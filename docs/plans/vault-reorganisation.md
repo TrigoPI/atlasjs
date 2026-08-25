@@ -19,6 +19,7 @@
 - **Ne pas toucher à `.claude/settings.local.json`** : ses chemins `docs/` sont un cache d'autorisations historique, inerte.
 - **Vocabulaire de statut inchangé** : backlog `todo` / `partial` / `vision` ; docs de design `implemented` / `partial` / `planned`.
 - **Ne rien inventer.** Un champ dont la valeur n'est pas connue (`shipped` d'un doc qui ne donne pas de date) est **omis**, jamais deviné.
+- **Le vault a des liens morts préexistants.** Le critère de vérification n'est donc **jamais « zéro lien mort »**, mais « **empreinte inchangée** » par rapport à `$TMPDIR/vault-links-avant.txt`. Constat de la Task 1 : **8** liens morts réels, dont 5 dans le `README.md` généré (ils disparaissent en Task 5 quand il est réécrit à la main) et **3 wikilinks de backlog pointant vers des notes supprimées** (`[[GAMEPLAY-76-scriptmanager-dispose-leaks-scripts]]`, et `[[PHYSICS-17-inertia-set-body-type]]` cité deux fois). Ces 3 renvois sont de la vraie pourriture, **hors périmètre** : ne pas les corriger au passage, les signaler en fin de plan.
 
 ---
 
@@ -290,6 +291,8 @@ diff <(sed 's#^docs/##' $TMPDIR/vault-links-avant.txt) <(sed 's#^memory/atlas/##
 ```
 
 Attendu : **aucune différence**. Toute ligne en `>` est un lien cassé par le déplacement — le réparer avant de continuer. Toute ligne en `<` est un lien réparé par accident : vérifier que ce n'est pas un faux positif du `sed`.
+
+Le nombre absolu n'a aucune importance ici ; seule l'égalité des deux listes en a.
 
 - [ ] **Step 7 : Commit (à proposer à l'utilisateur)**
 
@@ -679,7 +682,7 @@ git grep -n "docs:index" -- . ':!memory' || echo "aucune reference residuelle a 
 python3 -c "import yaml; yaml.safe_load(open('memory/atlas/backlog.base')); print('backlog.base OK')"
 ```
 
-Attendu : aucun lien mort (le `README.md` référence trois `.base` qui doivent tous exister — `claude-memory.base` n'arrive qu'en Task 6, **donc un lien mort vers `claude-memory.base` est attendu ici** ; le noter et le lever en Task 6). Aucune référence résiduelle à `docs:index`. YAML valide.
+Attendu : l'empreinte de référence **moins les 5 liens morts de l'ancien `README.md` généré**, qui vient d'être remplacé — et **plus un seul lien mort attendu** : le nouveau `README.md` référence `claude-memory.base`, qui n'arrive qu'en Task 6. Le noter, il sera levé là-bas. Tout autre écart est une régression. Aucune référence résiduelle à `docs:index`. YAML valide.
 
 - [ ] **Step 7 : Commit (à proposer à l'utilisateur)**
 
@@ -812,7 +815,7 @@ grep -rn 'metadata:' memory/atlas/claude/ || echo "aucun frontmatter imbrique re
 node scripts/check-vault-links.mjs memory/atlas
 ```
 
-Attendu : deux vues ; toutes les notes typées ; aucun `metadata:` résiduel ; **zéro lien mort** — le lien vers `claude-memory.base` laissé pendant en Task 5 est levé ici. Faire ouvrir la Base dans Obsidian.
+Attendu : deux vues ; toutes les notes typées ; aucun `metadata:` résiduel. Pour les liens : le renvoi vers `claude-memory.base` laissé pendant en Task 5 est **levé ici**, et les wikilinks des notes de mémoire doivent tous résoudre. Il ne doit rester que les 3 wikilinks morts préexistants du backlog. Faire ouvrir la Base dans Obsidian.
 
 - [ ] **Step 6 : Commit (à proposer à l'utilisateur)**
 
@@ -1007,7 +1010,9 @@ pnpm test
 git grep -n "pnpm docs:index\|backlog/_index" -- . ':!memory/atlas/plans' || echo "aucune reference residuelle"
 ```
 
-Attendu : zéro lien mort ; tests verts ; `pnpm test` vert ; aucune référence résiduelle à l'ancien système. Reporter la sortie réelle, pas un résumé.
+Attendu : **exactement les 3 wikilinks morts préexistants du backlog**, et rien d'autre — les 5 liens morts de l'ancien `README.md` généré ont disparu avec lui en Task 5, et le plan qui polluait la mesure est supprimé au step suivant. Tests verts ; `pnpm test` vert ; aucune référence résiduelle à l'ancien système. Reporter la sortie réelle, pas un résumé.
+
+Les 3 wikilinks morts ne sont **pas** corrigés par ce plan. Les remonter à l'utilisateur en fin de tâche, avec leur emplacement exact, pour qu'il décide : soit créer les notes manquantes, soit retirer les renvois.
 
 - [ ] **Step 3 : Basculer le statut du doc de design**
 
