@@ -71,7 +71,7 @@ class Transform2D {          // SEUL détenteur de la position/rotation/scale c�
   position: Vec2; scale: Vec2; rotation: number;
 }
 class RigidBody2D {          // PAS de position (déjà le cas aujourd'hui)
-  type: RigidBodyType; mass: number; rotation: number;
+  type: RigidBodyType; mass: number;
   velocity: Vec2; angularVelocity: number;
 }
 class SpriteRender { /* inchangé */ }
