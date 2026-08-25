@@ -12,8 +12,6 @@ import type {
   ScriptConstructor,
 } from "../scripting/core";
 
-export type { EntityBuilder } from "../scripting/core";
-
 // prettier-ignore
 export class PrefabEntityBuilder implements EntityBuilder {
   public readonly entity: Entity;

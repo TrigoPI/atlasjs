@@ -6,20 +6,13 @@ export { Color } from "@atlasjs/nebula";
 export { defineCollisionLayers, ALL_LAYERS, NO_LAYERS } from "@atlasjs/inertia";
 
 export * from "./tokens";
+export * from "./authoring";
 export * from "./components";
 export * from "./camera";
 export * from "./rendering";
 export * from "./scripting";
 export * from "./prefab";
 export * from "./GameplayPlugin";
-
-export { OccluderStrip } from "./components/OccluderStrip";
-export { OccluderRenderSystem } from "./systems/OccluderRenderSystem";
-export { bakeOccluderStrips } from "./systems/utils/bake-occluder-strips";
-export type {
-  OccluderRegion,
-  OccluderStripData,
-} from "./systems/utils/bake-occluder-strips";
 
 export type {
   CollisionLayer,

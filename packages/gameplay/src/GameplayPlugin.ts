@@ -22,13 +22,13 @@ import { SortingLayers, SORTING_LAYERS } from "./rendering";
 
 import { ScriptManager } from "./scripting";
 import { Instantiator } from "./prefab";
-import { OccluderRenderSystem } from "./systems/OccluderRenderSystem";
 
 import {
   AfterimageRenderSystem,
   AnimatorSystem,
   AudioSystem,
   CameraSyncSystem,
+  OccluderRenderSystem,
   PhysicsCollisionSystem,
   PhysicsPullSystem,
   PhysicsPushSystem,
@@ -48,6 +48,7 @@ import {
   CharacterControllerRef,
   Collider2D,
   Grid,
+  OccluderStrip,
   PhysicsBodyRef,
   PhysicsColliderRef,
   PlayerInput,
@@ -59,7 +60,6 @@ import {
   Transform2D,
   WorldTransform2D,
 } from "./components";
-import { OccluderStrip } from "./components/OccluderStrip";
 
 export class GameplayPlugin extends Plugin {
   private readonly logger: Logger;
