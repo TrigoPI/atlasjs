@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **152** items.
+Total : **151** items.
 
 ## app
 
@@ -106,7 +106,6 @@ Total : **152** items.
 | GAMEPLAY-63 | [GAMEPLAY-63-modifier-keys-left-only](GAMEPLAY-63-modifier-keys-left-only.md) | 📋 à faire | S | 2026-08-24 |
 | GAMEPLAY-64 | [GAMEPLAY-64-movement-arbitration](GAMEPLAY-64-movement-arbitration.md) | 📋 à faire | M | 2026-08-24 |
 | GAMEPLAY-68 | [GAMEPLAY-68-world-matrix-ignores-ancestors](GAMEPLAY-68-world-matrix-ignores-ancestors.md) | 📋 à faire | M | 2026-08-25 |
-| GAMEPLAY-70 | [GAMEPLAY-70-sorting-layers-warn-flood](GAMEPLAY-70-sorting-layers-warn-flood.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-71 | [GAMEPLAY-71-occluder-strip-mutability-contract](GAMEPLAY-71-occluder-strip-mutability-contract.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-72 | [GAMEPLAY-72-move-sprite-tileset-assets-to-nebula](GAMEPLAY-72-move-sprite-tileset-assets-to-nebula.md) | 📋 à faire | M | 2026-08-25 |
 | GAMEPLAY-73 | [GAMEPLAY-73-lazy-audio-engine-dependency](GAMEPLAY-73-lazy-audio-engine-dependency.md) | 📋 à faire | S | 2026-08-25 |
