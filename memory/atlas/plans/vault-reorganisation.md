@@ -670,14 +670,24 @@ filters:
     - file.inFolder("backlog")
 ```
 
-- [ ] **Step 5 : Mettre `/atlas-done` à jour**
+- [ ] **Step 5 : Réparer les renvois vers l'index supprimé**
+
+Trois docs pointent vers `backlog/_index.md`, qui n'existe plus. Les ancres (`#debug`, `#audio`) n'ont pas d'équivalent dans une Base : on perd l'ancre, on garde la cible et on nomme le domaine en toutes lettres.
+
+- `memory/atlas/debug/gizmos.md:7` — `[backlog](../backlog/_index.md#debug)` → `[backlog](../backlog.base)`, la phrase devenant « Les extensions V2 sont dans le [backlog](../backlog.base) (domaine `debug`). »
+- `memory/atlas/gameplay/audio-variation.md:105` — `[backlog V2](../backlog/_index.md#audio)` → `[backlog V2](../backlog.base)`, en mentionnant le domaine `audio` dans la phrase.
+- `memory/atlas/gameplay/audio.md:270` — le titre `## 10. Hors périmètre v1 → \`memory/atlas/backlog/_index.md#audio\`` cite un chemin mort dans un span de code. Le remplacer par une mention du domaine, sans chemin : `## 10. Hors périmètre v1 → backlog, domaine \`audio\``.
+
+Ne rien reformater d'autre dans ces trois fichiers.
+
+- [ ] **Step 6 : Mettre `/atlas-done` à jour**
 
 Dans `.claude/commands/atlas-done.md` :
 - Remplacer l'étape 7 (« **Régénérer les index** : `pnpm docs:index` ») par : « **Vérifier les liens** : `node scripts/check-vault-links.mjs memory/atlas`. Aucun lien mort ne doit apparaître. Il n'y a plus d'index à régénérer — `backlog.base` est calculé à l'ouverture. » Renuméroter les étapes suivantes.
 - Dans l'étape 4, remplacer « Vérifie ce qui est déjà pris dans `memory/atlas/backlog/` » par une commande exacte : ``Vérifie les IDs déjà pris : `grep -h '^id:' memory/atlas/backlog/*.md | sort`. Aucun identifiant ne se réutilise, même si sa note a été supprimée.``
 - Dans l'étape 3, ajouter : « Mettre à jour **le frontmatter** du doc (`status`, `shipped`, `summary`) **et** la ligne prose `> Statut :`. Les deux doivent raconter la même chose. »
 
-- [ ] **Step 6 : Vérifier**
+- [ ] **Step 7 : Vérifier**
 
 ```bash
 node scripts/check-vault-links.mjs memory/atlas
@@ -687,7 +697,7 @@ python3 -c "import yaml; yaml.safe_load(open('memory/atlas/backlog.base')); prin
 
 Attendu : l'empreinte de référence **moins les 5 liens morts de l'ancien `README.md` généré**, qui vient d'être remplacé — et **plus un seul lien mort attendu** : le nouveau `README.md` référence `claude-memory.base`, qui n'arrive qu'en Task 6. Le noter, il sera levé là-bas. Tout autre écart est une régression. Aucune référence résiduelle à `docs:index`. YAML valide.
 
-- [ ] **Step 7 : Commit (à proposer à l'utilisateur)**
+- [ ] **Step 8 : Commit (à proposer à l'utilisateur)**
 
 ```bash
 git add -A
