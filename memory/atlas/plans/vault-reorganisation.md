@@ -281,7 +281,7 @@ Puis relire chaque diff à l'œil (`git diff CLAUDE.md .gitignore .prettierignor
 pnpm docs:index && git diff --stat memory/atlas/README.md memory/atlas/backlog/_index.md
 ```
 
-Attendu : la commande affiche `docs:index — 140 items de backlog, README régénéré.` et le diff est **vide ou limité aux chemins**. Un diff de contenu signifie qu'une note a été abîmée par un `sed` — s'arrêter et corriger.
+Attendu : la commande affiche `docs:index — 139 items de backlog, README régénéré.` et le diff est **vide ou limité aux chemins**. Un diff de contenu signifie qu'une note a été abîmée par un `sed` — s'arrêter et corriger.
 
 - [ ] **Step 6 : Vérifier les liens contre l'empreinte**
 
@@ -598,10 +598,12 @@ git commit -m "feat(docs): promote design-doc status to frontmatter and add a Ba
 - [ ] **Step 1 : Lancer une dernière fois les tests qu'on va supprimer**
 
 ```bash
-node --test scripts/
+node --test scripts/*.test.mjs scripts/lib/*.test.mjs
 ```
 
-Attendu : vert. **Important :** `pnpm test` (`turbo run test`) ne parcourt que les packages et n'a **jamais** exécuté ces fichiers — leur suppression lui est invisible et ne prouve rien. C'est cette commande-ci qui atteste qu'on ne jette pas du rouge sous le tapis. Si elle est rouge, s'arrêter et le signaler.
+Attendu : `pass 24`, `fail 0`. **Ne pas passer un répertoire à `node --test`** : sous Node 26.3, `node --test scripts/` traite l'argument comme un module à charger au lieu d'y découvrir les tests, et échoue avec un `'test failed'` trompeur qui n'a rien à voir avec l'état du code. Passer les fichiers, ou un glob.
+
+**Important :** `pnpm test` (`turbo run test`) ne parcourt que les packages et n'a **jamais** exécuté ces fichiers — leur suppression lui est invisible et ne prouve rien. C'est cette commande-ci qui atteste qu'on ne jette pas du rouge sous le tapis. Si elle est rouge, s'arrêter et le signaler.
 
 - [ ] **Step 2 : Écrire le `README.md` à la main**
 
@@ -1005,7 +1007,7 @@ Attendu : plus aucun nœud portant `docs/` pour ce vault (`apps/dino-brawl/docs/
 
 ```bash
 node scripts/check-vault-links.mjs memory/atlas
-node --test scripts/ .claude/hooks/
+node --test scripts/*.test.mjs .claude/hooks/*.test.mjs
 pnpm test
 git grep -n "pnpm docs:index\|backlog/_index" -- . ':!memory/atlas/plans' || echo "aucune reference residuelle"
 ```
