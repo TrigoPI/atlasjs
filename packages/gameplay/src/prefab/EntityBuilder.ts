@@ -1,23 +1,18 @@
 import { Component, Entity, NexusWorld } from "@atlasjs/nexus";
 
 import { createGameEntity } from "../scripting/core";
-import type { AttachArgs, ScriptManager } from "../scripting/runtime";
+import type { ScriptManager } from "../scripting/runtime";
 
 import type {
   AtlasScript,
+  AttachArgs,
+  EntityBuilder,
   GameEntity,
   ScriptComponentToken,
   ScriptConstructor,
 } from "../scripting/core";
 
-// prettier-ignore
-export interface EntityBuilder {
-  readonly entity: Entity;
-  add<TApi, TEngine extends object, TArgs extends unknown[]>(type: ScriptComponentToken<TApi, TEngine, TArgs>, ...args: TArgs): TApi;
-  add<TComponent extends object, TArgs extends unknown[]>(type: Component<TComponent, TArgs>, ...args: TArgs): TComponent;
-  attach<TScript extends AtlasScript>(Script: ScriptConstructor<TScript>, ...rest: AttachArgs<TScript>): TScript;
-  child(build: (entity: EntityBuilder) => void): EntityBuilder;
-}
+export type { EntityBuilder } from "../scripting/core";
 
 // prettier-ignore
 export class PrefabEntityBuilder implements EntityBuilder {

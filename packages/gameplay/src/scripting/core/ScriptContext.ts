@@ -3,8 +3,7 @@ import { Entity } from "@atlasjs/nexus";
 import type { GameEntity } from "./GameEntity";
 import { ComponentAccess } from "./ComponentAccess";
 import { ScriptServiceCtor } from "./ScriptService";
-import type { Prefab } from "../../prefab/Prefab";
-import type { InstantiateArgs } from "../../prefab/Instantiator";
+import type { InstantiateArgs, Prefab } from "./Prefab";
 
 // prettier-ignore
 export interface ScriptContext extends ComponentAccess {

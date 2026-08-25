@@ -7,6 +7,8 @@ import { ScriptHost } from "../../components/ScriptHost";
 import { RuntimeScriptContext } from "./RuntimeScriptContext";
 import { IncrementalScriptIdGenerator } from "./IncrementalScriptIdGenerator";
 
+import type { AttachArgs } from "../core";
+
 import {
   AtlasScript,
   ExposeFieldMetadata,
@@ -19,17 +21,6 @@ import {
   createGameEntity,
   getScriptMetadata,
 } from "../core";
-
-type PropsOf<T> = T extends AtlasScript<infer P> ? P : {};
-
-export type AttachProps<P> = {
-  [K in keyof P]: P[K] extends GameEntity ? Entity : P[K];
-};
-
-export type AttachArgs<T> =
-  {} extends AttachProps<PropsOf<T>>
-    ? [props?: AttachProps<PropsOf<T>>]
-    : [props: AttachProps<PropsOf<T>>];
 
 export class ScriptManager implements ScriptResolver {
   private readonly records: Map<ScriptID, ScriptInstanceRecord>;

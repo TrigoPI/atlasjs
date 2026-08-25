@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **149** items.
+Total : **148** items.
 
 ## app
 
@@ -107,7 +107,6 @@ Total : **149** items.
 | GAMEPLAY-64 | [GAMEPLAY-64-movement-arbitration](GAMEPLAY-64-movement-arbitration.md) | 📋 à faire | M | 2026-08-24 |
 | GAMEPLAY-72 | [GAMEPLAY-72-move-sprite-tileset-assets-to-nebula](GAMEPLAY-72-move-sprite-tileset-assets-to-nebula.md) | 📋 à faire | M | 2026-08-25 |
 | GAMEPLAY-73 | [GAMEPLAY-73-lazy-audio-engine-dependency](GAMEPLAY-73-lazy-audio-engine-dependency.md) | 📋 à faire | S | 2026-08-25 |
-| GAMEPLAY-74 | [GAMEPLAY-74-scripting-prefab-circular-dependency](GAMEPLAY-74-scripting-prefab-circular-dependency.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-75 | [GAMEPLAY-75-render-transform-sync-duplication](GAMEPLAY-75-render-transform-sync-duplication.md) | 📋 à faire | M | 2026-08-25 |
 | GAMEPLAY-76 | [GAMEPLAY-76-scriptmanager-dispose-leaks-scripts](GAMEPLAY-76-scriptmanager-dispose-leaks-scripts.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-77 | [GAMEPLAY-77-scripting-hot-path-allocations](GAMEPLAY-77-scripting-hot-path-allocations.md) | 📋 à faire | S | 2026-08-25 |

@@ -2,8 +2,8 @@ import { ServiceRegistry } from "@atlasjs/core";
 import { Component, Entity, NexusWorld } from "@atlasjs/nexus";
 
 import { INSTANTIATOR } from "../../tokens";
-import type { Prefab } from "../../prefab/Prefab";
-import type { InstantiateArgs } from "../../prefab/Instantiator";
+
+import type { InstantiateArgs, Prefab } from "../core";
 
 import {
   GameEntity,
