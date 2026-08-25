@@ -108,7 +108,6 @@ Total : **139** items.
 | GAMEPLAY-82 | [GAMEPLAY-82-scheduler-order-and-uninstall-untested](GAMEPLAY-82-scheduler-order-and-uninstall-untested.md) | 📋 à faire | M | 2026-08-25 |
 | GAMEPLAY-83 | [GAMEPLAY-83-core-coverage-gaps](GAMEPLAY-83-core-coverage-gaps.md) | 📋 à faire | M | 2026-08-25 |
 | GAMEPLAY-84 | [GAMEPLAY-84-test-suite-hygiene](GAMEPLAY-84-test-suite-hygiene.md) | 📋 à faire | S | 2026-08-25 |
-| GAMEPLAY-85 | [GAMEPLAY-85-gameplay-docs-drift](GAMEPLAY-85-gameplay-docs-drift.md) | 📋 à faire | M | 2026-08-25 |
 | GAMEPLAY-87 | [GAMEPLAY-87-world-transform-one-frame-stale](GAMEPLAY-87-world-transform-one-frame-stale.md) | 📋 à faire | M | 2026-08-25 |
 | GAMEPLAY-88 | [GAMEPLAY-88-script-service-missing-token-message](GAMEPLAY-88-script-service-missing-token-message.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-89 | [GAMEPLAY-89-collision-dispatch-mints-a-handle-per-contact](GAMEPLAY-89-collision-dispatch-mints-a-handle-per-contact.md) | 📋 à faire | M | 2026-08-25 |
@@ -136,6 +135,8 @@ Total : **139** items.
 | GAMEPLAY-57 | [GAMEPLAY-57-sorting-layers-serialization-editor](GAMEPLAY-57-sorting-layers-serialization-editor.md) | 💭 vision | M | 2026-08-20 |
 | GAMEPLAY-58 | [GAMEPLAY-58-sort-axis-configurable](GAMEPLAY-58-sort-axis-configurable.md) | 💭 vision | M | 2026-08-20 |
 | GAMEPLAY-60 | [GAMEPLAY-60-promote-weapon-attacks-to-package](GAMEPLAY-60-promote-weapon-attacks-to-package.md) | 💭 vision | L | 2026-08-21 |
+| GAMEPLAY-90 | [GAMEPLAY-90-prefab-serialization](GAMEPLAY-90-prefab-serialization.md) | 💭 vision | L | 2026-08-25 |
+| GAMEPLAY-91 | [GAMEPLAY-91-prefab-instance-pooling](GAMEPLAY-91-prefab-instance-pooling.md) | 💭 vision | M | 2026-08-25 |
 
 ## physics
 
@@ -146,7 +147,6 @@ Total : **139** items.
 | PHYSICS-04 | [PHYSICS-04-spawn-overlap-depenetration](PHYSICS-04-spawn-overlap-depenetration.md) | 📋 à faire | S | 2026-08-20 |
 | PHYSICS-05 | [PHYSICS-05-static-world-physics-perf](PHYSICS-05-static-world-physics-perf.md) | 📋 à faire | M | 2026-08-25 |
 | PHYSICS-07 | [PHYSICS-07-rapier-package-hygiene](PHYSICS-07-rapier-package-hygiene.md) | 📋 à faire | S | 2026-08-20 |
-| PHYSICS-15 | [PHYSICS-15-kinematic-bodies-teleported-not-interpolated](PHYSICS-15-kinematic-bodies-teleported-not-interpolated.md) | 📋 à faire | M | 2026-08-25 |
 | PHYSICS-18 | [PHYSICS-18-body-less-collider-never-repositioned](PHYSICS-18-body-less-collider-never-repositioned.md) | 📋 à faire | M | 2026-08-25 |
 | PHYSICS-22 | [PHYSICS-22-rigidbody-mass-semantics](PHYSICS-22-rigidbody-mass-semantics.md) | 📋 à faire | M | 2026-08-25 |
 | PHYSICS-20 | [PHYSICS-20-audit-physics-fake-fidelity](PHYSICS-20-audit-physics-fake-fidelity.md) | 🔶 partiel | M | 2026-08-25 |

@@ -95,6 +95,20 @@ export class RapierRigidBody implements RigidBody {
     return this;
   }
 
+  public setNextKinematicTranslation(x: number, y: number): this {
+    const translation: RAPIER.Vector = new RAPIER.Vector2(0, 0);
+
+    this.tmpVec2.set(x, y);
+    this.converter.vecToPhysicsInto(this.tmpVec2);
+
+    translation.x = this.tmpVec2.x;
+    translation.y = this.tmpVec2.y;
+
+    this.rapierBody.setNextKinematicTranslation(translation);
+
+    return this;
+  }
+
   public setLinearVelocity(x: number, y: number): this {
     const velocity: RAPIER.Vector = new RAPIER.Vector2(0, 0);
 

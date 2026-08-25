@@ -85,7 +85,13 @@ export class PhysicsPushSystem implements NexusSystem {
 
       if (rigidBody.type === "kinematic" || rigidBody.type === "static") {
         const place: ResolvedPlacement = this.resolvePlacement(world, entity, transform);
-        body.setTranslation(place.x, place.y);
+
+        if (rigidBody.type === "kinematic" && !world.hasComponent(entity, CharacterController2D)) {
+          body.setNextKinematicTranslation(place.x, place.y);
+        } else {
+          body.setTranslation(place.x, place.y);
+        }
+
         body.setRotation(place.rotation);
       }
     });

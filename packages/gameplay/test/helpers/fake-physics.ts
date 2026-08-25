@@ -16,10 +16,14 @@ import {
 export class FakeRigidBody implements RigidBody {
   public readonly id: string;
   public setBodyTypeCount: number;
+  public setTranslationCount: number;
+  public setNextKinematicTranslationCount: number;
 
   private bodyType: RigidBodyType;
 
   private readonly translation: Vec2;
+  private readonly nextKinematicTranslation: Vec2;
+  private hasNextKinematicTranslation: boolean;
   private readonly linearVelocity: Vec2;
   private rotation: number;
   private angularVelocity: number;
@@ -31,8 +35,12 @@ export class FakeRigidBody implements RigidBody {
     this.id = id;
     this.bodyType = descriptor.type ?? "dynamic";
     this.setBodyTypeCount = 0;
+    this.setTranslationCount = 0;
+    this.setNextKinematicTranslationCount = 0;
 
     this.translation = descriptor.translation?.clone() ?? new Vec2(0, 0);
+    this.nextKinematicTranslation = this.translation.clone();
+    this.hasNextKinematicTranslation = false;
     this.linearVelocity = descriptor.linearVelocity?.clone() ?? new Vec2(0, 0);
     this.rotation = descriptor.rotation ?? 0;
     this.angularVelocity = descriptor.angularVelocity ?? 0;
@@ -46,6 +54,11 @@ export class FakeRigidBody implements RigidBody {
   }
 
   public integrate(dt: number): void {
+    if (this.hasNextKinematicTranslation) {
+      this.translation.copyFrom(this.nextKinematicTranslation);
+      this.hasNextKinematicTranslation = false;
+    }
+
     this.translation.x += this.linearVelocity.x * dt;
     this.translation.y += this.linearVelocity.y * dt;
     this.rotation += this.angularVelocity * dt;
@@ -96,7 +109,17 @@ export class FakeRigidBody implements RigidBody {
   }
 
   public setTranslation(x: number, y: number): this {
+    this.setTranslationCount++;
     this.translation.set(x, y);
+    this.nextKinematicTranslation.set(x, y);
+    this.hasNextKinematicTranslation = false;
+    return this;
+  }
+
+  public setNextKinematicTranslation(x: number, y: number): this {
+    this.setNextKinematicTranslationCount++;
+    this.nextKinematicTranslation.set(x, y);
+    this.hasNextKinematicTranslation = true;
     return this;
   }
 
