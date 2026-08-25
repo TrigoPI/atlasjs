@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **150** items.
+Total : **149** items.
 
 ## app
 
@@ -154,7 +154,6 @@ Total : **150** items.
 | PHYSICS-04 | [PHYSICS-04-spawn-overlap-depenetration](PHYSICS-04-spawn-overlap-depenetration.md) | 📋 à faire | S | 2026-08-20 |
 | PHYSICS-05 | [PHYSICS-05-static-world-physics-perf](PHYSICS-05-static-world-physics-perf.md) | 📋 à faire | M | 2026-08-25 |
 | PHYSICS-07 | [PHYSICS-07-rapier-package-hygiene](PHYSICS-07-rapier-package-hygiene.md) | 📋 à faire | S | 2026-08-20 |
-| PHYSICS-11 | [PHYSICS-11-dynamic-body-placement-order-dependent](PHYSICS-11-dynamic-body-placement-order-dependent.md) | 📋 à faire | S | 2026-08-25 |
 | PHYSICS-12 | [PHYSICS-12-rigidbody-type-not-resynced](PHYSICS-12-rigidbody-type-not-resynced.md) | 📋 à faire | M | 2026-08-25 |
 | PHYSICS-13 | [PHYSICS-13-collider-props-frozen-at-creation](PHYSICS-13-collider-props-frozen-at-creation.md) | 📋 à faire | M | 2026-08-25 |
 | PHYSICS-14 | [PHYSICS-14-character-controller-stale-collider-position](PHYSICS-14-character-controller-stale-collider-position.md) | 📋 à faire | M | 2026-08-25 |

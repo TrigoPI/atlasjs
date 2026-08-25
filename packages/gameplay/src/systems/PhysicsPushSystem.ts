@@ -55,7 +55,9 @@ export class PhysicsPushSystem implements NexusSystem {
     for (const entity of this.pending) {
       const rigidBody: RigidBody2D = world.requireComponent(entity, RigidBody2D);
       const transform: Transform2D = world.requireComponent(entity, Transform2D);
-      const place: ResolvedPlacement = this.resolvePlacement(world, entity, transform);
+      const place: ResolvedPlacement = rigidBody.type === "dynamic"
+        ? { x: transform.position.x, y: transform.position.y, rotation: transform.rotation }
+        : this.resolvePlacement(world, entity, transform);
 
       const body: RigidBody = this.inertia.createRigidBody({
         type: rigidBody.type,
