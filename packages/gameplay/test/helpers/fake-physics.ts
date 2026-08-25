@@ -328,19 +328,21 @@ export class FakeCharacterController implements CharacterController {
   public wallX: number | null;
   public lastCollider: Collider | null;
   public lastDesired: Vec2 | null;
+  public readonly scratch: Vec2;
 
   public constructor() {
     this.factor = 1;
     this.wallX = null;
     this.lastCollider = null;
     this.lastDesired = null;
+    this.scratch = new Vec2();
   }
 
   public computeMovement(collider: Collider, desired: Vec2): Vec2 {
     this.lastCollider = collider;
     this.lastDesired = desired.clone();
 
-    const allowed: Vec2 = new Vec2(
+    const allowed: Vec2 = this.scratch.set(
       desired.x * this.factor,
       desired.y * this.factor,
     );
