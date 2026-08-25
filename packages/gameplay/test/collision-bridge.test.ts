@@ -102,8 +102,10 @@ describe("Gameplay — collision bridge", () => {
     h.frame();
 
     const collider = [...h.physics.colliders][0];
-    expect(collider.getTranslation().x).toBeCloseTo(5, 5);
-    expect(collider.getTranslation().y).toBeCloseTo(-3, 5);
+    expect(collider.getLocalTranslation().x).toBeCloseTo(5, 5);
+    expect(collider.getLocalTranslation().y).toBeCloseTo(-3, 5);
+    expect(collider.getTranslation().x).toBeCloseTo(105, 5);
+    expect(collider.getTranslation().y).toBeCloseTo(47, 5);
   });
 
   it("dispatches onCollisionEnter to both entities with the other as GameEntity", () => {

@@ -1,3 +1,4 @@
+import { RigidBody } from "@atlasjs/inertia";
 import { Vec2 } from "@atlasjs/math";
 import { Entity, NexusWorld } from "@atlasjs/nexus";
 
@@ -6,6 +7,7 @@ import { defineScriptComponent } from "../core";
 import {
   CharacterController2D,
   CharacterControllerRef,
+  PhysicsBodyRef,
   PhysicsColliderRef,
   Transform2D,
 } from "../../components";
@@ -30,6 +32,17 @@ function createCharacterController(
         PhysicsColliderRef,
       );
 
+      const bodyRef: PhysicsBodyRef | undefined = world.getComponent(
+        entity,
+        PhysicsBodyRef,
+      );
+
+      if (bodyRef === undefined) {
+        throw new Error(
+          "CharacterController.move() requires a RigidBody2D on the entity: a body-less collider is never repositioned, so the controller would keep colliding from the spawn position.",
+        );
+      }
+
       const transform: Transform2D = world.requireComponent(
         entity,
         Transform2D,
@@ -44,6 +57,11 @@ function createCharacterController(
         transform.position.x + moved.x,
         transform.position.y + moved.y,
       );
+
+      const body: RigidBody = bodyRef.body;
+      const origin: Vec2 = body.getTranslation();
+
+      body.setTranslation(origin.x + moved.x, origin.y + moved.y);
 
       return moved;
     },

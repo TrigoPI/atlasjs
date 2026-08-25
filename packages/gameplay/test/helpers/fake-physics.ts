@@ -193,6 +193,7 @@ export class FakeCollider implements Collider {
   private userData: unknown;
   private readonly body: RigidBody | null;
   private readonly translation: Vec2;
+  private readonly worldTranslation: Vec2;
   private rotation: number;
 
   public constructor(
@@ -212,6 +213,7 @@ export class FakeCollider implements Collider {
     this.userData = descriptor.userData;
     this.body = body;
     this.translation = descriptor.translation?.clone() ?? new Vec2(0, 0);
+    this.worldTranslation = new Vec2(0, 0);
     this.rotation = descriptor.rotation ?? 0;
   }
 
@@ -295,8 +297,21 @@ export class FakeCollider implements Collider {
     return this;
   }
 
-  public getTranslation(): Vec2 {
+  public getLocalTranslation(): Vec2 {
     return this.translation;
+  }
+
+  public getTranslation(): Vec2 {
+    if (this.body === null) {
+      return this.worldTranslation.set(this.translation.x, this.translation.y);
+    }
+
+    const origin: Vec2 = this.body.getTranslation();
+
+    return this.worldTranslation.set(
+      origin.x + this.translation.x,
+      origin.y + this.translation.y,
+    );
   }
 
   public getRotation(): number {
@@ -310,11 +325,13 @@ export class FakeCollider implements Collider {
 
 export class FakeCharacterController implements CharacterController {
   public factor: number;
+  public wallX: number | null;
   public lastCollider: Collider | null;
   public lastDesired: Vec2 | null;
 
   public constructor() {
     this.factor = 1;
+    this.wallX = null;
     this.lastCollider = null;
     this.lastDesired = null;
   }
@@ -322,7 +339,24 @@ export class FakeCharacterController implements CharacterController {
   public computeMovement(collider: Collider, desired: Vec2): Vec2 {
     this.lastCollider = collider;
     this.lastDesired = desired.clone();
-    return new Vec2(desired.x * this.factor, desired.y * this.factor);
+
+    const allowed: Vec2 = new Vec2(
+      desired.x * this.factor,
+      desired.y * this.factor,
+    );
+
+    if (this.wallX === null) {
+      return allowed;
+    }
+
+    const origin: Vec2 = collider.getTranslation();
+    const room: number = this.wallX - origin.x;
+
+    if (allowed.x > 0 && allowed.x > room) {
+      allowed.x = room > 0 ? room : 0;
+    }
+
+    return allowed;
   }
 }
 

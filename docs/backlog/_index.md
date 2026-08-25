@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **149** items.
+Total : **148** items.
 
 ## app
 
@@ -154,7 +154,6 @@ Total : **149** items.
 | PHYSICS-04 | [PHYSICS-04-spawn-overlap-depenetration](PHYSICS-04-spawn-overlap-depenetration.md) | 📋 à faire | S | 2026-08-20 |
 | PHYSICS-05 | [PHYSICS-05-static-world-physics-perf](PHYSICS-05-static-world-physics-perf.md) | 📋 à faire | M | 2026-08-25 |
 | PHYSICS-07 | [PHYSICS-07-rapier-package-hygiene](PHYSICS-07-rapier-package-hygiene.md) | 📋 à faire | S | 2026-08-20 |
-| PHYSICS-14 | [PHYSICS-14-character-controller-stale-collider-position](PHYSICS-14-character-controller-stale-collider-position.md) | 📋 à faire | M | 2026-08-25 |
 | PHYSICS-15 | [PHYSICS-15-kinematic-bodies-teleported-not-interpolated](PHYSICS-15-kinematic-bodies-teleported-not-interpolated.md) | 📋 à faire | M | 2026-08-25 |
 | PHYSICS-16 | [PHYSICS-16-character-controller-move-scratch-and-space](PHYSICS-16-character-controller-move-scratch-and-space.md) | 📋 à faire | S | 2026-08-25 |
 | PHYSICS-17 | [PHYSICS-17-inertia-set-body-type](PHYSICS-17-inertia-set-body-type.md) | 📋 à faire | M | 2026-08-25 |
