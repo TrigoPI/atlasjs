@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **141** items.
+Total : **140** items.
 
 ## app
 
@@ -177,7 +177,6 @@ Total : **141** items.
 | RENDER-22 | [RENDER-22-instance-buffer-pool-shrink](RENDER-22-instance-buffer-pool-shrink.md) | 📋 à faire | S | 2026-08-23 |
 | RENDER-23 | [RENDER-23-trail-spline-smoothing](RENDER-23-trail-spline-smoothing.md) | 📋 à faire | M | 2026-08-23 |
 | RENDER-24 | [RENDER-24-afterimage-idle-cost](RENDER-24-afterimage-idle-cost.md) | 📋 à faire | S | 2026-08-25 |
-| RENDER-26 | [RENDER-26-afterimage-ring-buffer-extraction](RENDER-26-afterimage-ring-buffer-extraction.md) | 📋 à faire | M | 2026-08-25 |
 | RENDER-04 | [RENDER-04-resource-lifecycle-eviction](RENDER-04-resource-lifecycle-eviction.md) | 🔶 partiel | M | 2026-08-19 |
 | RENDER-01 | [RENDER-01-text-rendering](RENDER-01-text-rendering.md) | 💭 vision | L | 2026-08-19 |
 | RENDER-09 | [RENDER-09-shapes-arbitrary-polygons](RENDER-09-shapes-arbitrary-polygons.md) | 💭 vision | L | 2026-08-19 |
