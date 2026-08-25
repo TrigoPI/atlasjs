@@ -21,6 +21,7 @@ type Rig = {
   setViewport: (bound: Bound) => void;
   frame: () => void;
   map: TileMap;
+  grid: Grid;
   node: () => TileMapNode;
 };
 
@@ -53,7 +54,11 @@ function setup(initialViewport: Bound): Rig {
 
   const tileset: TileSet = makeTileSet();
   const grid: Entity = world.createEntity();
-  world.addComponent(grid, Grid, new Vec2(128, 128));
+  const gridComponent: Grid = world.addComponent(
+    grid,
+    Grid,
+    new Vec2(128, 128),
+  );
 
   const layer: Entity = world.createEntity();
   world
@@ -76,6 +81,7 @@ function setup(initialViewport: Bound): Rig {
     },
     frame,
     map,
+    grid: gridComponent,
     node,
   };
 }
@@ -134,5 +140,56 @@ describe("TileMapRenderSystem rebuild gate", () => {
 
     expect(getTileSpy).toHaveBeenCalled();
     expect(rig.node().instances.length).toBe(2);
+  });
+
+  it("rebuilds when grid.cellSize is mutated without changing the visible CellRange", () => {
+    const rig: Rig = setup(new Bound(-10, -10, 200, 200));
+    rig.map.fill(0, 0, 1, 1, 0);
+
+    rig.frame();
+    expect(rig.node().instances.length).toBe(4);
+    expect(rig.node().instances[3].x).toBe(128);
+    expect(rig.node().instances[3].y).toBe(128);
+
+    const getTileSpy = vi.spyOn(rig.map, "getTile");
+    rig.grid.cellSize.set(100, 100);
+    rig.frame();
+
+    expect(getTileSpy).toHaveBeenCalled();
+    expect(rig.node().instances.length).toBe(4);
+    expect(rig.node().instances[3].x).toBe(100);
+    expect(rig.node().instances[3].y).toBe(100);
+  });
+
+  it("rebuilds when grid.cellGap is mutated without changing the visible CellRange", () => {
+    const rig: Rig = setup(new Bound(-10, -10, 200, 200));
+    rig.map.fill(0, 0, 1, 1, 0);
+
+    rig.frame();
+    expect(rig.node().instances[3].x).toBe(128);
+    expect(rig.node().instances[3].y).toBe(128);
+
+    const getTileSpy = vi.spyOn(rig.map, "getTile");
+    rig.grid.cellGap.set(62, 62);
+    rig.frame();
+
+    expect(getTileSpy).toHaveBeenCalled();
+    expect(rig.node().instances.length).toBe(4);
+    expect(rig.node().instances[3].x).toBe(190);
+    expect(rig.node().instances[3].y).toBe(190);
+  });
+
+  it("does NOT rebuild when the grid step is left untouched", () => {
+    const rig: Rig = setup(new Bound(-10, -10, 200, 200));
+    rig.map.fill(0, 0, 1, 1, 0);
+
+    rig.frame();
+
+    const getTileSpy = vi.spyOn(rig.map, "getTile");
+    rig.frame();
+    rig.frame();
+    rig.frame();
+
+    expect(getTileSpy).toHaveBeenCalledTimes(0);
   });
 });

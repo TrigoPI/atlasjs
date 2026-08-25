@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **146** items.
+Total : **145** items.
 
 ## app
 
@@ -108,7 +108,6 @@ Total : **146** items.
 | GAMEPLAY-76 | [GAMEPLAY-76-scriptmanager-dispose-leaks-scripts](GAMEPLAY-76-scriptmanager-dispose-leaks-scripts.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-77 | [GAMEPLAY-77-scripting-hot-path-allocations](GAMEPLAY-77-scripting-hot-path-allocations.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-78 | [GAMEPLAY-78-scripting-dead-code-and-unused-api](GAMEPLAY-78-scripting-dead-code-and-unused-api.md) | 📋 à faire | S | 2026-08-25 |
-| GAMEPLAY-79 | [GAMEPLAY-79-tilemap-rebuild-key-ignores-cell-size](GAMEPLAY-79-tilemap-rebuild-key-ignores-cell-size.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-80 | [GAMEPLAY-80-barrels-and-authoring-helper-placement](GAMEPLAY-80-barrels-and-authoring-helper-placement.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-81 | [GAMEPLAY-81-occluder-test-reads-dist](GAMEPLAY-81-occluder-test-reads-dist.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-82 | [GAMEPLAY-82-scheduler-order-and-uninstall-untested](GAMEPLAY-82-scheduler-order-and-uninstall-untested.md) | 📋 à faire | M | 2026-08-25 |

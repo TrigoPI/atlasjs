@@ -32,6 +32,10 @@ type RebuildKey = {
   cyMin: number;
   cxMax: number;
   cyMax: number;
+  cellSizeX: number;
+  cellSizeY: number;
+  cellGapX: number;
+  cellGapY: number;
 };
 
 export class TileMapRenderSystem implements NexusSystem {
@@ -152,7 +156,11 @@ export class TileMapRenderSystem implements NexusSystem {
       previous.cxMin === range.cxMin &&
       previous.cyMin === range.cyMin &&
       previous.cxMax === range.cxMax &&
-      previous.cyMax === range.cyMax
+      previous.cyMax === range.cyMax &&
+      previous.cellSizeX === grid.cellSize.x &&
+      previous.cellSizeY === grid.cellSize.y &&
+      previous.cellGapX === grid.cellGap.x &&
+      previous.cellGapY === grid.cellGap.y
     ) {
       return;
     }
@@ -216,6 +224,10 @@ export class TileMapRenderSystem implements NexusSystem {
       cyMin: range.cyMin,
       cxMax: range.cxMax,
       cyMax: range.cyMax,
+      cellSizeX: grid.cellSize.x,
+      cellSizeY: grid.cellSize.y,
+      cellGapX: grid.cellGap.x,
+      cellGapY: grid.cellGap.y,
     });
   }
 }
