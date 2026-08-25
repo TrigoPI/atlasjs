@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **139** items.
+Total : **141** items.
 
 ## app
 
@@ -149,7 +149,9 @@ Total : **139** items.
 | PHYSICS-15 | [PHYSICS-15-kinematic-bodies-teleported-not-interpolated](PHYSICS-15-kinematic-bodies-teleported-not-interpolated.md) | 📋 à faire | M | 2026-08-25 |
 | PHYSICS-17 | [PHYSICS-17-inertia-set-body-type](PHYSICS-17-inertia-set-body-type.md) | 📋 à faire | M | 2026-08-25 |
 | PHYSICS-18 | [PHYSICS-18-body-less-collider-never-repositioned](PHYSICS-18-body-less-collider-never-repositioned.md) | 📋 à faire | M | 2026-08-25 |
-| PHYSICS-20 | [PHYSICS-20-audit-physics-fake-fidelity](PHYSICS-20-audit-physics-fake-fidelity.md) | 📋 à faire | M | 2026-08-25 |
+| PHYSICS-21 | [PHYSICS-21-set-gravity-bypasses-unit-converter](PHYSICS-21-set-gravity-bypasses-unit-converter.md) | 📋 à faire | S | 2026-08-25 |
+| PHYSICS-22 | [PHYSICS-22-rigidbody-mass-semantics](PHYSICS-22-rigidbody-mass-semantics.md) | 📋 à faire | M | 2026-08-25 |
+| PHYSICS-20 | [PHYSICS-20-audit-physics-fake-fidelity](PHYSICS-20-audit-physics-fake-fidelity.md) | 🔶 partiel | M | 2026-08-25 |
 | PHYSICS-03 | [PHYSICS-03-system-driven-character-controller](PHYSICS-03-system-driven-character-controller.md) | 💭 vision | M | 2026-08-20 |
 | PHYSICS-06 | [PHYSICS-06-joints](PHYSICS-06-joints.md) | 💭 vision | M | 2026-08-20 |
 | PHYSICS-08 | [PHYSICS-08-character-controller-tuning-remarks](PHYSICS-08-character-controller-tuning-remarks.md) | 💭 vision | S | 2026-08-20 |

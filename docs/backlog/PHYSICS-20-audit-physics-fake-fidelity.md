@@ -1,30 +1,58 @@
 ---
 id: PHYSICS-20
-status: todo
+status: partial
 domain: physics
 effort: M
 verified: 2026-08-25
 ---
 
-# Auditer la fidélité du faux moteur physique à rapier
+# Fidélité du faux moteur physique à rapier — carte des écarts restants
 
-`packages/gameplay/test/helpers/fake-physics.ts` est le double sur lequel repose toute la couverture du pont physique. **Trois fois pendant le lot d'août 2026, un bug réel s'est révélé intestable tant que le double n'avait pas été corrigé** — le double était plus permissif que le backend, donc le test aurait été vert des deux côtés :
+`packages/gameplay/test/helpers/fake-physics.ts` est le double sur lequel repose toute la couverture du pont physique. **Quatre fois pendant le chantier d'août 2026, un bug réel s'est révélé intestable tant que le double n'avait pas été corrigé** — le double était plus permissif que le backend, donc le test aurait été vert des deux côtés : `3e7dcb2` (cascade de destruction absente), `b33950e` (position de collider locale au lieu de monde), `876165c` (`Vec2` neuf au lieu du scratch partagé), `edf4ffa` (propagation immédiate au lieu d'attendre le step).
 
-1. `3e7dcb2` — `destroyRigidBody` ne supprimait que le body, alors que rapier détruit **en cascade les colliders attachés**. C'est ce qui avait laissé passer le `PhysicsColliderRef` pendouillant, un bug qui coupait silencieusement les collisions d'une entité.
-2. `b33950e` — `FakeCharacterController.computeMovement` ignorait complètement la position du collider, et `FakeCollider.getTranslation()` renvoyait la translation du **descripteur** (locale au body) là où `RapierCollider.getTranslation()` renvoie du **monde**.
-3. `876165c` — `FakeCharacterController.computeMovement` retournait un `new Vec2` à chaque appel là où `RapierCharacterController` renvoie son **scratch réutilisé**, rendant le piège d'aliasing invisible par construction.
+Chaque écart de fidélité est un **angle mort en forme de bug**. Cette note porte l'audit méthode par méthode qui en cherche les suivants, mené le 2026-08-25 contre `packages/rapier/src/`, chaque écart sondé sur le vrai backend.
 
-Le motif est clair : chaque écart de fidélité crée un **angle mort en forme de bug**, et on ne le découvre qu'en tombant sur le bug par un autre chemin. C'est le contraire de ce qu'un double doit apporter.
+## Ce qui est réglé
 
-Le compte est désormais de **quatre** occurrences, la quatrième étant celle réglée ci-dessous. Ce qu'il faut : passer l'implémentation de `FakePhysicsWorld` / `FakeRigidBody` / `FakeCollider` / `FakeCharacterController` **méthode par méthode** contre `packages/rapier/src/`, et pour chacune se demander « sur quel point le double est-il plus indulgent ? ». Deux écarts déjà connus et non corrigés, à traiter en priorité parce qu'ils masquent des raisonnements que rien ne protège aujourd'hui :
+**Le recyclage de handles n'était pas un danger — et la justification écrite était fausse.** Les commits `3e7dcb2`, `dbe53cb` et la version précédente de cette note affirmaient qu'un handle recyclé par l'arène rapier passerait la garde de `destroyCollider` et supprimerait le mauvais objet. Sondé sur rapier 0.19.3, deux fois indépendamment : les handles sont **générationnels**, encodés `(generation << 32) | index` et relus en `f64`. Un index recyclé repart avec une génération incrémentée, donc le `number` change, et `RapierPhysicsWorld` indexe par le handle **complet**. Un wrapper périmé donne `has() === false` — sortie anticipée, jamais un faux positif. Vérifié y compris sur le scénario adverse exact (ordre inversé **plus** un collider créé entre les deux, qui recycle l'index 0) : rien n'est supprimé à tort.
 
-- **Le recyclage de handles.** Le faux utilise des `Set` d'objets et des ids monotones (`nextId++`). Rapier indexe par **handle numérique recyclable par son arène**. C'est ce qui fonde l'ordre de retrait des refs dans `3e7dcb2` et `dbe53cb` — un ordre argumenté depuis la source de rapier, que **les deux ordres passent** dans le faux. Le jour où quelqu'un inverse ces deux lignes, rien ne le dira.
-- ~~**La propagation body → collider.**~~ **Réglé le 2026-08-25 par `edf4ffa`** — et c'est le meilleur exemple de ce que cette note décrit. Le faux propageait immédiatement ; rendu fidèle (instantané rafraîchi par `step()` ou par la nouvelle primitive `syncCollidersWithBodies`), **exactement deux tests sont tombés, et les deux étaient de vrais bugs** : le personnage traversait le mur de 20 unités. Le correctif de gameplay qui les visait (`b33950e`) était en place depuis plusieurs jours et se croyait vert.
+La prémisse n'est vraie que pour `RAPIER.World.getCollider(handle)`, qui ignore la génération — un chemin que le wrapper n'emprunte jamais. **L'ordre de retrait actuel reste préférable**, mais pour une raison plus simple : il ne présente jamais de référence périmée. Modéliser le recyclage dans le double ne ferait tomber aucun test et outillerait un danger inexistant.
 
-Piste complémentaire, si l'audit manuel paraît fragile : une petite suite de **tests de conformité** exécutée contre les deux implémentations de `PhysicsWorld` — le faux et rapier — pour les invariants qui ne dépendent pas d'un moteur graphique. C'est plus de travail au départ, mais c'est le seul dispositif qui empêche l'écart de réapparaître.
+**La garde manquante de `destroyRigidBody`** — trouvée en sondant ce qui précède — est corrigée par `f4d7fca` : un double appel paniquait le module wasm de façon irrécupérable.
 
-**Cette piste a été essayée en miniature, et elle marche.** `edf4ffa` ajoute **deux tests exécutés contre le vrai rapier** (`packages/rapier/test/character-controller.test.ts`) plutôt que contre le double, et ils ont été validés comme de vrais garde-fous en neutralisant la primitive — les deux tombent. Là où un invariant ne dépend pas d'un contexte graphique, l'écrire côté `packages/rapier` supprime le problème à la racine au lieu de le déplacer. C'est le modèle à généraliser.
+## Ce qui reste, par priorité
 
-**Accroche :** commencer par le recyclage de handles, le seul des deux écarts listés qui reste ouvert — et celui dont dépend un raisonnement qu'aucun test ne protège. Puis balayer `packages/gameplay/test/helpers/fake-physics.ts` face à `packages/rapier/src/RapierPhysicsWorld.ts`, `RapierRigidBody.ts`, `RapierCollider.ts`, `RapierCharacterController.ts`.
+**1. Le collider du faux ignore la rotation du body.** `FakeCollider.getTranslation` additionne simplement `bodyTranslation + offset`, et `getRotation()` renvoie la valeur locale figée au constructeur ; `RapierCollider` lit la pose **monde** composée par le solveur. Body en (100,50) rot=π/2, offset local (5,−3) : rapier donne `(103, 55)` et `1.8208`, le faux `(105, 47)` et `0.25`. C'est la suite directe de `b33950e`, qui n'avait corrigé le local/monde qu'en translation pure. Masque deux sites : `ColliderGizmoSystem` consomme précisément ces deux accesseurs, et `FakeCharacterController.computeMovement` calcule sa distance au mur depuis `getTranslation()` — donc les specs de `character-controller-hierarchy.test.ts` valident une géométrie qui n'est pas celle du vrai moteur dès qu'un parent tourne. Coût ~10 lignes. Prédiction : **0 test tombé** (tous les tests actuels sont à rotation 0), la valeur est de débloquer l'écriture de specs sur les entités tournées.
+
+**2. Le `clear()` du faux ne détruit rien.** C'est un `Set.clear()`, là où celui de rapier repasse par ses propres méthodes de destruction. Les `afterEach(() => h.physics.clear())` de `collision-bridge.test.ts` et `physics-body-type-change.test.ts` n'exercent donc aucun chemin de destruction. À rendre fidèle **sans faire lever** : depuis `f4d7fca` le vrai backend est idempotent, donc faire lever le double verrouillerait un contrat que rapier ne tient pas.
+
+**3. `FakeRigidBody.getTranslation()` rend l'état interne vivant** ; `RapierRigidBody` recopie dans un scratch. Écrire dans le vecteur retourné **déplace le body dans le faux** et est un no-op silencieux chez rapier. Aucun site ne le fait aujourd'hui — c'est un piège armé, pas un bug actif — mais c'est la troisième occurrence de la famille « identité d'objet » et elle coûte 4 lignes.
+
+**4. Le `step()` du faux intègre tout le monde** : statiques, kinématiques, désactivés, et rien ne dort jamais (`isSleeping()` en dur à `false`, damping et `gravityScale` non modélisés). Sondé : rapier laisse un statique, un désactivé et un kinématique position-based à `x = 0` là où le faux les amène à 10, et endort un dynamique posé après ~200 pas. Le dégât est contenu — `PhysicsPullSystem` ne recopie que pour `dynamic` — mais le sommeil mord : `PhysicsPushSystem` écrit les vélocités chaque frame, ce qui réveille chez rapier, donc **ça marche par accident et rien ne protège cet accident**. Les gardes `type`/`enabled` coûtent ~6 lignes sans risque ; le sommeil est un modèle à part entière.
+
+**5. `createCharacterController` ignore ses options.** `offset` et `slide` sont transmis par `PhysicsPushSystem` depuis `CharacterController2D` et jetés par le double. Sondé, le vrai backend en fait quelque chose de très visible : même mouvement diagonal contre un mur, `slide:true` → `(148.99, 100)`, `slide:false` → `(148.99, 37.25)`. Ces deux champs du composant ne sont couverts par rien — on peut les câbler à l'envers sans qu'un test bronche. Enregistrer les options pour permettre une assertion coûte ~5 lignes ; reproduire le vrai slide est hors de portée du double.
+
+**6. `getLocalTranslation()` n'existe que dans le faux.** Absente de l'interface `Collider` et de `RapierCollider`. `collision-bridge.test.ts` assert dessus : l'intention est bonne (vérifier que `buildColliderDesc` passe l'offset local quand il y a un body) mais l'assertion passe par un accesseur que le vrai backend n'expose pas — elle vérifie le double, pas le pont. Les deux lignes suivantes, sur `getTranslation()`, couvrent déjà le fait observable.
+
+**7. Tolérance aux objets étrangers** : rapier lève `Invalid RigidBody`, le faux fait un `Set.delete` muet. Réel mais improbable, il faudrait mélanger deux backends.
+
+## Écarts vérifiés et jugés sans conséquence — ne pas ticketer
+
+La précision f32 est **correctement modélisée** (`Math.fround` sur `friction`/`restitution`/`density`, sondé identique des deux côtés) : `PHYSICS-13` est bien refermé. Les groupes de collision par défaut correspondent. Les colliders sans body sont fidèles. La cascade `destroyRigidBody` → colliders est fidèle depuis `3e7dcb2`. `FakeCollider.getTranslation()` rend un scratch là où rapier alloue — le faux est *plus strict*, il ne peut produire qu'un faux rouge. `unitsPerMeter` n'est pas modélisé, mais toutes les applications tournent au défaut 1 ; le vrai risque est que le chemin `PhysicsUnitConverter` n'est couvert que par un seul fichier de test.
+
+## La limite dure, à connaître avant d'investir
+
+Le contrat `PhysicsWorld` a deux moitiés de nature différente. Une moitié **administrative** — créer, détruire, attacher, propager les poses, convertir — déterministe et entièrement spécifiable : c'est là que vivent les quatre bugs déjà payés et les sept points ci-dessus, et le double peut y être fidèle à 100 %. Une moitié **solveur** — `step`, `drainCollisions`, `computeMovement` en collide-and-slide, `query` : un double fidèle ici *est* un moteur physique.
+
+`FakePhysicsWorld` tranche déjà honnêtement en faveur de la première (`query()` lève explicitement, les collisions passent par `emitCollision`). **C'est le bon choix, à ne pas renverser** — mais il a un prix qu'il faut nommer : `emitCollision` **ne fait pas partie du contrat**. Un test qui l'appelle affirme « supposons que le moteur signale ce contact », et cette supposition n'est validée nulle part. Sondé : les deux specs de dispatch de `collision-bridge.test.ts` construisent deux entités **sans `RigidBody2D`**, une configuration pour laquelle rapier **n'émet rien du tout**. Elles valident le routage, ce qui est réel et utile, mais un jeu où deux décors sans body sont censés se déclencher serait muet avec 100 % des specs vertes. Aucune fidélité ajoutée au double ne corrigera ça, par construction.
+
+## La forme cible : deux suites, pas une
+
+La suite de conformité évoquée dans la version précédente de cette note **est réaliste**, et `edf4ffa` l'a démontrée en miniature sans le savoir. `packages/rapier/test` tourne en Node pur, sans jsdom ni contexte graphique, en ~400 ms. Et `character-controller.test.ts` teste **le contrat `PhysicsWorld`**, pas rapier : il n'appelle que des méthodes de l'interface, `RapierPhysicsWorld` n'apparaissant que dans son helper `makeWorld()`. **C'est déjà structurellement une suite paramétrable** — extraire `makeWorld` en paramètre suffirait à l'exécuter contre les deux implémentations.
+
+- **Noyau de conformité partagé**, exécuté contre le faux *et* rapier : cycle de vie et idempotence, composition de repères (translation **et rotation**), moment de la propagation, identité d'objet des getters, aller-retour f32.
+- **Suite rapier-only** pour tout ce qui demande un vrai solveur : trajectoires, damping, sommeil, résolution de contacts, collide-and-slide, raycasts. Le faux ne peut pas les produire et ne devrait pas essayer. Y écrire aussi la **table de vérité des événements** par configuration de body — le tableau sondé pendant l'audit s'y transpose tel quel, et c'est ce qui refermerait le trou décrit ci-dessus.
+
+**Accroche :** commencer par le point 1 (rotation du collider) — écart prouvé, sur un chemin de production réel, prédit sans casse. Puis le point 2 (`clear()`), qui conditionne la valeur de tous les `afterEach` existants.
 
 **À rapprocher de :** [[GAMEPLAY-84-test-suite-hygiene]] — même sujet vu sous l'angle de l'outillage de test.
