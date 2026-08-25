@@ -102,7 +102,7 @@ Idem `AudioApi.playOneShot`. Rétro-compat en positionnel écartée : un objet d
 
 ## 7. Hors périmètre (assumé)
 
-Déjà au [backlog V2](../backlog/_index.md#audio), on n'y touche pas ici :
+Déjà au [backlog V2](../backlog.base), domaine `audio`, on n'y touche pas ici :
 
 - `pan` / audio spatial 2D · fade / enveloppe (attaque-relâche) · filtres low/high-pass.
 - bus de mixage / ducking · crossfade musiques · pooling de voix / cap de concurrence.

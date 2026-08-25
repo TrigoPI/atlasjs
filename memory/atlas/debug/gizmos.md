@@ -4,7 +4,7 @@ summary: "Gizmos de debug (colliders et pivots) implémentés en v1 ; extensions
 ---
 # Debug — Gizmos (colliders & pivots)
 
-> Statut : **implémenté** (v1). Les extensions V2 sont dans le [backlog](../backlog/_index.md#debug) (domaine Debug).
+> Statut : **implémenté** (v1). Les extensions V2 sont dans le [backlog](../backlog.base) (domaine `debug`).
 > Portée : nouveau package `@atlasjs/gizmos` + extension **stroke** de `@atlasjs/nebula` / `@atlasjs/nebula-webgpu`. Vérification dans `apps/webgpu` et `apps/dino-brawl`.
 > Contexte : avant cette feature, un collider était invisible et un pivot ne se devinait qu'en collant un sprite `debug.png` en enfant de l'entité (workaround qui vivait dans `apps/dino-brawl`, `SwordWithShadowPrefab`, **supprimé par cette feature**). Ce design remplace ce bricolage par des gizmos moteur, en posant la brique dont le futur éditeur aura besoin.
 

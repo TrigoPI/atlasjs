@@ -1,8 +1,6 @@
 filters:
   and:
     - file.inFolder("backlog")
-    - not:
-        - 'file.name == "_index.md"'
 
 formulas:
   staleness: 'if(verified, (today() - date(verified)).days, "")'

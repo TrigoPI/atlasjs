@@ -9,8 +9,7 @@
     "test": "turbo run test",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "clean": "turbo clean && rimraf node_modules",
-    "docs:index": "node scripts/backlog-index.mjs"
+    "clean": "turbo clean && rimraf node_modules"
   },
   "devDependencies": {
     "@babel/plugin-proposal-decorators": "^8.0.2",
