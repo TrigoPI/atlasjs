@@ -65,8 +65,8 @@ describe("Gameplay — script getService dispatch", () => {
 
   it("throws when the backing service is not provided", () => {
     const e: Entity = h.world.createEntity();
-    h.scripts.attach(e, ServiceProbe);
+    const probe: ServiceProbe = h.scripts.attach(e, ServiceProbe);
 
-    expect(() => h.frame()).toThrow(/Service not found/);
+    expect(() => probe.onCreate()).toThrow(/Service not found/);
   });
 });
