@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **148** items.
+Total : **149** items.
 
 ## app
 
@@ -158,6 +158,7 @@ Total : **148** items.
 | PHYSICS-16 | [PHYSICS-16-character-controller-move-scratch-and-space](PHYSICS-16-character-controller-move-scratch-and-space.md) | 📋 à faire | S | 2026-08-25 |
 | PHYSICS-17 | [PHYSICS-17-inertia-set-body-type](PHYSICS-17-inertia-set-body-type.md) | 📋 à faire | M | 2026-08-25 |
 | PHYSICS-18 | [PHYSICS-18-body-less-collider-never-repositioned](PHYSICS-18-body-less-collider-never-repositioned.md) | 📋 à faire | M | 2026-08-25 |
+| PHYSICS-19 | [PHYSICS-19-propagate-body-positions-to-colliders](PHYSICS-19-propagate-body-positions-to-colliders.md) | 📋 à faire | M | 2026-08-25 |
 | PHYSICS-03 | [PHYSICS-03-system-driven-character-controller](PHYSICS-03-system-driven-character-controller.md) | 💭 vision | M | 2026-08-20 |
 | PHYSICS-06 | [PHYSICS-06-joints](PHYSICS-06-joints.md) | 💭 vision | M | 2026-08-20 |
 | PHYSICS-08 | [PHYSICS-08-character-controller-tuning-remarks](PHYSICS-08-character-controller-tuning-remarks.md) | 💭 vision | S | 2026-08-20 |
