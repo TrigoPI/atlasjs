@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Bound, Vec2 } from "@atlasjs/math";
 import type { Texture2D } from "@atlasjs/nebula";
 import { TileMap } from "../src/components/TileMap";
-import type { TileSet } from "../src/assets/TileSet";
-import type { Tile } from "../src/assets/Tile";
+import type { Tile, TileSet } from "@atlasjs/nebula";
 import { bakeOccluderStrips } from "../src/systems/utils/bake-occluder-strips";
 import type { OccluderRegion } from "../src/systems/utils/bake-occluder-strips";
 

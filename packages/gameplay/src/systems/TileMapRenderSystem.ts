@@ -3,7 +3,7 @@ import { TileMapNode } from "@atlasjs/nebula";
 import type { Bound, Mat3 } from "@atlasjs/math";
 import type { NebulaRenderer, TileInstance } from "@atlasjs/nebula";
 
-import type { Tile } from "../assets/Tile";
+import type { Tile } from "@atlasjs/nebula";
 import type { CellOrigin, CellRange } from "./utils";
 import { applySortFields } from "../rendering/applySortFields";
 import type { SortingLayers } from "../rendering";

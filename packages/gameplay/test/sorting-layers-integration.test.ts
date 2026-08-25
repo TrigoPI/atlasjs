@@ -1,9 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { Transform2D, Vec2 } from "@atlasjs/math";
-import { NebulaRenderer, Sampler, SceneGraph, SpriteNode } from "@atlasjs/nebula";
+import {
+  NebulaRenderer,
+  Sampler,
+  SceneGraph,
+  Sprite,
+  SpriteNode,
+} from "@atlasjs/nebula";
 import { Entity, NexusWorld } from "@atlasjs/nexus";
 
-import { Sprite } from "../src/assets";
 import { SpriteRender, WorldTransform2D } from "../src/components";
 import { SpriteRenderSystem } from "../src/systems";
 import { SortingLayers } from "../src/rendering";

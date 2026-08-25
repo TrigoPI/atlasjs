@@ -1,5 +1,5 @@
 import { Vec2 } from "@atlasjs/math";
-import { Sprite } from "../assets";
+import { Sprite } from "@atlasjs/nebula";
 import { SpriteRender, WorldTransform2D } from "../components";
 import { applySortFields } from "../rendering/applySortFields";
 import type { SortingLayers } from "../rendering";

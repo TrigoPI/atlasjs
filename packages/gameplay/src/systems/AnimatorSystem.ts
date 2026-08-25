@@ -1,7 +1,7 @@
 import { Frame } from "@atlasjs/nebula";
 import { Entity, NexusSystem, NexusSystemContext } from "@atlasjs/nexus";
 
-import { Sprite } from "../assets";
+import { Sprite } from "@atlasjs/nebula";
 import { Animator, SpriteRender } from "../components";
 
 export class AnimatorSystem implements NexusSystem {

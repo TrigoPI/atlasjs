@@ -1,4 +1,4 @@
-import type { Texture2D } from "@atlasjs/nebula";
+import type { Texture2D } from "../core";
 import type { Resource } from "@atlasjs/assets";
 import { Bound, type Vec2 } from "@atlasjs/math";
 import { Sprite } from "./Sprite";

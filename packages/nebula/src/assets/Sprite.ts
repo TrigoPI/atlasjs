@@ -1,5 +1,5 @@
 import { Bound, Vec2 } from "@atlasjs/math";
-import type { Texture2D } from "@atlasjs/nebula";
+import type { Texture2D } from "../core";
 import type { Resource } from "@atlasjs/assets";
 
 export interface SpriteOptions {

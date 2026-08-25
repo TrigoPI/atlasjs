@@ -1,6 +1,6 @@
 import { Vec2 } from "@atlasjs/math";
 
-import { Sprite } from "../assets";
+import { Sprite } from "@atlasjs/nebula";
 import {
   AfterimageRenderer,
   SpriteRender,

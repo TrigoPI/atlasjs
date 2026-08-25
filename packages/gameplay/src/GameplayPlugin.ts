@@ -9,12 +9,10 @@ import {
 import { NEBULA_RENDERER, NebulaRenderer } from "@atlasjs/nebula";
 import { INERTIAL_ENGINE, PhysicsWorld } from "@atlasjs/inertia";
 import { Entity, NEXUS, NexusWorld, Unsubscribe } from "@atlasjs/nexus";
-import { ASSET_MANAGER, AssetManager } from "@atlasjs/assets";
 
 import { SCRIPT_MANAGER, INSTANTIATOR } from "./tokens";
 import { CameraManager, CAMERA_MANAGER } from "./camera";
 import { registerSystem } from "./registerSystem";
-import { SpriteLoader, TileSetLoader } from "./assets";
 import { SortingLayers, SORTING_LAYERS } from "./rendering";
 
 import { ScriptManager } from "./scripting";
@@ -69,7 +67,7 @@ export class GameplayPlugin extends Plugin {
 
   public constructor() {
     super("gameplay-plugin", {
-      requires: [NEXUS, NEBULA_RENDERER, INERTIAL_ENGINE, ASSET_MANAGER],
+      requires: [NEXUS, NEBULA_RENDERER, INERTIAL_ENGINE],
       provides: [SCRIPT_MANAGER, INSTANTIATOR, CAMERA_MANAGER, SORTING_LAYERS],
     });
     this.logger = createLogger(GameplayPlugin.name);
@@ -82,10 +80,6 @@ export class GameplayPlugin extends Plugin {
     const world: NexusWorld = await engine.services.wait(NEXUS);
     const nebula: NebulaRenderer = await engine.services.wait(NEBULA_RENDERER);
     const inertia: PhysicsWorld = await engine.services.wait(INERTIAL_ENGINE);
-    const assets: AssetManager = await engine.services.wait(ASSET_MANAGER);
-
-    assets.register(new SpriteLoader());
-    assets.register(new TileSetLoader());
 
     this.scriptManager = new ScriptManager(world, engine.services);
     const instantiator: Instantiator = new Instantiator(world, this.scriptManager);

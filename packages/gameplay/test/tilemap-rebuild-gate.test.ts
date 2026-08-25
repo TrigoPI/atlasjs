@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Bound, Transform2D, Vec2 } from "@atlasjs/math";
 import { NebulaRenderer, SceneGraph, TileMapNode } from "@atlasjs/nebula";
 import { Entity, NexusWorld } from "@atlasjs/nexus";
-import { TileSet } from "../src/assets/TileSet";
+import { TileSet } from "@atlasjs/nebula";
 import {
   Grid,
   TileMap,

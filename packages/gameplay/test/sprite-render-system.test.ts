@@ -5,10 +5,10 @@ import {
   NebulaRenderer,
   Sampler,
   SceneGraph,
+  Sprite,
   SpriteNode,
 } from "@atlasjs/nebula";
 import { Entity, NexusWorld } from "@atlasjs/nexus";
-import { Sprite } from "../src/assets";
 import { SpriteRender, WorldTransform2D } from "../src/components";
 import { SpriteRenderSystem } from "../src/systems";
 import { SortingLayers } from "../src/rendering";

@@ -18,8 +18,10 @@
     "clean": "rimraf dist",
     "typecheck": "tsc --noEmit -p tsconfig.test.json"
   },
+  "devDependencies": {
+    "@atlasjs/assets": "workspace:*"
+  },
   "dependencies": {
-    "@atlasjs/assets": "workspace:*",
     "@atlasjs/audio": "workspace:*",
     "@atlasjs/core": "workspace:*",
     "@atlasjs/inertia": "workspace:*",

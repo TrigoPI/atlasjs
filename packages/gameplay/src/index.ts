@@ -7,7 +7,6 @@ export * from "./tokens";
 export * from "./components";
 export * from "./camera";
 export * from "./rendering";
-export * from "./assets";
 export * from "./scripting";
 export * from "./prefab";
 export * from "./registerSystem";
@@ -55,10 +54,21 @@ export {
   SpriteAnimation,
   AnimationPlayer,
   Frame,
+  Sprite,
+  SpriteAsset,
+  SpriteLoader,
+  Tile,
+  TileSet,
+  TileSetAsset,
+  TileSetLoader,
 } from "@atlasjs/nebula";
 
 export type {
   SpriteAnimationOptions,
   FromGridOptions,
   FromAutoGridOptions,
+  SpriteOptions,
+  SpriteAssetOptions,
+  TileSetOptions,
+  TileSetAssetOptions,
 } from "@atlasjs/nebula";

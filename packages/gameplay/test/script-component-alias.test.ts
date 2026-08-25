@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { Entity } from "@atlasjs/nexus";
 
-import { Sprite } from "../src/assets";
+import { Sprite } from "@atlasjs/nebula";
 import { RigidBody2D, SpriteRender } from "../src/components";
 import { AtlasScript, RigidBody, SpriteRenderer } from "../src/scripting";
 import { createHarness, Harness } from "./helpers/harness";

@@ -5,7 +5,7 @@ import { ASSET_MANAGER, AssetManager } from "@atlasjs/assets";
 import { Renderer } from "./core";
 import { NebulaRenderer } from "./NebulaRenderer";
 import { NEBULA_RENDERER } from "./tokens";
-import { TextureLoader } from "./assets";
+import { SpriteLoader, TextureLoader, TileSetLoader } from "./assets";
 
 export class NebulaPlugin extends Plugin {
   private readonly renderer: Renderer;
@@ -30,6 +30,8 @@ export class NebulaPlugin extends Plugin {
     await renderer.init();
 
     assets.register(new TextureLoader(renderer));
+    assets.register(new SpriteLoader());
+    assets.register(new TileSetLoader());
 
     this.renderStep = engine.scheduler.render.add(() => renderer.render(), {
       name: "nebula:render",

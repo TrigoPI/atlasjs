@@ -1,5 +1,5 @@
 import type { AssetLoader, LoadContext } from "@atlasjs/assets";
-import type { Texture2D } from "@atlasjs/nebula";
+import type { Texture2D } from "../core";
 import { TileSet } from "./TileSet";
 import type { TileSetAsset } from "./TileSetAsset";
 

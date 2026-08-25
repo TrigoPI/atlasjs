@@ -1,6 +1,6 @@
 import { Bound, Vec2 } from "@atlasjs/math";
 import { Asset } from "@atlasjs/assets";
-import { TextureAsset } from "@atlasjs/nebula";
+import { TextureAsset } from "./TextureAsset";
 
 export interface SpriteAssetOptions {
   readonly rect?: Bound;
@@ -35,7 +35,10 @@ export class SpriteAsset implements Asset {
     this.id = options?.id ?? `sprite:${texture.id}:${rectKey}:${pivotKey}`;
   }
 
-  public static fromPath(path: string, options?: SpriteAssetOptions): SpriteAsset {
+  public static fromPath(
+    path: string,
+    options?: SpriteAssetOptions,
+  ): SpriteAsset {
     const texture: TextureAsset = new TextureAsset(path);
     return new SpriteAsset(texture, options);
   }

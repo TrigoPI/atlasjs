@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Asset, LoadContext, Resource } from "@atlasjs/assets";
-import { TextureAsset, Texture2D } from "@atlasjs/nebula";
+import { TextureAsset } from "../src/assets/TextureAsset";
+import type { Texture2D } from "../src/core";
 import { SpriteAsset } from "../src/assets/SpriteAsset";
 import { SpriteLoader } from "../src/assets/SpriteLoader";
 import { Sprite } from "../src/assets/Sprite";
