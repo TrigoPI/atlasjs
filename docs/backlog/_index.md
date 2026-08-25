@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **142** items.
+Total : **141** items.
 
 ## app
 
@@ -103,7 +103,6 @@ Total : **142** items.
 | GAMEPLAY-62 | [GAMEPLAY-62-trail-defaults-single-source](GAMEPLAY-62-trail-defaults-single-source.md) | 📋 à faire | S | 2026-08-23 |
 | GAMEPLAY-63 | [GAMEPLAY-63-modifier-keys-left-only](GAMEPLAY-63-modifier-keys-left-only.md) | 📋 à faire | S | 2026-08-24 |
 | GAMEPLAY-64 | [GAMEPLAY-64-movement-arbitration](GAMEPLAY-64-movement-arbitration.md) | 📋 à faire | M | 2026-08-24 |
-| GAMEPLAY-77 | [GAMEPLAY-77-scripting-hot-path-allocations](GAMEPLAY-77-scripting-hot-path-allocations.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-78 | [GAMEPLAY-78-scripting-dead-code-and-unused-api](GAMEPLAY-78-scripting-dead-code-and-unused-api.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-80 | [GAMEPLAY-80-barrels-and-authoring-helper-placement](GAMEPLAY-80-barrels-and-authoring-helper-placement.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-81 | [GAMEPLAY-81-occluder-test-reads-dist](GAMEPLAY-81-occluder-test-reads-dist.md) | 📋 à faire | S | 2026-08-25 |

@@ -17,14 +17,17 @@ export const ScriptMetadata = {
 
 const REGISTRY: WeakMap<Function, ScriptMetadata> = new WeakMap();
 
+let MERGED: WeakMap<Function, ScriptMetadata | null> = new WeakMap();
+
 export function registerScriptMetadata(
   ctor: Function,
   metadata: ScriptMetadata,
 ): void {
   REGISTRY.set(ctor, metadata);
+  MERGED = new WeakMap<Function, ScriptMetadata | null>();
 }
 
-export function getScriptMetadata(ctor: Function): ScriptMetadata | undefined {
+function mergeScriptMetadata(ctor: Function): ScriptMetadata | null {
   const chain: Function[] = [];
   let current: Function | null = ctor;
 
@@ -45,18 +48,44 @@ export function getScriptMetadata(ctor: Function): ScriptMetadata | undefined {
     merged = merged ?? {};
 
     for (const field of Object.keys(own.exposed)) {
-      merged[field] = { ...own.exposed[field] };
+      merged[field] = Object.freeze({ ...own.exposed[field] });
     }
   }
 
-  return merged === undefined ? undefined : { exposed: merged };
+  return merged === undefined
+    ? null
+    : Object.freeze({ exposed: Object.freeze(merged) });
+}
+
+export function getScriptMetadata(ctor: Function): ScriptMetadata | undefined {
+  const cached: ScriptMetadata | null | undefined = MERGED.get(ctor);
+
+  if (cached !== undefined) {
+    return cached ?? undefined;
+  }
+
+  const merged: ScriptMetadata | null = mergeScriptMetadata(ctor);
+  MERGED.set(ctor, merged);
+
+  return merged ?? undefined;
 }
 
 export function getExposedFields(
   ctor: Function,
 ): Map<string, ExposeFieldMetadata> {
   const metadata: ScriptMetadata | undefined = getScriptMetadata(ctor);
-  return new Map<string, ExposeFieldMetadata>(
-    Object.entries(metadata?.exposed ?? {}),
-  );
+  const fields: Map<string, ExposeFieldMetadata> = new Map<
+    string,
+    ExposeFieldMetadata
+  >();
+
+  if (metadata === undefined) {
+    return fields;
+  }
+
+  for (const field of Object.keys(metadata.exposed)) {
+    fields.set(field, { ...metadata.exposed[field] });
+  }
+
+  return fields;
 }
