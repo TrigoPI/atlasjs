@@ -127,7 +127,7 @@ this.attack.sample(this.attackClock, this.pose);
 
 Deux pièges d'implémentation, tous deux dans du code existant :
 
-- **`MeleeHitResolver` reçoit `knockback` et `hitstop` une fois, au constructeur**, et le résolveur est mis en cache par `getResolver()`. Un override par attaque impose donc de porter ces deux valeurs sur `beginSwing(knockback, hitstop)` — déjà appelé à chaque re-armement — et de laisser le constructeur ne prendre que la source de cibles.
+- **`MeleeHitResolver` reçoit `knockback` et `hitstop` une fois, au constructeur**, et le résolveur est mis en cache par `getResolver()`. Un override par attaque impose donc de porter ces deux valeurs sur `beginSwing(knockback?, hitstop?)` — déjà appelé à chaque re-armement. Le constructeur les garde malgré tout : elles deviennent les **défauts de l'arme** (`defaultKnockback` / `defaultHitstop`) sur lesquels `beginSwing` retombe quand l'attaque courante n'override rien.
 - **`SwordScript.startAttack()` appelle aujourd'hui `beginSwing()` *avant* `this.attack.begin()`.** Or c'est `AttackChain.begin()` qui sélectionne le maillon courant : lire l'override avant, c'est lire celui de l'attaque **précédente**. `startAttack()` doit donc appeler `this.attack.begin()` d'abord, puis armer le résolveur.
 
 `shake` reste sur `SwordScript` : le spec ne l'inclut pas.
@@ -162,7 +162,7 @@ Nouveau `TimelineAttack` dans `apps/dino-brawl/src/game/scripts/weapon/attacks/L
 | Phase | Durée indicative | Contenu |
 | --- | --- | --- |
 | `windup` | ~0.12 s | armement en recul : `radiusScale → pullbackRadius`, léger `angleOffset`, `inOutQuad`. Cue sonore optionnel d'armement. |
-| `extend` | ~0.06 s | détente : `radiusScale → lungeRadius` (large), `outQuint`. **Cue sonore**, et **pas** de `rearmHits` → un seul hit. |
+| `extend` | ~0.06 s | détente : `angleOffset → 0` en `outQuint`, `radiusScale → lungeRadius` (large) en `outBack` (c'est là que tombe l'overshoot). **Cue sonore**, et **pas** de `rearmHits` → un seul hit. |
 | `hold` | ~0.06 s | pleine extension, fenêtre de touche généreuse. |
 | `recover` | ~0.28 s | retour `radiusScale → 1`, `inOutQuad`. Lenteur assumée : c'est le coût du finisher. |
 
@@ -170,7 +170,7 @@ Toutes les durées et portées sont des props exposées, comme sur les attaques 
 
 ### 8.3 `rappierSwordCombo`
 
-Trois maillons : `ThrustAttack` → `ThrustChainAttack` → `LungeAttack`, avec un `pitch` de base élevé conservé (feeling « rapière ») et le `thrust`/`swing` de clips actuels.
+Trois maillons : `ThrustAttack` → `ThrustChainAttack` → `LungeAttack`, avec un `pitch` de base élevé conservé sur les deux premiers (feeling « rapière ») et trois clips (`thrust`, `swing`, `lunge`). La fente descend à `pitch` 1.6 et porte son propre `knockback`/`hitstop` (§6).
 
 ## 9. Caveats de conception
 

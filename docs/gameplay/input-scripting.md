@@ -2,7 +2,7 @@
 
 > **Statut : implémenté** (les deux phases livrées).
 > - **Phase 1** — accès aux services depuis les scripts : `ScriptService<TService>` générique + façade `InputApi` (polling clavier/souris global). Voir `packages/gameplay/src/scripting/core/ScriptService.ts`, `packages/gameplay/src/scripting/services/InputApi.ts` + tests `script-service*.test.ts`, `input-api.test.ts`.
-> - **Phase 2** — actions nommées façon [Unity Input System](https://docs.unity3d.com/Packages/com.unity.inputsystem@1.19/manual/QuickStartGuide.html) : `defineActions`/`button()`/`vector2()`/`InputActionMap` (`@atlasjs/input`) + intégration ECS `PlayerInput` + `PlayerInputSystem` (`@atlasjs/gameplay`). Voir `packages/input/src/public/actions/`, `packages/gameplay/src/components/PlayerInput.ts`, `packages/gameplay/src/systems/PlayerInputSystem.ts` + tests `actions.test.ts`, `action-runtime.test.ts`, `player-input.test.ts` ; utilisé dans `apps/dino-brawl` (`TestScript.ts`).
+> - **Phase 2** — actions nommées façon [Unity Input System](https://docs.unity3d.com/Packages/com.unity.inputsystem@1.19/manual/QuickStartGuide.html) : `defineActions`/`button()`/`vector2()`/`InputActionMap` (`@atlasjs/input`) + intégration ECS `PlayerInput` + `PlayerInputSystem` (`@atlasjs/gameplay`). Voir `packages/input/src/public/actions/`, `packages/gameplay/src/components/PlayerInput.ts`, `packages/gameplay/src/systems/PlayerInputSystem.ts` + tests `actions.test.ts`, `action-runtime.test.ts`, `player-input.test.ts` ; utilisé dans `apps/dino-brawl` (`src/game/controls.ts`, consommé par `PlayerMovementScript`, `PlayerDashScript`, `PlayerAnimationScript`, `MovementEmitterScript`).
 >
 > Suite de `docs/gameplay/scripting-components.md` (accès aux composants depuis les scripts).
 
@@ -35,7 +35,7 @@ Objectif : permettre à un script de lire l'input, **sans statique global** (res
 
 ### Décisions validées avec l'auteur
 
-1. **Façade de service, concept symétrique à `ScriptComponent`.** `ScriptComponent<TEngine>` déclare `static engine` (composant moteur backing) ; `ScriptService<TService>` déclare `static token` (token de service backing). Même philosophie : proxy apatride, API curée.
+1. **Façade de service, concept symétrique à la façade de composant.** Une façade de composant est déclarée par `defineScriptComponent(engine, create)` et porte son composant moteur backing dans le `ScriptComponentToken` produit ; `ScriptService<TService>` déclare `static token` (token de service backing). Même philosophie : proxy apatride, API curée.
 
 2. **Verbe dédié `getService`, sémantique *require* (throw si absent).** `this.input = this.getService(InputApi)`. Un service manquant (plugin non installé) est une erreur de configuration → **échec bruyant au boot/premier accès** (cohérent avec `ServiceRegistry.get` qui throw déjà, et avec `requireComponent`). Pas de variante `undefined`.
 
@@ -45,7 +45,7 @@ Objectif : permettre à un script de lire l'input, **sans statique global** (res
 
 5. **Façade nommée `InputApi`, exportée depuis `@atlasjs/gameplay`.** Nom distinct de l'interface `Input` backend (`@atlasjs/input`) pour éviter toute confusion. `Key` est **ré-exporté** depuis `@atlasjs/gameplay` → un auteur de script importe tout d'un seul point : `import { AtlasScript, InputApi, Key } from "@atlasjs/gameplay"`.
 
-6. **Façade qui cache le service résolu au constructeur.** À la différence de `ScriptComponent` (qui re-résout à chaque accès parce qu'un composant peut être retiré/re-ajouté → risque de cache périmé), un **service n'est jamais retiré** (`ServiceRegistry` n'a pas d'`unprovide`, la référence est stable pour la vie de l'engine). La façade résout donc **une fois dans le constructeur** (`this.provided = services.get(token)`) et les méthodes lisent directement ce champ `protected readonly` — pas de `Map.get` par accès/frame, pas de méthode `resolve()`. `getService` fabrique quand même un nouveau wrapper à chaque appel (pattern « appel unique dans `onCreate`, l'utilisateur détient l'instance »). Le constructeur reste le point d'échec bruyant (throw si token absent ou service non fourni), donc `getService` n'a pas besoin de re-valider.
+6. **Façade qui cache le service résolu au constructeur.** À la différence des façades de composant (qui re-résolvent à chaque accès parce qu'un composant peut être retiré/re-ajouté → risque de cache périmé), un **service n'est jamais retiré** (`ServiceRegistry` n'a pas d'`unprovide`, la référence est stable pour la vie de l'engine). La façade résout donc **une fois dans le constructeur** (`this.provided = services.get(token)`) et les méthodes lisent directement ce champ `protected readonly` — pas de `Map.get` par accès/frame, pas de méthode `resolve()`. `getService` fabrique quand même un nouveau wrapper à chaque appel (pattern « appel unique dans `onCreate`, l'utilisateur détient l'instance »). Le constructeur reste le point d'échec bruyant (throw si token absent ou service non fourni), donc `getService` n'a pas besoin de re-valider.
 
 7. **`gameplay` dépend de `input`.** Dépendance `@atlasjs/gameplay` → `@atlasjs/input` (`workspace:*`). `input` ne dépend que de `@atlasjs/core`/`@atlasjs/math`/`@atlasjs/utils` → **pas de cycle**.
 
@@ -79,7 +79,7 @@ export abstract class ScriptService<TService> {
 }
 ```
 
-Garde bruyante (miroir de `ScriptComponent`) : une façade sans `static token` doit throw à la construction (message explicite « doit déclarer un `static token` »).
+Garde bruyante (miroir des façades de composant) : une façade sans `static token` doit throw à la construction (message explicite « doit déclarer un `static token` »).
 
 #### Façade concrète (`scripting/services/InputApi.ts`)
 
@@ -116,7 +116,7 @@ public getService<TFacade, TService>(
 }
 ```
 
-`RuntimeScriptContext` reçoit `(entity, world, services)`.
+`RuntimeScriptContext` reçoit `(entity, world, services, scripts)` — le 4e argument, ajouté depuis, est le résolveur de scripts, sans rapport avec l'input.
 
 #### Surface `AtlasScript`
 
@@ -137,7 +137,7 @@ Reste inchangé : `getComponent`/`addComponent`/`requireComponent`/`removeCompon
 `ServiceRegistry` threadé du plugin jusqu'au contexte :
 
 - `GameplayPlugin.install` : `new ScriptManager(world, engine.services)`.
-- `ScriptManager` : stocke `services`, le passe à `new RuntimeScriptContext(entityId, world, services)` dans `attach`.
+- `ScriptManager` : stocke `services`, le passe à `new RuntimeScriptContext(entityId, world, services, this)` dans `attach`.
 - Aucun nouveau step scheduler, aucune nouvelle dépendance de plugin déclarée (le service `INPUT` est résolu paresseusement à l'exécution du script, pas au boot du plugin ; `getService` throw proprement si `InputPlugin` est absent).
 
 #### Exemple d'usage (dino-brawl)
@@ -166,9 +166,9 @@ export class Player extends AtlasScript {
 
 ### Invariants Phase 1 (à ne pas régresser)
 
-- **Service caché au constructeur, pas re-résolu par accès.** Contrairement aux façades composant (re-résolution obligatoire car membership mutable), la façade de service cache `this.provided` au constructeur : un service ne se retire jamais, donc pas de péremption possible et pas de `Map.get` par frame. Ne **pas** transformer ça en re-résolution « pour s'aligner sur `ScriptComponent` » — la divergence est intentionnelle et reflète une vraie différence (service immuable vs composant mutable).
+- **Service caché au constructeur, pas re-résolu par accès.** Contrairement aux façades composant (re-résolution obligatoire car membership mutable), la façade de service cache `this.provided` au constructeur : un service ne se retire jamais, donc pas de péremption possible et pas de `Map.get` par frame. Ne **pas** transformer ça en re-résolution « pour s'aligner sur les façades de composant » — la divergence est intentionnelle et reflète une vraie différence (service immuable vs composant mutable).
 - **Le service backend ne fuit jamais au script.** `getService` retourne **toujours** la façade (`InputApi`), jamais le service `Input` brut.
-- **`ScriptService` ≠ `ScriptComponent`.** Deux familles distinctes : `static token` (service, résolu via `ServiceRegistry`, sans entité) vs `static engine` (composant, résolu via `world`, par-entité). Ne pas les fusionner ni router `getService` par `getComponent`.
+- **Façade de service ≠ façade de composant.** Deux familles distinctes : `static token` (service, résolu via `ServiceRegistry`, sans entité) vs `ScriptComponentToken` (composant, résolu via `world`, par-entité). Ne pas les fusionner ni router `getService` par `getComponent`.
 - **Échec bruyant sur service absent.** `getService` throw si le token n'est pas fourni. Pas de dégradation silencieuse en `undefined`.
 - **Lire l'input dans `onUpdate`.** Les fronts (`isPressed`/`isReleased`) sont fiables au stage `Logic` (avant `endFrame` au stage `Late`). `onFixedUpdate` = zone ambiguë.
 
@@ -215,25 +215,26 @@ La logique lit des **actions** nommées (`jump.isPressed()`, `move.readValue()`)
 const controls = defineActions({
   jump: button().keys(Key.Space, Key.Enter),        // OR de touches
   fire: button().keys(Key.MouseLeft),
-  throttle: value().key(Key.ShiftLeft),             // 0 | 1
+  throttle: value().key(Key.Shift),                 // 0 | 1
   steer: value().axis(Key.A, Key.D),                // -1 | 0 | 1
   move: vector2().wasd(),                            // composite 2D ; ou .keys({ up, down, left, right })
 });
 // typeof controls : ActionMapDescriptor<{
-//   jump: "button"; fire: "button"; throttle: "value"; steer: "value"; move: "vector2";
+//   jump: ButtonActionSpec; fire: ButtonActionSpec; throttle: ValueActionSpec;
+//   steer: ValueActionSpec; move: Vector2ActionSpec;
 // }>
 ```
 
-Les builders renvoient des **specs data** (nature + liste de bindings), pas des objets runtime. `defineActions` fige un descripteur sérialisable et porte au niveau type la map `nom → nature`, exploitée par `get`.
+Les builders renvoient des **specs data** (nature + liste de bindings), pas des objets runtime. `defineActions` fige un descripteur sérialisable (`{ specs }`) qui porte au niveau type la map `nom → spec` ; la nature s'en déduit par `T[K]["kind"]` (helper `ActionKindsOf`), et c'est ce que `get` exploite.
 
 #### Runtime (`@atlasjs/input`) — map + actions + sampling
 
 ```ts
-export class InputActionMap<T extends ActionKinds> {
+export class InputActionMap<T extends Record<string, AnyActionSpec>> {
   public enabled: boolean;
   public constructor(descriptor: ActionMapDescriptor<T>) { /* instancie un handle par action */ }
 
-  public get<K extends keyof T>(name: K): ActionFor<T[K]>;   // typé : ButtonAction | ValueAction | Vector2Action
+  public get<K extends keyof T>(name: K): ActionFor<T[K]["kind"]>;   // typé : ButtonAction | ValueAction | Vector2Action
 
   public update(input: Input, dt: number): void {            // stage Early
     if (!this.enabled) return;
@@ -252,10 +253,10 @@ export class InputActionMap<T extends ActionKinds> {
 
 ```ts
 // composant Nexus brut
-export class PlayerInput<T extends ActionKinds> {
+export class PlayerInput<T extends Record<string, AnyActionSpec> = Record<string, AnyActionSpec>> {
   public readonly map: InputActionMap<T>;
   public constructor(descriptor: ActionMapDescriptor<T>) { this.map = new InputActionMap(descriptor); }
-  public get<K extends keyof T>(name: K): ActionFor<T[K]> { return this.map.get(name); }
+  public get<K extends keyof T>(name: K): ActionFor<T[K]["kind"]> { return this.map.get(name); }
   public get enabled(): boolean { return this.map.enabled; }
   public set enabled(v: boolean) { this.map.enabled = v; }
 }
@@ -264,15 +265,18 @@ export class PlayerInput<T extends ActionKinds> {
 export class PlayerInputSystem implements NexusSystem {
   public constructor(private readonly services: ServiceRegistry) {}
   public update({ world, dt }: NexusSystemContext): void {
-    const input = this.services.get(INPUT);                 // throw si InputPlugin absent
-    world.query(PlayerInput).each((_, pi) => pi.map.update(input, dt));
+    let input: Input | undefined;                           // résolu à la première entité seulement
+    world.query(PlayerInput).each((_, pi) => {
+      input ??= this.services.get(INPUT);                   // throw si InputPlugin absent
+      pi.map.update(input, dt);
+    });
   }
 }
 ```
 
 `GameplayPlugin` : `world.defineComponent(PlayerInput)` + `registerSystem(update, world, new PlayerInputSystem(engine.services), { name: "gameplay:player-input", stage: "Early" })`.
 
-#### Usage script (dino-brawl — `TestScript`)
+#### Usage script (forme canonique)
 
 ```ts
 import { AtlasScript, PlayerInput, Transform } from "@atlasjs/gameplay";
@@ -305,6 +309,8 @@ export class Player extends AtlasScript {
 }
 ```
 
+Dans `apps/dino-brawl`, cette forme est éclatée : la map vit dans `src/game/controls.ts`, `PlayerPrefab` pose le composant (`entity.add(PlayerInput, dinoControls)`), et les scripts joueur (`PlayerMovementScript`, `PlayerDashScript`, `PlayerAnimationScript`, `MovementEmitterScript`) le récupèrent par `this.requireComponent(PlayerInput)` typé `PlayerInput<DinoControls>`. Le déplacement passe par `CharacterController.move`, pas par `Transform.translate`.
+
 ### Invariants Phase 2 (à ne pas régresser)
 
 - **`@atlasjs/input` reste pur** — le moteur d'actions ne dépend d'aucun ECS/scheduler. Seule l'intégration (`PlayerInput`/`PlayerInputSystem`) connaît Nexus/gameplay.
@@ -322,7 +328,7 @@ packages/gameplay/src/
   scripting/
     core/
       AtlasScript.ts  ScriptContext.ts  ScriptLifeCycle.ts
-      ScriptComponent.ts
+      ScriptComponentToken.ts
       ScriptService.ts            ← Phase 1 (base + ScriptServiceCtor)
       index.ts
     components/                   # façades de composant (par-entité)
@@ -346,7 +352,7 @@ packages/input/src/public/
   ... (Input, Key, Pointer, etc. inchangés)
 ```
 
-`scripting/index.ts` ré-exporte `./services` ; `src/index.ts` (barrel `@atlasjs/gameplay`) ré-exporte `InputApi`, `PlayerInput` et **ré-exporte `Key`** depuis `@atlasjs/input`. `@atlasjs/input` exporte le moteur d'actions.
+`scripting/index.ts` ré-exporte `./services` ; `src/index.ts` (barrel `@atlasjs/gameplay`) ré-exporte `InputApi`, `PlayerInput` et, depuis `@atlasjs/input`, **`Key` ainsi que tout l'authoring d'actions** (`defineActions`, `button`, `value`, `vector2`, `ButtonAction`, `ValueAction`, `Vector2Action` + les types `ActionKind`, `ActionMapDescriptor`, `ActionFor`, `*ActionSpec`) — un jeu peut donc n'importer que `@atlasjs/gameplay`, comme le fait `apps/dino-brawl`. `@atlasjs/input` reste la définition unique du moteur d'actions.
 
 ---
 
@@ -354,9 +360,9 @@ packages/input/src/public/
 
 - **`mousePosition`/`mouseDelta` (Phase 1) et `Vector2Action.readValue()` (Phase 2) renvoient un `Vec2` backend vivant, mutable.** Un script pourrait le muter. Cohérent avec `Transform.position` (renvoie aussi le live). Cloner allouerait à chaque accès/frame → non retenu. À surveiller si ça pose problème.
 - **`getService`/`getComponent` mintent un wrapper frais à chaque appel.** Sans conséquence au pattern visé (appel unique en `onCreate`, l'utilisateur détient l'instance). Acceptable (apatride).
-- **Ré-export de `Key` depuis gameplay** crée un point d'accès dupliqué (gameplay + input). Assumé : simplifie l'import côté script ; `Key` reste défini une seule fois dans `@atlasjs/input`.
+- **Ré-export de `Key` et de l'authoring d'actions depuis gameplay** crée un point d'accès dupliqué (gameplay + input). Assumé : simplifie l'import côté script ; ces symboles restent définis une seule fois dans `@atlasjs/input`.
 - **Caveat `onFixedUpdate` (les deux phases).** Lire l'input/les actions dans `onFixedUpdate` a le même problème : les fronts (`isPressed`/`isReleased`) sont par-frame `update` (fiables au stage `Logic`, avant `endFrame` au stage `Late`). En lane `fixed` (0..N passes/frame), les fronts sont ambigus. Recommander la lecture dans `onUpdate`. Documenté, pas de garde runtime. Réévaluer si un besoin réel d'input déterministe en lane `fixed` émerge (netcode).
-- **Sens de l'axe Y du composite** — `y = down−up`, donc `up = -y` : la convention **Y-down** du moteur, cohérente avec la caméra, le rendu et le tilemap. W renvoie `-1`, S renvoie `+1` ; un script peut donc appliquer `v.y` directement au monde sans l'inverser (comme dans `TestScript`).
+- **Sens de l'axe Y du composite** — `y = down−up`, donc `up = -y` : la convention **Y-down** du moteur, cohérente avec la caméra, le rendu et le tilemap. W renvoie `-1`, S renvoie `+1` ; un script peut donc appliquer `v.y` directement au monde sans l'inverser (comme `PlayerMovementScript` dans `apps/dino-brawl`).
 - **`value().axis(neg, pos)` quand les deux touches sont pressées** — convention : `pos` et `neg` s'annulent → `0` (comme le composite).
 - **Typage de `get` via composant générique** — `PlayerInput<T>` propage `T` à travers `addComponent` ; repli identifié si les génériques de composant se heurtent au registre Nexus (`get(name: string)` non typé + helper typé dérivé du descripteur).
 

@@ -48,7 +48,7 @@ Unity expose une **référence `GameObject`** dans l'inspecteur : `public GameOb
 2. **Schéma par champ minimal + type extensible.** Le runtime stocke ce dont il a besoin (discriminant + `required?`). `ExposeFieldMetadata` reste ouvert à l'extension : compilateur/éditeur ajouteront `kind`/`assetKind`/`runtimeType`/`tooltip`/… sans casser l'API. On ne fige **pas** de schéma éditeur spéculatif.
 3. **Validation = warn minimal.** `injectProps` émet un `logger.warn` si un champ `required` n'a pas de valeur, ou si une clé de `props` n'est pas exposée. **Jamais de throw** (ne casse pas le jeu). Le reste (éditeur, throw strict) reste au backlog.
 4. **Héritage fusionné.** `getScriptMetadata(Child)` fusionne les métadonnées parent→enfant via la chaîne de prototypes des constructeurs, sans piège de pollution.
-5. **Pas de nouveau package.** Le code reste dans `@atlasjs/gameplay` (`scripting/core`). La discipline de découplage (`scripting/core`+`runtime` ne dépendent que des packages **foundational** `@atlasjs/nexus`, `@atlasjs/core` et `@atlasjs/utils` — ce dernier pour le logging) est maintenue pour rendre une future extraction `@atlasjs/scripting` triviale, mais l'extraction n'est **pas** faite ici (YAGNI : un seul consommateur aujourd'hui).
+5. **Pas de nouveau package.** Le code reste dans `@atlasjs/gameplay` (`scripting/core`). La discipline de découplage (`scripting/core`+`runtime` ne dépendent que des packages **foundational** `@atlasjs/nexus`, `@atlasjs/core` et `@atlasjs/utils` — ce dernier pour le logging) est maintenue pour rendre une future extraction `@atlasjs/scripting` triviale, mais l'extraction n'est **pas** faite ici (YAGNI : un seul consommateur aujourd'hui). _Depuis, deux imports internes à gameplay se sont ajoutés dans `scripting/runtime` — `ScriptManager` → `src/components/ScriptHost`, `RuntimeScriptContext` → `src/tokens` (`INSTANTIATOR`) : la contrainte inter-**packages** tient toujours, mais l'extraction n'est plus un simple déplacement de dossier._
 
 ### Design des références d'entités (acté)
 
@@ -186,19 +186,20 @@ export abstract class AtlasScript<
 Props **requis** si le script en déclare, **omis** sinon. Un champ entité est typé `GameEntity` dans le `TProps` du script ; au call site d'`attach`, le type mappé `AttachProps` le ramène à `Entity` :
 
 ```ts
-// scripting/runtime/ScriptManager.ts
+// scripting/core/AttachArgs.ts
 type AttachProps<P> = { [K in keyof P]: P[K] extends GameEntity ? Entity : P[K] };
 
 type PropsOf<T> = T extends AtlasScript<infer P> ? P : {};
-type PropsOfArgs<T> =
+type AttachArgs<T> =
   {} extends AttachProps<PropsOf<T>>
     ? [props?: AttachProps<PropsOf<T>>]
     : [props: AttachProps<PropsOf<T>>];
 
+// scripting/runtime/ScriptManager.ts
 public attach<TScript extends AtlasScript>(
   entityId: Entity,
   ScriptType: ScriptConstructor<TScript>,
-  ...rest: PropsOfArgs<TScript>
+  ...rest: AttachArgs<TScript>
 ): TScript
 ```
 
@@ -237,10 +238,10 @@ private injectProps(
     }
   }
 
-  for (const key in source) {
+  for (const key of Object.keys(source)) {
     if (!(key in exposed)) {
       this.logger.warn(
-        `prop "${key}" provided to "${ScriptType.name}" is not exposed and was ignored.`,
+        `Prop "${key}" provided to "${ScriptType.name}" is not exposed and was ignored.`,
       );
     }
   }
@@ -257,7 +258,7 @@ private injectProps(
 
 Relevées en revue en câblant le dash du joueur ([`../rendering/afterimages.md`](../rendering/afterimages.md) §5). Aucune des deux n'est un défaut ; les deux mordent silencieusement.
 
-**1. Le « warn, jamais throw » déplace la panne, il ne l'absorbe pas.** Une faute de frappe dans `exposed` — ou un champ simplement oublié — laisse le champ à `undefined` sans erreur de compilation : le générique `AtlasScript<TProps>` et les clés de `registerScriptMetadata` sont deux déclarations indépendantes que rien ne rapproche. Le script démarre, puis `onUpdate` lève à la **première frame** sur l'accès au champ manquant. Or `runLifecycle` n'a aucun `try`/`catch` : l'exception remonte et **tous** les scripts du monde cessent d'être mis à jour, pas seulement le fautif. Un `warn` dans la console est donc le seul indice d'une panne qui se présentera comme « plus rien ne bouge ».
+**1. Le « warn, jamais throw » déplace la panne, il ne l'absorbe pas.** Une faute de frappe dans `exposed` — ou un champ simplement oublié — laisse le champ à `undefined` sans erreur de compilation : le générique `AtlasScript<TProps>` et les clés de `registerScriptMetadata` sont deux déclarations indépendantes que rien ne rapproche. Le script démarre, puis `onUpdate` lève à la **première frame** sur l'accès au champ manquant. `runLifecycle` isole désormais chaque invocation dans son propre `try`/`catch` (et `flushCreates` fait de même pour `onCreate`) : le script fautif est **désactivé** (`record.isEnabled = false`) et l'erreur part en `logger.error` avec son nom, son entité et la phase ; les autres scripts continuent de tourner. La panne ne se présente donc plus comme « plus rien ne bouge » mais comme « cet objet-là est figé », et seule la console la nomme. Un script ainsi désactivé ne se réarme pas tout seul : seul `ScriptManager.setEnabled(instance, true)` le remet dans la boucle (`isEnabled(instance)` permet de le constater).
 
 **2. L'ordre d'attache est l'ordre d'exécution.** `records` est une `Map` alimentée par un id incrémental, une insertion par `attach`, et `runLifecycle` itère `records.values()` — donc `onUpdate` et `onCreate` suivent tous deux l'ordre d'attache. C'est exploitable, et exploité : un script qui doit voir l'état d'un autre dans la **même** frame est attaché avant lui. Mais c'est une propriété émergente de l'implémentation, pas un contrat. Et elle a un angle mort : `flushDestroys` fait un vrai `records.delete`, et les ids ne sont jamais réutilisés, donc un script détruit puis **ré-attaché à chaud** repart en fin d'itération — ses consommateurs le liront alors avec une frame de retard, sans erreur, sans test rouge, avec un jeu qui tourne normalement.
 
@@ -297,12 +298,17 @@ export interface GameEntity {
 }
 ```
 
+> Depuis, le chantier prefab a étendu ce contrat : la surface d'accès composant est factorisée dans
+> l'interface `ComponentAccess` (`scripting/core/ComponentAccess.ts`) que `GameEntity` étend, et
+> `GameEntity` gagne un `destroy(): void` (cf. [`prefab.md`](prefab.md) §5).
+
 Le résolveur de script (interface core, pour éviter le cycle `core → runtime`) :
 
 ```ts
 // prettier-ignore
 export interface ScriptResolver {
-  getScript<T extends AtlasScript>(entity: Entity, type: ScriptConstructor<T>): T | undefined;
+  getScript<T extends AtlasScript>(entityId: Entity, type: ScriptConstructor<T>): T | undefined;
+  destroyEntityScripts(entityId: Entity): void;   // ajouté par le chantier prefab
 }
 ```
 
@@ -329,13 +335,19 @@ export function createGameEntity(entity: Entity, world: NexusWorld, scripts: Scr
 
     addComponent(type, ...args: any[]): unknown {
       if (isScriptComponentToken(type)) {
-        if (!world.hasComponent(entity, type.engine)) {
+        if (world.hasComponent(entity, type.engine)) {
+          assertNoDroppedArgs(type.engine.name, args);   // throw si des args seraient jetés
+        } else {
           world.addComponent(entity, type.engine, ...args);
         }
         return type.create(world, entity);
       }
       const existing: object | undefined = world.getComponent(entity, type);
-      return existing !== undefined ? existing : world.addComponent(entity, type, ...args);
+      if (existing !== undefined) {
+        assertNoDroppedArgs(type.name, args);            // idem
+        return existing;
+      }
+      return world.addComponent(entity, type, ...args);
     },
 
     removeComponent(type): void {
@@ -361,6 +373,8 @@ export function createGameEntity(entity: Entity, world: NexusWorld, scripts: Scr
 ```
 
 > Ce corps est **le** dispatch token/composant, celui qui vivait autrefois dans `RuntimeScriptContext`. Après ce refactor, `RuntimeScriptContext` ne le duplique plus (délégation ci-dessous).
+>
+> Deux écarts avec le code d'aujourd'hui, sans conséquence sur le contrat : le corps est porté par une **classe** `GameEntityHandle` (privée au module) que `createGameEntity` instancie, et non par un objet littéral ; et `addComponent` **lève** (`assertNoDroppedArgs`, méthode privée du handle) quand le composant est déjà présent **et** que des arguments sont fournis — ils seraient sinon silencieusement jetés. Sans argument, l'instance existante est retournée telle quelle, comme ici.
 
 ### `getScript` côté `ScriptManager` — `scripting/runtime/ScriptManager.ts`
 
@@ -423,7 +437,15 @@ Le prédécesseur de ce système était `@Expose()` — un décorateur de champ 
 
 ---
 
-## 9. Exemple complet (dino-brawl)
+## 9. Exemple complet (dino-brawl) — ⚠️ **code supprimé depuis**
+
+> `TestScript` et le corps de `ArenaScene.onCreate` montrés ici ont été livrés puis **supprimés**.
+> `apps/dino-brawl` ne câble plus ses entités à la main dans la scène : `ArenaScene` charge ses assets
+> via `ASSET_MANAGER` puis délègue à des **spawn functions** (`src/game/spawn/`) qui instancient des
+> **prefabs** (`src/game/prefabs/`, cf. [`prefab.md`](prefab.md)) ; `scriptManager.attach` direct a
+> laissé place à `EntityBuilder.attach` à l'intérieur des `build`. Le **mécanisme** décrit ci-dessous
+> (`registerScriptMetadata` + bag de props plat + wrapping `Entity → GameEntity`) est inchangé et
+> reste exact : seuls les noms de fichiers et de symboles de cet exemple sont obsolètes.
 
 **Un script joueur (dino-brawl)** — reçoit ses assets **et** l'entité `sword`, et la pilote :
 

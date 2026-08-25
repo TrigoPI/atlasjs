@@ -49,7 +49,8 @@ packages/audio/
     tokens.ts                 AUDIO_ENGINE
     AudioPlugin.ts            backend wiring (loader + service)
     AudioEngine.ts            service — possède l'audio graph
-    Voice.ts                  handle interne (source + gain), NON exporté
+    AudioVoice.ts             interface publique d'une voix (finished / apply / stop)
+    Voice.ts                  implémentation interne (source + gain), NON exportée
     assets/
       AudioClipAsset.ts       Asset      (type "audio")
       AudioClip.ts            Resource   (wrap AudioBuffer)
@@ -66,7 +67,7 @@ packages/gameplay/src/
   components/AudioSource.ts             LEVEL-1 (données pures)
   systems/AudioSystem.ts               NexusSystem (réconciliation)
   scripting/services/AudioApi.ts        façade ScriptService
-  GameplayPlugin.ts                     ← câble AudioSource + AudioSystem (requires AUDIO_ENGINE)
+  GameplayPlugin.ts                     ← câble AudioSource + AudioSystem (AUDIO_ENGINE résolu à la demande)
 ```
 
 Conventions de nommage respectées : `*Asset` / `*Loader` / resource nue (`AudioClip`) / `*System` / composant sans suffixe (`AudioSource`) / `*Api` / `*Plugin` / token SCREAMING_SNAKE (`AUDIO_ENGINE`). Dépendances : `@atlasjs/audio` → {core, assets, utils} ; `@atlasjs/gameplay` → `@atlasjs/audio` (**acyclique**, l'audio n'importe jamais gameplay).
@@ -124,7 +125,7 @@ export class AudioEngine {
   private _muted: boolean = false;
   private unlocked: boolean = false;
 
-  public constructor(ctx: AudioContext = new AudioContext()) {
+  public constructor(ctx: AudioContext = new AudioContext(), options?: AudioEngineOptions) {   // { target?: EventTarget; doc?: VisibilityDoc } — injectables en test
     this.ctx = ctx;
     this.master = ctx.createGain();
     this.master.connect(ctx.destination);
@@ -134,21 +135,21 @@ export class AudioEngine {
 
   public decode(data: ArrayBuffer): Promise<AudioBuffer> { return this.ctx.decodeAudioData(data); }
 
-  public playOneShot(clip: AudioClip, volume: number = 1): void { /* source+gain → master, start, auto-disconnect on ended */ }
-  public createVoice(clip: AudioClip, opts: { loop: boolean; volume: number; mute: boolean }): Voice { /* source+gain → master, start, retourne le handle */ }
+  public playOneShot(clip: AudioClip, params: PlaybackParams = {}): void { /* source+gain → master, start, auto-disconnect on ended */ }
+  public createVoice(clip: AudioClip, opts: { loop: boolean; volume: number; mute: boolean; pitch?: number }): AudioVoice { /* source+gain → master, start, retourne le handle */ }
 
   public get masterVolume(): number { return this._masterVolume; }
   public set masterVolume(v: number) { this._masterVolume = Math.max(0, v); this.applyMaster(); }
   public get muted(): boolean { return this._muted; }
   public set muted(b: boolean) { this._muted = b; this.applyMaster(); }
 
-  public destroy(): void { /* retire listeners, stoppe voix, ctx.close() */ }
+  public destroy(): void { /* retire listeners (unlock + visibility), ctx.close() */ }
 }
 ```
 
 - **One-shot** = chemin immédiat, sans entité, zéro latence (les SFX de coup).
 - **Master gain** = point unique pour volume/mute global (`applyMaster` écrit `master.gain = muted ? 0 : masterVolume`).
-- **`Voice`** (`Voice.ts`, interne, **non exporté**) : `{ stop(); setVolume(v); setMute(b); finished: boolean }`. Un `AudioBufferSourceNode` (avec `loop`) + un `GainNode` par voix, routés vers `master`. `finished` est mis à `true` par le handler `onended`.
+- **`AudioVoice`** (`AudioVoice.ts`, **exporté** — le contrat manipulé par `AudioSystem` et par les fakes de test) : `{ readonly finished: boolean; apply(volume, muted, pitch); stop() }`. Son implémentation `Voice` (`Voice.ts`) reste **non exportée** : un `AudioBufferSourceNode` (avec `loop`) + un `GainNode` par voix, routés vers `master`. `finished` est mis à `true` par le handler `onended` (et par `stop()`). Le paramètre `pitch` d'`apply` arrive avec [`audio-variation.md`](audio-variation.md).
 
 ## 6. `AudioSource` (composant) + `AudioSystem` (réconciliation)
 
@@ -163,17 +164,17 @@ export class AudioSource {
   public loop: boolean = false;
   public mute: boolean = false;
   public playOnAwake: boolean = false;
-  private _command: "none" | "play" | "stop" = "none";   // dernière intention de la frame
-  private _isPlaying: boolean = false;                    // reflété par le système
+  public pitch: number = 1;                              // cf. audio-variation.md
+  public command: AudioSourceCommand = "none";           // "none" | "play" | "stop" — dernière intention de la frame
+  public isPlaying: boolean = false;                     // reflété par le système
 
   public constructor(
     clip: AudioClip | null = null,
     opts?: { volume?: number; loop?: boolean; mute?: boolean; playOnAwake?: boolean },
   ) { /* … applique les défauts */ }
 
-  public play(): this { this._command = "play"; return this; }   // (re)démarre depuis le début
-  public stop(): this { this._command = "stop"; return this; }
-  public get isPlaying(): boolean { return this._isPlaying; }
+  public play(): this { this.command = "play"; return this; }   // (re)démarre depuis le début
+  public stop(): this { this.command = "stop"; return this; }
 }
 ```
 
@@ -181,8 +182,8 @@ export class AudioSource {
 
 ```ts
 export class AudioSystem implements NexusSystem {
-  private readonly voices: Map<AudioSource, Voice> = new Map();
-  public constructor(private readonly audio: AudioEngine) {}
+  private readonly voices: Map<AudioSource, AudioVoice> = new Map();
+  public constructor(private readonly services: ServiceRegistry) {}   // AUDIO_ENGINE résolu paresseusement
 
   public update({ world }: NexusSystemContext): void {
     this.sweepFinished();                       // voix terminées → source._isPlaying = false, drop
@@ -199,7 +200,7 @@ export class AudioSystem implements NexusSystem {
 - **Lane / stage** : enregistré par `GameplayPlugin` sur `update` / **`Late`** (nom `"gameplay:audio"`), donc après tous les scripts en `Logic` → un `play()` appelé dans un script est honoré **la même frame**.
 - **`playOnAwake`** : `world.onAdd(AudioSource, (_e, src) => { if (src.playOnAwake) src.play(); })` dans `GameplayPlugin`.
 - **Entité détruite en pleine lecture** : `world.onRemove(AudioSource, (_e, src) => audioSystem.release(src))` → stop + disconnect, **zéro fuite** (même pattern `onRemove` que le reste de `GameplayPlugin`).
-- **`_command`** consommé puis remis à `"none"` chaque frame. `play()` (re)démarre toujours depuis le début (parité Unity `Play()`), même si une voix tourne déjà.
+- **`command`** consommé puis remis à `"none"` chaque frame. `play()` (re)démarre toujours depuis le début (parité Unity `Play()`), même si une voix tourne déjà.
 - Le système **ignore `dt`** : Web Audio a son propre clock ; le système ne fait que réconcilier l'état (volume/mute live, start/stop).
 
 ## 7. `AudioApi` (façade, gameplay) + `AudioPlugin` (backend, audio) + wiring ECS (gameplay)
@@ -209,7 +210,7 @@ export class AudioSystem implements NexusSystem {
 ```ts
 export class AudioApi extends ScriptService<AudioEngine> {
   public static readonly token = AUDIO_ENGINE;
-  public playOneShot(clip: AudioClip, volume?: number): void { this.provided.playOneShot(clip, volume); }
+  public playOneShot(clip: AudioClip, params?: PlaybackParams): void { this.provided.playOneShot(clip, params); }
   public get masterVolume(): number { return this.provided.masterVolume; }
   public set masterVolume(v: number) { this.provided.masterVolume = v; }
   public get muted(): boolean { return this.provided.muted; }
@@ -235,10 +236,10 @@ super("audio-plugin", { requires: [ASSET_MANAGER], provides: [AUDIO_ENGINE] });
 
 ### Wiring ECS — dans `GameplayPlugin.install` (`@atlasjs/gameplay`)
 
-`GameplayPlugin` ajoute `AUDIO_ENGINE` à ses `requires`, puis (calque `PlayerInputSystem`/`AnimatorSystem`) :
+`GameplayPlugin` n'ajoute **pas** `AUDIO_ENGINE` à ses `requires` — une app sans `AudioPlugin` démarre. Il passe le registre de services au système (calque `PlayerInputSystem`), qui résout le token à la première lecture réelle :
 
-1. `const audio = await engine.services.wait(AUDIO_ENGINE);`
-2. `const audioSystem = new AudioSystem(audio);`
+1. `const audioSystem = new AudioSystem(engine.services);` (aucun `services.wait(AUDIO_ENGINE)` au boot)
+2. Premier `play()` sans `AUDIO_ENGINE` enregistré → `AudioSystem` throw un message d'installation explicite.
 3. `world.defineComponent(AudioSource);` (ajouté à `defineComponents`)
 4. `unsubs`: `world.onAdd(AudioSource, (_e, src) => { if (src.playOnAwake) src.play(); })`, `world.onRemove(AudioSource, (_e, src) => audioSystem.release(src))`.
 5. `registerSystem(update, world, audioSystem, { name: "gameplay:audio", stage: "Late" });` (garder le `StepHandle`).
@@ -254,8 +255,9 @@ super("audio-plugin", { requires: [ASSET_MANAGER], provides: [AUDIO_ENGINE] });
 
 - **Décodage échoué** (fichier/format invalide) : la promesse du loader rejette → `AssetManager` retire l'entrée de `loading` (retry permis), l'erreur remonte à `assets.load` (awaité par l'appelant). Même contrat que `TextureLoader`.
 - **`clip === null` + `play()`** : `consumeCommand` no-op gardé (aucune voix créée).
+- **Aucun `AudioPlugin` installé** : `GameplayPlugin` démarre quand même (`AUDIO_ENGINE` hors de ses `requires`, cf. §7) ; sans `AudioSource` en scène le token n'est jamais lu. Le premier `play()` d'un `AudioSource` throw alors un message qui dit d'installer `AudioPlugin`.
 - **Voix non-loop terminée** : `onended` met `voice.finished = true` → `sweepFinished` la balaie (`source._isPlaying = false`, disconnect).
-- **Teardown plugin** : `AudioEngine.destroy()` stoppe toutes les voix, retire les listeners (unlock + visibility), `ctx.close()`.
+- **Teardown plugin** : `AudioEngine.destroy()` retire les listeners (unlock + visibility) puis `ctx.close()` — il ne parcourt **pas** les voix pour les stopper une à une : fermer le contexte les coupe toutes. Les voix portées par une entité sont, elles, libérées avant, par `onRemove` → `AudioSystem.release`.
 - **Volume** : clampé `>= 0` (autorise le boost > 1), défaut `1`. `mute` force le gain à 0 sans écraser la valeur de `volume`.
 - **`resume()` rejeté** (geste non fiable) : best-effort, l'erreur est avalée ; le prochain geste réessaiera (listeners retirés uniquement après un resume réussi).
 - **Environnement sans `AudioContext`** (jsdom/node en test) : contexte **injectable** dans le ctor → fake en test (aucun `new AudioContext()` implicite hors navigateur).
@@ -283,5 +285,5 @@ Unitaires, avec un **fake `AudioContext`** (pattern `FakeResource` / `CountingLo
 
 **`packages/gameplay/test/`** (intégration ECS) :
 
-- **`AudioSource`** : `play()`/`stop()` positionnent le `_command` ; défauts du ctor.
+- **`AudioSource`** : `play()`/`stop()` positionnent `command` ; défauts du ctor.
 - **`AudioSystem`** (avec un fake `AudioEngine`) : `playOnAwake` → voix créée ; `play()` puis update → voix démarrée ; `stop()` → voix stoppée ; `volume`/`mute` poussés live à la voix ; voix finie balayée → `isPlaying` false ; `release` (onRemove) libère la voix.

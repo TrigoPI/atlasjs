@@ -61,16 +61,20 @@ interface EntityBuilder {
   readonly entity: Entity;
   add(type, ...args): instance;   // = world.addComponent(root, type, ...args) → on mute l'instance
   attach(Script, ...props): script; // = scriptManager.attach(root, Script, ...props)
+  child(buildFn): EntityBuilder;    // ajouté après la v1 — voir prefab-multi-entity.md
 }
 ```
 
 - **`add`** réutilise **le même dispatch que `GameEntity.addComponent`** (token de composant → API/proxy ;
   composant brut → instance brute). En pratique le corps de `build` mute l'instance retournée
   (`render.sortingOrder = …`, `transform.scale.set(…)`), exactement comme les spawn functions.
+  Si le composant est **déjà présent**, l'instance existante est réutilisée — mais lui passer des
+  arguments **lève** désormais, plutôt que de les jeter silencieusement.
 - **`attach`** délègue à `scriptManager.attach(root, Script, props)` — même signature/typage que l'attach
   courant (props exposés typés via `AttachProps`/`ScriptMetadata`).
-- v1 **mono-racine** : pas de création d'enfants dans le builder. `child()` (création d'entités filles
-  auto-parentées + résolution des références internes) est explicitement **V2** (§10).
+- la v1 était **mono-racine** (pas de création d'enfants dans le builder) ; `child()` — création
+  d'entités filles auto-parentées + résolution des références internes — a été **livré depuis**
+  (voir [`prefab-multi-entity.md`](prefab-multi-entity.md) et §10).
 
 ## 4. `instantiate` — l'API qui manque
 
@@ -79,16 +83,20 @@ Un seul moteur d'instanciation, le service **`Instantiator`**, exposé à **deux
 
 ```ts
 interface Instantiator {
-  instantiate<TParams>(prefab: Prefab<TParams>, params: TParams, options?: InstantiateOptions): GameEntity;
+  instantiate<TParams>(prefab: Prefab<TParams>, ...rest: InstantiateArgs<TParams>): GameEntity;
   destroy(entity: Entity): void;
 }
 
 type InstantiateOptions = { parent?: Entity };
+
+type InstantiateArgs<TParams> = [TParams] extends [void]
+  ? [params?: undefined, options?: InstantiateOptions]
+  : [params: TParams, options?: InstantiateOptions];
 ```
 
 > **Ergonomie des params.** Quand `TParams` est `void`, les params sont omis (`instantiate(prefab)`) ;
 > sinon ils sont exigés (`instantiate(prefab, params)`). L'implémentation reprend l'astuce de tuple
-> conditionnel déjà utilisée par `ScriptManager.attach` (`PropsOfArgs`) pour rendre l'argument
+> conditionnel déjà utilisée par `ScriptManager.attach` (`AttachArgs`) pour rendre l'argument
 > optionnel-ou-requis selon le type. Le site d'appel reste `instantiate(prefab, params, options?)`.
 
 **Déroulé de `instantiate` :**
@@ -98,6 +106,10 @@ type InstantiateOptions = { parent?: Entity };
 3. `prefab.build(builder, params)`.
 4. Si `options.parent` → `world.setParent(root, options.parent)` (pur ECS, aucune hypothèse `Transform`).
 5. Retour : `createGameEntity(root, world, scriptManager)`.
+
+Les étapes 3 et 4 tournent sous `try`/`catch` : si `build` (ou `setParent`) lève, `instantiate`
+**détruit la racine déjà créée** (`this.destroy(root)`) puis re-propage l'erreur — aucune entité
+à moitié construite ne survit à un `build` fautif.
 
 **Retour = `GameEntity`** — cohérent avec le modèle cross-entity : l'appelant obtient
 `getScript` / `getComponent` / `destroy` sur la nouvelle entité, et son id brut reste accessible.
@@ -143,14 +155,14 @@ des scripts d'une entité détruite doit être **explicite**.
 
 1. Marcher le **sous-arbre** capturé *maintenant* (`entity` + descendants via `world.getChildren`,
    récursif — les listes d'enfants sont encore valides).
-2. Pour chaque nœud du sous-arbre : `scriptManager.destroyAllByEntity(node)` — déjà différé
+2. Pour chaque nœud du sous-arbre : `scriptManager.destroyEntityScripts(node)` — déjà différé
    (`pendingDestroy` → `onDestroy` au prochain `flushDestroys`).
 3. `world.commands.destroy(entity)` — différé, récursif au `Sync`.
 
 **Localisation.** `destroy` est **auto-suffisant sur `GameEntity`** : il n'a besoin que de `(world,
 resolver)`, que le handle possède déjà. Cela impose une **extension minimale** de l'interface
 `ScriptResolver` (déjà passée à `createGameEntity`) : ajouter `destroyEntityScripts(entity)`, implémenté
-par `ScriptManager.destroyAllByEntity` (déjà existant). Ainsi :
+par `ScriptManager` (qui enfile chaque record de l'entité via `destroyById`). Ainsi :
 - `GameEntity.destroy()` = marche du sous-arbre + `resolver.destroyEntityScripts(node)` + `world.commands.destroy(entity)`.
 - `AtlasScript.destroy()` = `this.self.destroy()` (le `RuntimeScriptContext` détient déjà `self: GameEntity`).
 - `Instantiator.destroy(entity)` = `createGameEntity(entity, world, scriptManager).destroy()` (même corps).
@@ -185,8 +197,11 @@ scriptManager.attach(player, ShooterScript, { bulletPrefab }); // déclaré Scri
 Tout dans **`@atlasjs/gameplay`** (le prefab câble le monde ECS + le `ScriptManager` + les tokens de
 composants — pile la responsabilité de composition de ce package).
 
-- **Nouveau dossier `packages/gameplay/src/prefab/`** : `Prefab`, `definePrefab`, `EntityBuilder`,
-  `Instantiator`. Barrel réexporté par `src/index.ts`.
+- **Nouveau dossier `packages/gameplay/src/prefab/`** : `definePrefab`, `PrefabEntityBuilder`,
+  `Instantiator`. Barrel réexporté par `src/index.ts`. Les **types** (`Prefab`, `InstantiateOptions`,
+  `InstantiateArgs`, `EntityBuilder`) vivent depuis dans `src/scripting/core/` — `ScriptContext` et
+  `AtlasScript` les référencent et ne doivent pas dépendre de `src/prefab/` — et sont réexportés par
+  `src/prefab/` pour que le point d'entrée public reste inchangé.
 - **`ScriptContext` + `AtlasScript`** gagnent `instantiate(...)` et `destroy()`.
   `RuntimeScriptContext.instantiate` **résout `INSTANTIATOR` paresseusement via `services`**
   (`this.services.get(INSTANTIATOR)`), ce qui **casse le cycle** `ScriptManager ↔ Instantiator` sans

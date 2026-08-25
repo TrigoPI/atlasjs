@@ -75,15 +75,17 @@ Ces helpers sont **génériques** (pas audio-spécifiques) et **optionnels** : p
 
 ## 5. Résultat côté auteur (footstep du dino)
 
-Le prefab `runningAudioPlayer` de `spawnPlayer.ts` (aujourd'hui : un seul clip + volume random) devient :
+Le prefab `running_audio`, extrait depuis `spawnPlayer.ts` vers `apps/dino-brawl/src/game/prefabs/fx/RunningAudioPrefab.ts`, roule la variation dans son `build` :
 
 ```ts
-const audio: AudioSource = entity.add(AudioSource, pickRandom(grassSounds), {
+const audio: AudioSource = entity.add(AudioSource, pickRandom([deps.sound]), {
   playOnAwake: true,
 });
-audio.volume = randomRange(0.05, 0.1);
-audio.pitch  = randomRange(0.9, 1.1);
+audio.volume = randomRange(0.5, 0.8);
+audio.pitch  = randomRange(1, 1.2);
 ```
+
+> Le jeu ne fournit pour l'instant qu'**un** clip d'herbe (`deps.sound`) : `pickRandom` est déjà câblé, sur un tableau d'un seul élément, prêt à recevoir `grass01..04`.
 
 `RunningAudioPlayerScript` réinstancie ce prefab à chaque foulée → le `build` re-roll pitch, volume **et** clip sur chaque instance fraîche. Aucune nouvelle mécanique de re-trigger : le pattern « instancie un prefab par lecture » de l'auteur porte déjà la re-randomisation.
 
