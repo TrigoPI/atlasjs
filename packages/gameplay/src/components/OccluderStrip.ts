@@ -2,8 +2,8 @@ import type { TileInstance, Texture2D } from "@atlasjs/nebula";
 
 export class OccluderStrip {
   public footY: number;
-  public tiles: TileInstance[];
-  public texture: Texture2D;
+  public readonly tiles: TileInstance[];
+  public readonly texture: Texture2D;
   public sortingLayer: string;
 
   public constructor(
