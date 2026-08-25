@@ -30,4 +30,4 @@ Contrainte à ne pas perdre de vue : `memory/atlas/gameplay/gameplay-redesign.md
 
 **Accroche :** trancher la sémantique d'abord, écrire la spec côté `packages/rapier` ensuite (elle prouvera le comportement réel), et n'ajuster le double qu'en dernier. Dans l'ordre inverse on figerait dans le faux une sémantique que le backend ne tient pas — exactement le motif que l'audit a documenté quatre fois.
 
-**À rapprocher de :** [[PHYSICS-17-inertia-set-body-type]] — l'autre moitié du même « sync `mass`/`type` », et la même famille : une primitive d'`inertia` dont la sémantique n'a jamais été tranchée.
+**À rapprocher de :** `PHYSICS-17` (`inertia.setBodyType`), **livré** dans la PR #6 et donc sorti du backlog — c'était l'autre moitié du même « sync `mass`/`type` ». Le `type` est désormais tranché ; la sémantique de `mass`, non.

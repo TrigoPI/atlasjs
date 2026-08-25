@@ -45,7 +45,17 @@ Dérouler dans l'ordre. **Ne pas passer à l'étape suivante si la précédente 
    - `legacyId` — seulement si l'item portait un identifiant dans un ancien système de suivi.
    - `Bloqué par :` — seulement pour une dépendance avérée, `[[nom-de-fichier-complet]]`, cible vérifiée existante. En cas de doute, omets : une fausse dépendance est pire qu'une absente.
 5. **Fermer les notes de backlog couvertes** : les supprimer de `memory/atlas/backlog/`. Le vocabulaire de statut n'a pas de valeur `done` — un item terminé quitte le backlog. Si une partie seulement est livrée, le reste vit dans une note `todo` distincte (créée à l'étape 4), jamais en reliquat dans une note fermée.
+
+   **Avant chaque suppression, cherche qui cite la note :**
+
+   ```bash
+   grep -rln "<ID>-<slug>" memory/atlas/
+   ```
+
+   Supprimer une note sans traiter ses renvois entrants laisse des `[[wikilinks]]` vers le vide. Ce n'est pas théorique : les PR #3 et #6 ont fermé `GAMEPLAY-76`, `PHYSICS-15`, `PHYSICS-17` et `PHYSICS-21` en laissant trois renvois pendants derrière elles, invisibles jusqu'à ce qu'un vérificateur de liens existe.
+
+   Pour chaque fichier trouvé, **ne supprime pas le renvoi** : il porte une information réelle (« même famille », « le teardown a le même besoin »). Réécris-le pour dire que l'item a été **livré**, en nommant où — par exemple `` `PHYSICS-17` (`inertia.setBodyType`), **livré** dans la PR #6 et donc sorti du backlog ``. Un lecteur qui suivait ce fil doit apprendre que le problème est résolu, pas se cogner à une cible absente.
 6. **Supprimer le plan** dans `memory/atlas/plans/`.
-7. **Vérifier les liens** : `node scripts/check-vault-links.mjs memory/atlas`. Aucun lien mort ne doit apparaître. Il n'y a plus d'index à régénérer — `backlog.base` est calculé à l'ouverture.
+7. **Vérifier les liens** : `node scripts/check-vault-links.mjs memory/atlas`. **Zéro lien mort** — c'est le garde-fou de sortie de l'étape 5, et le vault est à zéro depuis le 2026-08-25 : toute cible morte vient de ce que tu viens de faire. Il n'y a plus d'index à régénérer, `backlog.base` et `design-docs.base` sont calculés à l'ouverture.
 8. **Clore les tâches** correspondantes, et consigner la clôture dans le journal de progression s'il en existe un.
 9. **S'arrêter.** Ne rien commiter : la revue et le commit appartiennent à l'utilisateur. Présenter un résumé de ce qui a changé.

@@ -18,7 +18,7 @@ C'est exactement ce que fait `ScriptManager` depuis le commit `ddef90c`, qui a r
 
 Proposition : émettre `onBeforeDestroy(entity)` **en tête** de `destroyEntity`, avant la récursion sur les enfants et avant toute suppression de store. Les trois dépendances disparaissent d'un coup — plus besoin de forcer l'ordre des stores, plus de couplage à l'ordre de la `Map`, et l'`onDestroy` d'un parent verrait son sous-arbre intact. À trancher au passage : le signal doit-il être émis une fois pour la racine, ou pour chaque entité du sous-arbre (probablement les deux, en pré-ordre).
 
-Autres consommateurs qui en bénéficieraient : [[GAMEPLAY-76-scriptmanager-dispose-leaks-scripts]] (le teardown au `dispose` a le même besoin), [[GAMEPLAY-61-render-systems-unmount-lifecycle]] (les systèmes de rendu veulent démonter leurs nœuds avant que les composants ne s'évaporent), et plus généralement tout système qui doit libérer une ressource externe indexée sur une entité.
+Autres consommateurs qui en bénéficieraient : [[GAMEPLAY-61-render-systems-unmount-lifecycle]] (les systèmes de rendu veulent démonter leurs nœuds avant que les composants ne s'évaporent), et plus généralement tout système qui doit libérer une ressource externe indexée sur une entité. `GAMEPLAY-76` (fuite de scripts au `dispose` du `ScriptManager`) portait le même besoin ; il a été **livré** dans la PR #3 — `dispose` appelle désormais `tearDownScript` pour chaque script.
 
 **Accroche :** `NexusWorld.ts:116-118` — le signal se pose juste après l'`assertEntityExists`. Le mécanisme d'émission existe déjà (`this.emit(this.removeListeners, …)`), il s'agit d'ajouter une liste de listeners de même forme, sans identifiant de composant.
 

@@ -20,4 +20,4 @@ Deux points à trancher **avant** de coder, pas pendant :
 
 **Accroche :** `packages/inertia/src/Collider.ts` — la décision d'API (point 2) est le seul vrai travail ; le reste est de la délégation et une extension du faux moteur.
 
-**À rapprocher de :** [[PHYSICS-17-inertia-set-body-type]] — même nature : une primitive manquante dans `inertia` force gameplay à contourner ou à renoncer.
+**À rapprocher de :** `PHYSICS-17` (`inertia.setBodyType`), **livré** dans la PR #6 et donc sorti du backlog — même nature : une primitive manquante dans `inertia` forçait gameplay à contourner. Celle-ci ne l'est toujours pas.

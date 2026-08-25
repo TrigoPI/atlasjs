@@ -22,6 +22,8 @@ Ce qui a changé :
 
 Deux pièges mécaniques extraits vers leurs propres notes : [[node-test-directory-arg]] et [[pnpm-test-skips-repo-scripts]].
 
-**Ce qui reste ouvert :** trois wikilinks de backlog pointent vers des notes supprimées à leur livraison (`[[GAMEPLAY-76-scriptmanager-dispose-leaks-scripts]]` dans `CORE-08`, `[[PHYSICS-17-inertia-set-body-type]]` dans `PHYSICS-18` et `PHYSICS-22`), et `apps/dino-brawl/docs/weapon-content-modules.md` cite un `APP-05` dont l'identifiant a depuis été **réattribué** à une autre note — le renvoi ne pointe donc pas vers le vide mais vers le mauvais item, ce qui est pire. Laissés hors périmètre, à arbitrer.
+**La cause des liens morts, et le correctif :** les trois wikilinks morts que le vérificateur a exhumés (`GAMEPLAY-76` dans `CORE-08`, `PHYSICS-17` dans `PHYSICS-18` et `PHYSICS-22`) venaient tous de `/atlas-done`, qui supprimait une note **sans regarder qui la citait** — PR #3 et #6 ont fermé quatre items et laissé leurs renvois pendants. Corrigé des deux côtés le 2026-08-25 : les trois renvois disent maintenant que l'item a été livré et où (le renvoi porte une vraie information, on le réécrit, on ne le supprime pas), et l'étape 5 d'`/atlas-done` impose un `grep -rln "<ID>-<slug>" memory/atlas/` avant toute suppression, avec le vérificateur en garde-fou de sortie. **Le vault est à zéro lien mort depuis cette date** : toute cible morte qui apparaît vient de ce qu'on vient de faire.
+
+**Reste ouvert :** `apps/dino-brawl/docs/weapon-content-modules.md` cite un `APP-05` dont l'identifiant a depuis été **réattribué** à une autre note — le renvoi ne pointe pas vers le vide mais vers le mauvais item, ce qui est pire et qu'aucun vérificateur de liens ne peut voir. Ce doc vit hors du vault.
 
 Related: [[docs-reorganisation]], [[execution-cadence-preference]], [[run-prettier-before-staging]].
