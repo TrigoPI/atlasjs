@@ -1,9 +1,12 @@
 # Gameplay — Afterimages (rémanence de sprite)
 
-> Statut : **en cours d'implémentation** (branche `feat/app-08-player-dash`).
-> Portée : `@atlasjs/gameplay` (composant + système ECS) + `apps/dino-brawl` (dash du joueur, validation).
-> Contexte : réalise [`RENDER-19`](../backlog/RENDER-19-afterimage-renderer.md), ouvert comme suite naturelle de [`trails.md`](trails.md) §10. **Ce n'est pas un trail** : pas de ruban continu, pas de courbe de largeur le long d'un chemin. C'est une feature voisine et distincte, à ne pas confondre avec `TrailRenderer`.
-> Consommateur de validation : [`APP-08`](../backlog/APP-08-player-dash.md), le dash du joueur de dino-brawl.
+> Statut : **✅ implémenté** (livré le 2026-08-24 sur la branche `feat/app-08-player-dash`, non mergée).
+> Livré : tout ce que décrit ce document. Deux mécanismes ont été ajoutés en revue et sont absents du design initial — le vidage du buffer au front montant de `emitting` et la commande `clear()` (§3), tous deux repris de `TrailRenderer`. Le document a par ailleurs été corrigé en cours de route sur deux points : le monté porte une **copie** des réglages de fade, parce que le chemin détaché n'a plus de composant à lire (§4.1), et la première frame émettrice après un vidage estampe **immédiatement** au lieu d'hériter l'accumulateur de l'émission précédente (§4.2).
+> Vérifié navigateur : le déclenchement sur `Shift`, la capture de direction, l'injection de la prop par le prefab et une distance parcourue de `220.00` **exactement** dans le moteur réel ; puis, sur des réglages volontairement exagérés pour être échantillonnables, une traînée de copies fanées correctement orientées, figées en espace monde et triées derrière l'émetteur — avec la confirmation numérique du système (capacité reçue, position d'instantané constante, alpha décroissant).
+> **Non vérifié** : le rendu de la traînée à **vitesse réelle**. Un dash de 0,18 s ne survit pas au délai d'aller-retour d'une capture, et le pane de preview retombe à 4 fps dès qu'on le sollicite. Les timings sont couverts en unitaire, le chemin de rendu par la passe exagérée ; leur conjonction ne l'est pas. Non vérifié non plus : le chemin **détaché** en jeu, faute d'émetteur éphémère dans dino-brawl ([`APP-10`](../backlog/APP-10-afterimages-on-enemies-and-projectiles.md)).
+> Portée : `@atlasjs/gameplay` (composant + système ECS) + `apps/dino-brawl` (dash du joueur, validation). `nebula` et `nebula-webgpu` n'ont pas été touchés, comme annoncé en §2.
+> Contexte : réalisait `RENDER-19` (clos à la livraison), ouvert comme suite naturelle de [`trails.md`](trails.md) §10. **Ce n'est pas un trail** : pas de ruban continu, pas de courbe de largeur le long d'un chemin. C'est une feature voisine et distincte, à ne pas confondre avec `TrailRenderer`.
+> Consommateur de validation : `APP-08`, le dash du joueur de dino-brawl (clos à la livraison).
 
 ---
 
@@ -209,7 +212,7 @@ Validation navigateur (skill `atlas-verify-webgpu`) : le dash dans `apps/dino-br
 
 ## 8. Découpage de livraison
 
-Le plan d'exécution vit dans [`../plans/player-dash-afterimages.md`](../plans/player-dash-afterimages.md) et est transitoire.
+Livré en six étapes, une par commit. Le plan d'exécution était transitoire et a été supprimé à la clôture.
 
 1. Tickets et ce document.
 2. `AfterimageRenderer` + `AfterimageRenderSystem` + enregistrement plugin, en TDD.
@@ -220,7 +223,13 @@ Le plan d'exécution vit dans [`../plans/player-dash-afterimages.md`](../plans/p
 
 ## 9. Suites naturelles (hors périmètre)
 
-- **Arbitrage du déplacement** (`MovementLock` ou équivalent) : le knockback, le dash et un futur stun se disputent `character.move()` sans se voir.
-- **I-frames réelles** ([`APP-09`](../backlog/APP-09-dash-iframes.md)), qui demandent d'abord un vecteur de dégâts vers le joueur.
-- **Rémanence sur les ennemis et les projectiles** : le composant est générique, seul le câblage manque.
-- **Décalage et échelle le long de la traînée**, pour des looks moins littéraux qu'une copie exacte.
+Toutes ouvertes en backlog à la clôture :
+
+- **Arbitrage du déplacement** — [`GAMEPLAY-64`](../backlog/GAMEPLAY-64-movement-arbitration.md). Le knockback, le dash et un futur stun se disputent `character.move()` sans se voir.
+- **I-frames réelles** — [`APP-09`](../backlog/APP-09-dash-iframes.md), qui demandent d'abord un vecteur de dégâts vers le joueur.
+- **Rémanence sur les ennemis et les projectiles** — [`APP-10`](../backlog/APP-10-afterimages-on-enemies-and-projectiles.md), qui serait aussi la première validation en jeu du chemin détaché.
+- **Décalage et échelle le long de la traînée** — [`RENDER-25`](../backlog/RENDER-25-afterimage-offset-and-scale-ramp.md).
+- **Coût au repos et par frame** — [`RENDER-24`](../backlog/RENDER-24-afterimage-idle-cost.md), deux écarts au coût annoncé en §6, raisonnés et non mesurés.
+- **Fakes dupliqués dans les specs joueur** — [`APP-11`](../backlog/APP-11-player-spec-fakes-duplicated.md).
+
+Deux trous de testabilité découverts en chemin, indépendants de cette feature : [`CORE-05`](../backlog/CORE-05-scheduler-step-introspection.md) (rien ne permet d'asserter où une étape de scheduler s'est enregistrée) et [`GAMEPLAY-63`](../backlog/GAMEPLAY-63-modifier-keys-left-only.md) (`Key.Shift` ne capte que la touche de gauche).

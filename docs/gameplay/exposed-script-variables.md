@@ -253,6 +253,14 @@ private injectProps(
 - **Cas nominal silencieux** : script sans metadata et sans props (`attach(e, Script)`) → `exposed = {}`, `source = {}`, aucun warn.
 - Injection **avant `onCreate`** : le script lit ses champs injectés dans `onCreate` en toute sûreté.
 
+### Deux propriétés porteuses que rien ne contractualise
+
+Relevées en revue en câblant le dash du joueur ([`../rendering/afterimages.md`](../rendering/afterimages.md) §5). Aucune des deux n'est un défaut ; les deux mordent silencieusement.
+
+**1. Le « warn, jamais throw » déplace la panne, il ne l'absorbe pas.** Une faute de frappe dans `exposed` — ou un champ simplement oublié — laisse le champ à `undefined` sans erreur de compilation : le générique `AtlasScript<TProps>` et les clés de `registerScriptMetadata` sont deux déclarations indépendantes que rien ne rapproche. Le script démarre, puis `onUpdate` lève à la **première frame** sur l'accès au champ manquant. Or `runLifecycle` n'a aucun `try`/`catch` : l'exception remonte et **tous** les scripts du monde cessent d'être mis à jour, pas seulement le fautif. Un `warn` dans la console est donc le seul indice d'une panne qui se présentera comme « plus rien ne bouge ».
+
+**2. L'ordre d'attache est l'ordre d'exécution.** `records` est une `Map` alimentée par un id incrémental, une insertion par `attach`, et `runLifecycle` itère `records.values()` — donc `onUpdate` et `onCreate` suivent tous deux l'ordre d'attache. C'est exploitable, et exploité : un script qui doit voir l'état d'un autre dans la **même** frame est attaché avant lui. Mais c'est une propriété émergente de l'implémentation, pas un contrat. Et elle a un angle mort : `flushDestroys` fait un vrai `records.delete`, et les ids ne sont jamais réutilisés, donc un script détruit puis **ré-attaché à chaud** repart en fin d'itération — ses consommateurs le liront alors avec une frame de retard, sans erreur, sans test rouge, avec un jeu qui tourne normalement.
+
 ---
 
 ## 7. Le handle `GameEntity` & `ScriptResolver`
