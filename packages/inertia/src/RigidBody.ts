@@ -27,6 +27,7 @@ export interface RigidBody {
   setMass(value: number): this;
   setEnabled(value: boolean): this;
   setUserData(data: unknown): this;
+  setBodyType(type: RigidBodyType): this;
 
   applyForce(x: number, y: number, wake?: boolean): void;
   applyImpulse(x: number, y: number, wake?: boolean): void;

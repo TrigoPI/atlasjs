@@ -5,11 +5,13 @@ import { RigidBody, RigidBodyType } from "@atlasjs/inertia";
 
 import { PhysicsUnitConverter } from "./PhysicsUnitConverter";
 import { RapierRigidBodyOption } from "./rapier-types";
+import { mapRigidBodyType } from "./mappers/map-rigid-body-type";
 
 export class RapierRigidBody implements RigidBody {
   public readonly id: string;
-  public readonly type: RigidBodyType;
   public readonly rapierBody: RAPIER.RigidBody;
+
+  private bodyType: RigidBodyType;
 
   private readonly translation: Vec2;
   private readonly velocity: Vec2;
@@ -22,13 +24,17 @@ export class RapierRigidBody implements RigidBody {
     options: RapierRigidBodyOption,
   ) {
     this.id = options.id;
-    this.type = options.type;
+    this.bodyType = options.type;
     this.rapierBody = rapierBody;
 
     this.converter = new PhysicsUnitConverter(options.unitScale);
     this.translation = new Vec2();
     this.velocity = new Vec2();
     this.tmpVec2 = new Vec2();
+  }
+
+  public get type(): RigidBodyType {
+    return this.bodyType;
   }
 
   public isEnabled(): boolean {
@@ -140,6 +146,12 @@ export class RapierRigidBody implements RigidBody {
 
   public setUserData(data: unknown): this {
     this.rapierBody.userData = data;
+    return this;
+  }
+
+  public setBodyType(type: RigidBodyType): this {
+    this.rapierBody.setBodyType(mapRigidBodyType(type), true);
+    this.bodyType = type;
     return this;
   }
 

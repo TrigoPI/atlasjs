@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Le backlog vit dans [`backlog/`](backlog/) — **140** items ouverts, index dans [`backlog/_index.md`](backlog/_index.md).
+Le backlog vit dans [`backlog/`](backlog/) — **139** items ouverts, index dans [`backlog/_index.md`](backlog/_index.md).
 
 Les plans d'implémentation en cours vivent dans [`plans/`](plans/) et sont **transitoires** : ils sont supprimés à la clôture de la feature (`/atlas-done`).
 

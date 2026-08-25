@@ -15,7 +15,9 @@ import {
 
 export class FakeRigidBody implements RigidBody {
   public readonly id: string;
-  public readonly type: RigidBodyType;
+  public setBodyTypeCount: number;
+
+  private bodyType: RigidBodyType;
 
   private readonly translation: Vec2;
   private readonly linearVelocity: Vec2;
@@ -27,7 +29,8 @@ export class FakeRigidBody implements RigidBody {
 
   public constructor(id: string, descriptor: RigidBodyDesc) {
     this.id = id;
-    this.type = descriptor.type ?? "dynamic";
+    this.bodyType = descriptor.type ?? "dynamic";
+    this.setBodyTypeCount = 0;
 
     this.translation = descriptor.translation?.clone() ?? new Vec2(0, 0);
     this.linearVelocity = descriptor.linearVelocity?.clone() ?? new Vec2(0, 0);
@@ -36,6 +39,10 @@ export class FakeRigidBody implements RigidBody {
     this.mass = 1;
     this.enabled = descriptor.enabled ?? true;
     this.userData = descriptor.userData;
+  }
+
+  public get type(): RigidBodyType {
+    return this.bodyType;
   }
 
   public integrate(dt: number): void {
@@ -132,6 +139,12 @@ export class FakeRigidBody implements RigidBody {
 
   public setUserData(data: unknown): this {
     this.userData = data;
+    return this;
+  }
+
+  public setBodyType(type: RigidBodyType): this {
+    this.bodyType = type;
+    this.setBodyTypeCount++;
     return this;
   }
 
