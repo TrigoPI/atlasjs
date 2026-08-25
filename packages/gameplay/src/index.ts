@@ -1,3 +1,5 @@
+export { registerSystem } from "@atlasjs/nexus";
+
 export { Key } from "@atlasjs/input";
 export { Color } from "@atlasjs/nebula";
 
@@ -9,7 +11,6 @@ export * from "./camera";
 export * from "./rendering";
 export * from "./scripting";
 export * from "./prefab";
-export * from "./registerSystem";
 export * from "./GameplayPlugin";
 
 export { OccluderStrip } from "./components/OccluderStrip";

@@ -8,11 +8,16 @@ import {
 } from "@atlasjs/core";
 import { NEBULA_RENDERER, NebulaRenderer } from "@atlasjs/nebula";
 import { INERTIAL_ENGINE, PhysicsWorld } from "@atlasjs/inertia";
-import { Entity, NEXUS, NexusWorld, Unsubscribe } from "@atlasjs/nexus";
+import {
+  Entity,
+  NEXUS,
+  NexusWorld,
+  Unsubscribe,
+  registerSystem,
+} from "@atlasjs/nexus";
 
 import { SCRIPT_MANAGER, INSTANTIATOR } from "./tokens";
 import { CameraManager, CAMERA_MANAGER } from "./camera";
-import { registerSystem } from "./registerSystem";
 import { SortingLayers, SORTING_LAYERS } from "./rendering";
 
 import { ScriptManager } from "./scripting";

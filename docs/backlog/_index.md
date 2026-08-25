@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **147** items.
+Total : **146** items.
 
 ## app
 
@@ -43,7 +43,6 @@ Total : **147** items.
 | CORE-01 | [CORE-01-archetype-soa-storage](CORE-01-archetype-soa-storage.md) | 📋 à faire | L | 2026-08-19 |
 | CORE-02 | [CORE-02-changed-t-detection](CORE-02-changed-t-detection.md) | 📋 à faire | L | 2026-08-19 |
 | CORE-05 | [CORE-05-scheduler-step-introspection](CORE-05-scheduler-step-introspection.md) | 📋 à faire | S | 2026-08-24 |
-| CORE-06 | [CORE-06-register-system-belongs-in-nexus](CORE-06-register-system-belongs-in-nexus.md) | 📋 à faire | S | 2026-08-25 |
 | CORE-07 | [CORE-07-mat3-transform-bound-duplication](CORE-07-mat3-transform-bound-duplication.md) | 📋 à faire | M | 2026-08-25 |
 | CORE-08 | [CORE-08-nexus-on-before-destroy-signal](CORE-08-nexus-on-before-destroy-signal.md) | 📋 à faire | M | 2026-08-25 |
 | CORE-03 | [CORE-03-component-registry-by-name](CORE-03-component-registry-by-name.md) | 💭 vision | S | 2026-08-19 |

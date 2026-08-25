@@ -1,5 +1,7 @@
 import { LaneScheduler, StepHandle, StepSpec } from "@atlasjs/core";
-import { NexusSystem, NexusWorld } from "@atlasjs/nexus";
+
+import { NexusSystem } from "./NexusSystem";
+import { NexusWorld } from "./NexusWorld";
 
 export function registerSystem(
   lane: LaneScheduler,

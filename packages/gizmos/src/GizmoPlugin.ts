@@ -1,8 +1,7 @@
 import { Engine, Plugin, StepHandle } from "@atlasjs/core";
 import { createLogger, Logger } from "@atlasjs/utils";
-import { NEXUS, NexusWorld } from "@atlasjs/nexus";
+import { NEXUS, NexusWorld, registerSystem } from "@atlasjs/nexus";
 import { NEBULA_RENDERER, NebulaRenderer } from "@atlasjs/nebula";
-import { registerSystem } from "@atlasjs/gameplay";
 
 import { GIZMOS } from "./tokens";
 import { Gizmos } from "./Gizmos";
