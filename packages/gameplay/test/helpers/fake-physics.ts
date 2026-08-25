@@ -353,6 +353,12 @@ export class FakePhysicsWorld implements PhysicsWorld {
   }
 
   public destroyRigidBody(body: RigidBody): void {
+    for (const collider of this.colliders) {
+      if (collider.getRigidBody() === body) {
+        this.colliders.delete(collider);
+      }
+    }
+
     this.bodies.delete(body as FakeRigidBody);
   }
 
