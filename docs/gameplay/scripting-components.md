@@ -101,7 +101,7 @@ Deux formes, une seule primitive :
 
 > Le second token comportemental, `CharacterController` (`scripting/components/CharacterController.ts`, `move(delta)` = collide-and-slide rapier), suit exactement ce modèle — cf. la table §6.
 
-`Transform` est justifié par trois comportements moteur réels : routage d'autorité, hiérarchie et world-matrix. L'API authored (getters, setters, méthodes chaînables) est portée 1:1 dans l'objet renvoyé par `create` — **inchangée pour l'auteur**. Les helpers privés (`worldMatrix`, `controllingBody`) et la logique parent/enfants sont des **fonctions libres de module** `(world, entity, …)`.
+`Transform` est justifié par trois comportements moteur réels : routage d'autorité, hiérarchie et world-matrix. L'API authored (getters, setters, méthodes chaînables) est portée 1:1 par le proxy renvoyé par `create` — **inchangée pour l'auteur**. Les helpers (`controllingBody` dans `Transform.ts` ; `worldMatrix`/`ancestorWorldMatrix`/`isDynamicBody` dans `scripting/components/hierarchy.ts`, partagés avec `CharacterController`) sont des **fonctions libres de module** `(world, entity, …)`.
 
 ```ts
 export interface Transform {
@@ -141,19 +141,28 @@ setPosition(x: number, y: number): Transform {
 
 `controllingBody(world, entity)` renvoie le `PhysicsBodyRef` uniquement si un `RigidBody2D` de type `"dynamic"` existe. `worldMatrix(world, entity)` lit `WorldTransform2D` (ou dérive de `Transform2D`) pour `worldPosition` et pour la conservation de la position monde dans `setParent`.
 
-**Threading de l'`entity` entre proxies — le symbole `ENTITY`.** Choix de conception load-bearing hérité du plan d'implémentation : le proxy n'est **plus une classe** portant `this.entity`, mais un objet littéral. Or `setParent(parent)` a besoin de lire l'`entity` du **parent** (un autre proxy `Transform`) pour appeler `world.setParent(entity, parentEntity)`. La solution : chaque proxy porte son `entity` sous une **clé symbole** privée au module :
+**Threading de l'`entity` entre proxies — le symbole `ENTITY`.** Choix de conception load-bearing : `setParent(parent)` a besoin de lire l'`entity` du **parent** (un autre proxy `Transform`) pour appeler `world.setParent(entity, parentEntity)`, alors que l'interface `Transform` n'expose aucune entity. La solution : chaque proxy porte son `entity` sous une **clé symbole** privée au module :
 
 ```ts
 const ENTITY: unique symbol = Symbol("Transform.entity");
 
-type TransformHandle = Transform & { readonly [ENTITY]: Entity };
-
 function entityOf(transform: Transform): Entity {
   return (transform as TransformHandle)[ENTITY];
 }
+
+class TransformHandle implements Transform {
+  public readonly [ENTITY]: Entity;
+  private readonly world: NexusWorld;
+
+  public constructor(world: NexusWorld, entity: Entity) {
+    this.world = world;
+    this[ENTITY] = entity;
+  }
+  // … getters/setters, tous en `world.requireComponent(this[ENTITY], Transform2D)`
+}
 ```
 
-`createTransform` pose `[ENTITY]: entity` sur l'objet renvoyé ; `setParent` lit l'entity du parent via `entityOf(parent)`. Le champ `parent` et `getChildren()` re-mintent via `createTransform(world, childEntity)` — ce qui remplace l'ancien `new Transform(world, entity)` de la classe. Le symbole est invisible à l'auteur (il ne fait pas partie de l'interface `Transform`).
+`TransformHandle` est une **classe** : ses méthodes vivent sur le prototype, si bien qu'une résolution n'alloue qu'un objet à deux champs (`world`, `[ENTITY]`) au lieu d'un objet littéral re-créant une closure par méthode. C'est le seul motif du choix — la classe ne réintroduit **aucun** état résolu (cf. §10). `createTransform(world, entity)` renvoie `new TransformHandle(world, entity)` ; `setParent` lit l'entity du parent via `entityOf(parent)` ; le getter `parent` et `getChildren()` re-mintent des `TransformHandle` sur l'entité voisine. Le symbole est invisible à l'auteur (il ne fait pas partie de l'interface `Transform`).
 
 ## 6. Composants passthrough
 
@@ -214,13 +223,19 @@ public getComponent(type) {
 
 public addComponent(type, ...args) {
   if (isScriptComponentToken(type)) {
-    if (!this.world.hasComponent(this.entity, type.engine)) {
+    if (this.world.hasComponent(this.entity, type.engine)) {
+      this.assertNoDroppedArgs(type.engine.name, args);      // throw si args ≠ []
+    } else {
       this.world.addComponent(this.entity, type.engine, ...args);
     }
     return type.create(this.world, this.entity);
   }
   const existing = this.world.getComponent(this.entity, type);
-  return existing ?? this.world.addComponent(this.entity, type, ...args);
+  if (existing !== undefined) {
+    this.assertNoDroppedArgs(type.name, args);               // throw si args ≠ []
+    return existing;
+  }
+  return this.world.addComponent(this.entity, type, ...args);
 }
 
 public removeComponent(type) {
@@ -243,7 +258,7 @@ Sémantique du trio (identique quel que soit le niveau) :
 
 Pour un token, `addComponent` forwarde les `...args` au **composant moteur** (`type.engine`), puis mint un proxy frais. `Transform` et `CharacterController` empruntent la branche token aujourd'hui ; `RigidBody`/`SpriteRenderer`/`Collider`/`Animator`/`PlayerInput` sont des `Component` (valeurs `function`) → `isScriptComponentToken` est faux → branche raw.
 
-⚠️ Piège documenté (comportement Nexus, conservé) : `addComponent(token, ...args)` **ignore les args si le composant moteur existe déjà** (get-or-create).
+⚠️ Ancien piège, **fermé depuis** : `addComponent(X, ...args)` sur un composant déjà présent jetait silencieusement les `...args` (get-or-create). Il **throw** désormais (`assertNoDroppedArgs`), avec un message qui nomme les deux issues — retirer les arguments pour réutiliser l'existant, ou `removeComponent(X)` d'abord pour le reconstruire. `addComponent(X)` sans argument reste un get-or-create silencieux.
 
 ## 8. Typage — `AtlasScript` + `ScriptContext`
 
@@ -286,17 +301,21 @@ src/
     PhysicsPushSystem.ts  PhysicsPullSystem.ts  SpriteRenderSystem.ts  index.ts
   scripting/
     core/                         # FRAMEWORK de script (abstrait)
-      AtlasScript.ts  ScriptContext.ts  ScriptLifeCycle.ts
+      AtlasScript.ts  ScriptContext.ts  ScriptLifeCycle.ts  ScriptService.ts  ScriptMetadata.ts
+      ComponentAccess.ts          # le trio get/add/remove, partagé ScriptContext ↔ GameEntity
+      GameEntity.ts               # createGameEntity — le dispatch runtime (§7)
+      Prefab.ts  EntityBuilder.ts  AttachArgs.ts   # contrats prefab (impl. dans src/prefab/)
       ScriptComponentToken.ts     # defineScriptComponent / isScriptComponentToken
       index.ts
     components/                   # NIVEAU 2 — tokens scripting
       Transform.ts                # token comportemental
       CharacterController.ts      # token comportemental (collide-and-slide rapier)
+      hierarchy.ts                # helpers libres partagés (worldMatrix, isDynamicBody)
       index.ts                    # RigidBody / SpriteRenderer / Collider (identité) + Transform
     runtime/                      # ORCHESTRATION
       ScriptManager.ts  RuntimeScriptContext.ts  IncrementalScriptIdGenerator.ts  index.ts
     index.ts
-  GameplayPlugin.ts  registerSystem.ts  tokens.ts  index.ts
+  GameplayPlugin.ts  tokens.ts  index.ts          # registerSystem vit dans @atlasjs/nexus, ré-exporté par le barrel
 ```
 
 - `scripting/core/` porte le contrat du framework : `ScriptComponentToken` (`defineScriptComponent`/`isScriptComponentToken`).
@@ -305,7 +324,7 @@ src/
 
 ## 10. Invariants à ne pas régresser
 
-- **Les proxies sont apatrides.** Un proxy ne détient **aucun** état par-instance : chaque accès re-résout via `world.requireComponent(entity, engine)`. Ré-introduire un champ d'instance (ex. un cache) recréerait silencieusement le bug de péremption que cette saga a supprimé.
+- **Les proxies sont apatrides.** Un proxy ne détient **rien de résolu** : ses seuls champs sont son adressage (`world`, `[ENTITY]`), et chaque accès re-résout via `world.requireComponent(entity, engine)`. Ré-introduire un champ d'instance qui *mémorise* (ex. un cache de l'instance moteur) recréerait silencieusement le bug de péremption que cette saga a supprimé — le fait que le proxy soit une classe (§5) ne change rien à cet invariant.
 - **Dispatch par le brand, pas par la présence d'`engine`.** `isScriptComponentToken` teste le brand symbole — un objet quelconque portant `engine` reste raw. Ne pas re-tester une forme structurelle.
 - **Re-résolution + throw bruyant.** Un proxy détenu dont le composant moteur a été retiré **throw à l'accès** (`requireComponent`). C'est le contrat Unity (utiliser un composant détruit lève).
 - **`any[]` load-bearing** (cf. §8) — ne pas resserrer en `unknown[]`.

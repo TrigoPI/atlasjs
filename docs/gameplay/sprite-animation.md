@@ -13,7 +13,7 @@
 - **`Frame`** — `texture: Texture2D` + `rect: Bound`.
 - **`SpriteAnimation`** — `frames: Frame[]` + `fps` + `loop` + `play/pause/resume/stop` + `getCurrentFrame()`.
 
-Mais ces briques sont **inaccessibles depuis la voie gameplay**. Dans le pipeline gameplay, le nœud nebula (`graphics/Sprite`) est **détenu en interne** par `SpriteRenderSystem` (monté par entité, projeté depuis `SpriteRender` chaque frame — cf. `docs/rendering/sprites.md`). Or `SpriteAnimation.updateAndApply(spriteNode)` pousse **directement dans un nœud nebula**, en s'appuyant sur une **`Clock` wall-clock interne**. Résultat : aucun moyen propre de faire vivre une animation à travers le modèle de données gameplay, et le temps d'animation ignore le `dt` du moteur (pause, timescale, déterminisme).
+Mais ces briques sont **inaccessibles depuis la voie gameplay**. Dans le pipeline gameplay, le nœud nebula (`graphics/SpriteNode`) est **détenu en interne** par `SpriteRenderSystem` (monté par entité, projeté depuis `SpriteRender` chaque frame — cf. `docs/rendering/sprites.md`). Or `SpriteAnimation.updateAndApply(spriteNode)` pousse **directement dans un nœud nebula**, en s'appuyant sur une **`Clock` wall-clock interne**. Résultat : aucun moyen propre de faire vivre une animation à travers le modèle de données gameplay, et le temps d'animation ignore le `dt` du moteur (pause, timescale, déterminisme).
 
 Il manque donc **un composant + un système côté gameplay** qui tick l'animation active et fait suivre le rendu via le canal existant.
 
@@ -53,7 +53,7 @@ export class SpriteAnimation {
   public getCurrentFrameIndex(): number; // inchangé
   public isPlaying(): boolean;           // inchangé
   public getDuration(): number;          // inchangé
-  public play(): void;                   // playing = true, elapsedMs = 0
+  public play(): void;                   // playing = true, elapsedMs = 0, index = 0
   public pause(): void;                  // playing = false (garde elapsedMs)
   public resume(): void;                 // playing = true (garde elapsedMs)
   public stop(): void;                   // playing = false, elapsedMs = 0, index = 0
@@ -71,7 +71,7 @@ export class SpriteAnimation {
 ```ts
 public tick(deltaMs: number): void;              // NOUVEAU : this.currentAnimation?.tick(deltaMs)
 public getCurrentFrame(): Frame | undefined;     // NOUVEAU : this.currentAnimation?.getCurrentFrame()
-public updateAndApply(sprite: Sprite, deltaMs: number): void;  // migré : ajoute deltaMs
+public updateAndApply(sprite: SpriteNode, deltaMs: number): void;  // migré : ajoute deltaMs
 ```
 
 ## 5. `Animator` (LEVEL 1, `packages/gameplay/src/components/Animator.ts`)
@@ -86,8 +86,10 @@ export class Animator {
 
   public constructor(clips: Record<string, SpriteAnimation>, initial?: string);
 
-  public play(name: string): this;   // délègue à player.play(name) — NO-OP si déjà actif
+  public play(name: string, restart?: boolean): this;   // délègue à player.play(name, restart) — NO-OP si déjà actif et !restart
   public stop(): this;               // délègue à player.stop()
+  public pause(): this;              // délègue à player.pause() — gèle la frame courante
+  public resume(): this;             // délègue à player.resume()
   public get playing(): string | null;        // player.getCurrentAnimationName() ?? null
   public currentFrame(): Frame | null;         // player.getCurrentFrame() ?? null
   public tick(deltaMs: number): void;           // player.tick(deltaMs)
@@ -95,7 +97,7 @@ export class Animator {
 ```
 
 - Constructeur : ajoute chaque clip au `AnimationPlayer` ; si `initial` fourni, `player.play(initial)`.
-- **`play(name)` no-op si déjà actif** : hérité de `AnimationPlayer.play` (ne redémarre pas une anim en cours). Nom inconnu → throw (hérité de `AnimationPlayer.get`).
+- **`play(name)` no-op si déjà actif** : hérité de `AnimationPlayer.play` (ne redémarre pas une anim en cours) — sauf `play(name, true)`, qui rejoue le clip actif depuis sa première frame. Nom inconnu → throw (hérité de `AnimationPlayer.get`).
 - `currentFrame()` retourne `null` si aucun clip actif → le système laisse `SpriteRender.sprite` intact (fallback sur le sprite statique).
 - Composant **LEVEL 1** : `this.addComponent(Animator, clips, initial?)` retourne l'instance brute (dispatch non-façade), le script appelle `.play()` directement.
 
@@ -119,7 +121,7 @@ export class AnimatorSystem implements NexusSystem {
   }
 
   private spriteFor(frame: Frame): Sprite {
-    // get-or-create : new Sprite(frame.texture, { rect: frame.rect })
+    // get-or-create : new Sprite(frame.texture, { rect: frame.rect, pivot: frame.pivot })
   }
 }
 ```
@@ -135,7 +137,7 @@ export class AnimatorSystem implements NexusSystem {
 
 ## 8. Exports
 
-- `@atlasjs/gameplay` `index.ts` : exporter `Animator`, et **re-exporter l'authoring** `SpriteSheet`, `SpriteAnimation`, `Frame` (+ `SpriteAnimationOptions`, options grille) — pour qu'un jeu écrive tout contre `@atlasjs/gameplay` (comme le `Sprite` asset aujourd'hui). Confirmer que `@atlasjs/nebula` les exporte, sinon les exposer d'abord.
+- `@atlasjs/gameplay` `index.ts` : exporter `Animator`, et **re-exporter l'authoring** `SpriteSheet`, `SpriteAnimation`, `AnimationPlayer`, `Frame` (+ `SpriteAnimationOptions`, options grille) — pour qu'un jeu écrive tout contre `@atlasjs/gameplay` (comme le `Sprite` asset aujourd'hui). Confirmer que `@atlasjs/nebula` les exporte, sinon les exposer d'abord.
 
 ## 9. Tests (TDD, harness `test/helpers/harness.ts`)
 

@@ -40,13 +40,13 @@ public off<K extends keyof AnimatorEvents>(event: K, cb: (clip: string) => void)
 
 | Event | Déclencheur | Fréquence |
 |---|---|---|
-| `started` | Un clip devient le clip actif via `play(name)` **quand le nom change réellement**. | Une fois par switch. No-op si déjà actif (cohérent avec `AnimationPlayer.play`). |
+| `started` | Un clip devient le clip actif via `play(name)` **quand le nom change réellement**, ou est rejoué explicitement via `play(name, true)`. | Une fois par switch (ou par replay explicite). No-op si `play(name)` vise le clip déjà actif sans `restart` (cohérent avec `AnimationPlayer.play`). |
 | `finished` | Un clip **non-loop** atteint sa dernière frame (front `playing` true→false pendant `tick`). | **Une seule fois** ; pas de répétition sur les ticks suivants. Jamais pour un clip en boucle. |
 | `loop` | Un clip en boucle **boucle** (wrap d'index : `nowIndex < prevIndex` alors que `playing` reste vrai). | À **chaque** cycle. |
 
 ## 4. Mécanique de détection
 
-- **`play(name)`** : compare `getCurrentAnimationName()` avant/après `player.play(name)` → si le nom courant change, `emit("started", current)`.
+- **`play(name, restart = false)`** : compare `getCurrentAnimationName()` avant/après `player.play(name, restart)` → si le nom courant change **ou** si `restart` est demandé, `emit("started", current)`.
 - **`tick(deltaMs)`** : capture `(wasPlaying, prevIndex)` sur le clip courant, délègue à `player.tick`, relit `(nowPlaying, nowIndex)` :
   - `wasPlaying && !nowPlaying` → `emit("finished", name)`
   - sinon si `nowPlaying && nowIndex < prevIndex` → `emit("loop", name)`
@@ -70,4 +70,4 @@ public off<K extends keyof AnimatorEvents>(event: K, cb: (clip: string) => void)
 
 ## 7. Hors périmètre (reste V2 → `docs/backlog/`)
 
-Events de **frame** (le stub nebula reste), state machine / transitions, blend trees, replay one-shot d'un clip non-loop terminé, payload enrichi (`{ clip, frame, loopCount }`).
+Events de **frame** (le stub nebula reste), state machine / transitions, blend trees, payload enrichi (`{ clip, frame, loopCount }`). Le replay d'un clip non-loop terminé, lui, est couvert depuis par `Animator.play(name, true)`.

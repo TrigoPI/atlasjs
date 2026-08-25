@@ -151,12 +151,12 @@ body dynamic            →  world = Mat3.fromTransform2D(local)   // physique =
 Rappel du scheduling existant (`GameplayPlugin`) :
 
 ```
-fixed:  physics-push (PhysicsRequest) → [inertia] → physics-pull (PhysicsWriteback)
-update: player-input (Early) → script-update (Logic) → animator (Logic)
-render: sprite-render (PreRender)
+fixed:  physics-push (PhysicsRequest) → [inertia] → physics-pull / physics-collision (PhysicsWriteback)
+update: player-input (Early) → script-update (Logic) → animator (Logic) → audio (Logic)
+render: camera-sync → sprite-render → tilemap-render → occluder-render → trail-render → afterimage-render (PreRender)
 ```
 
-`TransformPropagationSystem` s'insère dans la lane **`update`, après la logique** (après `gameplay:animator`, avant le `Sync` de fin). Ainsi :
+`TransformPropagationSystem` s'insère dans la lane **`update`, après la logique** — stage `Late`, sous le nom `gameplay:transform-propagation` (donc après `gameplay:animator`, avant le `Sync` de fin). Ainsi :
 
 - **Rendu (même frame)** : `sprite-render` (render/PreRender) lit un `WorldTransform2D` frais → **exact**.
 - **Physique (frame suivante)** : `physics-push` (fixed/PhysicsRequest) lit le `WorldTransform2D` calculé à la frame précédente → **1 frame de retard**, exactement la latence que la physique tolère déjà (les scripts déplacent un kinematic en update, la physique le récupère au fixed suivant).
@@ -178,19 +178,19 @@ Rendre le shear exactement demanderait un seam « matrice monde » sur le `Node`
 À la Unity `transform.SetParent(...)`, sur la façade stateless existante (elle re-résout à chaque accès, cf. invariants scripting) :
 
 ```ts
-this.transform.setParent(parent: Transform | null, worldPositionStays?: boolean): this
-this.transform.parent: Transform | null      // getter
+this.transform.setParent(parent: Transform | null, worldPositionStays?: boolean): Transform
+this.transform.parent: Transform | null      // getter (readonly)
 this.transform.getChildren(): Transform[]
 ```
 
 - `setParent` route vers `world.setParent(entity, parentEntity)` et applique le changement **immédiatement** : c'est sûr car les callbacks de cycle de vie d'un script (`onUpdate`/`onFixedUpdate`) ne s'exécutent jamais à l'intérieur d'un `world.query(...).each(...)`. Si un appelant reparente depuis **sa propre** itération `query().each()`, il doit différer via `world.commands.setParent(...)` (même dualité que §3.3).
 - `worldPositionStays` (défaut **`true`**, comme Unity) : après reparent, on recalcule le `Transform2D` **local** pour que le monde ne bouge pas : `localMatrix = parentWorld.invert() * currentWorld`, puis on ré-injecte translation/rotation/échelle (d'où `Mat3.invert`). Avec `false`, le local est conservé tel quel et réinterprété dans le repère du parent (l'enfant « snap »).
-- `parent` / `getChildren` résolvent les composants `Parent`/`Children` de Nexus et renvoient des façades `Transform` fraîches.
+- `parent` / `getChildren` résolvent les composants `Parent`/`Children` de Nexus et renvoient des façades `Transform` fraîches. `getChildren` ne renvoie que les enfants **portant un `Transform2D`** (les intermédiaires pass-through, §5.2, sont donc absents de la liste).
 - **Références inter-entités** : un script parente vers un transform qu'il tient déjà (passé en prop de script, ou renvoyé par un service). La *découverte* d'entités arbitraires (« trouve le player ») reste hors scope — c'est la scène qui câble.
 
 ---
 
-## 7. API scène (`EcsScene`, `world` brut) + éditeur
+## 7. API scène (la scène de l'app — `ArenaScene` aujourd'hui —, `world` brut) + éditeur
 
 Au niveau scène, tout tombe naturellement parce que `Parent`/`Children` est natif Nexus :
 

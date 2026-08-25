@@ -1,10 +1,10 @@
 # Prefab multi-entités — enfants inline + références internes (design)
 
 > **Statut : ✅ implémenté.**
-> Domaine : `@atlasjs/gameplay` (primitive moteur) + `apps/dino-brawl` (cas d'usage).
+> Domaine : `@atlasjs/gameplay` (primitive moteur). Le cas d'usage `apps/dino-brawl` qui illustrait ce doc a été supprimé depuis — voir l'avertissement §5.
 > Débloque le point marqué **V2** dans [`prefab.md`](prefab.md) §10 : un prefab qui crée déjà
-> ses **enfants** et câble des **références internes** entre eux (l'ombre référence l'épée sœur,
-> créée dans le même `build`).
+> ses **enfants** et câble des **références internes** entre eux (un enfant référence une entité
+> sœur créée dans le même `build`).
 
 ---
 
@@ -41,7 +41,8 @@ orbite autour d'une ancre.
 
 ## 3. Le primitive `EntityBuilder.child(buildFn)`
 
-**Toute** la modif moteur tient dans `packages/gameplay/src/prefab/`.
+**Toute** la modif moteur tient dans l'implémentation `packages/gameplay/src/prefab/EntityBuilder.ts`
+(le contrat `EntityBuilder` vit, lui, dans `packages/gameplay/src/scripting/core/EntityBuilder.ts`).
 
 ### Signature (ajout à l'interface `EntityBuilder`)
 
@@ -65,14 +66,14 @@ interface EntityBuilder {
 public child(build: (entity: EntityBuilder) => void): EntityBuilder {
   const childEntity: Entity = this.world.createEntity();
   const childBuilder: PrefabEntityBuilder = new PrefabEntityBuilder(childEntity, this.world, this.scripts);
-  build(childBuilder);
   this.world.setParent(childEntity, this.entity); // immédiat, même API que l'Instantiator
+  build(childBuilder);                            // parenté AVANT le build : le callback voit déjà la hiérarchie
   return childBuilder;
 }
 ```
 
-- Seul ajout d'état : `PrefabEntityBuilder` doit **conserver `world`** (aujourd'hui il ne garde que
-  `entity`/`self`/`scripts` et jette le `world` reçu au ctor).
+- Seul ajout d'état : `PrefabEntityBuilder` **conserve `world`** (il ne gardait auparavant que
+  `entity`/`self`/`scripts` et jetait le `world` reçu au ctor).
 - `createEntity` + `setParent` sont **immédiats** (comme dans `Instantiator.instantiate`). Les scripts
   attachés aux enfants partent en `pendingCreate` → `onCreate` au prochain `flushCreates` (latence
   ~1 frame, sémantique `attach` inchangée).
@@ -113,9 +114,20 @@ l'épée est « libre » aujourd'hui (le joueur a `scale (3,3)`).
 > sans transform (nœuds de groupe « first-class »). Plus pur, mais touche un système cœur pour un gain
 > nul sur ce cas → **backlog**.
 
-## 5. Application `dino-brawl`
+## 5. Application `dino-brawl` — ⚠️ **supprimée depuis**
 
-### `SwordWithShadowPrefab` (nouveau)
+> **Les §5 et §6 décrivent un état applicatif qui n'existe plus.** `SwordWithShadowPrefab`,
+> `SwordShadowScript` et le helper `orbitBase` ont bien été livrés avec `child()`, puis **supprimés**
+> lors de la refonte de l'arme (centralisation de la visée, combo d'attaques). Le code applicatif
+> actuel est `apps/dino-brawl/src/game/prefabs/weapon/SwordPrefab.ts` : **une seule** épée, sans ombre
+> ni orbite animée (`angularSpeed` n'existe plus ; `SwordScript` garde `radius`/`angleOffset` fixes),
+> instanciée une fois par `spawn/spawnPlayer.ts`. Ce prefab utilise toujours `child()` — racine
+> `Transform2D` identité → enfant « lame » (sprite, collider, scripts) → petit-enfant « pointe »
+> porteur du `TrailRenderer` —, donc la primitive et le motif restent valides ; seuls les symboles
+> nommés ci-dessous sont obsolètes. Les sections suivantes sont conservées comme **illustration de
+> conception**, pas comme description du code.
+
+### `SwordWithShadowPrefab` (illustration — supprimé depuis)
 
 Remplace et **absorbe** `SwordPrefab` + `SwordShadowPrefab` (leur construction passe **inline** dans les
 callbacks `child()`). `SwordAnchorPrefab` **reste** (l'ancre est enfant du joueur, créée à part).
@@ -206,7 +218,7 @@ for (let i: number = 0; i < count; i++) {
 }
 ```
 
-## 6. Géométrie (rappel du modèle)
+## 6. Géométrie (rappel du modèle de l'illustration §5 — supprimée depuis)
 
 - L'**ancre** (enfant du joueur, suit donc le joueur) est le **centre** d'un cercle de rayon `r`.
 - Les épées **orbitent** : `angle(t) = angle + angularSpeed·t`.
@@ -223,7 +235,8 @@ for (let i: number = 0; i < count; i++) {
   une **référence interne** (`sword.entity` passée au script de l'ombre) est bien résolue ; **profondeur**
   (enfant d'enfant) ; **destroy récursif** (détruire la racine retire enfants **et** scripts).
 - **App** : browser-verify — l'anneau d'épées flotte, suit le joueur, les ombres restent fixes sous
-  chaque épée, le foot-sort de l'épée par rapport au joueur est correct.
+  chaque épée, le foot-sort de l'épée par rapport au joueur est correct. (Vérification faite à
+  l'époque ; ce montage a été supprimé depuis — cf. §5.)
 
 ## 8. Invariants — à ne pas casser
 
@@ -235,7 +248,8 @@ for (let i: number = 0; i < count; i++) {
   entité à transform (double-transform + héritage de scale).
 - **Pas de remap runtime.** Les références internes se câblent par capture directe de `.entity`. Le
   remap n'existe que pour un futur modèle **sérialisé** (V2).
-- **`SwordScript`/`SwordShadowScript` restent des scripts** (comportement), pas des composants moteur.
+- **Les comportements d'arme restent des scripts** (`SwordScript`, `SwordSortingScript`…), pas des
+  composants moteur.
 
 ## 9. Hors périmètre (V2)
 

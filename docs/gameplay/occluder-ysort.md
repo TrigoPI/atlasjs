@@ -2,7 +2,7 @@
 
 > **Statut : ✅ implémenté & vérifié navigateur (mergé sur `dev`).**
 >
-> Fait suite au Y-sort (`SortingLayers` + mode `ySorted`, cf. [`../rendering/renderer-architecture.md`](../rendering/renderer-architecture.md)) et au système TileSet/TileMap ([`tilemap.md`](tilemap.md)). Prépare la feature **collisions** : le même rectangle Tiled sert de ligne de tri _et_ de boîte de collision.
+> Fait suite au Y-sort (`SortingLayers` + mode `ySorted`, cf. [`../rendering/renderer-architecture.md`](../rendering/renderer-architecture.md)) et au système TileSet/TileMap ([`tilemap.md`](tilemap.md)). Le seam collider décrit en §9 est resté un seam : la solidité du monde, livrée depuis, passe par un **calque d'objets `colliders` distinct** (`tiled/ingestColliders.ts`, collision layer `World`) et **non** par les rectangles `occluder_regions`.
 
 ## 1. Problème
 
@@ -50,7 +50,7 @@ Chaque strip rejoint la couche `ySorted` **comme une unité triable de plus**, �
 | 4   | Authoring                          | **Peinture tuile-par-tuile** (calque `occluders`) + **rectangles** sur un object layer `occluder_regions` (intention : groupe + `footY`)                  |
 | 5   | `footY`                            | Bord **bas** du rectangle, en **monde** (l'artiste contrôle la ligne de pieds)                                                                            |
 | 6   | Frontière packages                 | **Composant + système + baker pur** dans `@atlasjs/gameplay` ; **ingestion Tiled** dans l'app dino-brawl (`MapBuilder`)                                   |
-| 7   | Couche de tri                      | Les strips vont sur **`Entities`** (la seule `ySorted`), `sortingOrder` en départage                                                                      |
+| 7   | Couche de tri                      | Les strips vont sur **`Entities`** (la seule `ySorted`) ; leur `sortingOrder` est **toujours `0`** en v1 — deux strips au même `footY` sont départagés par `kindOrder` puis `batchKey` |
 | 8   | Collider                           | **Seam** documenté (rectangle partagé), **création hors périmètre v1** (→ feature collisions)                                                             |
 | A   | Calque `occluders`                 | **Input du baker**, **pas** rendu comme un calque plat (sinon double dessin)                                                                              |
 | B   | Espace des instances               | **Local** (cellOrigin), échelle via la `Transform2D` du Grid (comme `TileMap`) ; `footY` **monde** stocké dans le composant                               |
@@ -75,26 +75,27 @@ Le rectangle porte **trois infos, zéro sprite** : (1) _quelles_ tuiles vont ens
 
 Le [Tiled bridge existant](../../apps/dino-brawl/src/game/tiled/) fait déjà le gros du travail : `TiledDocument` parse les object layers **et** leurs custom properties ; `MapBuilder.build()` crée déjà l'entité `Grid` (`Transform2D.scale = MAP_SCALE`) + les enfants `TileMap`/`TileMapRenderer`, et convertit les rectangles en coordonnées **monde** via `colliderFromRect` (×échelle).
 
-**Extension de `MapBuilder`** (app) :
+**Extension de l'ingestion** (app — aujourd'hui `tiled/ingestOccluders.ts`, appelé par `MapBuilder.build`) :
 
 1. Les calques de tuiles `occluders_*` fournissent les cellules (`getTile(cx, cy)` → index) + leur `TileSet` (un par tileset/catégorie, décision D).
 2. Pour chaque rectangle de `occluder_regions`, **et pour chaque calque occluder ayant ≥1 tuile sous le rectangle**, appeler le baker pur du package → **un `OccluderStrip` par (rectangle × tileset contributeur)**, tous au **même `footY`** :
 
 ```ts
-// @atlasjs/gameplay — helper pur, sans dépendance Tiled
-export interface OccluderRegion {
-  bounds: Bound; // en cellules (cx0, cy0, cxSpan, cySpan)
-  footYWorld: number; // bord bas du rectangle, en monde (= colliderFromRect(rect).y + .height)
+// @atlasjs/gameplay (src/authoring/) — helper pur, sans dépendance Tiled
+export type OccluderRegion = {
+  cellBounds: CellRange; // en cellules, bornes INCLUSIVES (cxMin, cyMin, cxMax, cyMax)
   slice: "single" | "perRow";
-  sortingLayer: string; // défaut "Entities"
-}
+  sortingLayer: string; // "Entities" par défaut, choisi par l'appelant
+  footYWorld: number; // bord bas du rectangle, en monde (= colliderFromRect(rect).y + .height)
+  rowFootYWorld: (cy: number) => number; // bas monde d'une rangée, pour slice "perRow"
+};
 
 export function bakeOccluderStrips(
   region: OccluderRegion,
   layer: TileMap, // le calque "occluders"
   cellSize: Vec2,
   cellGap: Vec2,
-): OccluderStripData[]; // { footY, tiles: TileInstance[], sortingLayer }
+): OccluderStripData[]; // { footY, tiles: TileInstance[], texture: Texture2D, sortingLayer }
 ```
 
 3. Pour chaque `OccluderStripData`, spawn une **entité enfant du Grid** portant `OccluderStrip` + `Transform2D` (identité → hérite l'échelle du Grid via `TransformPropagationSystem`, comme un `TileMap`).
@@ -102,19 +103,13 @@ export function bakeOccluderStrips(
 **Boucle du baker** (miroir de `TileMapRenderSystem.rebuildInstances`, mais bornée au rectangle) :
 
 ```ts
-for (
-  let cy = region.bounds.cy0;
-  cy < region.bounds.cy0 + region.bounds.cySpan;
-  cy++
-) {
-  for (
-    let cx = region.bounds.cx0;
-    cx < region.bounds.cx0 + region.bounds.cxSpan;
-    cx++
-  ) {
+for (let cy = region.cellBounds.cyMin; cy <= region.cellBounds.cyMax; cy++) {
+  for (let cx = region.cellBounds.cxMin; cx <= region.cellBounds.cxMax; cx++) {
     const index = layer.getTile(cx, cy);
     if (index < 0) continue; // cellule vide
-    const rect = layer.tileset.getTile(index).sprite.rect;
+    const tile = layer.tileset.tryGetTile(index);
+    if (tile === undefined) continue; // index hors tileset
+    const rect = tile.sprite.rect;
     const origin = cellOrigin(cellSize, cellGap, cx, cy); // LOCAL
     tiles.push({
       x: origin.x,
@@ -127,12 +122,12 @@ for (
 }
 ```
 
-- `slice: "single"` → un seul `OccluderStripData`, `footY = region.footYWorld`.
-- `slice: "perRow"` → un `OccluderStripData` par `cy` non vide, `footY` = bas monde de cette rangée.
+- `slice: "single"` → un seul `OccluderStripData`, `footY = region.footYWorld` (aucun strip si le rectangle ne couvre aucune tuile).
+- `slice: "perRow"` → un `OccluderStripData` par `cy` non vide, `footY = region.rowFootYWorld(cy)` (bas monde de cette rangée, fourni par l'appelant).
 
 > **Multi-tileset** : un occluder mixant deux tilesets (ex. bâtiment mur + porte) donne **2 strips au même `footY`** — ils se trient ensemble (l'ordre entre strips de même `footY` est départagé par `batchKey`, acceptable v1).
 
-**Cas de bord** : rectangle sans tuile → warn + skip ; tuile `occluders` sous **aucun** rectangle → warn dev (non rendue) ; rectangles chevauchants → une tuile est attribuée au **premier** rectangle (le non-chevauchement est une convention d'authoring).
+**Cas de bord** : rectangle sans tuile → skip silencieux côté baker (il renvoie `[]`) ; un calque `occluders_*` qui a des tuiles mais **aucun** strip baké → warn dev côté ingestion (`ingestOccluders`, tuiles non rendues) ; rectangles chevauchants → une tuile couverte par deux rectangles est bakée **dans les deux** strips (le non-chevauchement est une convention d'authoring).
 
 ## 6. Modèle de données
 
@@ -140,8 +135,8 @@ for (
 // gameplay/src/components/OccluderStrip.ts — LEVEL 1 (donnée bakée, statique)
 export class OccluderStrip {
   public footY: number; // ligne de pieds, en MONDE (sert le tri)
-  public tiles: TileInstance[]; // le "sac" — instances en espace LOCAL du Grid
-  public texture: Texture2D; // le tileset
+  public readonly tiles: TileInstance[]; // le "sac" — instances en espace LOCAL du Grid, posé une fois
+  public readonly texture: Texture2D; // le tileset
   public sortingLayer: string; // couche ySorted (défaut "Entities")
 
   public constructor(
@@ -179,19 +174,22 @@ export class OccluderRenderSystem implements NexusSystem {
       .each((entity, worldTransform, strip) => {
         const node = this.resolveNode(entity, strip); // instances bakées au montage
 
-        // transform (échelle du Grid) : même décomposition lossy que TileMapRenderSystem.syncNode
-        const position = worldTransform.getPosition(this.positionScratch);
-        const scale = worldTransform.getScale(this.scaleScratch);
-        node
-          .setPosition(position.x, position.y)
-          .setRotation(worldTransform.getRotation());
-        node.setScale(scale.x, scale.y);
+        // transform (échelle du Grid) : le helper partagé avec TileMapRenderSystem
+        // (src/rendering/syncNodeTransform.ts) — même décomposition TRS lossy
+        syncNodeTransform(
+          node,
+          worldTransform,
+          this.positionScratch,
+          this.scaleScratch,
+          false, // flipX
+          false, // flipY
+        );
 
         applySortFields(
           node,
           this.sortingLayers,
           strip.sortingLayer, // "Entities" (ySorted)
-          0, // sortingOrder — départage 2 strips au même footY
+          0, // sortingOrder — constant en v1 (pas de départage exposé)
           strip.footY, // ← LA sort key : footY (monde)
         );
       });
@@ -221,7 +219,7 @@ export class OccluderRenderSystem implements NexusSystem {
 
 ### 7.1 Batching (perf) — pourquoi ce n'est _pas_ 1 draw call par strip
 
-`RenderQueue.flush()` fusionne les commandes **contiguës** partageant `kind` + `batchKey` en **un seul draw call** (`isSameRun`, [`RenderQueue.ts:63`](../../packages/nebula/src/renderers/RenderQueue.ts)). Pour les strips : `kind = "tilemap"`, `batchKey = texture|sampler|blend`.
+`RenderQueue.flush()` fusionne les commandes **contiguës** partageant `kind` + `batchKey` en **un seul draw call** (`isSameRun`, [`RenderQueue.ts:63`](../../packages/nebula/src/renderers/RenderQueue.ts)). Pour les strips : `kind = "tilemap"`, `batchKey` = l'entier interné par `TileMapNodeRenderer` pour la clé matériau `texture.id|sampler.id|blend`.
 
 Tu as **plusieurs tilesets** d'occluders (arbres, murs…) → chacun son `batchKey`. Conséquence : les strips **de même tileset** contigus en `footY` fusionnent ; un **changement de tileset** (ou un sprite intercalé) **casse le run**.
 
@@ -233,14 +231,14 @@ Aucun changement au tri : `applySortFields` en mode `ySorted` écrit `sortPrimar
 
 **Discipline d'authoring** : `footY` = **bord bas** du rectangle, calé sur la ligne de pieds visuelle de l'occluder. Un `footY` au centre trierait un mur par son milieu.
 
-## 9. Seam collider (feature suivante — hors périmètre v1)
+## 9. Seam collider (hors périmètre v1 — toujours non consommé)
 
-Le socle est déjà là et le rectangle est **conçu pour servir les deux features** :
+Le socle est déjà là et le rectangle **pourrait** servir les deux features :
 
-- `Collider2D` **sans** `RigidBody2D` = **géométrie statique** : `PhysicsPushSystem.update` query `Collider2D.without(PhysicsColliderRef)` → `createCollider(desc, undefined)` ([`PhysicsPushSystem.ts:77`](../../packages/gameplay/src/systems/PhysicsPushSystem.ts)).
-- La collision layer `Occluder` est **déjà définie** (`defineCollisionLayers("Player", "Occluder")`, [`config.ts:15`](../../apps/dino-brawl/src/game/config.ts)) et le joueur `collidesWith: Occluder` ([`spawnPlayer.ts`](../../apps/dino-brawl/src/game/spawn/spawnPlayer.ts)).
+- `Collider2D` **sans** `RigidBody2D` = **géométrie statique** : `PhysicsPushSystem.update` query `Collider2D.without(PhysicsColliderRef)` → `createCollider(desc, undefined)` ([`PhysicsPushSystem.ts:107`](../../packages/gameplay/src/systems/PhysicsPushSystem.ts)).
+- La collision layer `Occluder` est **déjà définie** (`defineCollisionLayers("Player", "Occluder", "World", "Enemy", "Weapon")`, [`config.ts:19`](../../apps/dino-brawl/src/game/config.ts)).
 
-→ Quand on fera les collisions : ajouter un `Collider2D` (`layer = Occluder`, `shape` = le rectangle) sur l'entité occluder (ou une entité collider dédiée). **Ce doc ne crée pas ces colliders** — il garantit juste que le rectangle `occluder_regions` est le point d'ancrage partagé.
+→ **État actuel** : la feature collisions a été livrée **sans** consommer ce seam. La solidité du monde vient d'un calque d'objets Tiled `colliders` séparé, ingéré par [`ingestColliders.ts`](../../apps/dino-brawl/src/game/tiled/ingestColliders.ts) avec `layer = CollisionLayers.World` ; le joueur est `collidesWith: World` ([`PlayerPrefab.ts:75`](../../apps/dino-brawl/src/game/prefabs/player/PlayerPrefab.ts)). Aucun `Collider2D` n'est créé depuis `occluder_regions`, et la layer `Occluder` n'est portée par aucun collider. Fusionner les deux rectangles (un seul rect = tri + collision) reste possible → backlog §13.
 
 ## 10. Coordonnées & échelle
 
@@ -254,17 +252,17 @@ Le socle est déjà là et le rectangle est **conçu pour servir les deux featur
 | ----------------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
 | `OccluderStrip`                                             | `gameplay/src/components/`                                   | défini dans `GameplayPlugin.install` ; composant LEVEL 1 réexporté brut via `gameplay/src/index.ts`       |
 | `OccluderRenderSystem`                                      | `gameplay/src/systems/`                                      | `registerSystem(render, …, { stage: "PreRender" })` + `world.onRemove(OccluderStrip, …)` |
-| `bakeOccluderStrips` + `OccluderRegion`/`OccluderStripData` | `gameplay/src/systems/utils/` (ou `gameplay/src/occluders/`) | — (helper pur)                                                                           |
-| Ingestion `occluder_regions` + calque `occluders`           | `apps/dino-brawl/src/game/tiled/MapBuilder.ts`               | dans `MapBuilder.build`, après les calques de tuiles                                     |
+| `bakeOccluderStrips` + `OccluderRegion`/`OccluderStripData` | `gameplay/src/authoring/`                                    | — (helper pur)                                                                           |
+| Ingestion `occluder_regions` + calques `occluders_*`        | `apps/dino-brawl/src/game/tiled/ingestOccluders.ts`          | appelé depuis `MapBuilder.build`, après les calques de tuiles                            |
 
 Barrels : réexport de `OccluderStrip` / `OccluderRenderSystem` / `bakeOccluderStrips` depuis `gameplay/src/index.ts`.
 
 ## 12. Stratégie de test
 
-- **Baker (unitaire, sans GPU)** : `single` → 1 strip (tuiles ramassées, `footY` correct) ; `perRow` → 1 strip par `cy` non vide avec le bon `footY` ; rectangle vide → warn + skip ; cellules hors rectangle ignorées ; `TileSet` mocké (`{ id, width, height }`).
-- **`OccluderRenderSystem` (intégration ECS)** : node monté/démonté sur add/remove `OccluderStrip` ; `applySortFields` écrit `sortPrimary = footY` sur `Entities` ; instances posées **une fois** (pas de rebuild par frame).
-- **Tri (intégration)** : un joueur à `worldY = Yp` s'ordonne **entre** deux strips (`footY` < `Yp` < `footY'`) ; deux strips au même `footY` départagés par `sortingOrder`.
-- **Batching (unitaire `RenderQueue`)** : N strips même `batchKey` contigus → 1 run ; un sprite intercalé casse le run.
+- **Baker (unitaire, sans GPU)** : `single` → 1 strip (tuiles ramassées, `footY` correct) ; `perRow` → 1 strip par `cy` non vide avec le bon `footY` ; région vide → aucun strip ; cellules hors rectangle ignorées ; `TileSet` mocké (`{ id, width, height }`).
+- **`OccluderRenderSystem` (intégration ECS)** : node monté/démonté sur add/remove `OccluderStrip` ; `applySortFields` écrit `sortPrimary = footY` sur `Entities` ; échelle héritée du `WorldTransform2D` ; instances posées **une fois** (pas de rebuild par frame).
+- **Tri (intégration)** : un joueur à `worldY = Yp` s'ordonne **entre** deux strips (`footY` < `Yp` < `footY'`).
+- **Batching (unitaire `RenderQueue`)** : N commandes même `kind`/`batchKey` contiguës → 1 run ; une commande intercalée casse le run — couvert par [`packages/nebula/test/RenderQueue.test.ts`](../../packages/nebula/test/RenderQueue.test.ts) (au niveau `RenderQueue`, pas spécifiquement avec des strips).
 - **Vérif navigateur (obligatoire, WebGPU)** : scène dino-brawl, le joueur passe **devant** un mur quand il est plus bas et **derrière** quand il est plus haut ; un `perRow` reculant s'interleave rangée par rangée ; compteur de draws bas (un seul tileset). Les fichiers d'app doivent `import type` les symboles type-only (sinon Vite casse au runtime — écran noir).
 
 ## 13. Non-objectifs / backlog (v2+)
@@ -273,7 +271,7 @@ Barrels : réexport de `OccluderStrip` / `OccluderRenderSystem` / `bakeOccluderS
 - **Détection automatique** (composantes connexes du calque `occluders`, base = cellule du bas de chaque colonne) — sans rectangle, mais arbres / structures nord-sud imprécis, et pas de colliders offerts. Mode de secours.
 - **Slicing riche** : `perCol`, diagonale, per-cell ; anchor/foot configurable par tuile.
 - **Atlas / texture-array occluder partagé** : les tilesets multiples (arbres, murs…) sont supportés en v1 (1 strip par tileset), mais chaque tileset = un `batchKey` → quelques draws de plus. Les fusionner en un atlas / texture-array = optimisation batching (non nécessaire à l'échelle actuelle).
-- **Création des `Collider2D` occluder** (feature **collisions**, ce doc n'expose que le seam).
+- **Création des `Collider2D` occluder** : toujours à faire (la feature collisions est passée par un calque `colliders` distinct, cf. §9) — fusionner tri et collision sur le même rectangle `occluder_regions`.
 - **Culling des strips** : AABB par strip contre le viewport (reporté v1 — peu de strips).
 - **occluders dynamiques** (rebuild d'instances / `footY` quand l'objet bouge) — v1 suppose **statique**.
 - **Sérialisation** : `slice`/`sortingLayer` déjà portés par les propriétés Tiled ; un `AssetRef` d'occluder → dépend du JSON tilemap (backlog tilemap).

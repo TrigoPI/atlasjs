@@ -49,7 +49,7 @@ L'intention derrière ce split était bonne et légitime : reproduire le modèle
 - **On garde l'objectif d'encapsulation** : l'utilisateur manipule une API script curée, pas les composants moteur bruts. C'est un principe sain (stabilité d'API, sûreté, méthodes de confort, application des règles d'autorité).
 - **Façade, pas copie.** On implémente ce split comme Unity le fait *réellement* : un **proxy fin** (handle) sur **une source de vérité unique** dans Nexus. Le handle **pointe** vers la donnée, ne la **duplique** jamais.
 - **Style façade retenu** (vs style « direct » à la Bevy où les scripts tapent les composants bruts). La façade est réservée aux **composants moteur** (ceux à autorité/encapsulation) ; les composants de données propres à l'utilisateur restent accessibles directement.
-- **Résolution paresseuse + cache invalidé par events.** Le handle résout l'instance réelle à la demande, la met en cache, et l'invalide via `world.onRemove` (cf. §3).
+- **Résolution à la demande, sans cache.** Le handle re-résout l'instance réelle à **chaque** accès (cf. §3). *(La décision d'origine — mise en cache + invalidation via `world.onRemove` — a été **inversée** depuis : le cache périmait silencieusement. Le modèle courant est le proxy apatride du token `defineScriptComponent`, cf. `docs/gameplay/scripting-components.md`.)*
 - **Autorité déclarée par le type de corps** (dynamic/kinematic/static), appliquée au moment de l'écriture par la façade + le pont. Fin de l'ambiguïté « et si je bouge les deux en même temps ».
 - **Source de vérité unique par donnée.** Un seul `Transform2D`, un seul `RigidBody2D`. Les handles runtime (body physique) deviennent des composants Nexus.
 - **`Vec2` partout.** Suppression de `Vector2D`.
@@ -88,81 +88,76 @@ class PhysicsBodyRef { constructor(public body: RigidBody) {} }
 
 ### 2. Façade script = handle fin (le cœur)
 
+> **Forme finale :** la façade décrite ici a été mintée depuis en **token** `defineScriptComponent(engine, create?)` — le proxy est **apatride** et re-résout à chaque accès. Le bloc ci-dessous montre la forme réellement implémentée (`packages/gameplay/src/scripting/components/Transform.ts`) ; les détails du modèle token sont dans `docs/gameplay/scripting-components.md`.
+
 Un handle **ne contient aucune donnée** : il enveloppe `(world, entity)` et lit/écrit le vrai composant moteur.
 
 ```ts
-class Transform2DComponent {
-  private cached: Transform2D | null = null;
-  constructor(private readonly world: NexusWorld, private readonly entity: Entity) {}
+const ENTITY: unique symbol = Symbol("Transform.entity");
 
-  invalidate(): void { this.cached = null; }
-  private t(): Transform2D {
-    if (this.cached === null) this.cached = this.world.requireComponent(this.entity, Transform2D);
-    return this.cached;
-  }
+class TransformHandle implements Transform {
+  public readonly [ENTITY]: Entity;
+  private readonly world: NexusWorld;
 
-  get position(): Vec2 { return this.t().position; }
-  get rotation(): number { return this.t().rotation; }
-  get scale(): Vec2 { return this.t().scale; }
+  public constructor(world: NexusWorld, entity: Entity) { this.world = world; this[ENTITY] = entity; }
 
-  // API curée conservée (aujourd'hui portée par Transform2DComponent)
-  translate(dx: number, dy: number): this { const p = this.t().position; p.x += dx; p.y += dy; return this; }
-  setPosition(x: number, y: number): this { /* voir §4 : routage d'autorité */ return this; }
-  rotate(a: number): this { this.t().rotation += a; return this; }
-  setScale(x: number, y: number): this { this.t().scale.set(x, y); return this; }
+  // aucun cache : chaque accès re-résout la source unique
+  public get position(): Vec2 { return this.world.requireComponent(this[ENTITY], Transform2D).position; }
+  public get rotation(): number { return this.world.requireComponent(this[ENTITY], Transform2D).rotation; }
+  public get scale(): Vec2 { return this.world.requireComponent(this[ENTITY], Transform2D).scale; }
+
+  // API curée conservée
+  public translate(dx: number, dy: number): Transform { const p = this.world.requireComponent(this[ENTITY], Transform2D).position; return this.setPosition(p.x + dx, p.y + dy); }
+  public setPosition(x: number, y: number): Transform { /* voir §4 : routage d'autorité */ return this; }
+  public rotate(angle: number): Transform { return this.setRotation(this.world.requireComponent(this[ENTITY], Transform2D).rotation + angle); }
+  public setScale(x: number, y: number): Transform { this.world.requireComponent(this[ENTITY], Transform2D).scale.set(x, y); return this; }
 }
+
+export const Transform = defineScriptComponent(Transform2D, createTransform);
 ```
 
-- **Encapsulation préservée** : le script ne voit que `Transform2DComponent`, jamais `Transform2D`. L'objectif initial est atteint.
-- **Zéro copie / zéro sync** : `this.transform.position.x += 10` mute la source de vérité. Plus de request/feedback/snapshot.
+- **Encapsulation préservée** : le script ne voit que le token `Transform` (et l'interface du même nom), jamais `Transform2D`. L'objectif initial est atteint.
+- **Zéro copie / zéro sync / zéro cache** : `this.transform.position.x += 10` mute la source de vérité. Plus de request/feedback/snapshot, et rien à invalider.
 - Les composants de **données utilisateur** (ex. `Health`, `Inventory`) n'ont **pas** de façade : ils sont enregistrés comme composants Nexus normaux et `ctx.getComponent(Health)` renvoie l'instance réelle. La façade est réservée aux composants **moteur** (encapsulation + autorité). Ça évite de recréer la cérémonie « un handle par composant » pour le code de l'utilisateur.
 
-### 3. Résolution paresseuse + cache invalidé par events
+### 3. Résolution à chaque accès, sans cache ni registre
 
-Le handle résout `world.requireComponent(...)` **à la demande** (1er accès), met l'instance en cache, et la réutilise. L'invalidation est pilotée par les événements de cycle de vie de Nexus.
+> **Décision inversée.** Ce paragraphe décrivait un cache par handle invalidé via `world.onRemove`, tenu par un `ScriptComponentRegistry` construit d'office pour toute entité scriptée. Le cache périmait silencieusement (`world.setComponent` remplace l'instance sans émettre `onRemove`) et le registre imposait des façades non demandées : les deux ont été **supprimés**. Il n'existe ni `ScriptComponentRegistry.ts`, ni `Transform2DComponent.ts`, ni `RigidBody2DComponent.ts` dans le code.
 
-**Registre de handles, par world :**
+Le handle résout `world.requireComponent(...)` **à chaque accès**, et ne mémorise rien. Aucun registre, aucune souscription de cycle de vie, aucun contrat d'invalidation à respecter.
 
 ```ts
-class ScriptComponentRegistry {
-  private readonly handles = new Map<Entity, EntityHandles>();
-
-  constructor(private readonly world: NexusWorld) {
-    // une souscription par type de composant à façade
-    world.onRemove(Transform2D, (e) => this.handles.get(e)?.transform.invalidate());
-    world.onRemove(RigidBody2D, (e) => this.handles.get(e)?.rigidbody.invalidate());
-  }
-
-  for(entity: Entity): EntityHandles { /* getOrCreate */ }
-  release(entity: Entity): void { this.handles.delete(entity); }
+public get position(): Vec2 {
+  return this.world.requireComponent(this[ENTITY], Transform2D).position;
 }
 ```
 
-**Contrat d'invalidation (à respecter) :**
+**Ce que ça garantit :**
 
-- On **ne met en cache que l'instance trouvée**, jamais l'absence : si le composant manque, `require` throw (ou une variante nullable renvoie `null`) sans rien cacher → un `addComponent` ultérieur est vu au prochain accès **sans** avoir besoin d'écouter `onAdd`.
-- `onRemove(T, entity)` → `invalidate()` du handle correspondant. Prochain accès = re-résolution.
-- **Point de vigilance :** `world.setComponent` remplace l'instance *en place* sans émettre `onRemove` (il n'émet `onAdd` que si le composant était absent). C'est la seule opération qui rendrait le cache périmé silencieusement. Contrat retenu : **les composants à façade sont mutés en place, jamais remplacés via `setComponent`** (c'est tout l'intérêt d'une source unique). Durcissement Nexus possible (hors scope) : émettre `onRemove`+`onAdd` sur remplacement.
-- **Cycle de vie du cache** : `ScriptManager` connaît déjà les scripts par entité (`recordsByEntity`). Quand le dernier script d'une entité est détruit, appeler `handleRegistry.release(entity)`. À la destruction d'entité, `destroyEntity` émet `onRemove` par composant → les handles s'invalident de toute façon.
+- **Pas de péremption possible.** Un handle détenu par un script après un `removeComponent` ne pointe pas une instance morte : il **throw bruyamment** au prochain accès (`requireComponent`). C'est le contrat Unity — utiliser un composant détruit lève.
+- **`setComponent` cesse d'être un piège.** Remplacer l'instance en place n'a plus besoin d'émettre quoi que ce soit : la résolution suivante voit la nouvelle.
+- **Cycle de vie nul.** Un proxy est un objet frais minté par `token.create(world, entity)` à chaque `getComponent`/`addComponent` ; rien à relâcher quand le dernier script d'une entité meurt. Corollaire assumé : **pas d'identité stable** entre deux résolutions (pas de `===`, pas de clé de `Map`).
+- **Ne pas ré-introduire de champ d'instance de cache** dans un proxy : ce serait exactement le bug supprimé ici.
 
-> Note perf assumée : à l'échelle cible (1k–3k entités, cf. `docs/core/nexus-ecs.md`), re-résoudre `world.getComponent` à chaque accès serait déjà négligeable. Le cache est l'optimisation demandée ; le fallback « re-résoudre à chaque fois » reste la baseline correcte la plus simple si l'invalidation devient un fardeau.
+> Note perf assumée : à l'échelle cible (1k–3k entités, cf. `docs/core/nexus-ecs.md`), re-résoudre `world.requireComponent` à chaque accès est négligeable — c'est ce qui a permis d'abandonner le cache sans le remplacer. Le seul coût restant est l'allocation du proxy par résolution ; le handle est une **classe** (méthodes sur le prototype) plutôt qu'un objet littéral précisément pour que cette allocation reste une seule shape à deux champs.
 
 ### 4. Pont physique & autorité déclarée
 
-On **garde la forme** du pipeline (déjà alignée sur les stages du core : `PhysicsRequest → PhysicsStep → PhysicsWriteback`), mais réduite à **deux systèmes** qui remplacent les six actuels.
+On **garde la forme** du pipeline (déjà alignée sur les stages du core : `PhysicsRequest → PhysicsStep → PhysicsWriteback`), mais réduite à **deux systèmes** qui remplacent les six actuels. *(Un troisième, `PhysicsCollisionSystem`, s'est ajouté depuis en `PhysicsWriteback` après le pull : il draine les événements du solveur vers `onCollisionEnter`/`onTriggerEnter` — il ne participe pas au transport de la position et ne remet pas en cause la table d'autorité ci-dessous.)*
 
 **Table d'autorité (la règle unique) :**
 
 | Type de corps | Autorité sur la position | Mécanisme par step |
 |---|---|---|
 | `dynamic` | **physique** | writeback `body → Transform2D` ; `setPosition` script = **téléport explicite** |
-| `kinematic` | **script / `Transform2D`** | push `Transform2D → body` (`setNextKinematicTranslation`) |
+| `kinematic` | **script / `Transform2D`** | push `Transform2D → body` (`body.setTranslation`/`setRotation` chaque step) |
 | `static` | `Transform2D` | poussé à la création, quasi jamais ensuite |
 | *(pas de `RigidBody2D`)* | script (`Transform2D`) | le script écrit `Transform2D` directement, aucun pont |
 
 **`PhysicsPushSystem`** — stage `PhysicsRequest` (avant `PhysicsStep`) :
-- `query(RigidBody2D, Transform2D).without(PhysicsBodyRef)` → crée le body inertia depuis `Transform2D`+`RigidBody2D`, ajoute `PhysicsBodyRef` (via `world.commands` puisqu'on itère). Remplace la création de `RigidBody2DSystem`.
-- `query(RigidBody2D, Transform2D, PhysicsBodyRef)` → pousse dans le body : vélocité/angular depuis `RigidBody2D` ; pour `kinematic`/`static`, pousse aussi la position/rotation depuis `Transform2D` ; sync `mass`/`type`.
+- `query(RigidBody2D, Transform2D).without(PhysicsBodyRef)` → crée le body inertia depuis `Transform2D`+`RigidBody2D`, ajoute `PhysicsBodyRef`. Remplace la création de `RigidBody2DSystem`. *(Les entités sont collectées dans un tableau réutilisé pendant l'itération, puis mutées **après** la query — pas via `world.commands` comme prévu ici.)*
+- `query(RigidBody2D, Transform2D, PhysicsBodyRef)` → pousse dans le body : vélocité/angular depuis `RigidBody2D` ; pour `kinematic`/`static`, pousse aussi la position/rotation depuis `Transform2D` ; sync `mass`. Un `type` qui ne correspond plus à celui du body **reconstruit** le body (retrait de `PhysicsBodyRef`, recréé au passage suivant) plutôt que de le muter en place.
+- Ajout depuis : le même système mint aussi les `PhysicsColliderRef` (depuis `Collider2D`) et les `CharacterControllerRef` (depuis `CharacterController2D`), et re-synchronise les colliders existants sur leur `Collider2D`. Pour une entité parentée, la position poussée vient du `WorldTransform2D` et non du `Transform2D` local.
 
 **`PhysicsPullSystem`** — stage `PhysicsWriteback` (après `PhysicsStep`) :
 - `query(RigidBody2D, Transform2D, PhysicsBodyRef)` → `transform.position = body.getTranslation()`, `transform.rotation = body.getRotation()`, `rigidBody.velocity = body.getLinearVelocity()`. Vaut **uniquement pour `dynamic`** (`if (type !== "dynamic") return`) : pour `kinematic`, `Transform2D` reste la source (poussée vers le solveur par `PhysicsPushSystem`), donc le pull n'a rien à en tirer — le lire en retour re-créerait une deuxième autorité sur la même donnée.
@@ -190,7 +185,7 @@ abstract class AtlasScript {
 ```
 
 - `addComponent`/`removeComponent` restent **directs** : `ScriptManager` itère ses propres records, pas une query world → aucun hazard de mutation-pendant-itération (cf. garde-fou Nexus). Si un jour les scripts sont pilotés dans une query world, basculer sur `world.commands`.
-- `ScriptManager` (files pending create/destroy, `onCreate/onUpdate/onFixedUpdate/onDestroy`) est **conservé tel quel** ; seul le `ScriptContext` change (vrai world au lieu du shadow storage), plus l'appel `handleRegistry.release(entity)` à la destruction du dernier script d'une entité.
+- `ScriptManager` (files pending create/destroy, `onCreate/onUpdate/onFixedUpdate/onDestroy`) est **conservé tel quel** ; seul le `ScriptContext` change (vrai world au lieu du shadow storage). *(L'appel `handleRegistry.release(entity)` prévu ici n'existe plus : sans cache il n'y a rien à relâcher, cf. §3.)*
 
 ### 6. Ce qu'on supprime / garde / ajoute
 
@@ -204,11 +199,11 @@ abstract class AtlasScript {
 **Garder**
 - `components/Transform2D.ts`, `RigidBody2D.ts`, `SpriteRender.ts`
 - `systems/SpriteRenderSystem.ts`
-- `scripting/core/ScriptManager` (+ `AtlasScript`, cycle de vie), `registerSystem.ts`, `GameplayPlugin` (recâblé)
+- `scripting/core/ScriptManager` (+ `AtlasScript`, cycle de vie), `registerSystem` (depuis déplacé dans `@atlasjs/nexus`, ré-exporté par le barrel gameplay), `GameplayPlugin` (recâblé)
 
 **Ajouter**
 - `components/PhysicsBodyRef.ts`
-- `scripting/runtime/Transform2DComponent.ts`, `RigidBody2DComponent.ts`, `ScriptComponentRegistry.ts`
+- `scripting/components/Transform.ts` — le handle, minté par `defineScriptComponent` (`scripting/core/ScriptComponentToken.ts`). *(Prévu ici comme `scripting/runtime/Transform2DComponent.ts` + `RigidBody2DComponent.ts` + `ScriptComponentRegistry.ts` : aucun des trois n'existe — `RigidBody` est un token identité et il n'y a pas de registre, cf. §3.)*
 - `systems/PhysicsPushSystem.ts`, `PhysicsPullSystem.ts` (fusion des ex-`RigidBody2DSystem` + `RigidBodyWriteBackSystem`)
 - `ScriptContext`/`RuntimeScriptContext` réécrits sur le vrai world
 
@@ -231,16 +226,20 @@ public onCreate(): void {
 public onUpdate(dt: number): void { this.rigidBody.rotation += 1 * dt; }
 ```
 
-Après (façade sur la source unique) :
+Après (tokens sur la source unique — l'utilisateur récupère et stocke lui-même, façon Unity) :
 
 ```ts
+private transform!: Transform;
+private rigidbody!: RigidBody;
+
 public onCreate(): void {
-  this.addComponent(RigidBody2D);           // vrai composant moteur ; type via handle
-  this.rigidbody!.type = "kinematic";
+  this.rigidbody = this.addComponent(RigidBody);   // token identité → RigidBody2D brut
+  this.transform = this.addComponent(Transform);   // token comportemental → proxy apatride
+  this.rigidbody.type = "kinematic";
   this.transform.setScale(3, 3);
   this.transform.setPosition(400, 300);     // kinematic → écrit Transform2D (autorité script)
 }
-public onUpdate(dt: number): void { this.rigidbody!.rotate(1 * dt); }
+public onUpdate(dt: number): void { this.transform.rotate(1 * dt); }
 ```
 
 L'ergonomie côté utilisateur est quasi identique — mais il n'y a plus de copie, plus de sync, plus de `Vector2D`.
@@ -269,8 +268,10 @@ L'ergonomie côté utilisateur est quasi identique — mais il n'y a plus de cop
 - [x] Phase 5 — `Vec2` partout : `Vector2D` supprimé (n'était utilisé que par la couche fantôme ; le reste du code était déjà en `Vec2`). Réalisé en même temps que la Phase 4.
 - [x] Phase 6 — migration `apps/dino-brawl` : `TestScript` (seule entité scriptée) migré sur la façade dès la Phase 3.
 
+> **Superséded depuis (phases 2-3).** Les livrables « handles + registre + cache » des phases 2 et 3 ci-dessus ont été **démontés** par la saga suivante : les façades-classes `Transform2DComponent`/`RigidBody2DComponent`, le `ScriptComponentRegistry`, son cache et son `release(entity)`, ainsi que les getters magiques `AtlasScript.transform`/`.rigidbody`, n'existent plus. Le modèle courant est le token apatride `defineScriptComponent` — cf. `docs/gameplay/scripting-components.md`. Tout ce qui concerne le **pont physique** (phases 0-1, 4-6) reste en vigueur.
+
 ## Points ouverts / risques
 
-- **`setComponent` vs cache de handle** (§3) : contrat « mutation en place, jamais de remplacement » pour les composants à façade ; sinon durcir Nexus (émettre `onRemove`+`onAdd` au remplacement).
-- **Téléport d'un `dynamic` avant création du body** : au 1er frame le `PhysicsBodyRef` peut ne pas exister ; `setPosition` doit alors écrire `Transform2D` (utilisé comme translation initiale à la création du body) plutôt que d'appeler un body inexistant.
+- ~~**`setComponent` vs cache de handle** (§3)~~ — **clos** : il n'y a plus de cache à périmer, le proxy re-résout à chaque accès (§3).
+- **Téléport d'un `dynamic` avant création du body** — **traité** : `setPosition` écrit `Transform2D` d'abord, puis ne touche au body que si un `PhysicsBodyRef` existe déjà ; au 1er frame `Transform2D` sert de translation initiale à la création du body.
 - **Scripts en lane `update` (variable) mutant un `dynamic`** : privilégier vélocité/force (appliquées au prochain `PhysicsStep`) ; réserver le téléport aux cas explicites, pour rester déterministe côté fixed.

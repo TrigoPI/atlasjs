@@ -15,15 +15,17 @@ Objectif : un système de tuiles façon Unity, en trois couches empilées.
 ```
                         @atlasjs/gameplay                           @atlasjs/nebula
   ┌──────────────────────────────────────────────┐      ┌────────────────────────────────────┐
-  │ assets/     TileSetAsset → TileSetLoader → TileSet    │ graphics/   TileMapNode              │
-  │             (Tile = seam fin : index → Sprite) │      │ renderers/  TileMapNodeRenderer      │
-  │ components/ Grid, TileMap, TileMapRenderer     │      │             + kind "tilemap"         │
-  │ systems/    TileMapRenderSystem  ──────────────┼──────┼──► remplit un TileMapNode / calque   │
-  └──────────────────────────────────────────────┘      │             + TileMapBatcher         │
+  │ components/ Grid, TileMap, TileMapRenderer     │      │ assets/     TileSetAsset →           │
+  │             (Tile / TileSet ré-exportés        │      │             TileSetLoader → TileSet  │
+  │              depuis nebula par le barrel)      │      │             (Tile = seam fin)        │
+  │ systems/    TileMapRenderSystem  ──────────────┼──────┼──► graphics/  TileMapNode            │
+  │                                                │      │    renderers/ TileMapNodeRenderer    │
+  └──────────────────────────────────────────────┘      │               + kind "tilemap"        │
+                                                          │               + TileMapBatcher       │
                                                           └────────────────────────────────────┘
 ```
 
-**Frontière packages** : nebula reste au niveau texture / rect / instances (ne connaît **pas** la notion de tuile) ; gameplay reste au niveau tuile / cellule et traduit vers nebula. Miroir de la répartition `Sprite` (gameplay) ↔ `SpriteNode` (nebula).
+**Frontière packages** (état actuel) : nebula possède l'**asset** tileset (`Tile`/`TileSet`/`TileSetAsset`/`TileSetLoader`, au même titre que `Sprite`/`SpriteAsset`/`SpriteLoader`) **et** le seam de rendu (`TileMapNode`) ; gameplay possède la **grille et les cellules** (`Grid`/`TileMap`/`TileMapRenderer`) et traduit les cellules visibles en instances. Le barrel gameplay **ré-exporte** les symboles tileset de nebula pour que le code de jeu n'ait qu'un import.
 
 ## 2. Périmètre v1 & non-objectifs
 
@@ -33,9 +35,9 @@ Objectif : un système de tuiles façon Unity, en trois couches empilées.
 - Multi-calque : une `Grid` → N `TileMap` enfants.
 - Remplissage **code-first** (`setTile` / `getTile` / `fill` / `clear` / …).
 - Rendu instancié via `TileMapNode` dédié, avec culling au viewport.
-- Tri par un unique `sortingOrder: int` (cohérent avec `SpriteRender`).
+- Tri par un unique `sortingOrder: int` (cohérent avec `SpriteRender`). *(Depuis, les **sorting layers nommés** ont été implémentés — cf. §6 et `src/rendering/SortingLayers.ts` : `TileMapRenderer` porte aussi un `sortingLayer: string`.)*
 
-**Non-objectifs v1 (→ [backlog](../backlog/)) :** (dé)sérialisation JSON + référence de tuile par id ; multi-tileset par tilemap & `Tile` riche (couleur / collider / animation par tuile) ; sorting layers nommés + order-in-layer ; colliders de tilemap ; layouts isométrique / hexagonal + cell swizzle ; palette / éditeur ; optimisations de rendu (buffer d'instances persistant, cache par `revision`, chunking).
+**Non-objectifs v1 (→ [backlog](../backlog/)) :** (dé)sérialisation JSON + référence de tuile par id ; multi-tileset par tilemap & `Tile` riche (couleur / collider / animation par tuile) ; colliders de tilemap ; layouts isométrique / hexagonal + cell swizzle ; palette / éditeur ; optimisations de rendu (buffer d'instances persistant, chunking). *(Livrés depuis : les **sorting layers nommés** et le **cache par `revision`**, cf. §7.2.)*
 
 ## 3. Décisions d'architecture
 
@@ -45,7 +47,7 @@ Objectif : un système de tuiles façon Unity, en trois couches empilées.
 | 2 | Qui possède les tuiles | **L'entité `TileMap` possède la grille de cellules** ; les tuiles **ne sont pas** des entités (modèle Unity, performant) |
 | 3 | Ce que stocke une cellule | Un **`int` (index de tuile)**, `-1` = vide ; un `TileSet` unique par tilemap ; abstraction **`Tile` conservée comme seam** d'extension |
 | 4 | Structure d'entités | `Grid` (racine) → N `TileMap` enfants (**multi-calque dès la v1**) |
-| 5 | Tri | **`sortingOrder: int` seul** ; sorting layers nommés reportés (feature de rendu transverse) |
+| 5 | Tri | v1 : **`sortingOrder: int` seul** ; **aujourd'hui** : `sortingLayer: string` + `sortingOrder`, résolus par `SortingLayers`/`applySortFields` (feature de rendu transverse livrée depuis) |
 | 6 | Nature du `TileSet` | **Asset complet** (`TileSetAsset → TileSetLoader → TileSet`) → `id` stable = ancre du futur JSON |
 | 7 | Seam de rendu | **`TileMapNode` dédié dans nebula + `NodeRenderer`** (pas un `SpriteNode` par cellule) |
 | A | Slicing | `TileSet` fait **sa propre boucle** row-major (util de slicing partagé → backlog) |
@@ -58,11 +60,11 @@ Objectif : un système de tuiles façon Unity, en trois couches empilées.
 
 **Coordonnées de cellule** : entiers `(cx, cy)`, convention **Y-down / top-left** cohérente avec la caméra et le reste du moteur (`cy` croissant = vers le bas à l'écran). Coordonnées arbitraires autorisées (y compris négatives).
 
-**Stockage** (décision B) : `Map` éparse `clé packée → index de tuile`. La clé packe `(cx, cy)` de façon bijective sur une plage bornée (offset + décalage) pour rester en `number`. L'absence d'entrée = cellule vide. `revision: number` incrémenté à chaque mutation, pour permettre au rendu de cacher plus tard (v1 : recalcul par frame).
+**Stockage** (décision B) : `Map` éparse `clé packée → index de tuile`. La clé packe `(cx, cy)` de façon bijective sur une plage bornée (offset + décalage) pour rester en `number`. L'absence d'entrée = cellule vide. `revision: number` incrémenté à chaque mutation — consommé par le cache de reconstruction du `TileMapRenderSystem` (§7.2).
 
 ## 5. Couche 1 — `TileSet` (asset)
 
-Placement : `packages/gameplay/src/assets/` (miroir de `Sprite`). Enregistré via `GameplayPlugin.install` (`assets.register(new TileSetLoader())`), comme `SpriteLoader`.
+Placement : `packages/nebula/src/assets/` (miroir de `Sprite`, dans le même package). Enregistré via `NebulaPlugin.install` (`assets.register(new TileSetLoader())`), comme `SpriteLoader`. Ré-exporté par le barrel `@atlasjs/gameplay` pour le code de jeu.
 
 ```ts
 // Tile.ts — le seam fin (aujourd'hui : juste index + sprite)
@@ -106,7 +108,7 @@ export class TileSet implements Resource {
 }
 ```
 
-**`TileSetLoader`** (`implements AssetLoader<TileSetAsset, TileSet>`, `type = "tileset"`) : `load(asset, ctx)` charge la texture via `ctx.load<Texture2D>(asset.texture)` (dedup gratuit), résout `columns`/`rows` (fournis ou dérivés de la taille texture), puis **sa propre boucle row-major** (décision A) construit `count` `Sprite` — pour chaque cellule `(col, row)` :
+**`TileSetLoader`** (`implements AssetLoader<TileSetAsset, TileSet>`, `type = "tileset"`) : `load(asset, ctx)` charge la texture via `ctx.load<Texture2D>(asset.texture)` (dedup gratuit) puis délègue à `new TileSet(texture, options)`. C'est le **constructeur de `TileSet`** qui résout `columns`/`rows` (fournis ou dérivés de la taille texture) et fait **sa propre boucle row-major** (décision A) pour construire `count` `Sprite` — pour chaque cellule `(col, row)` :
 
 ```
 rectX = margin + col * (tileWidth + spacing)
@@ -150,7 +152,8 @@ export class TileMapRenderer {
   public sortingOrder: number;   // défaut 0
   public color: Color;           // teinte du calque (décision C), défaut White
   public visible: boolean;       // défaut true
-  public constructor(sortingOrder?: number, color?: Color, visible?: boolean);
+  public sortingLayer: string;   // couche nommée résolue par SortingLayers, défaut "Default"
+  public constructor(sortingOrder?: number, color?: Color, visible?: boolean, sortingLayer?: string);
 }
 ```
 
@@ -167,8 +170,8 @@ export interface TileInstance {
   width: number; height: number;   // taille native de la tuile (taille du rect du sprite)
   uvRect: Vec4;                     // rect de la tuile normalisé par la taille de la texture
 }
-export class TileMapNode extends Node {   // hérite Transformable (position/rotation/scale) + zIndex/visible
-  public texture: Texture2D;
+export class TileMapNode extends Node {   // hérite Transformable (position/rotation/scale) + visible + sortingLayer/sortPrimary/sortSecondary
+  public texture: Texture2D | null;   // null tant que le système n'a pas sync le calque
   public sampler?: Sampler;
   public blend: BlendMode;    // défaut "alpha"
   public tint: Vec4;
@@ -176,25 +179,25 @@ export class TileMapNode extends Node {   // hérite Transformable (position/rot
 }
 ```
 
-- Nouveau `kind: "tilemap"` ajouté à `KIND_ORDER` (`packages/nebula/src/renderers/NodeRenderer.ts`) et à l'union `DrawCommand`. `TileMapDrawCommand` porte `{ kind, sortKey, batchKey, renderState, texture, sampler, tint, instances }`.
-- **`TileMapNodeRenderer implements NodeRenderer`** (`kind = "tilemap"`) : `collect(node)` construit **un** `TileMapDrawCommand`, `sortKey` calculé depuis `node.zIndex` + `KIND_ORDER.tilemap` (via `NodeRendererBase.computeSortKey`), `batchKey` = `${texture.id}|${sampler.id}|${blend}`. Le **modèle de chaque instance** est construit exactement comme `SpriteRenderer.buildCommand` (world-matrix du node ∘ translation vers `(x, y)` ∘ scale par `(width, height)`, même convention de quad) — c'est nebula qui possède le lift Mat3→Mat4 et la convention de quad, pas gameplay.
+- Nouveau `kind: "tilemap"` ajouté à `KIND_ORDER` (`packages/nebula/src/renderers/NodeRenderer.ts`) et à l'union `DrawCommand`. `TileMapDrawCommand` porte `{ kind, sortingLayer, sortPrimary, sortSecondary, kindOrder, batchKey, renderState, texture, sampler, tint, models, uvRects, count }`.
+- **`TileMapNodeRenderer implements NodeRenderer`** (`kind = "tilemap"`) : `collect(node)` construit **un** `TileMapDrawCommand` (ou `null` si pas de texture / zéro instance), recopie les champs de tri du node (`sortingLayer`/`sortPrimary`/`sortSecondary`) et pose `kindOrder = KIND_ORDER.tilemap` ; `batchKey` est un **entier interné** par clé matériau `${texture.id}|${sampler.id}|${blend}`. Le **modèle de chaque instance** est construit comme dans `SpriteRenderer` (world-matrix du node ∘ translation vers le **centre** `(x + width/2, y + height/2)` ∘ scale par `(width, height)`, même convention de quad) — c'est nebula qui possède le lift Mat3→Mat4 et la convention de quad, pas gameplay.
 - **`TileMapBatcher implements Batcher`** : réutilise le **`SpriteBatch` backend existant** (`begin(texture, sampler, renderState)` + `add(model, uvRect, tint)` par instance) → **un draw call instancié** pour tout le calque visible.
 - Enregistrement : `TileMapNodeRenderer` ajouté au tableau `nodeRenderers` de `SceneRenderer`, avec son `Batcher` dans le `RenderQueue`.
 
 ### 7.2 Côté gameplay — `TileMapRenderSystem`
 
-Lane `render` / stage `PreRender` (comme `SpriteRenderSystem`), après `CameraSyncSystem`. `SparseSet<TileMapNode>` pour tracker un node par entité-calque.
+Lane `render` / stage `PreRender` (comme `SpriteRenderSystem`), après `CameraSyncSystem`. `Map<Entity, TileMapNode>` pour tracker un node par entité-calque (+ une `Map<Entity, RebuildKey>` pour le cache d'instances).
 
 Par frame, `query(WorldTransform2D, TileMap, TileMapRenderer).each((layer, worldTransform, tileMap, renderer) => …)` :
 1. Résout la `Grid` du **parent** : `grid = world.getComponent(world.getParent(layer), Grid)`. Si absente → skip (warn dev).
 2. Monte le `TileMapNode` à la volée si absent (`nebula.scene.addChild`) ; décompose `worldTransform.matrix` → `node.setPosition/setRotation/setScale` (même décomposition TRS lossy que `SpriteRenderSystem`).
 3. **Culling** : convertit le viewport (`getCameraViewport()`, world-space `Bound`) en plage de cellules via l'inverse de la world-matrix du calque → AABB local → division par `stride = cellSize + cellGap` → `[cxMin..cxMax] × [cyMin..cyMax]` clampée.
-4. Reconstruit `node.instances` : pour chaque cellule visible non-vide, `tile = tileMap.tileset.getTile(index)` → `x, y = stride * (cx, cy)` (origine cellule, espace local), `width, height = tile.sprite.rect.{width,height}`, `uvRect = tile.sprite.rect` normalisé par la taille texture.
-5. Sync : `node.texture = tileset.texture`, `node.tint = renderer.color`, `node.zIndex = renderer.sortingOrder`, `node.visible = renderer.visible`.
+4. Reconstruit `node.instances` : pour chaque cellule visible non-vide, `tile = tileMap.tileset.tryGetTile(index)` (index hors tileset ⇒ cellule sautée) → `x, y = cellOrigin(cellSize, cellGap, cx, cy)` (origine cellule, espace local), `width, height = tile.sprite.rect.{width,height}`, `uvRect = tile.sprite.rect` normalisé par la taille texture.
+5. Sync : `node.texture = tileset.texture`, `node.tint = renderer.color`, `node.visible = renderer.visible`, et les champs de tri via `applySortFields(node, sortingLayers, renderer.sortingLayer, renderer.sortingOrder, positionY)` — qui écrit `node.sortingLayer` + `sortPrimary`/`sortSecondary` selon le mode (`manual` ⇒ `sortPrimary = sortingOrder` ; `ySorted` ⇒ `sortPrimary = worldY`, `sortSecondary = sortingOrder`).
 
-**Lifecycle** : démontage via `world.onRemove(TileMap, entity => system.unmount(entity))` dans `GameplayPlugin` (retire le node de la scène + supprime l'entrée du sparse-set), même pattern que `SpriteRenderSystem.unmount`.
+**Lifecycle** : démontage via `world.onRemove(TileMap, entity => system.unmount(entity))` dans `GameplayPlugin` (retire le node de la scène + supprime les entrées des deux `Map`), même pattern que `SpriteRenderSystem.unmount`.
 
-**Perf v1** : la liste d'instances *visibles* est reconstruite chaque frame (aucun churn de node — c'est le gain vs "un `SpriteNode` par cellule"). Cache par `revision` + plage-visible et buffer d'instances persistant (static batch) → backlog.
+**Perf** : la liste d'instances *visibles* n'est reconstruite que si la **clé de rebuild** change — `{ revision, plage de cellules visible, cellSize, cellGap }` mémorisée par entité (`RebuildKey`) ; sinon la passe sort tôt. Le tableau `node.instances` est réutilisé en place (les objets `TileInstance` sont recyclés, seul `length` est ajusté) — aucun churn de node. Buffer d'instances GPU persistant (static batch) et chunking → backlog.
 
 **Placement de la tuile (v1)** : ancrée au **coin d'origine** de la cellule, dessinée à sa taille native (`rect`). Le `pivot` du sprite n'intervient pas dans le placement de tuile en v1 ; un « Tile Anchor » configurable et le scaling *fit-to-cell* → backlog.
 
@@ -202,7 +205,7 @@ Par frame, `query(WorldTransform2D, TileMap, TileMapRenderer).each((layer, world
 
 | Élément | Package / dossier | Enregistrement |
 | --- | --- | --- |
-| `Tile`, `TileSetAsset`, `TileSet`, `TileSetLoader` | `gameplay/src/assets/` | loader dans `GameplayPlugin.install` |
+| `Tile`, `TileSetAsset`, `TileSet`, `TileSetLoader` | `nebula/src/assets/` | loader dans `NebulaPlugin.install` ; ré-exportés par `gameplay/src/index.ts` |
 | `Grid`, `TileMap`, `TileMapRenderer` | `gameplay/src/components/` | composants LEVEL 1, réexportés bruts via `gameplay/src/index.ts` |
 | `TileMapRenderSystem` | `gameplay/src/systems/` | `registerSystem(render, …, { stage: "PreRender" })` + `world.onRemove(TileMap, …)` |
 | `TileMapNode` | `nebula/src/graphics/` | — |
@@ -238,16 +241,16 @@ groundMap.setTile(5, 5, grassTileset.indexOf(2, 0));
 // (calques "murs"/"déco" = mêmes lignes avec sortingOrder 10, 20…)
 ```
 
-Remplace la double-boucle de ~15 lignes de [`apps/dino-brawl/src/game/EcsScene.ts`](../../apps/dino-brawl/src/game/EcsScene.ts) (100 entités-tuiles).
+A remplacé la double-boucle de ~15 lignes de l'ancien `apps/dino-brawl/src/game/EcsScene.ts` (100 entités-tuiles). Aujourd'hui la scène dino-brawl construit sa `Grid` et ses calques depuis Tiled ([`tiled/MapBuilder.ts`](../../apps/dino-brawl/src/game/tiled/MapBuilder.ts)).
 
 ## 10. Stratégie de test
 
 - **`TileSet` (unitaire, sans GPU)** : slicing row-major correct (indices, rects) avec/sans `spacing`/`margin` ; `indexOf(col,row)` bijectif ; `count = columns*rows` ; `getTile` hors-bornes throw, `tryGetTile` undefined. Texture mockée (`{ id, width, height }`).
 - **`TileMap` (unitaire)** : `setTile`/`getTile`/`removeTile`/`hasTile`, `-1` efface, `fill` sur une plage, `clear`, `revision` incrémenté à chaque mutation, coordonnées négatives.
 - **Culling (unitaire)** : plage de cellules visibles pour un viewport donné (bords, échelle, translation du calque).
-- **`TileMapRenderSystem` (intégration ECS)** : node monté/démonté sur add/remove `TileMap` ; `sortingOrder → zIndex` ; instances reconstruites après mutation ; skip si pas de `Grid` parente.
+- **`TileMapRenderSystem` (intégration ECS)** : node monté/démonté sur add/remove `TileMap` ; `sortingLayer`/`sortingOrder` → champs de tri du node ; instances reconstruites après mutation et **pas** reconstruites quand la clé de rebuild est inchangée ; skip si pas de `Grid` parente.
 - **Vérif navigateur** (obligatoire) : la scène `dino-brawl` réécrite rend la grille correctement, multi-calque trié, batch en un draw call (via les outils de preview). Les fichiers d'app/scripts doivent `import type` les symboles type-only (sinon `tsc` passe mais Vite casse au runtime — écran noir).
 
 ## 11. Non-objectifs / backlog
 
-Voir le [backlog](../backlog/) pour la liste complète des reports (JSON/sérialisation, multi-tileset & `Tile` riche, sorting layers nommés, colliders de tilemap, iso/hex, palette/éditeur, optimisations de rendu, util de slicing partagé, tile anchor / fit-to-cell).
+Voir le [backlog](../backlog/) pour la liste complète des reports (JSON/sérialisation, multi-tileset & `Tile` riche, colliders de tilemap, iso/hex, palette/éditeur, optimisations de rendu restantes — buffer d'instances persistant, chunking —, util de slicing partagé, tile anchor / fit-to-cell). Les **sorting layers nommés** et le **cache par `revision`** ont depuis été implémentés.

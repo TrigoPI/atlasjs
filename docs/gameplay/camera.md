@@ -10,6 +10,7 @@
 > - [x] §6 `CameraManager` + token `CAMERA_MANAGER`
 > - [x] §7 `CameraSyncSystem`
 > - [x] §8 `CameraApi`
+> - [x] §8bis camera shake (`shake.ts` + `CameraManager.shake`/`advanceShake` + `CameraApi.shake`)
 > - [x] §10 câblage `GameplayPlugin`
 > - [x] §12 démo `dino-brawl` (édit en place ; vérif visuelle navigateur en attente)
 
@@ -99,7 +100,7 @@ export class Camera {
 }
 ```
 
-- **LEVEL 1** : `this.addComponent(Camera)` retourne l'instance brute (dispatch non-façade), le script fait `this.getComponent(Camera).zoom = 1.5` directement.
+- **LEVEL 1** : `this.addComponent(Camera)` retourne l'instance brute (dispatch non-façade), le script fait `this.requireComponent(Camera).zoom = 1.5` directement (`getComponent` renvoie `Camera | undefined`).
 - **Nommage** : `Camera` (sans suffixe, convention LEVEL 1). Distinct du `Camera2D` de nebula (autre package, autre responsabilité : la matrice de rendu). Le `CameraSyncSystem` importe les deux ; aucun conflit de nom (`Camera` gameplay vs `Camera2D` nebula).
 - **YAGNI** : pas de `clearColor` / `viewport rect` / `renderTarget` en v1 (→ backlog multi-caméra). L'entité caméra doit posséder un `Transform2D` (le sync lit son `WorldTransform2D`).
 
@@ -116,6 +117,10 @@ export class CameraManager {
 
   public screenToWorld(screen: Vec2, out?: Vec2): Vec2;  // délègue à renderer.camera
   public worldToScreen(world: Vec2, out?: Vec2): Vec2;
+
+  public shake(spec: ShakeSpec, direction?: Vec2): void;  // §8bis : lance un kick
+  public advanceShake(dt: number): void;                  // §8bis : intègre le ressort
+  public getShakeOffset(): Vec2;                          // §8bis : offset courant (Vec2 réutilisé)
 }
 ```
 
@@ -130,7 +135,9 @@ Le push par frame, sur la lane **`render`**, **avant** le rendu nebula (et avant
 export class CameraSyncSystem {
   public constructor(manager: CameraManager, renderer: NebulaRenderer);
 
-  public update({ world }: NexusSystemContext): void {
+  public update({ world, dt }: NexusSystemContext): void {
+    this.manager.advanceShake(dt);                          // 0) intégrer le ressort de shake (§8bis)
+
     const active: Entity | undefined = this.manager.getActive();
     if (active === undefined) return;                       // aucune caméra → ne touche à rien
 
@@ -142,14 +149,16 @@ export class CameraSyncSystem {
     const cam2d = this.renderer.camera;                     // Camera2D nebula
     cam2d.zoom = cam.zoom;                                   // 1) poser le zoom d'abord
     const vp = this.renderer.getCameraViewport();            // 2) extent monde au bon zoom (§4bis)
-    cam2d.position.set(center.x - vp.width / 2, center.y - vp.height / 2);  // 3) baker le centrage
+    const shake: Vec2 = this.manager.getShakeOffset();       // 3) offset de shake, en unités monde
+    cam2d.position.set(center.x - vp.width / 2 + shake.x, center.y - vp.height / 2 + shake.y);  // 4) baker centrage + shake
   }
 }
 ```
 
 - Lit `WorldTransform2D` (produit par `TransformPropagationSystem` en `update/Late`) → frais en `render/PreRender`. **Follow via parenting gratuit** (`nexus.setParent(cam, player)`).
 - Ordre strict : **zoom → lire viewport → position** (le viewport dépend du zoom courant).
-- N'itère pas une query : il **résout l'unique entité active**. (Implémenté comme `NexusSystem` via `registerSystem`, ou comme step simple — tranché au plan ; il n'a besoin ni de `dt` ni de query.)
+- N'itère pas une query : il **résout l'unique entité active**. Implémenté comme `NexusSystem` via `registerSystem` ; il a besoin du `dt` (pour `advanceShake`) mais d'aucune query.
+- `advanceShake(dt)` est appelé **avant** le `return` anticipé : le ressort continue de s'amortir même sans caméra active, plutôt que de rester figé et de repartir en sursaut au prochain `setActive`.
 - Écrit uniquement `renderer.camera.position/zoom` — ne touche à rien d'autre.
 
 ## 8. `CameraApi` (façade de service, `packages/gameplay/src/scripting/services/CameraApi.ts`)
@@ -163,16 +172,56 @@ export class CameraApi extends ScriptService<CameraManager> {
   public screenToWorld(screen: Vec2, out?: Vec2): Vec2 { return this.provided.screenToWorld(screen, out); }
   public worldToScreen(world: Vec2, out?: Vec2): Vec2 { return this.provided.worldToScreen(world, out); }
   public setMain(entity: Entity): void { this.provided.setActive(entity); }
+  public shake(spec: ShakeSpec, direction?: Vec2): void { this.provided.shake(spec, direction); }
 }
 ```
+
+### 8bis. Camera shake — un ressort amorti, pas une courbe de bruit
+
+Le shake est le seul effet qui écrit `renderer.camera.position` **en plus** du centrage. Il vit entièrement dans `CameraManager` (état) + `shake.ts` (paramètres), et le `CameraSyncSystem` se contente d'additionner son offset (§7).
+
+**Le mécanisme : masse-ressort amorti à une seule impulsion.** Pas de bruit, pas d'échantillonnage de courbe, pas de durée. `shake()` ne déplace pas la caméra : il pose une **vitesse initiale** sur un offset qui vaut zéro au repos, et le ressort fait le reste. Chaque sous-pas intègre explicitement, en deux lignes symétriques sur `x` et `y` :
+
+```
+velocity += (−stiffness · offset − damping · velocity) · dt
+offset   += velocity · dt
+```
+
+L'offset part donc de zéro, s'éloigne dans la direction du kick, est rappelé vers le centre, dépasse, et l'oscillation meurt en quelques allers-retours. En dessous d'un seuil de repos (`SHAKE_REST = 0.01` sur l'offset **et** la vitesse), offset et vitesse sont **remis à zéro net** — la caméra revient exactement au centre plutôt que de traîner un résidu sous-pixel indéfiniment.
+
+**Trois paramètres, aucune durée** (`ShakeSpec`, `packages/gameplay/src/camera/shake.ts`) :
+
+| Champ | Rôle |
+|---|---|
+| `strength` | vitesse initiale du kick, en **unités monde par seconde** (pas une amplitude : l'amplitude atteinte en découle, via `stiffness`) |
+| `stiffness` | force de rappel vers le centre. Plus haut = retour plus sec, amplitude plus faible, fréquence plus élevée |
+| `damping` | vitesse d'extinction du ballant. Plus haut = se stabilise en moins d'oscillations |
+
+Quatre presets couvrent les cas usuels (`ShakePresets.light` / `medium` / `heavy` / `rumble`) ; on s'en écarte en spreadant plutôt qu'en repartant de zéro : `{ ...ShakePresets.heavy, strength: 200 }`.
+
+**Direction.** `shake(spec, direction?)` normalise `direction` lui-même — l'appelant peut passer un vecteur brut (un delta de coup, une normale de collision). Sans `direction`, ou si son module est nul, le kick est **vers le haut** (`(0, strength)`).
+
+**Un seul shake à la fois.** Un nouvel appel **remplace** le spec en vol et écrase la vitesse : les shakes ne s'accumulent pas et ne se mettent pas en file. L'offset courant, lui, n'est pas remis à zéro — un second coup pendant le ballant du premier repart de là où la caméra se trouve.
+
+**Spec invalide = no-op silencieux.** `strength <= 0`, `stiffness <= 0` ou `damping < 0` font sortir `shake()` sans rien toucher : ni le spec actif, ni la vitesse. Un `strength: 0` est donc « ne secoue pas », pas « secoue de zéro », et n'interrompt pas un shake en cours.
+
+**Stabilité de l'intégrateur (la partie non évidente).** L'intégration est explicite, donc elle **diverge** dès que le pas dépasse la limite de stabilité du ressort. Comme le pas vient de la lane `render` (variable, dépendant de la machine), un `dt` de frame ne peut pas être utilisé tel quel : un preset raide sur une frame lente ferait exploser l'offset. Deux garde-fous :
+
+- **Sous-pas dérivé du spec.** `advanceShake(dt)` découpe `dt` en pas d'au plus `min(1/120, 1/√stiffness, 1/damping)` — la borne est recalculée depuis le spec **actif**, si bien que n'importe quel preset reste stable à n'importe quel frame rate, sans que le doc ait à interdire des valeurs.
+- **Rattrapage borné.** Le `dt` consommé est plafonné à `1/10 s` : après une longue pause (onglet en arrière-plan, breakpoint), le shake ne rejoue pas le temps perdu en rafale.
+
+**Ce que le shake n'est pas.** Pas de shake **par caméra** : l'état vit dans le manager, une seule caméra étant active à la fois (§3). Pas de rotation ni de zoom secoués — uniquement une translation (cf. §3, rotation hors v1). Pas de fin d'effet observable : rien ne notifie « le shake est terminé », l'état se lit via `getShakeOffset()`.
+
+Côté script, tout passe par `CameraApi.shake` — un usage réel est décrit dans `docs/gameplay/weapon-attack-cues.md`.
 
 ## 9. Flux par frame
 
 ```
 update/Late   : TransformPropagationSystem  → WorldTransform2D (position monde de la caméra)
 render/PreRender (avant sprite-render):
-  CameraSyncSystem → lit active (WorldTransform2D + Camera.zoom)
-                   → .zoom = zoom ; .position = center - getCameraViewport().{w,h}/2
+  CameraSyncSystem → advanceShake(dt) (ressort amorti, §8bis)
+                   → lit active (WorldTransform2D + Camera.zoom)
+                   → .zoom = zoom ; .position = center - getCameraViewport().{w,h}/2 + shakeOffset
 render/Main   : NebulaRenderer.render() dessine via renderer.camera (culling getCameraViewport OK)
 ```
 
@@ -188,7 +237,7 @@ Ordonnancement : `CameraSyncSystem` en `render/PreRender`, **avant** `gameplay:s
 
 ## 11. Exports
 
-`@atlasjs/gameplay` `index.ts` : exporter `Camera` (composant), `CameraManager`, `CAMERA_MANAGER`, `CameraApi`. (`CameraSyncSystem` reste interne comme les autres systèmes.)
+`@atlasjs/gameplay` `index.ts` : exporter `Camera` (composant), `CameraManager`, `CAMERA_MANAGER`, `CameraApi`, plus `ShakeSpec`/`ShakePresets` (§8bis — le spec est un argument d'appel côté jeu). (`CameraSyncSystem` reste interne comme les autres systèmes.)
 
 ## 12. Création de la main camera (côté jeu)
 
@@ -204,7 +253,8 @@ cameraManager.setActive(cam);
 // Dans un script
 const world: Vec2 = this.getService(CameraApi)
   .screenToWorld(this.getService(InputApi).mousePosition);
-this.getComponent(Camera).zoom = 1.5;
+this.requireComponent(Camera).zoom = 1.5;
+this.getService(CameraApi).shake(ShakePresets.medium);   // §8bis
 ```
 
 ## 13. Tests (TDD, harness `test/helpers/harness.ts`)
@@ -212,6 +262,7 @@ this.getComponent(Camera).zoom = 1.5;
 - **`Camera2D` (nebula)** : `screenToWorld`/`worldToScreen` inverses l'un de l'autre ; `zoom`/`position` corrects ; `out?` réutilisé.
 - **`CameraManager`** : `setActive`/`getActive` ; `screenToWorld`/`worldToScreen` délèguent à `renderer.camera`.
 - **`CameraSyncSystem`** : avec une caméra active à `center=(cx,cy)`, `zoom=z` et un viewport `(w,h)` → `renderer.camera.position == (cx - (w/2)/z, cy - (h/2)/z)` et `.zoom == z` ; parenting → suit la position monde du parent ; aucune caméra active → `renderer.camera` intouché.
+- **Shake** (`test/camera-shake.test.ts`) : au repos l'offset est nul ; le kick suit la direction donnée et ne dépend que de `strength` (direction normalisée) ; le ressort revient au repos seul ; une frame très longue reste bornée ; le point d'arrivée est le même quel qu'ait été le frame rate, et chaque preset reste stable à une cadence rampante ; un spec à `stiffness`/`strength` non positif est ignoré ; direction de module nul → kick vertical.
 - **Round-trip centrage** : `screenToWorld(centreÉcran) == centreMonde` de la caméra active après un sync.
 - **Cycle de vie** : retirer la caméra active → `getActive() === undefined`.
 - **Intégration harness** : entité `Transform2D + Camera`, `setActive`, `frame()` → la matrice de rendu reflète la caméra ; `screenToWorld` de la souris cohérent.
