@@ -96,6 +96,11 @@ Consult it before undertaking a significant change: a design may already be vali
 
 In-flight implementation plans live in `memory/atlas/plans/` and are **transient**: `/atlas-done` deletes them once a feature is closed out.
 
+`memory/atlas/claude/` est la mémoire de l'agent sur ce projet : une note par fait,
+indexée dans `claude/index.md`, injectée au démarrage de session par
+`.claude/hooks/claude-memory.mjs`. Toute nouvelle mémoire s'écrit **là** — jamais
+dans le dossier `~/.claude/projects/…/memory/`, qui ne contient plus qu'un pointeur.
+
 ---
 
 ## Architectural Direction

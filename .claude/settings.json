@@ -24,6 +24,10 @@
           {
             "type": "command",
             "command": "node .claude/hooks/plan-reminder.mjs"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/hooks/claude-memory.mjs"
           }
         ]
       }
