@@ -1,5 +1,5 @@
 import { AssetLoader, LoadContext } from "@atlasjs/assets";
-import { Texture2D } from "@atlasjs/nebula";
+import { Texture2D } from "../core";
 import { Sprite } from "./Sprite";
 import { SpriteAsset } from "./SpriteAsset";
 

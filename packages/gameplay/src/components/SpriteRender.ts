@@ -1,6 +1,6 @@
 import { Color } from "@atlasjs/nebula";
 import type { Entity } from "@atlasjs/nexus";
-import { Sprite } from "../assets";
+import { Sprite } from "@atlasjs/nebula";
 
 export class SpriteRender {
   public sprite: Sprite;

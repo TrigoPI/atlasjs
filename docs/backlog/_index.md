@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **149** items.
+Total : **140** items.
 
 ## app
 
@@ -43,8 +43,6 @@ Total : **149** items.
 | CORE-01 | [CORE-01-archetype-soa-storage](CORE-01-archetype-soa-storage.md) | 📋 à faire | L | 2026-08-19 |
 | CORE-02 | [CORE-02-changed-t-detection](CORE-02-changed-t-detection.md) | 📋 à faire | L | 2026-08-19 |
 | CORE-05 | [CORE-05-scheduler-step-introspection](CORE-05-scheduler-step-introspection.md) | 📋 à faire | S | 2026-08-24 |
-| CORE-06 | [CORE-06-register-system-belongs-in-nexus](CORE-06-register-system-belongs-in-nexus.md) | 📋 à faire | S | 2026-08-25 |
-| CORE-07 | [CORE-07-mat3-transform-bound-duplication](CORE-07-mat3-transform-bound-duplication.md) | 📋 à faire | M | 2026-08-25 |
 | CORE-08 | [CORE-08-nexus-on-before-destroy-signal](CORE-08-nexus-on-before-destroy-signal.md) | 📋 à faire | M | 2026-08-25 |
 | CORE-03 | [CORE-03-component-registry-by-name](CORE-03-component-registry-by-name.md) | 💭 vision | S | 2026-08-19 |
 | CORE-04 | [CORE-04-rollback-driver](CORE-04-rollback-driver.md) | 💭 vision | L | 2026-08-19 |
@@ -105,21 +103,15 @@ Total : **149** items.
 | GAMEPLAY-62 | [GAMEPLAY-62-trail-defaults-single-source](GAMEPLAY-62-trail-defaults-single-source.md) | 📋 à faire | S | 2026-08-23 |
 | GAMEPLAY-63 | [GAMEPLAY-63-modifier-keys-left-only](GAMEPLAY-63-modifier-keys-left-only.md) | 📋 à faire | S | 2026-08-24 |
 | GAMEPLAY-64 | [GAMEPLAY-64-movement-arbitration](GAMEPLAY-64-movement-arbitration.md) | 📋 à faire | M | 2026-08-24 |
-| GAMEPLAY-72 | [GAMEPLAY-72-move-sprite-tileset-assets-to-nebula](GAMEPLAY-72-move-sprite-tileset-assets-to-nebula.md) | 📋 à faire | M | 2026-08-25 |
-| GAMEPLAY-73 | [GAMEPLAY-73-lazy-audio-engine-dependency](GAMEPLAY-73-lazy-audio-engine-dependency.md) | 📋 à faire | S | 2026-08-25 |
-| GAMEPLAY-74 | [GAMEPLAY-74-scripting-prefab-circular-dependency](GAMEPLAY-74-scripting-prefab-circular-dependency.md) | 📋 à faire | S | 2026-08-25 |
-| GAMEPLAY-75 | [GAMEPLAY-75-render-transform-sync-duplication](GAMEPLAY-75-render-transform-sync-duplication.md) | 📋 à faire | M | 2026-08-25 |
-| GAMEPLAY-76 | [GAMEPLAY-76-scriptmanager-dispose-leaks-scripts](GAMEPLAY-76-scriptmanager-dispose-leaks-scripts.md) | 📋 à faire | S | 2026-08-25 |
-| GAMEPLAY-77 | [GAMEPLAY-77-scripting-hot-path-allocations](GAMEPLAY-77-scripting-hot-path-allocations.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-78 | [GAMEPLAY-78-scripting-dead-code-and-unused-api](GAMEPLAY-78-scripting-dead-code-and-unused-api.md) | 📋 à faire | S | 2026-08-25 |
-| GAMEPLAY-79 | [GAMEPLAY-79-tilemap-rebuild-key-ignores-cell-size](GAMEPLAY-79-tilemap-rebuild-key-ignores-cell-size.md) | 📋 à faire | S | 2026-08-25 |
-| GAMEPLAY-80 | [GAMEPLAY-80-barrels-and-authoring-helper-placement](GAMEPLAY-80-barrels-and-authoring-helper-placement.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-81 | [GAMEPLAY-81-occluder-test-reads-dist](GAMEPLAY-81-occluder-test-reads-dist.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-82 | [GAMEPLAY-82-scheduler-order-and-uninstall-untested](GAMEPLAY-82-scheduler-order-and-uninstall-untested.md) | 📋 à faire | M | 2026-08-25 |
 | GAMEPLAY-83 | [GAMEPLAY-83-core-coverage-gaps](GAMEPLAY-83-core-coverage-gaps.md) | 📋 à faire | M | 2026-08-25 |
 | GAMEPLAY-84 | [GAMEPLAY-84-test-suite-hygiene](GAMEPLAY-84-test-suite-hygiene.md) | 📋 à faire | S | 2026-08-25 |
 | GAMEPLAY-85 | [GAMEPLAY-85-gameplay-docs-drift](GAMEPLAY-85-gameplay-docs-drift.md) | 📋 à faire | M | 2026-08-25 |
 | GAMEPLAY-87 | [GAMEPLAY-87-world-transform-one-frame-stale](GAMEPLAY-87-world-transform-one-frame-stale.md) | 📋 à faire | M | 2026-08-25 |
+| GAMEPLAY-88 | [GAMEPLAY-88-script-service-missing-token-message](GAMEPLAY-88-script-service-missing-token-message.md) | 📋 à faire | S | 2026-08-25 |
+| GAMEPLAY-89 | [GAMEPLAY-89-collision-dispatch-mints-a-handle-per-contact](GAMEPLAY-89-collision-dispatch-mints-a-handle-per-contact.md) | 📋 à faire | M | 2026-08-25 |
 | GAMEPLAY-35 | [GAMEPLAY-35-addcomponent-overload-duplication](GAMEPLAY-35-addcomponent-overload-duplication.md) | 🔶 partiel | S | 2026-08-25 |
 | GAMEPLAY-47 | [GAMEPLAY-47-tilemap-render-persistent-buffer-chunking](GAMEPLAY-47-tilemap-render-persistent-buffer-chunking.md) | 🔶 partiel | M | 2026-08-25 |
 | GAMEPLAY-03 | [GAMEPLAY-03-animator-state-machine](GAMEPLAY-03-animator-state-machine.md) | 💭 vision | L | 2026-08-19 |
@@ -185,7 +177,6 @@ Total : **149** items.
 | RENDER-22 | [RENDER-22-instance-buffer-pool-shrink](RENDER-22-instance-buffer-pool-shrink.md) | 📋 à faire | S | 2026-08-23 |
 | RENDER-23 | [RENDER-23-trail-spline-smoothing](RENDER-23-trail-spline-smoothing.md) | 📋 à faire | M | 2026-08-23 |
 | RENDER-24 | [RENDER-24-afterimage-idle-cost](RENDER-24-afterimage-idle-cost.md) | 📋 à faire | S | 2026-08-25 |
-| RENDER-26 | [RENDER-26-afterimage-ring-buffer-extraction](RENDER-26-afterimage-ring-buffer-extraction.md) | 📋 à faire | M | 2026-08-25 |
 | RENDER-04 | [RENDER-04-resource-lifecycle-eviction](RENDER-04-resource-lifecycle-eviction.md) | 🔶 partiel | M | 2026-08-19 |
 | RENDER-01 | [RENDER-01-text-rendering](RENDER-01-text-rendering.md) | 💭 vision | L | 2026-08-19 |
 | RENDER-09 | [RENDER-09-shapes-arbitrary-polygons](RENDER-09-shapes-arbitrary-polygons.md) | 💭 vision | L | 2026-08-19 |

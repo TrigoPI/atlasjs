@@ -1,9 +1,6 @@
-import type { EntityBuilder } from "./EntityBuilder";
+import type { EntityBuilder, Prefab } from "../scripting/core";
 
-export type Prefab<TParams = void> = {
-  readonly name?: string;
-  build(entity: EntityBuilder, params: TParams): void;
-};
+export type { Prefab } from "../scripting/core";
 
 export function definePrefab<TParams = void>(def: {
   name?: string;

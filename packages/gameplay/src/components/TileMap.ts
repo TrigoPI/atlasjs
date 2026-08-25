@@ -1,4 +1,4 @@
-import type { TileSet } from "../assets/TileSet";
+import type { TileSet } from "@atlasjs/nebula";
 
 const KEY_OFFSET: number = 32768;
 const KEY_STRIDE: number = 65536;

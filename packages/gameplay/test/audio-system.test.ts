@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { ServiceRegistry } from "@atlasjs/core";
 import { NexusWorld, ComponentRegistry, Entity } from "@atlasjs/nexus";
-import { AudioClip, AudioEngine, AudioVoice } from "@atlasjs/audio";
+import {
+  AUDIO_ENGINE,
+  AudioClip,
+  AudioEngine,
+  AudioVoice,
+} from "@atlasjs/audio";
 
 import { AudioSource } from "../src/components/AudioSource";
 import { AudioSystem } from "../src/systems/AudioSystem";
@@ -41,6 +47,12 @@ const clip: AudioClip = new AudioClip("audio:x", {
   duration: 1,
 } as AudioBuffer);
 
+function servicesWith(engine: FakeEngine): ServiceRegistry {
+  const services: ServiceRegistry = new ServiceRegistry();
+  services.provide(AUDIO_ENGINE, engine as unknown as AudioEngine);
+  return services;
+}
+
 function setup(): {
   world: NexusWorld;
   engine: FakeEngine;
@@ -50,7 +62,7 @@ function setup(): {
   const world: NexusWorld = new NexusWorld(new ComponentRegistry());
   world.defineComponent(AudioSource);
   const engine: FakeEngine = new FakeEngine();
-  const system: AudioSystem = new AudioSystem(engine as unknown as AudioEngine);
+  const system: AudioSystem = new AudioSystem(servicesWith(engine));
   const entity: Entity = world.createEntity();
   world.addComponent(entity, AudioSource, clip, { loop: true, volume: 0.5 });
   const source: AudioSource = world.requireComponent(entity, AudioSource);
@@ -77,9 +89,7 @@ describe("AudioSystem", () => {
     const world: NexusWorld = new NexusWorld(new ComponentRegistry());
     world.defineComponent(AudioSource);
     const engine: FakeEngine = new FakeEngine();
-    const system: AudioSystem = new AudioSystem(
-      engine as unknown as AudioEngine,
-    );
+    const system: AudioSystem = new AudioSystem(servicesWith(engine));
     const entity: Entity = world.createEntity();
     world.addComponent(entity, AudioSource);
     world.requireComponent(entity, AudioSource).play();

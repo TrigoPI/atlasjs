@@ -3,9 +3,10 @@ import { TileMapNode } from "@atlasjs/nebula";
 import type { Bound, Mat3 } from "@atlasjs/math";
 import type { NebulaRenderer, TileInstance } from "@atlasjs/nebula";
 
-import type { Tile } from "../assets/Tile";
+import type { Tile } from "@atlasjs/nebula";
 import type { CellOrigin, CellRange } from "./utils";
 import { applySortFields } from "../rendering/applySortFields";
+import { syncNodeTransform } from "../rendering/syncNodeTransform";
 import type { SortingLayers } from "../rendering";
 
 import { Grid } from "../components/Grid";
@@ -32,6 +33,10 @@ type RebuildKey = {
   cyMin: number;
   cxMax: number;
   cyMax: number;
+  cellSizeX: number;
+  cellSizeY: number;
+  cellGapX: number;
+  cellGapY: number;
 };
 
 export class TileMapRenderSystem implements NexusSystem {
@@ -102,12 +107,14 @@ export class TileMapRenderSystem implements NexusSystem {
     renderer: TileMapRenderer,
     tileMap: TileMap,
   ): void {
-    const position: Vec2 = worldTransform.getPosition(this.positionScratch);
-    const scale: Vec2 = worldTransform.getScale(this.scaleScratch);
-
-    node.setPosition(position.x, position.y);
-    node.setRotation(worldTransform.getRotation());
-    node.setScale(scale.x, scale.y);
+    const position: Vec2 = syncNodeTransform(
+      node,
+      worldTransform,
+      this.positionScratch,
+      this.scaleScratch,
+      false,
+      false,
+    );
 
     node.texture = tileMap.tileset.texture;
 
@@ -152,7 +159,11 @@ export class TileMapRenderSystem implements NexusSystem {
       previous.cxMin === range.cxMin &&
       previous.cyMin === range.cyMin &&
       previous.cxMax === range.cxMax &&
-      previous.cyMax === range.cyMax
+      previous.cyMax === range.cyMax &&
+      previous.cellSizeX === grid.cellSize.x &&
+      previous.cellSizeY === grid.cellSize.y &&
+      previous.cellGapX === grid.cellGap.x &&
+      previous.cellGapY === grid.cellGap.y
     ) {
       return;
     }
@@ -216,6 +227,10 @@ export class TileMapRenderSystem implements NexusSystem {
       cyMin: range.cyMin,
       cxMax: range.cxMax,
       cyMax: range.cyMax,
+      cellSizeX: grid.cellSize.x,
+      cellSizeY: grid.cellSize.y,
+      cellGapX: grid.cellGap.x,
+      cellGapY: grid.cellGap.y,
     });
   }
 }

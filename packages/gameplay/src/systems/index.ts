@@ -2,6 +2,7 @@ export * from "./AfterimageRenderSystem";
 export * from "./AnimatorSystem";
 export * from "./AudioSystem";
 export * from "./CameraSyncSystem";
+export * from "./OccluderRenderSystem";
 export * from "./PhysicsCollisionSystem";
 export * from "./PhysicsPullSystem";
 export * from "./PhysicsPushSystem";

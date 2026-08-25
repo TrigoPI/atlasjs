@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { Bound, Transform2D, Vec2 } from "@atlasjs/math";
-import { NebulaRenderer, SceneGraph, TileMapNode } from "@atlasjs/nebula";
+import {
+  NebulaRenderer,
+  SceneGraph,
+  TileMapNode,
+  TileSet,
+} from "@atlasjs/nebula";
 import { Entity, NexusWorld } from "@atlasjs/nexus";
-import { TileSet } from "../src/assets/TileSet";
 import { Grid, TileMap, TileMapRenderer, WorldTransform2D } from "../src/components";
 import { TileMapRenderSystem } from "../src/systems";
 import { SortingLayers } from "../src/rendering";

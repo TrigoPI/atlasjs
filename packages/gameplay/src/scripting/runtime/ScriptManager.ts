@@ -7,6 +7,8 @@ import { ScriptHost } from "../../components/ScriptHost";
 import { RuntimeScriptContext } from "./RuntimeScriptContext";
 import { IncrementalScriptIdGenerator } from "./IncrementalScriptIdGenerator";
 
+import type { AttachArgs } from "../core";
+
 import {
   AtlasScript,
   ExposeFieldMetadata,
@@ -20,20 +22,10 @@ import {
   getScriptMetadata,
 } from "../core";
 
-type PropsOf<T> = T extends AtlasScript<infer P> ? P : {};
-
-export type AttachProps<P> = {
-  [K in keyof P]: P[K] extends GameEntity ? Entity : P[K];
-};
-
-export type AttachArgs<T> =
-  {} extends AttachProps<PropsOf<T>>
-    ? [props?: AttachProps<PropsOf<T>>]
-    : [props: AttachProps<PropsOf<T>>];
-
 export class ScriptManager implements ScriptResolver {
   private readonly records: Map<ScriptID, ScriptInstanceRecord>;
   private readonly recordsByEntity: Map<Entity, Set<ScriptID>>;
+  private readonly idsByInstance: WeakMap<AtlasScript, ScriptID>;
   private readonly idGenerator: IncrementalScriptIdGenerator;
   private readonly world: NexusWorld;
   private readonly services: ServiceRegistry;
@@ -58,6 +50,7 @@ export class ScriptManager implements ScriptResolver {
 
     this.records = new Map<ScriptID, ScriptInstanceRecord>();
     this.recordsByEntity = new Map<Entity, Set<ScriptID>>();
+    this.idsByInstance = new WeakMap<AtlasScript, ScriptID>();
     this.idGenerator = new IncrementalScriptIdGenerator();
 
     this.world.defineComponent(ScriptHost);
@@ -103,6 +96,7 @@ export class ScriptManager implements ScriptResolver {
     };
 
     this.records.set(record.scriptId, record);
+    this.idsByInstance.set(instance, record.scriptId);
 
     let entityRecords: Set<ScriptID> | undefined =
       this.recordsByEntity.get(entityId);
@@ -141,14 +135,37 @@ export class ScriptManager implements ScriptResolver {
     });
   }
 
-  public setEnabled(scriptId: ScriptID, enabled: boolean): void {
-    const record: ScriptInstanceRecord | undefined = this.records.get(scriptId);
+  public setEnabled(script: AtlasScript, enabled: boolean): void;
+  public setEnabled(scriptId: ScriptID, enabled: boolean): void;
+  public setEnabled(target: AtlasScript | ScriptID, enabled: boolean): void {
+    const record: ScriptInstanceRecord | undefined = this.resolveRecord(target);
 
     if (!record || record.isDestroyed) {
       return;
     }
 
     record.isEnabled = enabled;
+  }
+
+  public isEnabled(script: AtlasScript): boolean;
+  public isEnabled(scriptId: ScriptID): boolean;
+  public isEnabled(target: AtlasScript | ScriptID): boolean {
+    const record: ScriptInstanceRecord | undefined = this.resolveRecord(target);
+
+    return record !== undefined && !record.isDestroyed && record.isEnabled;
+  }
+
+  private resolveRecord(
+    target: AtlasScript | ScriptID,
+  ): ScriptInstanceRecord | undefined {
+    const scriptId: ScriptID | undefined =
+      typeof target === "number" ? target : this.idsByInstance.get(target);
+
+    if (scriptId === undefined) {
+      return undefined;
+    }
+
+    return this.records.get(scriptId);
   }
 
   public getScriptsByEntity(entityId: Entity): readonly AtlasScript[] {
@@ -190,6 +207,17 @@ export class ScriptManager implements ScriptResolver {
 
   public dispose(): void {
     this.unsubscribeHost();
+
+    const scriptIds: ScriptID[] = [...this.records.keys()];
+
+    for (let i: number = 0; i < scriptIds.length; i++) {
+      this.tearDownScript(scriptIds[i]);
+    }
+
+    this.records.clear();
+    this.recordsByEntity.clear();
+    this.pendingCreate.length = 0;
+    this.pendingDestroy.length = 0;
   }
 
   public getScript<T extends AtlasScript>(

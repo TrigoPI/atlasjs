@@ -1,25 +1,18 @@
+export { registerSystem } from "@atlasjs/nexus";
+
 export { Key } from "@atlasjs/input";
 export { Color } from "@atlasjs/nebula";
 
 export { defineCollisionLayers, ALL_LAYERS, NO_LAYERS } from "@atlasjs/inertia";
 
 export * from "./tokens";
+export * from "./authoring";
 export * from "./components";
 export * from "./camera";
 export * from "./rendering";
-export * from "./assets";
 export * from "./scripting";
 export * from "./prefab";
-export * from "./registerSystem";
 export * from "./GameplayPlugin";
-
-export { OccluderStrip } from "./components/OccluderStrip";
-export { OccluderRenderSystem } from "./systems/OccluderRenderSystem";
-export { bakeOccluderStrips } from "./systems/utils/bake-occluder-strips";
-export type {
-  OccluderRegion,
-  OccluderStripData,
-} from "./systems/utils/bake-occluder-strips";
 
 export type {
   CollisionLayer,
@@ -55,10 +48,21 @@ export {
   SpriteAnimation,
   AnimationPlayer,
   Frame,
+  Sprite,
+  SpriteAsset,
+  SpriteLoader,
+  Tile,
+  TileSet,
+  TileSetAsset,
+  TileSetLoader,
 } from "@atlasjs/nebula";
 
 export type {
   SpriteAnimationOptions,
   FromGridOptions,
   FromAutoGridOptions,
+  SpriteOptions,
+  SpriteAssetOptions,
+  TileSetOptions,
+  TileSetAssetOptions,
 } from "@atlasjs/nebula";

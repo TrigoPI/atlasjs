@@ -2,6 +2,7 @@ import { Vec2 } from "@atlasjs/math";
 
 import { TrailRenderer, WorldTransform2D } from "../components";
 import { applySortFields } from "../rendering/applySortFields";
+import { DetachedPool } from "../rendering/DetachedPool";
 import type { SortingLayers } from "../rendering";
 
 import { Color, NebulaRenderer, TrailNode } from "@atlasjs/nebula";
@@ -20,14 +21,22 @@ interface MountedTrail {
 
 export class TrailRenderSystem implements NexusSystem {
   private readonly mounted: SparseSet<MountedTrail>;
-  private readonly detached: TrailNode[];
+  private readonly detached: DetachedPool<TrailNode>;
   private readonly nebula: NebulaRenderer;
   private readonly sortingLayers: SortingLayers;
   private readonly positionScratch: Vec2;
 
   public constructor(nebula: NebulaRenderer, sortingLayers: SortingLayers) {
     this.mounted = new SparseSet<MountedTrail>();
-    this.detached = [];
+    this.detached = new DetachedPool<TrailNode>({
+      advance: (node: TrailNode, dt: number): void => {
+        node.advance(dt);
+      },
+      isExpired: (node: TrailNode): boolean => node.pointCount < 2,
+      release: (node: TrailNode): void => {
+        node.removeFromParent();
+      },
+    });
     this.nebula = nebula;
     this.sortingLayers = sortingLayers;
     this.positionScratch = new Vec2();
@@ -69,7 +78,7 @@ export class TrailRenderSystem implements NexusSystem {
       );
     });
 
-    this.advanceDetached(dt);
+    this.detached.advance(dt);
   }
 
   public detach(entity: Entity): void {
@@ -84,26 +93,7 @@ export class TrailRenderSystem implements NexusSystem {
   }
 
   public clear(): void {
-    for (let i: number = 0; i < this.detached.length; i++) {
-      this.detached[i].removeFromParent();
-    }
-
-    this.detached.length = 0;
-  }
-
-  private advanceDetached(dt: number): void {
-    for (let i: number = this.detached.length - 1; i >= 0; i--) {
-      const node: TrailNode = this.detached[i];
-      node.advance(dt);
-
-      if (node.pointCount >= 2) {
-        continue;
-      }
-
-      node.removeFromParent();
-      this.detached[i] = this.detached[this.detached.length - 1];
-      this.detached.pop();
-    }
+    this.detached.clear();
   }
 
   private sync(node: TrailNode, trailRenderer: TrailRenderer): void {

@@ -1,15 +1,21 @@
+import { ServiceRegistry } from "@atlasjs/core";
 import { Entity, NexusSystem, NexusSystemContext } from "@atlasjs/nexus";
-import { AudioEngine, AudioVoice } from "@atlasjs/audio";
+import { AUDIO_ENGINE, AudioEngine, AudioVoice } from "@atlasjs/audio";
 
 import { AudioSource } from "../components/AudioSource";
 
-export class AudioSystem implements NexusSystem {
-  private readonly engine: AudioEngine;
-  private readonly voices: Map<AudioSource, AudioVoice>;
+const MISSING_AUDIO_ENGINE: string =
+  'AudioSource playback requires an AudioEngine, but no service is registered under AUDIO_ENGINE. Install the audio plugin before starting the engine — import { AudioPlugin } from "@atlasjs/audio" then engine.use(new AudioPlugin()) — or remove the AudioSource component if this project has no audio.';
 
-  public constructor(engine: AudioEngine) {
-    this.engine = engine;
+export class AudioSystem implements NexusSystem {
+  private readonly services: ServiceRegistry;
+  private readonly voices: Map<AudioSource, AudioVoice>;
+  private engine: AudioEngine | undefined;
+
+  public constructor(services: ServiceRegistry) {
+    this.services = services;
     this.voices = new Map<AudioSource, AudioVoice>();
+    this.engine = undefined;
   }
 
   public update({ world }: NexusSystemContext): void {
@@ -35,7 +41,8 @@ export class AudioSystem implements NexusSystem {
         source.isPlaying = false;
         return;
       }
-      const voice: AudioVoice = this.engine.createVoice(source.clip, {
+      const engine: AudioEngine = this.requireEngine();
+      const voice: AudioVoice = engine.createVoice(source.clip, {
         loop: source.loop,
         volume: source.volume,
         mute: source.mute,
@@ -47,6 +54,20 @@ export class AudioSystem implements NexusSystem {
       this.stopVoice(source);
       source.isPlaying = false;
     }
+  }
+
+  private requireEngine(): AudioEngine {
+    let engine: AudioEngine | undefined = this.engine;
+
+    if (engine === undefined) {
+      if (!this.services.has(AUDIO_ENGINE)) {
+        throw new Error(MISSING_AUDIO_ENGINE);
+      }
+      engine = this.services.get(AUDIO_ENGINE);
+      this.engine = engine;
+    }
+
+    return engine;
   }
 
   private pushLiveState(source: AudioSource): void {

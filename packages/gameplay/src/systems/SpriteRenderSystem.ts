@@ -1,7 +1,8 @@
 import { Vec2 } from "@atlasjs/math";
-import { Sprite } from "../assets";
+import { Sprite } from "@atlasjs/nebula";
 import { SpriteRender, WorldTransform2D } from "../components";
 import { applySortFields } from "../rendering/applySortFields";
+import { syncNodeTransform } from "../rendering/syncNodeTransform";
 import type { SortingLayers } from "../rendering";
 
 import { Color, NebulaRenderer, Sampler, SpriteNode } from "@atlasjs/nebula";
@@ -45,18 +46,10 @@ export class SpriteRenderSystem implements NexusSystem {
     world.query(WorldTransform2D, SpriteRender).each((entity: Entity, worldTransform: WorldTransform2D, spriteRender: SpriteRender) => {
       const node: SpriteNode = this.resolveNode(entity, spriteRender.sprite);
 
-      const position: Vec2 = worldTransform.getPosition(this.positionScratch);
-      const rotation: number = worldTransform.getRotation();
-      const scale: Vec2 = worldTransform.getScale(this.scaleScratch);
-
-      const scaleX: number = scale.x * (spriteRender.flipX ? -1 : 1);
-      const scaleY: number = scale.y * (spriteRender.flipY ? -1 : 1);
+      const position: Vec2 = syncNodeTransform(node, worldTransform, this.positionScratch, this.scaleScratch, spriteRender.flipX, spriteRender.flipY);
       const color: Color = spriteRender.color;
 
       node
-        .setPosition(position.x, position.y)
-        .setRotation(rotation)
-        .setScale(scaleX, scaleY)
         .setTint(color.r, color.g, color.b, color.a)
         .setVisible(spriteRender.visible);
 

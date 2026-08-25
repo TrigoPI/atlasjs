@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TileSet } from "../src/assets/TileSet";
+import { TileSet } from "@atlasjs/nebula";
 import { TileMap } from "../src/components/TileMap";
 import { fakeTexture } from "./helpers/fakes";
 

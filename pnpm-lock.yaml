@@ -195,29 +195,8 @@ importers:
         specifier: ^8.18.1
         version: 8.18.1
 
-  packages/editor:
-    dependencies:
-      '@atlasjs/core':
-        specifier: workspace:*
-        version: link:../core
-      '@atlasjs/input':
-        specifier: workspace:*
-        version: link:../input
-      '@atlasjs/math':
-        specifier: workspace:*
-        version: link:../math
-      '@atlasjs/nebula':
-        specifier: workspace:*
-        version: link:../nebula
-      '@atlasjs/utils':
-        specifier: workspace:*
-        version: link:../utils
-
   packages/gameplay:
     dependencies:
-      '@atlasjs/assets':
-        specifier: workspace:*
-        version: link:../assets
       '@atlasjs/audio':
         specifier: workspace:*
         version: link:../audio
@@ -242,6 +221,10 @@ importers:
       '@atlasjs/utils':
         specifier: workspace:*
         version: link:../utils
+    devDependencies:
+      '@atlasjs/assets':
+        specifier: workspace:*
+        version: link:../assets
 
   packages/gizmos:
     dependencies:

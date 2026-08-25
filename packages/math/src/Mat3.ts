@@ -1,3 +1,4 @@
+import type { Bound } from "./Bound";
 import { Transform2DValues } from "./Transform2DValues";
 import { Vec2 } from "./Vec2";
 
@@ -64,6 +65,37 @@ export class Mat3 {
       m[0] * x + m[3] * y + m[6],
       m[1] * x + m[4] * y + m[7],
     );
+  }
+
+  public transformBound(bound: Bound, out: Bound): Bound {
+    const m: Float32Array = this.buffer;
+    const m0: number = m[0];
+    const m1: number = m[1];
+    const m3: number = m[3];
+    const m4: number = m[4];
+    const m6: number = m[6];
+    const m7: number = m[7];
+
+    const x0: number = bound.x;
+    const y0: number = bound.y;
+    const x1: number = x0 + bound.width;
+    const y1: number = y0 + bound.height;
+
+    const px0: number = m0 * x0 + m3 * y0 + m6;
+    const py0: number = m1 * x0 + m4 * y0 + m7;
+    const px1: number = m0 * x1 + m3 * y0 + m6;
+    const py1: number = m1 * x1 + m4 * y0 + m7;
+    const px2: number = m0 * x0 + m3 * y1 + m6;
+    const py2: number = m1 * x0 + m4 * y1 + m7;
+    const px3: number = m0 * x1 + m3 * y1 + m6;
+    const py3: number = m1 * x1 + m4 * y1 + m7;
+
+    const minX: number = Math.min(px0, px1, px2, px3);
+    const minY: number = Math.min(py0, py1, py2, py3);
+    const maxX: number = Math.max(px0, px1, px2, px3);
+    const maxY: number = Math.max(py0, py1, py2, py3);
+
+    return out.set(minX, minY, maxX - minX, maxY - minY);
   }
 
   public multiply(b: Mat3): Mat3 {

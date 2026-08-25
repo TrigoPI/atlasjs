@@ -3,7 +3,8 @@ import { Entity } from "@atlasjs/nexus";
 
 import { Transform2D } from "../src";
 import { AtlasScript } from "../src/scripting";
-import { definePrefab, EntityBuilder, Instantiator } from "../src/prefab";
+import type { EntityBuilder } from "../src/scripting/core";
+import { definePrefab, Instantiator } from "../src/prefab";
 import { createHarness, Harness } from "./helpers/harness";
 
 class Marker extends AtlasScript {}

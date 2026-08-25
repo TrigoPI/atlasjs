@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Color } from "@atlasjs/nebula";
-import { Sprite } from "../src/assets";
+import { Sprite } from "@atlasjs/nebula";
 import { SpriteRender } from "../src/components";
 import { fakeTexture } from "./helpers/fakes";
 

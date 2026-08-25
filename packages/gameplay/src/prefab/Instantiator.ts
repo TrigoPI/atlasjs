@@ -1,17 +1,17 @@
 import { Entity, NexusWorld } from "@atlasjs/nexus";
 
 import { createGameEntity } from "../scripting/core";
-import type { GameEntity } from "../scripting/core";
+import type {
+  GameEntity,
+  InstantiateArgs,
+  InstantiateOptions,
+  Prefab,
+} from "../scripting/core";
 import type { ScriptManager } from "../scripting/runtime";
 
 import { PrefabEntityBuilder } from "./EntityBuilder";
-import type { Prefab } from "./Prefab";
 
-export type InstantiateOptions = { parent?: Entity };
-
-export type InstantiateArgs<TParams> = [TParams] extends [void]
-  ? [params?: undefined, options?: InstantiateOptions]
-  : [params: TParams, options?: InstantiateOptions];
+export type { InstantiateArgs, InstantiateOptions } from "../scripting/core";
 
 // prettier-ignore
 export class Instantiator {

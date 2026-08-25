@@ -4,8 +4,7 @@ import { ScriptServiceCtor } from "./ScriptService";
 import { ScriptContext } from "./ScriptContext";
 import { ScriptLifecycle } from "./ScriptLifeCycle";
 import type { GameEntity } from "./GameEntity";
-import type { Prefab } from "../../prefab/Prefab";
-import type { InstantiateArgs } from "../../prefab/Instantiator";
+import type { InstantiateArgs, Prefab } from "./Prefab";
 
 import {
   ScriptComponentToken,
