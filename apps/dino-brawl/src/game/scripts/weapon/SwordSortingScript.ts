@@ -1,5 +1,7 @@
 import type { Entity } from "@atlasjs/nexus";
 
+import { PI } from "@atlasjs/math";
+
 import {
   AtlasScript,
   registerScriptMetadata,
@@ -34,7 +36,7 @@ export class SwordSortingScript extends AtlasScript<SwordSortingScriptProps> {
   public onUpdate(): void {
     const angle: number = this.aim.angle;
 
-    if (angle < 0) {
+    if (angle > PI) {
       this.renderer.sortingOrder = this.sortingBehind;
     } else {
       this.renderer.sortingOrder = this.sortingFront;

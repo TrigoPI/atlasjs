@@ -34,13 +34,13 @@ describe("readAimAngle", () => {
     expect(angle).toBeCloseTo(Math.PI / 2);
   });
 
-  it("returns -pi/2 when the mouse world position is below the origin", () => {
+  it("returns 3pi/2, not -pi/2, when the mouse world position is on the -Y side of the origin", () => {
     const input: InputApi = createInput(new Vec2(1, 1));
     const camera: CameraApi = createCamera(new Vec2(0, -5));
 
     const angle: number = readAimAngle(input, camera, Vec2.zero());
 
-    expect(angle).toBeCloseTo(-Math.PI / 2);
+    expect(angle).toBeCloseTo((3 * Math.PI) / 2);
   });
 
   it("returns pi when the mouse world position is to the left of the origin", () => {
