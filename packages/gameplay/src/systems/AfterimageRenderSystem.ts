@@ -7,6 +7,7 @@ import {
   WorldTransform2D,
 } from "../components";
 import { applySortFields } from "../rendering/applySortFields";
+import { DetachedPool } from "../rendering/DetachedPool";
 import type { SortingLayers } from "../rendering";
 
 import { Color, NebulaRenderer, Sampler, SpriteNode } from "@atlasjs/nebula";
@@ -52,7 +53,7 @@ interface MountedAfterimages {
 
 export class AfterimageRenderSystem implements NexusSystem {
   private readonly mounted: SparseSet<MountedAfterimages>;
-  private readonly detached: MountedAfterimages[];
+  private readonly detached: DetachedPool<MountedAfterimages>;
   private readonly nebula: NebulaRenderer;
   private readonly sortingLayers: SortingLayers;
   private readonly sampler: Sampler;
@@ -61,7 +62,16 @@ export class AfterimageRenderSystem implements NexusSystem {
 
   public constructor(nebula: NebulaRenderer, sortingLayers: SortingLayers) {
     this.mounted = new SparseSet<MountedAfterimages>();
-    this.detached = [];
+    this.detached = new DetachedPool<MountedAfterimages>({
+      advance: (mounted: MountedAfterimages, dt: number): void => {
+        this.advance(mounted, dt);
+        this.render(mounted);
+      },
+      isExpired: (mounted: MountedAfterimages): boolean => mounted.count === 0,
+      release: (mounted: MountedAfterimages): void => {
+        this.release(mounted);
+      },
+    });
     this.nebula = nebula;
     this.sortingLayers = sortingLayers;
     this.positionScratch = new Vec2();
@@ -99,7 +109,7 @@ export class AfterimageRenderSystem implements NexusSystem {
       this.render(mounted);
     });
 
-    this.advanceDetached(dt);
+    this.detached.advance(dt);
   }
 
   public detach(entity: Entity): void {
@@ -114,28 +124,7 @@ export class AfterimageRenderSystem implements NexusSystem {
   }
 
   public clear(): void {
-    for (let i: number = 0; i < this.detached.length; i++) {
-      this.release(this.detached[i]);
-    }
-
-    this.detached.length = 0;
-  }
-
-  private advanceDetached(dt: number): void {
-    for (let i: number = this.detached.length - 1; i >= 0; i--) {
-      const mounted: MountedAfterimages = this.detached[i];
-
-      this.advance(mounted, dt);
-      this.render(mounted);
-
-      if (mounted.count > 0) {
-        continue;
-      }
-
-      this.release(mounted);
-      this.detached[i] = this.detached[this.detached.length - 1];
-      this.detached.pop();
-    }
+    this.detached.clear();
   }
 
   private release(mounted: MountedAfterimages): void {

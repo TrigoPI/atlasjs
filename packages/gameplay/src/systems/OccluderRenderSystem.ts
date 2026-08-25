@@ -2,6 +2,7 @@ import { Vec2 } from "@atlasjs/math";
 import { TileMapNode } from "@atlasjs/nebula";
 import type { NebulaRenderer } from "@atlasjs/nebula";
 import { applySortFields } from "../rendering/applySortFields";
+import { syncNodeTransform } from "../rendering/syncNodeTransform";
 import type { SortingLayers } from "../rendering";
 import { OccluderStrip } from "../components/OccluderStrip";
 import { WorldTransform2D } from "../components/WorldTransform2D";
@@ -33,14 +34,14 @@ export class OccluderRenderSystem implements NexusSystem {
         ) => {
           const node: TileMapNode = this.resolveNode(entity, strip);
 
-          const position: Vec2 = worldTransform.getPosition(
+          syncNodeTransform(
+            node,
+            worldTransform,
             this.positionScratch,
+            this.scaleScratch,
+            false,
+            false,
           );
-          const scale: Vec2 = worldTransform.getScale(this.scaleScratch);
-
-          node.setPosition(position.x, position.y);
-          node.setRotation(worldTransform.getRotation());
-          node.setScale(scale.x, scale.y);
 
           applySortFields(
             node,

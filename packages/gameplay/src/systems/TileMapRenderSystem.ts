@@ -6,6 +6,7 @@ import type { NebulaRenderer, TileInstance } from "@atlasjs/nebula";
 import type { Tile } from "@atlasjs/nebula";
 import type { CellOrigin, CellRange } from "./utils";
 import { applySortFields } from "../rendering/applySortFields";
+import { syncNodeTransform } from "../rendering/syncNodeTransform";
 import type { SortingLayers } from "../rendering";
 
 import { Grid } from "../components/Grid";
@@ -106,12 +107,14 @@ export class TileMapRenderSystem implements NexusSystem {
     renderer: TileMapRenderer,
     tileMap: TileMap,
   ): void {
-    const position: Vec2 = worldTransform.getPosition(this.positionScratch);
-    const scale: Vec2 = worldTransform.getScale(this.scaleScratch);
-
-    node.setPosition(position.x, position.y);
-    node.setRotation(worldTransform.getRotation());
-    node.setScale(scale.x, scale.y);
+    const position: Vec2 = syncNodeTransform(
+      node,
+      worldTransform,
+      this.positionScratch,
+      this.scaleScratch,
+      false,
+      false,
+    );
 
     node.texture = tileMap.tileset.texture;
 
