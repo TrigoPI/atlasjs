@@ -2,17 +2,20 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Total : **118** items.
+Total : **125** items.
 
 ## app
 
 | ID | Item | Statut | Effort | Vérifié |
 | --- | --- | --- | --- | --- |
 | APP-02 | [APP-02-dino-brawl-dead-react-screens](APP-02-dino-brawl-dead-react-screens.md) | 📋 à faire | S | 2026-08-21 |
-| APP-04 | [APP-04-dino-brawl-specs-not-typechecked](APP-04-dino-brawl-specs-not-typechecked.md) | 📋 à faire | S | 2026-08-21 |
+| APP-04 | [APP-04-dino-brawl-specs-not-typechecked](APP-04-dino-brawl-specs-not-typechecked.md) | 📋 à faire | S | 2026-08-24 |
 | APP-05 | [APP-05-per-attack-camera-shake](APP-05-per-attack-camera-shake.md) | 📋 à faire | S | 2026-08-21 |
 | APP-06 | [APP-06-richer-attack-cues](APP-06-richer-attack-cues.md) | 📋 à faire | M | 2026-08-21 |
-| APP-07 | [APP-07-timeline-attack-props-validation](APP-07-timeline-attack-props-validation.md) | 📋 à faire | S | 2026-08-21 |
+| APP-07 | [APP-07-timeline-attack-props-validation](APP-07-timeline-attack-props-validation.md) | 📋 à faire | S | 2026-08-24 |
+| APP-10 | [APP-10-afterimages-on-enemies-and-projectiles](APP-10-afterimages-on-enemies-and-projectiles.md) | 📋 à faire | S | 2026-08-24 |
+| APP-11 | [APP-11-player-spec-fakes-duplicated](APP-11-player-spec-fakes-duplicated.md) | 📋 à faire | S | 2026-08-24 |
+| APP-09 | [APP-09-dash-iframes](APP-09-dash-iframes.md) | 💭 vision | S | 2026-08-24 |
 
 ## assets
 
@@ -39,6 +42,7 @@ Total : **118** items.
 | --- | --- | --- | --- | --- |
 | CORE-01 | [CORE-01-archetype-soa-storage](CORE-01-archetype-soa-storage.md) | 📋 à faire | L | 2026-08-19 |
 | CORE-02 | [CORE-02-changed-t-detection](CORE-02-changed-t-detection.md) | 📋 à faire | L | 2026-08-19 |
+| CORE-05 | [CORE-05-scheduler-step-introspection](CORE-05-scheduler-step-introspection.md) | 📋 à faire | S | 2026-08-24 |
 | CORE-03 | [CORE-03-component-registry-by-name](CORE-03-component-registry-by-name.md) | 💭 vision | S | 2026-08-19 |
 | CORE-04 | [CORE-04-rollback-driver](CORE-04-rollback-driver.md) | 💭 vision | L | 2026-08-19 |
 
@@ -96,6 +100,8 @@ Total : **118** items.
 | GAMEPLAY-59 | [GAMEPLAY-59-sort-point-customization](GAMEPLAY-59-sort-point-customization.md) | 📋 à faire | M | 2026-08-20 |
 | GAMEPLAY-61 | [GAMEPLAY-61-render-systems-unmount-lifecycle](GAMEPLAY-61-render-systems-unmount-lifecycle.md) | 📋 à faire | M | 2026-08-23 |
 | GAMEPLAY-62 | [GAMEPLAY-62-trail-defaults-single-source](GAMEPLAY-62-trail-defaults-single-source.md) | 📋 à faire | S | 2026-08-23 |
+| GAMEPLAY-63 | [GAMEPLAY-63-modifier-keys-left-only](GAMEPLAY-63-modifier-keys-left-only.md) | 📋 à faire | S | 2026-08-24 |
+| GAMEPLAY-64 | [GAMEPLAY-64-movement-arbitration](GAMEPLAY-64-movement-arbitration.md) | 📋 à faire | M | 2026-08-24 |
 | GAMEPLAY-35 | [GAMEPLAY-35-addcomponent-overload-duplication](GAMEPLAY-35-addcomponent-overload-duplication.md) | 🔶 partiel | S | 2026-08-19 |
 | GAMEPLAY-47 | [GAMEPLAY-47-tilemap-render-persistent-buffer-chunking](GAMEPLAY-47-tilemap-render-persistent-buffer-chunking.md) | 🔶 partiel | M | 2026-08-19 |
 | GAMEPLAY-03 | [GAMEPLAY-03-animator-state-machine](GAMEPLAY-03-animator-state-machine.md) | 💭 vision | L | 2026-08-19 |
@@ -155,10 +161,11 @@ Total : **118** items.
 | RENDER-21 | [RENDER-21-trail-temporal-interpolation](RENDER-21-trail-temporal-interpolation.md) | 📋 à faire | S | 2026-08-23 |
 | RENDER-22 | [RENDER-22-instance-buffer-pool-shrink](RENDER-22-instance-buffer-pool-shrink.md) | 📋 à faire | S | 2026-08-23 |
 | RENDER-23 | [RENDER-23-trail-spline-smoothing](RENDER-23-trail-spline-smoothing.md) | 📋 à faire | M | 2026-08-23 |
+| RENDER-24 | [RENDER-24-afterimage-idle-cost](RENDER-24-afterimage-idle-cost.md) | 📋 à faire | S | 2026-08-24 |
 | RENDER-04 | [RENDER-04-resource-lifecycle-eviction](RENDER-04-resource-lifecycle-eviction.md) | 🔶 partiel | M | 2026-08-19 |
 | RENDER-01 | [RENDER-01-text-rendering](RENDER-01-text-rendering.md) | 💭 vision | L | 2026-08-19 |
 | RENDER-09 | [RENDER-09-shapes-arbitrary-polygons](RENDER-09-shapes-arbitrary-polygons.md) | 💭 vision | L | 2026-08-19 |
 | RENDER-10 | [RENDER-10-shapes-gradient-texture-fill](RENDER-10-shapes-gradient-texture-fill.md) | 💭 vision | M | 2026-08-19 |
 | RENDER-14 | [RENDER-14-material-graph](RENDER-14-material-graph.md) | 💭 vision | L | 2026-08-19 |
-| RENDER-19 | [RENDER-19-afterimage-renderer](RENDER-19-afterimage-renderer.md) | 💭 vision | M | 2026-08-23 |
+| RENDER-25 | [RENDER-25-afterimage-offset-and-scale-ramp](RENDER-25-afterimage-offset-and-scale-ramp.md) | 💭 vision | M | 2026-08-24 |
 

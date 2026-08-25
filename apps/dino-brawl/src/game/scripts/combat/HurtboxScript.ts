@@ -55,6 +55,13 @@ export class HurtboxScript extends AtlasScript<HurtboxScriptProps> {
     this.invincibilityRemaining -= dt;
   }
 
+  public grantInvincibility(duration: number): void {
+    this.invincibilityRemaining = Math.max(
+      this.invincibilityRemaining,
+      duration,
+    );
+  }
+
   public takeHit(hit: HitInfo): boolean {
     if (this.invincibilityRemaining > 0) {
       return false;

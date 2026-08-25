@@ -2,7 +2,7 @@
 
 > Fichier **généré** par `pnpm docs:index`. Ne pas éditer à la main.
 
-Le backlog vit dans [`backlog/`](backlog/) — **118** items ouverts, index dans [`backlog/_index.md`](backlog/_index.md).
+Le backlog vit dans [`backlog/`](backlog/) — **125** items ouverts, index dans [`backlog/_index.md`](backlog/_index.md).
 
 Les plans d'implémentation en cours vivent dans [`plans/`](plans/) et sont **transitoires** : ils sont supprimés à la clôture de la feature (`/atlas-done`).
 
@@ -56,6 +56,7 @@ Les plans d'implémentation en cours vivent dans [`plans/`](plans/) et sont **tr
 
 | Document | Statut |
 | --- | --- |
+| [afterimages.md](rendering/afterimages.md) | ✅ implémenté (livré le 2026-08-24 sur la branche feat/app-08-player-dash, non mergée). |
 | [canvas-resize.md](rendering/canvas-resize.md) | implémenté. Renderer.resize(w, h) en pixels logiques (CSS), backing store physique × |
 | [material-graph.md](rendering/material-graph.md) | design cadré, non implémenté. Document de vision. |
 | [renderer-architecture.md](rendering/renderer-architecture.md) | implémenté (6 phases 0→5 + dirty-flag + tint/blend par sprite). Durcissement post-refactor |

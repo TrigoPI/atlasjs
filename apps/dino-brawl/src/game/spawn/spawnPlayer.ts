@@ -66,7 +66,8 @@ export function spawnPlayer(
 
   const playerPrefab: Prefab<PlayerPrefabProps> = createPlayerPrefab({
     runningAudioPrefab,
-    runningParticlePrefab
+    runningParticlePrefab,
+    dashWooshClip: woosh1Sound
   });
 
   const player: GameEntity = instantiator.instantiate(playerPrefab, {

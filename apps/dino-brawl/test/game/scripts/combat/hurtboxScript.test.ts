@@ -146,4 +146,67 @@ describe("HurtboxScript", () => {
       expect(hurtbox.isInvincible).toBe(true);
     });
   });
+
+  describe("grantInvincibility", () => {
+    it("shrugs off hits during a granted invincibility window", () => {
+      const hurtbox: HurtboxScript = new HurtboxScript();
+
+      hurtbox.grantInvincibility(0.3);
+
+      expect(hurtbox.takeHit(hit())).toBe(false);
+      expect(hurtbox.hitCount).toBe(0);
+    });
+
+    it("is invincible during a granted window and stops once onUpdate consumes it", () => {
+      const hurtbox: HurtboxScript = new HurtboxScript();
+
+      hurtbox.grantInvincibility(0.3);
+
+      expect(hurtbox.isInvincible).toBe(true);
+
+      hurtbox.onUpdate(0.3);
+
+      expect(hurtbox.isInvincible).toBe(false);
+    });
+
+    it("extends an invincibility window shorter than the granted duration", () => {
+      const hurtbox: HurtboxScript = new HurtboxScript();
+
+      injectField(hurtbox, "invincibilityRemaining", 0.1);
+      hurtbox.grantInvincibility(0.3);
+      hurtbox.onUpdate(0.29);
+
+      expect(hurtbox.isInvincible).toBe(true);
+    });
+
+    it("never shortens an invincibility window already longer than the granted duration", () => {
+      const hurtbox: HurtboxScript = new HurtboxScript();
+
+      injectField(hurtbox, "invincibilityRemaining", 0.4);
+      hurtbox.grantInvincibility(0.1);
+      hurtbox.onUpdate(0.39);
+
+      expect(hurtbox.isInvincible).toBe(true);
+    });
+
+    it("does nothing when the granted duration is zero or negative", () => {
+      const hurtbox: HurtboxScript = new HurtboxScript();
+
+      hurtbox.grantInvincibility(0);
+      expect(hurtbox.isInvincible).toBe(false);
+
+      hurtbox.grantInvincibility(-1);
+      expect(hurtbox.isInvincible).toBe(false);
+    });
+
+    it("does not make an already-invincible hurtbox vulnerable when granted a non-positive duration", () => {
+      const hurtbox: HurtboxScript = new HurtboxScript();
+
+      hurtbox.grantInvincibility(0.3);
+      hurtbox.grantInvincibility(0);
+
+      expect(hurtbox.isInvincible).toBe(true);
+      expect(hurtbox.takeHit(hit())).toBe(false);
+    });
+  });
 });

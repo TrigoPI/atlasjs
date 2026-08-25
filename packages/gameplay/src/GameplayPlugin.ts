@@ -23,6 +23,7 @@ import { Instantiator } from "./prefab";
 import { OccluderRenderSystem } from "./systems/OccluderRenderSystem";
 
 import {
+  AfterimageRenderSystem,
   AnimatorSystem,
   AudioSystem,
   CameraSyncSystem,
@@ -37,6 +38,7 @@ import {
 } from "./systems";
 
 import {
+  AfterimageRenderer,
   Animator,
   AudioSource,
   Camera,
@@ -62,6 +64,7 @@ export class GameplayPlugin extends Plugin {
 
   private scriptManager!: ScriptManager;
   private trailRenderSystem?: TrailRenderSystem;
+  private afterimageRenderSystem?: AfterimageRenderSystem;
   private handles: StepHandle[];
   private unsubscribers: Unsubscribe[];
 
@@ -104,6 +107,8 @@ export class GameplayPlugin extends Plugin {
     const occluderRenderSystem: OccluderRenderSystem = new OccluderRenderSystem(nebula, sortingLayers);
     const trailRenderSystem: TrailRenderSystem = new TrailRenderSystem(nebula, sortingLayers);
     this.trailRenderSystem = trailRenderSystem;
+    const afterimageRenderSystem: AfterimageRenderSystem = new AfterimageRenderSystem(nebula, sortingLayers);
+    this.afterimageRenderSystem = afterimageRenderSystem;
     const playerInputSystem: PlayerInputSystem = new PlayerInputSystem(engine.services);
     const animatorSystem: AnimatorSystem = new AnimatorSystem();
     const audioSystem: AudioSystem = new AudioSystem(audio);
@@ -113,7 +118,7 @@ export class GameplayPlugin extends Plugin {
 
     this.defineComponents(world);
 
-    this.registerCleanup(world, inertia, spriteRenderSystem, tileMapRenderSystem, occluderRenderSystem, cameraManager, trailRenderSystem);
+    this.registerCleanup(world, inertia, spriteRenderSystem, tileMapRenderSystem, occluderRenderSystem, cameraManager, trailRenderSystem, afterimageRenderSystem);
 
     this.unsubscribers.push(
       world.onAdd(AudioSource, (_entity: Entity, source: AudioSource) => {
@@ -141,6 +146,7 @@ export class GameplayPlugin extends Plugin {
       tileMapRenderSystem,
       occluderRenderSystem,
       trailRenderSystem,
+      afterimageRenderSystem,
     );
 
     this.logger.log("GameplayPlugin installed.");
@@ -171,6 +177,7 @@ export class GameplayPlugin extends Plugin {
       .defineComponent(TileMap)
       .defineComponent(TileMapRenderer)
       .defineComponent(TrailRenderer)
+      .defineComponent(AfterimageRenderer)
       .defineComponent(OccluderStrip);
   }
 
@@ -183,6 +190,7 @@ export class GameplayPlugin extends Plugin {
     occluderRenderSystem: OccluderRenderSystem,
     cameraManager: CameraManager,
     trailRenderSystem: TrailRenderSystem,
+    afterimageRenderSystem: AfterimageRenderSystem,
   ): void {
     this.unsubscribers.push(
       world.onRemove(PhysicsBodyRef, (_entity: Entity, ref: PhysicsBodyRef) => {
@@ -219,6 +227,10 @@ export class GameplayPlugin extends Plugin {
         spriteRenderSystem.unmount(entity);
       }),
 
+      world.onRemove(SpriteRender, (entity: Entity) => {
+        afterimageRenderSystem.detach(entity);
+      }),
+
       world.onRemove(TileMap, (entity: Entity) => {
         tileMapRenderSystem.unmount(entity);
       }),
@@ -229,6 +241,10 @@ export class GameplayPlugin extends Plugin {
 
       world.onRemove(TrailRenderer, (entity: Entity) => {
         trailRenderSystem.detach(entity);
+      }),
+
+      world.onRemove(AfterimageRenderer, (entity: Entity) => {
+        afterimageRenderSystem.detach(entity);
       }),
 
       world.onRemove(Transform2D, (entity: Entity) => {
@@ -260,6 +276,7 @@ export class GameplayPlugin extends Plugin {
     tileMapRenderSystem: TileMapRenderSystem,
     occluderRenderSystem: OccluderRenderSystem,
     trailRenderSystem: TrailRenderSystem,
+    afterimageRenderSystem: AfterimageRenderSystem,
   ): void {
     const { fixed, update, render } = scheduler;
 
@@ -360,6 +377,14 @@ export class GameplayPlugin extends Plugin {
         after: "gameplay:occluder-render",
       }),
     );
+
+    this.handles.push(
+      registerSystem(render, world, afterimageRenderSystem, {
+        name: "gameplay:afterimage-render",
+        stage: "PreRender",
+        after: "gameplay:trail-render",
+      }),
+    );
   }
 
   public uninstall(): void {
@@ -367,6 +392,7 @@ export class GameplayPlugin extends Plugin {
     for (const handle of this.handles) handle.remove();
     for (const off of this.unsubscribers) off();
     this.trailRenderSystem?.clear();
+    this.afterimageRenderSystem?.clear();
     this.scriptManager.dispose();
     this.handles = [];
     this.unsubscribers = [];

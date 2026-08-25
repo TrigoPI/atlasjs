@@ -114,6 +114,19 @@ document.dispatchEvent(new KeyboardEvent("keydown", { code: "KeyT", key: "t", bu
 
 This is the opposite of pitfall 8, where `javascript_tool` is the wrong tool for *held* keys because it stops the loop. For a one-shot toggle read off `document`, it is the only thing that lands.
 
+## 13. A sub-second effect cannot be sampled at the pane's framerate — exaggerate it instead
+
+A dash lasts 0.18 s. Even once the pane reaches 60 fps, the round-trip of a `computer{action:"screenshot"}` call is longer than that, and the pane drops back to 4 fps as soon as it is driven — where the whole effect completes *between two frames*. Retrying the capture is not a strategy: it produces a stream of screenshots showing nothing, which reads exactly like a broken feature.
+
+Split the question in two instead, and answer each where it can actually be answered:
+
+- **Do the timings hold?** That belongs in unit tests, which already run at arbitrary `dt`. Never try to measure a duration or a cadence through the pane.
+- **Does it draw at all, in the right place, with the right orientation and the right fade?** That is what only the browser can answer — so make the effect big enough and slow enough to be sampled. Temporarily override the tuning at the call site (prefab, scene) to stretch the duration *and* the distance, keeping the speed realistic so the stamps stay spatially separated. Slowing the effect **without** lengthening its path is the trap: the copies pile up on top of the emitter and the screen looks empty.
+
+On the dash this meant `duration 0.18 → 1.75`, `distance 220 → 700`, `interval 0.04 → 0.25`, `time 0.22 → 4`, which turned an invisible flicker into four clearly separated ghosts. Revert the override the moment the screenshot is taken, and say plainly in the write-up that the real-speed render was never captured — the exaggerated run proves the *render path*, not the tuning.
+
+Pair it with a numeric probe in the system itself: a frozen `x` that stays constant across frames while the emitter moves away proves snapshot semantics far better than any screenshot, and a monotonically decreasing tint alpha proves the fade. Both survive a framerate the eye cannot use.
+
 ## Verification order
 
 1. `pnpm --filter @atlasjs/nebula-webgpu build` if a `.wgsl` has changed.
