@@ -74,3 +74,93 @@ test("suit une cible qui sort du vault", () => {
   assert.equal(dead.length, 1);
   assert.equal(dead[0].kind, "relative");
 });
+
+test("ignore un lien mort dans un bloc de code", () => {
+  const root = makeVault({
+    "a/one.md": ["texte", "```", "[deux](../b/two.md)", "```", ""].join("\n"),
+  });
+  assert.deepEqual(checkLinks(root), []);
+});
+
+test("ignore un lien mort dans un bloc de code avec langage", () => {
+  const root = makeVault({
+    "a/one.md": ["```yaml", "cible: [deux](../b/two.md)", "```", ""].join("\n"),
+  });
+  assert.deepEqual(checkLinks(root), []);
+});
+
+test("ignore un lien mort dans un bloc de code a plus de trois backticks", () => {
+  const root = makeVault({
+    "a/one.md": ["````md", "```", "[deux](../b/two.md)", "```", "````"].join(
+      "\n",
+    ),
+  });
+  assert.deepEqual(checkLinks(root), []);
+});
+
+test("ignore un wikilink mort dans un span de code inline", () => {
+  const root = makeVault({ "a/one.md": "on ecrit `[[trois]]` pour lier" });
+  assert.deepEqual(checkLinks(root), []);
+});
+
+test("ignore un lien relatif mort dans un span de code inline", () => {
+  const root = makeVault({ "a/one.md": "voir `[deux](../b/two.md)` ici" });
+  assert.deepEqual(checkLinks(root), []);
+});
+
+test("detecte encore un lien mort situe apres un bloc de code", () => {
+  const root = makeVault({
+    "a/one.md": [
+      "```js",
+      "const x = 1;",
+      "```",
+      "",
+      "voir [deux](../b/two.md) et [[trois]]",
+    ].join("\n"),
+  });
+  const dead = checkLinks(root);
+  assert.equal(dead.length, 2);
+  assert.deepEqual(dead.map((entry) => entry.target).sort(), [
+    "../b/two.md",
+    "trois",
+  ]);
+});
+
+test("detecte encore un lien mort entre deux blocs de code", () => {
+  const root = makeVault({
+    "a/one.md": [
+      "```",
+      "[ignore](./nulle-part-1.md)",
+      "```",
+      "voir [deux](../b/two.md)",
+      "```",
+      "[ignore](./nulle-part-2.md)",
+      "```",
+    ].join("\n"),
+  });
+  const dead = checkLinks(root);
+  assert.equal(dead.length, 1);
+  assert.equal(dead[0].target, "../b/two.md");
+});
+
+test("un bloc de code non ferme neutralise le reste du fichier", () => {
+  const root = makeVault({
+    "a/one.md": [
+      "texte [zero](../b/zero.md)",
+      "```",
+      "[deux](../b/two.md)",
+    ].join("\n"),
+  });
+  const dead = checkLinks(root);
+  assert.equal(dead.length, 1);
+  assert.equal(dead[0].target, "../b/zero.md");
+});
+
+test("un backtick isole ne neutralise pas le reste de la ligne", () => {
+  const root = makeVault({
+    "a/one.md": "un ` seul backtick puis [deux](../b/two.md)",
+  });
+  const dead = checkLinks(root);
+  assert.equal(dead.length, 1);
+  assert.equal(dead[0].target, "../b/two.md");
+});

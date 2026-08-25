@@ -6,6 +6,71 @@ const RELATIVE_LINK = /\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
 const WIKILINK = /\[\[([^\]]+)\]\]/g;
 const EXTERNAL = /^([a-z][a-z0-9+.-]*:|#)/i;
 
+const FENCE = /^ {0,3}(`{3,})(.*)$/;
+
+function blank(text) {
+  return " ".repeat(text.length);
+}
+
+function maskInlineCode(line) {
+  let out = "";
+  let index = 0;
+  while (index < line.length) {
+    if (line[index] !== "`") {
+      out += line[index];
+      index += 1;
+      continue;
+    }
+    let open = index;
+    while (open < line.length && line[open] === "`") open += 1;
+    const width = open - index;
+    let close = open;
+    let found = -1;
+    while (close < line.length) {
+      if (line[close] !== "`") {
+        close += 1;
+        continue;
+      }
+      let end = close;
+      while (end < line.length && line[end] === "`") end += 1;
+      if (end - close === width) {
+        found = end;
+        break;
+      }
+      close = end;
+    }
+    if (found === -1) {
+      out += line.slice(index, open);
+      index = open;
+      continue;
+    }
+    out += blank(line.slice(index, found));
+    index = found;
+  }
+  return out;
+}
+
+export function maskCode(text) {
+  const lines = text.split("\n");
+  let fence = null;
+  return lines
+    .map((line) => {
+      const match = FENCE.exec(line);
+      if (fence === null) {
+        if (match) {
+          fence = match[1].length;
+          return blank(line);
+        }
+        return maskInlineCode(line);
+      }
+      if (match && match[1].length >= fence && match[2].trim() === "") {
+        fence = null;
+      }
+      return blank(line);
+    })
+    .join("\n");
+}
+
 export function listFiles(dir) {
   const out = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -32,7 +97,7 @@ export function checkLinks(vaultDir) {
 
   const dead = [];
   for (const file of files.filter((name) => name.endsWith(".md"))) {
-    const text = readFileSync(file, "utf8");
+    const text = maskCode(readFileSync(file, "utf8"));
 
     for (const [, target] of text.matchAll(RELATIVE_LINK)) {
       if (EXTERNAL.test(target)) continue;
