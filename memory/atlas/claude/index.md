@@ -22,3 +22,5 @@ Corrige librement : une note fausse ici vaut une erreur répétée à chaque ses
 - [[docs-reorganisation]] — shipped 2026-08-19: 85 atomic backlog notes, 3 hooks, /atlas-done; never trust a status line in docs/
 - [[trail-renderer-feature]] — merged to dev 2026-08-23; emission-resume must clear the ribbon; 2 reusable browser-verify techniques
 - [[player-dash-afterimages-feature]] — MERGÉ dans dev le 2026-08-24 (non poussé) ; vérifier un effet sub-seconde demande un A/B exagéré ; 2 propriétés porteuses de ScriptManager documentées
+- [[node-test-directory-arg]] — `node --test <dossier>` ne découvre rien sous Node 26.3 ; il charge le dossier comme un module et échoue sur un `'test failed'` trompeur — passer les fichiers ou un glob quoté
+- [[pnpm-test-skips-repo-scripts]] — `pnpm test` (turbo) ne couvre que `apps/*` et `packages/*` : `scripts/` et `.claude/hooks/` doivent être lancés à la main
