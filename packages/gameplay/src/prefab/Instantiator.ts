@@ -30,10 +30,15 @@ export class Instantiator {
     const root: Entity = this.world.createEntity();
     const builder: PrefabEntityBuilder = new PrefabEntityBuilder(root, this.world, this.scripts);
 
-    prefab.build(builder, params);
+    try {
+      prefab.build(builder, params);
 
-    if (options?.parent !== undefined) {
-      this.world.setParent(root, options.parent);
+      if (options?.parent !== undefined) {
+        this.world.setParent(root, options.parent);
+      }
+    } catch (error: unknown) {
+      this.destroy(root);
+      throw error;
     }
 
     return createGameEntity(root, this.world, this.scripts);

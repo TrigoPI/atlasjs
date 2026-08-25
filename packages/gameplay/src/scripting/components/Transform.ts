@@ -5,10 +5,11 @@ import { defineScriptComponent } from "../core";
 
 import {
   PhysicsBodyRef,
-  RigidBody2D,
   Transform2D,
   WorldTransform2D,
 } from "../../components";
+
+import { isDynamicBody, worldMatrix } from "./hierarchy";
 
 const ENTITY: unique symbol = Symbol("Transform.entity");
 
@@ -29,27 +30,11 @@ export interface Transform {
 
 type TransformHandle = Transform & { readonly [ENTITY]: Entity };
 
-function worldMatrix(world: NexusWorld, entity: Entity): Mat3 {
-  const wt: WorldTransform2D | undefined = world.getComponent(
-    entity,
-    WorldTransform2D,
-  );
-
-  return wt !== undefined
-    ? wt.matrix.clone()
-    : Mat3.fromTransform2D(world.requireComponent(entity, Transform2D));
-}
-
 function controllingBody(
   world: NexusWorld,
   entity: Entity,
 ): PhysicsBodyRef | undefined {
-  const rigidBody: RigidBody2D | undefined = world.getComponent(
-    entity,
-    RigidBody2D,
-  );
-
-  if (rigidBody === undefined || rigidBody.type !== "dynamic") {
+  if (!isDynamicBody(world, entity)) {
     return undefined;
   }
 
@@ -80,7 +65,14 @@ function createTransform(world: NexusWorld, entity: Entity): Transform {
     },
 
     get worldPosition(): Vec2 {
-      return worldMatrix(world, entity).getTranslation();
+      const wt: WorldTransform2D | undefined = world.getComponent(
+        entity,
+        WorldTransform2D,
+      );
+
+      return wt !== undefined
+        ? wt.getPosition()
+        : worldMatrix(world, entity).getTranslation();
     },
 
     get rotation(): number {

@@ -11,17 +11,21 @@ export class SortingLayers {
   private readonly logger: Logger;
   private readonly layers: LayerEntry[];
   private readonly index: Map<string, number>;
+  private readonly reportedUnknown: Set<string>;
 
-  public constructor() {
-    this.logger = createLogger(SortingLayers.name);
+  public constructor(logger?: Logger) {
+    this.logger = logger ?? createLogger(SortingLayers.name);
     this.layers = [{ name: "Default", mode: "manual" }];
     this.index = new Map<string, number>([["Default", 0]]);
+    this.reportedUnknown = new Set<string>();
   }
 
   public define(defs: ReadonlyArray<{ name: string; mode?: SortMode }>): this {
     for (const def of defs) {
       if (this.index.has(def.name)) {
-        this.logger.warn(`Sorting layer '${def.name}' already defined; ignored.`);
+        this.logger.warn(
+          `Sorting layer '${def.name}' already defined; ignored.`,
+        );
         continue;
       }
 
@@ -37,7 +41,13 @@ export class SortingLayers {
     const found: number | undefined = this.index.get(name);
 
     if (found === undefined) {
-      this.logger.warn(`Unknown sorting layer '${name}'; using 'Default'.`);
+      if (!this.reportedUnknown.has(name)) {
+        this.reportedUnknown.add(name);
+        this.logger.warn(
+          `Unknown sorting layer '${name}'; using 'Default'. Warned once for this name; later lookups stay silent.`,
+        );
+      }
+
       return 0;
     }
 

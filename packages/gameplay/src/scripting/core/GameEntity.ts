@@ -59,13 +59,26 @@ class GameEntityHandle implements GameEntity {
   public addComponent<TComponent extends object, TArgs extends unknown[]>(type: Component<TComponent, TArgs>, ...args: TArgs): TComponent;
   public addComponent(type: Component<object, any[]> | ScriptComponentToken<unknown, object, any[]>, ...args: any[]): unknown {
     if (isScriptComponentToken(type)) {
-      if (!this.world.hasComponent(this.entity, type.engine)) {
+      if (this.world.hasComponent(this.entity, type.engine)) {
+        this.assertNoDroppedArgs(type.engine.name, args);
+      } else {
         this.world.addComponent(this.entity, type.engine, ...args);
       }
       return type.create(this.world, this.entity);
     }
     const existing: object | undefined = this.world.getComponent(this.entity, type);
-    return existing !== undefined ? existing : this.world.addComponent(this.entity, type, ...args);
+    if (existing !== undefined) {
+      this.assertNoDroppedArgs(type.name, args);
+      return existing;
+    }
+    return this.world.addComponent(this.entity, type, ...args);
+  }
+
+  private assertNoDroppedArgs(name: string, args: readonly unknown[]): void {
+    if (args.length === 0) {
+      return;
+    }
+    throw new Error(`[GameEntity] Component "${name}" is already present on entity "${this.entity}"; the arguments passed to addComponent would be ignored. Remove the arguments to reuse the existing component, or removeComponent("${name}") first to rebuild it.`);
   }
 
   public removeComponent(type: Component<object, any[]> | ScriptComponentToken<unknown, object, any[]>): void {

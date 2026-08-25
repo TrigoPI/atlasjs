@@ -85,7 +85,7 @@ export class Vec2 {
   }
 
   public angle(): number {
-    return atan2(this.y, this.x);
+    return normalizeAngle(atan2(this.y, this.x));
   }
 
   public static from(a: Vec2): Vec2 {

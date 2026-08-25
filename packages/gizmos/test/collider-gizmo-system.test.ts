@@ -70,11 +70,16 @@ function spawn(
     .addComponent(entity, WorldTransform2D)
     .matrix.fromTransform2D(transform);
 
-  ctx.world.addComponent(entity, Collider2D, shape);
+  const collider: Collider2D = ctx.world.addComponent(
+    entity,
+    Collider2D,
+    shape,
+  );
   ctx.world.addComponent(
     entity,
     PhysicsColliderRef,
     fakeCollider(colliderWorld.x, colliderWorld.y, colliderWorld.rotation ?? 0),
+    collider,
   );
 
   return entity;

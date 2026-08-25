@@ -198,6 +198,10 @@ export class GameplayPlugin extends Plugin {
       }),
 
       world.onRemove(RigidBody2D, (entity: Entity) => {
+        if (world.hasComponent(entity, PhysicsColliderRef)) {
+          world.removeComponent(entity, PhysicsColliderRef);
+        }
+
         if (world.hasComponent(entity, PhysicsBodyRef)) {
           world.removeComponent(entity, PhysicsBodyRef);
         }

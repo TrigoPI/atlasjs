@@ -61,10 +61,15 @@ export class ScriptManager implements ScriptResolver {
     this.idGenerator = new IncrementalScriptIdGenerator();
 
     this.world.defineComponent(ScriptHost);
+    this.ensureHostStoreIsSweptFirst();
     this.unsubscribeHost = this.world.onRemove(
       ScriptHost,
-      (entity: Entity): void => this.destroyEntityScripts(entity),
+      (entity: Entity): void => this.tearDownEntityScripts(entity),
     );
+  }
+
+  private ensureHostStoreIsSweptFirst(): void {
+    this.world.getStore(ScriptHost);
   }
 
   public attach<TScript extends AtlasScript>(
@@ -125,13 +130,13 @@ export class ScriptManager implements ScriptResolver {
   }
 
   public update(dt: number): void {
-    this.runLifecycle((record: ScriptInstanceRecord): void => {
+    this.runLifecycle("onUpdate", (record: ScriptInstanceRecord): void => {
       record.instance.onUpdate?.(dt);
     });
   }
 
   public fixedUpdate(): void {
-    this.runLifecycle((record: ScriptInstanceRecord): void => {
+    this.runLifecycle("onFixedUpdate", (record: ScriptInstanceRecord): void => {
       record.instance.onFixedUpdate?.();
     });
   }
@@ -251,18 +256,43 @@ export class ScriptManager implements ScriptResolver {
     }
   }
 
-  private runLifecycle(invoke: (record: ScriptInstanceRecord) => void): void {
-    this.flushCreates();
+  private describeFailure(
+    record: ScriptInstanceRecord,
+    phase: string,
+    error: unknown,
+  ): string {
+    const detail: string =
+      error instanceof Error
+        ? `${error.name}: ${error.message}`
+        : String(error);
 
-    for (const record of this.records.values()) {
-      if (!record.isCreated || record.isDestroyed || !record.isEnabled) {
-        continue;
+    return `Script "${record.scriptType.name}" on entity ${record.entityId} threw in ${phase}: ${detail}.`;
+  }
+
+  private runLifecycle(
+    phase: string,
+    invoke: (record: ScriptInstanceRecord) => void,
+  ): void {
+    try {
+      this.flushCreates();
+
+      for (const record of this.records.values()) {
+        if (!record.isCreated || record.isDestroyed || !record.isEnabled) {
+          continue;
+        }
+
+        try {
+          invoke(record);
+        } catch (error: unknown) {
+          record.isEnabled = false;
+          this.logger.error(
+            `${this.describeFailure(record, phase, error)} The script has been disabled.`,
+          );
+        }
       }
-
-      invoke(record);
+    } finally {
+      this.flushDestroys();
     }
-
-    this.flushDestroys();
   }
 
   private flushCreates(): void {
@@ -276,7 +306,15 @@ export class ScriptManager implements ScriptResolver {
       }
 
       record.isCreated = true;
-      record.instance.onCreate?.();
+
+      try {
+        record.instance.onCreate?.();
+      } catch (error: unknown) {
+        record.isEnabled = false;
+        this.logger.error(
+          `${this.describeFailure(record, "onCreate", error)} The script has been disabled.`,
+        );
+      }
     }
 
     this.pendingCreate.length = 0;
@@ -284,34 +322,69 @@ export class ScriptManager implements ScriptResolver {
 
   private flushDestroys(): void {
     for (let i: number = 0; i < this.pendingDestroy.length; i++) {
-      const scriptId: ScriptID = this.pendingDestroy[i];
-      const record: ScriptInstanceRecord | undefined =
-        this.records.get(scriptId);
-
-      if (!record) {
-        continue;
-      }
-
-      if (record.isCreated) {
-        record.instance.onDestroy?.();
-      }
-
-      record.instance.__unbindContext();
-      this.records.delete(scriptId);
-
-      const entityRecords: Set<ScriptID> | undefined = this.recordsByEntity.get(
-        record.entityId,
-      );
-
-      if (entityRecords) {
-        entityRecords.delete(scriptId);
-
-        if (entityRecords.size === 0) {
-          this.recordsByEntity.delete(record.entityId);
-        }
-      }
+      this.tearDownScript(this.pendingDestroy[i]);
     }
 
     this.pendingDestroy.length = 0;
+  }
+
+  private tearDownEntityScripts(entityId: Entity): void {
+    const recordIds: Set<ScriptID> | undefined =
+      this.recordsByEntity.get(entityId);
+
+    if (!recordIds) {
+      return;
+    }
+
+    const scriptIds: ScriptID[] = [...recordIds];
+
+    for (let i: number = 0; i < scriptIds.length; i++) {
+      const record: ScriptInstanceRecord | undefined = this.records.get(
+        scriptIds[i],
+      );
+
+      if (record) {
+        record.isDestroyed = true;
+      }
+    }
+
+    for (let i: number = 0; i < scriptIds.length; i++) {
+      this.tearDownScript(scriptIds[i]);
+    }
+  }
+
+  private tearDownScript(scriptId: ScriptID): void {
+    const record: ScriptInstanceRecord | undefined = this.records.get(scriptId);
+
+    if (!record) {
+      return;
+    }
+
+    record.isDestroyed = true;
+    this.records.delete(scriptId);
+
+    const entityRecords: Set<ScriptID> | undefined = this.recordsByEntity.get(
+      record.entityId,
+    );
+
+    if (entityRecords) {
+      entityRecords.delete(scriptId);
+
+      if (entityRecords.size === 0) {
+        this.recordsByEntity.delete(record.entityId);
+      }
+    }
+
+    try {
+      if (record.isCreated) {
+        record.instance.onDestroy?.();
+      }
+    } catch (error: unknown) {
+      this.logger.error(
+        `${this.describeFailure(record, "onDestroy", error)} Its cleanup was completed anyway.`,
+      );
+    } finally {
+      record.instance.__unbindContext();
+    }
   }
 }

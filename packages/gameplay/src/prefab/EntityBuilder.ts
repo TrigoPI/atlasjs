@@ -46,8 +46,8 @@ export class PrefabEntityBuilder implements EntityBuilder {
   public child(build: (entity: EntityBuilder) => void): EntityBuilder {
     const childEntity: Entity = this.world.createEntity();
     const childBuilder: PrefabEntityBuilder = new PrefabEntityBuilder(childEntity, this.world, this.scripts);
-    build(childBuilder);
     this.world.setParent(childEntity, this.entity);
+    build(childBuilder);
     return childBuilder;
   }
 }

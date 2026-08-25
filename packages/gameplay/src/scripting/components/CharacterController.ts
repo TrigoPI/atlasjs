@@ -1,4 +1,5 @@
-import { Vec2 } from "@atlasjs/math";
+import { RigidBody } from "@atlasjs/inertia";
+import { Mat3, Vec2 } from "@atlasjs/math";
 import { Entity, NexusWorld } from "@atlasjs/nexus";
 
 import { defineScriptComponent } from "../core";
@@ -6,12 +7,46 @@ import { defineScriptComponent } from "../core";
 import {
   CharacterController2D,
   CharacterControllerRef,
+  PhysicsBodyRef,
   PhysicsColliderRef,
   Transform2D,
 } from "../../components";
 
+import { ancestorWorldMatrix } from "./hierarchy";
+
 export interface CharacterController {
   move(delta: Vec2): Vec2;
+}
+
+function translateLocally(
+  world: NexusWorld,
+  entity: Entity,
+  transform: Transform2D,
+  moved: Vec2,
+): void {
+  const parent: Entity | undefined = world.getParent(entity);
+
+  if (parent === undefined) {
+    transform.position.set(
+      transform.position.x + moved.x,
+      transform.position.y + moved.y,
+    );
+
+    return;
+  }
+
+  const parentWorld: Mat3 = ancestorWorldMatrix(world, parent);
+
+  const current: Vec2 = parentWorld.transformPoint2(
+    transform.position.x,
+    transform.position.y,
+  );
+
+  const local: Vec2 = parentWorld
+    .invert()
+    .transformPoint2(current.x + moved.x, current.y + moved.y);
+
+  transform.position.set(local.x, local.y);
 }
 
 function createCharacterController(
@@ -30,20 +65,32 @@ function createCharacterController(
         PhysicsColliderRef,
       );
 
+      const bodyRef: PhysicsBodyRef | undefined = world.getComponent(
+        entity,
+        PhysicsBodyRef,
+      );
+
+      if (bodyRef === undefined) {
+        throw new Error(
+          "CharacterController.move() requires a RigidBody2D on the entity: a body-less collider is never repositioned, so the controller would keep colliding from the spawn position.",
+        );
+      }
+
       const transform: Transform2D = world.requireComponent(
         entity,
         Transform2D,
       );
 
-      const moved: Vec2 = ref.controller.computeMovement(
-        colliderRef.collider,
-        delta,
-      );
+      const moved: Vec2 = ref.controller
+        .computeMovement(colliderRef.collider, delta)
+        .clone();
 
-      transform.position.set(
-        transform.position.x + moved.x,
-        transform.position.y + moved.y,
-      );
+      translateLocally(world, entity, transform, moved);
+
+      const body: RigidBody = bodyRef.body;
+      const origin: Vec2 = body.getTranslation();
+
+      body.setTranslation(origin.x + moved.x, origin.y + moved.y);
 
       return moved;
     },

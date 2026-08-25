@@ -2,8 +2,8 @@ import { Vec2 } from "@atlasjs/math";
 import { ALL_LAYERS, ColliderShapeDesc } from "@atlasjs/inertia";
 
 export class Collider2D {
-  public shape: ColliderShapeDesc;
-  public offset: Vec2;
+  public readonly shape: ColliderShapeDesc;
+  public readonly offset: Vec2;
   public rotation: number;
   public isSensor: boolean;
   public layer: number;

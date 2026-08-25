@@ -15,7 +15,7 @@ import {
 
 export class FakeRigidBody implements RigidBody {
   public readonly id: string;
-  public type: RigidBodyType;
+  public readonly type: RigidBodyType;
 
   private readonly translation: Vec2;
   private readonly linearVelocity: Vec2;
@@ -144,8 +144,44 @@ export class FakeRigidBody implements RigidBody {
   public sleep(): void {}
 }
 
+export class FakeColliderWrites {
+  public sensor: number;
+  public collisionGroup: number;
+  public collisionMask: number;
+  public friction: number;
+  public restitution: number;
+  public density: number;
+  public enabled: number;
+  public userData: number;
+
+  public constructor() {
+    this.sensor = 0;
+    this.collisionGroup = 0;
+    this.collisionMask = 0;
+    this.friction = 0;
+    this.restitution = 0;
+    this.density = 0;
+    this.enabled = 0;
+    this.userData = 0;
+  }
+
+  public get total(): number {
+    return (
+      this.sensor +
+      this.collisionGroup +
+      this.collisionMask +
+      this.friction +
+      this.restitution +
+      this.density +
+      this.enabled +
+      this.userData
+    );
+  }
+}
+
 export class FakeCollider implements Collider {
   public readonly id: string;
+  public readonly writes: FakeColliderWrites;
 
   private sensor: boolean;
   private enabled: boolean;
@@ -157,6 +193,7 @@ export class FakeCollider implements Collider {
   private userData: unknown;
   private readonly body: RigidBody | null;
   private readonly translation: Vec2;
+  private readonly worldTranslation: Vec2;
   private rotation: number;
 
   public constructor(
@@ -165,16 +202,18 @@ export class FakeCollider implements Collider {
     body: RigidBody | null,
   ) {
     this.id = id;
+    this.writes = new FakeColliderWrites();
     this.sensor = descriptor.sensor ?? false;
     this.enabled = descriptor.enabled ?? true;
     this.group = descriptor.collisionGroup ?? 0xffff;
     this.mask = descriptor.collisionMask ?? 0xffff;
-    this.friction = descriptor.friction ?? 0;
-    this.restitution = descriptor.restitution ?? 0;
-    this.density = descriptor.density ?? 0;
+    this.friction = Math.fround(descriptor.friction ?? 0);
+    this.restitution = Math.fround(descriptor.restitution ?? 0);
+    this.density = Math.fround(descriptor.density ?? 0);
     this.userData = descriptor.userData;
     this.body = body;
     this.translation = descriptor.translation?.clone() ?? new Vec2(0, 0);
+    this.worldTranslation = new Vec2(0, 0);
     this.rotation = descriptor.rotation ?? 0;
   }
 
@@ -187,36 +226,43 @@ export class FakeCollider implements Collider {
   }
 
   public setSensor(value: boolean): this {
+    this.writes.sensor++;
     this.sensor = value;
     return this;
   }
 
   public setCollisionGroup(group: number): this {
+    this.writes.collisionGroup++;
     this.group = group;
     return this;
   }
 
   public setRestitution(value: number): this {
-    this.restitution = value;
+    this.writes.restitution++;
+    this.restitution = Math.fround(value);
     return this;
   }
 
   public setCollisionMask(mask: number): this {
+    this.writes.collisionMask++;
     this.mask = mask;
     return this;
   }
 
   public setFriction(value: number): this {
-    this.friction = value;
+    this.writes.friction++;
+    this.friction = Math.fround(value);
     return this;
   }
 
   public setDensity(value: number): this {
-    this.density = value;
+    this.writes.density++;
+    this.density = Math.fround(value);
     return this;
   }
 
   public setEnabled(value: boolean): this {
+    this.writes.enabled++;
     this.enabled = value;
     return this;
   }
@@ -246,12 +292,26 @@ export class FakeCollider implements Collider {
   }
 
   public setUserData(data: unknown): this {
+    this.writes.userData++;
     this.userData = data;
     return this;
   }
 
-  public getTranslation(): Vec2 {
+  public getLocalTranslation(): Vec2 {
     return this.translation;
+  }
+
+  public getTranslation(): Vec2 {
+    if (this.body === null) {
+      return this.worldTranslation.set(this.translation.x, this.translation.y);
+    }
+
+    const origin: Vec2 = this.body.getTranslation();
+
+    return this.worldTranslation.set(
+      origin.x + this.translation.x,
+      origin.y + this.translation.y,
+    );
   }
 
   public getRotation(): number {
@@ -265,19 +325,40 @@ export class FakeCollider implements Collider {
 
 export class FakeCharacterController implements CharacterController {
   public factor: number;
+  public wallX: number | null;
   public lastCollider: Collider | null;
   public lastDesired: Vec2 | null;
+  public readonly scratch: Vec2;
 
   public constructor() {
     this.factor = 1;
+    this.wallX = null;
     this.lastCollider = null;
     this.lastDesired = null;
+    this.scratch = new Vec2();
   }
 
   public computeMovement(collider: Collider, desired: Vec2): Vec2 {
     this.lastCollider = collider;
     this.lastDesired = desired.clone();
-    return new Vec2(desired.x * this.factor, desired.y * this.factor);
+
+    const allowed: Vec2 = this.scratch.set(
+      desired.x * this.factor,
+      desired.y * this.factor,
+    );
+
+    if (this.wallX === null) {
+      return allowed;
+    }
+
+    const origin: Vec2 = collider.getTranslation();
+    const room: number = this.wallX - origin.x;
+
+    if (allowed.x > 0 && allowed.x > room) {
+      allowed.x = room > 0 ? room : 0;
+    }
+
+    return allowed;
   }
 }
 
@@ -286,6 +367,8 @@ export class FakePhysicsWorld implements PhysicsWorld {
   public readonly colliders: Set<FakeCollider>;
   public readonly characterControllers: Set<FakeCharacterController>;
   public stepCount: number;
+  public createdBodyCount: number;
+  public createdColliderCount: number;
 
   private readonly gravity: Vec2;
   private readonly events: Array<{
@@ -300,6 +383,8 @@ export class FakePhysicsWorld implements PhysicsWorld {
     this.colliders = new Set();
     this.characterControllers = new Set();
     this.stepCount = 0;
+    this.createdBodyCount = 0;
+    this.createdColliderCount = 0;
     this.gravity = new Vec2(0, 0);
     this.events = [];
     this.nextId = 0;
@@ -349,10 +434,17 @@ export class FakePhysicsWorld implements PhysicsWorld {
       descriptor,
     );
     this.bodies.add(body);
+    this.createdBodyCount++;
     return body;
   }
 
   public destroyRigidBody(body: RigidBody): void {
+    for (const collider of this.colliders) {
+      if (collider.getRigidBody() === body) {
+        this.colliders.delete(collider);
+      }
+    }
+
     this.bodies.delete(body as FakeRigidBody);
   }
 
@@ -363,6 +455,7 @@ export class FakePhysicsWorld implements PhysicsWorld {
       body ?? null,
     );
     this.colliders.add(collider);
+    this.createdColliderCount++;
     return collider;
   }
 
@@ -396,5 +489,7 @@ export class FakePhysicsWorld implements PhysicsWorld {
     this.characterControllers.clear();
     this.events.length = 0;
     this.stepCount = 0;
+    this.createdBodyCount = 0;
+    this.createdColliderCount = 0;
   }
 }

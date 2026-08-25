@@ -34,6 +34,7 @@ type ResolvedPlacement = {
 export class PhysicsPushSystem implements NexusSystem {
   private readonly inertia: PhysicsWorld;
   private readonly pending: Entity[];
+  private readonly pendingRebuild: Entity[];
   private readonly pendingColliders: Entity[];
   private readonly pendingControllers: Entity[];
   private readonly positionScratch: Vec2;
@@ -41,6 +42,7 @@ export class PhysicsPushSystem implements NexusSystem {
   public constructor(inertia: PhysicsWorld) {
     this.inertia = inertia;
     this.pending = [];
+    this.pendingRebuild = [];
     this.pendingColliders = [];
     this.pendingControllers = [];
     this.positionScratch = new Vec2();
@@ -48,6 +50,22 @@ export class PhysicsPushSystem implements NexusSystem {
 
   // prettier-ignore
   public update({ world }: NexusSystemContext): void {
+    world.query(RigidBody2D, Transform2D, PhysicsBodyRef).each((entity: Entity, rigidBody: RigidBody2D, _transform: Transform2D, ref: PhysicsBodyRef) => {
+      if (ref.body.type !== rigidBody.type) {
+        this.pendingRebuild.push(entity);
+      }
+    });
+
+    for (const entity of this.pendingRebuild) {
+      if (world.hasComponent(entity, PhysicsColliderRef)) {
+        world.removeComponent(entity, PhysicsColliderRef);
+      }
+
+      world.removeComponent(entity, PhysicsBodyRef);
+    }
+
+    this.pendingRebuild.length = 0;
+
     world.query(RigidBody2D, Transform2D).without(PhysicsBodyRef).each((entity: Entity) => {
       this.pending.push(entity);
     });
@@ -55,7 +73,9 @@ export class PhysicsPushSystem implements NexusSystem {
     for (const entity of this.pending) {
       const rigidBody: RigidBody2D = world.requireComponent(entity, RigidBody2D);
       const transform: Transform2D = world.requireComponent(entity, Transform2D);
-      const place: ResolvedPlacement = this.resolvePlacement(world, entity, transform);
+      const place: ResolvedPlacement = rigidBody.type === "dynamic"
+        ? { x: transform.position.x, y: transform.position.y, rotation: transform.rotation }
+        : this.resolvePlacement(world, entity, transform);
 
       const body: RigidBody = this.inertia.createRigidBody({
         type: rigidBody.type,
@@ -94,10 +114,14 @@ export class PhysicsPushSystem implements NexusSystem {
       const transform: Transform2D | undefined = world.getComponent(entity, Transform2D);
       const desc: ColliderDesc = this.buildColliderDesc(world, entity, col, bodyRef, transform);
       const collider: Collider = this.inertia.createCollider(desc, bodyRef?.body);
-      world.addComponent(entity, PhysicsColliderRef, collider);
+      world.addComponent(entity, PhysicsColliderRef, collider, col);
     }
 
     this.pendingColliders.length = 0;
+
+    world.query(Collider2D, PhysicsColliderRef).each((_entity: Entity, col: Collider2D, ref: PhysicsColliderRef) => {
+      ref.sync(col);
+    });
 
     world.query(CharacterController2D).without(CharacterControllerRef).each((entity: Entity) => {
       this.pendingControllers.push(entity);
