@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Vec2 } from "@atlasjs/math";
 import { NexusWorld, ComponentRegistry } from "@atlasjs/nexus";
 import type { Entity } from "@atlasjs/nexus";
+import { Collider2D } from "../src/components/Collider2D";
 import { Transform2D } from "../src/components/Transform2D";
 import { CharacterController2D } from "../src/components/CharacterController2D";
 import { CharacterControllerRef } from "../src/components/CharacterControllerRef";
@@ -28,7 +29,12 @@ describe("CharacterController token move()", () => {
       { shape: { type: "circle", radius: 1 } },
       null,
     );
-    world.addComponent(e, PhysicsColliderRef, collider);
+    world.addComponent(
+      e,
+      PhysicsColliderRef,
+      collider,
+      new Collider2D({ type: "circle", radius: 1 }),
+    );
 
     const controller: FakeCharacterController = new FakeCharacterController();
     controller.factor = 0.5;

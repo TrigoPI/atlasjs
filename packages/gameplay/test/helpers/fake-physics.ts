@@ -144,8 +144,44 @@ export class FakeRigidBody implements RigidBody {
   public sleep(): void {}
 }
 
+export class FakeColliderWrites {
+  public sensor: number;
+  public collisionGroup: number;
+  public collisionMask: number;
+  public friction: number;
+  public restitution: number;
+  public density: number;
+  public enabled: number;
+  public userData: number;
+
+  public constructor() {
+    this.sensor = 0;
+    this.collisionGroup = 0;
+    this.collisionMask = 0;
+    this.friction = 0;
+    this.restitution = 0;
+    this.density = 0;
+    this.enabled = 0;
+    this.userData = 0;
+  }
+
+  public get total(): number {
+    return (
+      this.sensor +
+      this.collisionGroup +
+      this.collisionMask +
+      this.friction +
+      this.restitution +
+      this.density +
+      this.enabled +
+      this.userData
+    );
+  }
+}
+
 export class FakeCollider implements Collider {
   public readonly id: string;
+  public readonly writes: FakeColliderWrites;
 
   private sensor: boolean;
   private enabled: boolean;
@@ -165,13 +201,14 @@ export class FakeCollider implements Collider {
     body: RigidBody | null,
   ) {
     this.id = id;
+    this.writes = new FakeColliderWrites();
     this.sensor = descriptor.sensor ?? false;
     this.enabled = descriptor.enabled ?? true;
     this.group = descriptor.collisionGroup ?? 0xffff;
     this.mask = descriptor.collisionMask ?? 0xffff;
-    this.friction = descriptor.friction ?? 0;
-    this.restitution = descriptor.restitution ?? 0;
-    this.density = descriptor.density ?? 0;
+    this.friction = Math.fround(descriptor.friction ?? 0);
+    this.restitution = Math.fround(descriptor.restitution ?? 0);
+    this.density = Math.fround(descriptor.density ?? 0);
     this.userData = descriptor.userData;
     this.body = body;
     this.translation = descriptor.translation?.clone() ?? new Vec2(0, 0);
@@ -187,36 +224,43 @@ export class FakeCollider implements Collider {
   }
 
   public setSensor(value: boolean): this {
+    this.writes.sensor++;
     this.sensor = value;
     return this;
   }
 
   public setCollisionGroup(group: number): this {
+    this.writes.collisionGroup++;
     this.group = group;
     return this;
   }
 
   public setRestitution(value: number): this {
-    this.restitution = value;
+    this.writes.restitution++;
+    this.restitution = Math.fround(value);
     return this;
   }
 
   public setCollisionMask(mask: number): this {
+    this.writes.collisionMask++;
     this.mask = mask;
     return this;
   }
 
   public setFriction(value: number): this {
-    this.friction = value;
+    this.writes.friction++;
+    this.friction = Math.fround(value);
     return this;
   }
 
   public setDensity(value: number): this {
-    this.density = value;
+    this.writes.density++;
+    this.density = Math.fround(value);
     return this;
   }
 
   public setEnabled(value: boolean): this {
+    this.writes.enabled++;
     this.enabled = value;
     return this;
   }
@@ -246,6 +290,7 @@ export class FakeCollider implements Collider {
   }
 
   public setUserData(data: unknown): this {
+    this.writes.userData++;
     this.userData = data;
     return this;
   }

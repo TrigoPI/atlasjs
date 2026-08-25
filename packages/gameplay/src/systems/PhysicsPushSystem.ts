@@ -114,10 +114,14 @@ export class PhysicsPushSystem implements NexusSystem {
       const transform: Transform2D | undefined = world.getComponent(entity, Transform2D);
       const desc: ColliderDesc = this.buildColliderDesc(world, entity, col, bodyRef, transform);
       const collider: Collider = this.inertia.createCollider(desc, bodyRef?.body);
-      world.addComponent(entity, PhysicsColliderRef, collider);
+      world.addComponent(entity, PhysicsColliderRef, collider, col);
     }
 
     this.pendingColliders.length = 0;
+
+    world.query(Collider2D, PhysicsColliderRef).each((_entity: Entity, col: Collider2D, ref: PhysicsColliderRef) => {
+      ref.sync(col);
+    });
 
     world.query(CharacterController2D).without(CharacterControllerRef).each((entity: Entity) => {
       this.pendingControllers.push(entity);
