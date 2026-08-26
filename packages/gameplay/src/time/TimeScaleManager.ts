@@ -1,3 +1,4 @@
+import { TimeControl } from "@atlasjs/core";
 import { Entity, NexusWorld } from "@atlasjs/nexus";
 
 import { TimeScale } from "../components";
@@ -9,18 +10,28 @@ type FreezeRecord = {
 
 export class TimeScaleManager {
   private readonly world: NexusWorld;
+  private readonly time: TimeControl;
   private readonly memo: Map<Entity, number>;
   private readonly freezes: Map<Entity, FreezeRecord>;
   private readonly expired: Entity[];
 
   private active: boolean;
 
-  public constructor(world: NexusWorld) {
+  public constructor(world: NexusWorld, time: TimeControl) {
     this.world = world;
+    this.time = time;
     this.memo = new Map<Entity, number>();
     this.freezes = new Map<Entity, FreezeRecord>();
     this.expired = [];
     this.active = false;
+  }
+
+  public get globalScale(): number {
+    return this.time.scale;
+  }
+
+  public set globalScale(value: number) {
+    this.time.scale = value;
   }
 
   public update(dt: number): void {

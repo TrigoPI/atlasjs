@@ -5,6 +5,8 @@ import {
   Scheduler,
   StepContext,
   StepHandle,
+  TIME,
+  TimeControl,
 } from "@atlasjs/core";
 import { NEBULA_RENDERER, NebulaRenderer } from "@atlasjs/nebula";
 import { INERTIAL_ENGINE, PhysicsWorld } from "@atlasjs/inertia";
@@ -93,8 +95,9 @@ export class GameplayPlugin extends Plugin {
     const world: NexusWorld = await engine.services.wait(NEXUS);
     const nebula: NebulaRenderer = await engine.services.wait(NEBULA_RENDERER);
     const inertia: PhysicsWorld = await engine.services.wait(INERTIAL_ENGINE);
+    const time: TimeControl = await engine.services.wait(TIME);
 
-    const timeScaleManager: TimeScaleManager = new TimeScaleManager(world);
+    const timeScaleManager: TimeScaleManager = new TimeScaleManager(world, time);
     engine.services.provide(TIME_SCALE_MANAGER, timeScaleManager);
 
     this.scriptManager = new ScriptManager(world, engine.services);
