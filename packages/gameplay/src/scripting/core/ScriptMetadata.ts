@@ -1,16 +1,30 @@
-export type ExposeFieldMetadata =
-  | { type: "field"; required?: boolean }
-  | { type: "entity"; required?: boolean };
+import type { AtlasScript } from "./AtlasScript";
+import type { PropsOf } from "./AttachArgs";
+import type { GameEntity } from "./GameEntity";
+
+export type ExposeValueMetadata = { type: "field"; required?: boolean };
+
+export type ExposeEntityMetadata = { type: "entity"; required?: boolean };
+
+export type ExposeFieldMetadata = ExposeValueMetadata | ExposeEntityMetadata;
+
+export type ExposeFor<TValue> = [NonNullable<TValue>] extends [GameEntity]
+  ? ExposeEntityMetadata
+  : ExposeValueMetadata;
+
+export type ExposedFor<TProps, TKeys extends keyof TProps> = {
+  [K in TKeys]: ExposeFor<TProps[K]>;
+};
 
 export interface ScriptMetadata {
   exposed: Record<string, ExposeFieldMetadata>;
 }
 
 export const ScriptMetadata = {
-  field(options: { required?: boolean } = {}): ExposeFieldMetadata {
+  field(options: { required?: boolean } = {}): ExposeValueMetadata {
     return { type: "field", required: options.required };
   },
-  entity(options: { required?: boolean } = {}): ExposeFieldMetadata {
+  entity(options: { required?: boolean } = {}): ExposeEntityMetadata {
     return { type: "entity", required: options.required };
   },
 };
@@ -19,6 +33,13 @@ const REGISTRY: WeakMap<Function, ScriptMetadata> = new WeakMap();
 
 let MERGED: WeakMap<Function, ScriptMetadata | null> = new WeakMap();
 
+export function registerScriptMetadata<
+  TScript extends AtlasScript<object>,
+  TKeys extends keyof PropsOf<TScript>,
+>(
+  ctor: abstract new (...args: never[]) => TScript,
+  metadata: { exposed: ExposedFor<PropsOf<TScript>, TKeys> },
+): void;
 export function registerScriptMetadata(
   ctor: Function,
   metadata: ScriptMetadata,

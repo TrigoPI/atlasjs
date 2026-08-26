@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { AtlasScript } from "../src/scripting/core/AtlasScript";
 import {
   ExposeFieldMetadata,
   ScriptMetadata,
@@ -10,20 +11,27 @@ import {
 
 class NoMeta {}
 
-class Simple {}
+class Simple extends AtlasScript<{ a?: number; b?: number }> {}
 registerScriptMetadata(Simple, {
-  exposed: { a: ScriptMetadata.field({ required: true }), b: ScriptMetadata.field() },
+  exposed: {
+    a: ScriptMetadata.field({ required: true }),
+    b: ScriptMetadata.field(),
+  },
 });
 
-class Base {}
+class Base<TProps extends object = object> extends AtlasScript<
+  TProps & { base?: number }
+> {}
 registerScriptMetadata(Base, { exposed: { base: ScriptMetadata.field() } });
 
-class Child extends Base {}
+class Child<TProps extends object = object> extends Base<
+  TProps & { a?: number; b?: number }
+> {}
 registerScriptMetadata(Child, {
   exposed: { a: ScriptMetadata.field(), b: ScriptMetadata.field() },
 });
 
-class GrandChild extends Child {}
+class GrandChild extends Child<{ c?: number }> {}
 registerScriptMetadata(GrandChild, { exposed: { c: ScriptMetadata.field() } });
 
 describe("registerScriptMetadata / getScriptMetadata", () => {
@@ -76,8 +84,10 @@ describe("registerScriptMetadata / getScriptMetadata", () => {
   });
 
   it("last registration wins when called twice on the same constructor", () => {
-    class Rebound {}
-    registerScriptMetadata(Rebound, { exposed: { a: ScriptMetadata.field({ required: true }) } });
+    class Rebound extends AtlasScript<{ a?: number; b?: number }> {}
+    registerScriptMetadata(Rebound, {
+      exposed: { a: ScriptMetadata.field({ required: true }) },
+    });
     registerScriptMetadata(Rebound, { exposed: { b: ScriptMetadata.field() } });
 
     expect([...getExposedFields(Rebound).keys()]).toEqual(["b"]);
@@ -90,7 +100,10 @@ describe("ScriptMetadata builders", () => {
       type: "field",
       required: true,
     });
-    expect(ScriptMetadata.field()).toEqual({ type: "field", required: undefined });
+    expect(ScriptMetadata.field()).toEqual({
+      type: "field",
+      required: undefined,
+    });
   });
 
   it("entity() tags an entry as an entity ref", () => {
@@ -98,6 +111,9 @@ describe("ScriptMetadata builders", () => {
       type: "entity",
       required: true,
     });
-    expect(ScriptMetadata.entity()).toEqual({ type: "entity", required: undefined });
+    expect(ScriptMetadata.entity()).toEqual({
+      type: "entity",
+      required: undefined,
+    });
   });
 });
