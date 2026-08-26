@@ -1,0 +1,75 @@
+filters:
+  and:
+    - file.inFolder("backlog")
+
+formulas:
+  staleness: 'if(verified, (today() - date(verified)).days, "")'
+
+properties:
+  id:
+    displayName: "ID"
+  status:
+    displayName: "Statut"
+  domain:
+    displayName: "Domaine"
+  effort:
+    displayName: "Effort"
+  verified:
+    displayName: "Vérifié"
+  formula.staleness:
+    displayName: "Jours depuis vérif."
+
+views:
+  - type: table
+    name: "Par domaine"
+    groupBy:
+      property: domain
+      direction: ASC
+    order:
+      - id
+      - file.name
+      - status
+      - effort
+      - verified
+
+  - type: table
+    name: "À faire"
+    filters:
+      or:
+        - 'status == "todo"'
+        - 'status == "partial"'
+    groupBy:
+      property: effort
+      direction: ASC
+    order:
+      - id
+      - file.name
+      - domain
+      - verified
+
+  - type: table
+    name: "Vision"
+    filters:
+      and:
+        - 'status == "vision"'
+    groupBy:
+      property: domain
+      direction: ASC
+    order:
+      - id
+      - file.name
+      - effort
+      - verified
+
+  - type: table
+    name: "Périmés"
+    filters:
+      and:
+        - 'if(verified, (today() - date(verified)).days > 90, true)'
+    order:
+      - id
+      - file.name
+      - domain
+      - status
+      - verified
+      - formula.staleness

@@ -1,0 +1,32 @@
+filters:
+  and:
+    - file.inFolder("claude")
+    - not:
+        - 'file.name == "index.md"'
+
+properties:
+  type:
+    displayName: "Type"
+  description:
+    displayName: "Fait retenu"
+  modified:
+    displayName: "Écrit le"
+
+views:
+  - type: table
+    name: "Par type"
+    groupBy:
+      property: type
+      direction: ASC
+    order:
+      - file.name
+      - description
+      - modified
+
+  - type: table
+    name: "Tout"
+    order:
+      - file.name
+      - type
+      - description
+      - modified

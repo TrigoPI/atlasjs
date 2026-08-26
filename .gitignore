@@ -52,7 +52,7 @@ yarn-error.log*
 # graphify
 graphify-out/
 # Obsidian: personal UI state (the rest of .obsidian/ is versioned)
-docs/.obsidian/workspace.json
-docs/.obsidian/workspace-mobile.json
-docs/.obsidian/graph.json
-docs/.obsidian/cache
+memory/atlas/.obsidian/workspace.json
+memory/atlas/.obsidian/workspace-mobile.json
+memory/atlas/.obsidian/graph.json
+memory/atlas/.obsidian/cache

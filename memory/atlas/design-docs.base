@@ -1,0 +1,41 @@
+filters:
+  and:
+    - 'file.ext == "md"'
+    - not:
+        - file.inFolder("backlog")
+    - not:
+        - file.inFolder("plans")
+    - not:
+        - file.inFolder("claude")
+    - not:
+        - 'file.name == "README.md"'
+
+properties:
+  status:
+    displayName: "Statut"
+  shipped:
+    displayName: "Livré"
+  summary:
+    displayName: "Résumé"
+
+views:
+  - type: table
+    name: "Par domaine"
+    groupBy:
+      property: file.folder
+      direction: ASC
+    order:
+      - file.name
+      - status
+      - shipped
+      - summary
+
+  - type: table
+    name: "Non implémentés"
+    filters:
+      and:
+        - 'status != "implemented"'
+    order:
+      - file.name
+      - status
+      - summary
