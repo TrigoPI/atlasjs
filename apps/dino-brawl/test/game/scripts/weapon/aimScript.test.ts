@@ -1,18 +1,24 @@
 import { describe, expect, it } from "vitest";
 
 import { Vec2 } from "@atlasjs/math";
-import type { CameraApi, InputApi, Transform } from "@atlasjs/gameplay";
+import { CameraApi, InputApi, Transform } from "@atlasjs/gameplay";
+import {
+  createScriptHarness,
+  type ScriptHarness,
+} from "@atlasjs/gameplay/testing";
 
 import { readAimAngle } from "../../../../src/game/scripts/weapon/aim";
 import { AimScript } from "../../../../src/game/scripts/weapon/AimScript";
 
 type MutableInput = { mousePosition: Vec2 };
 
+type StubTransform = { worldPosition: Vec2 };
+
 type Rig = {
   aim: AimScript;
   input: InputApi & MutableInput;
   camera: CameraApi;
-  transform: Transform;
+  transform: StubTransform;
 };
 
 function createInput(mousePosition: Vec2): InputApi & MutableInput {
@@ -25,29 +31,25 @@ function createCamera(): CameraApi {
   } as unknown as CameraApi;
 }
 
-function createTransform(worldPosition: Vec2): Transform {
-  return { worldPosition } as unknown as Transform;
-}
-
 function createRig(
   origin: Vec2 = Vec2.zero(),
   mousePosition: Vec2 = new Vec2(10, 0),
 ): Rig {
-  const aim: AimScript = new AimScript();
   const input: InputApi & MutableInput = createInput(mousePosition);
   const camera: CameraApi = createCamera();
-  const transform: Transform = createTransform(origin);
+  const transform: StubTransform = { worldPosition: origin };
 
-  const injected: Record<string, unknown> = aim as unknown as Record<
-    string,
-    unknown
-  >;
+  const harness: ScriptHarness<AimScript> = createScriptHarness(AimScript, {
+    components: [[Transform, transform]],
+    services: [
+      [InputApi, input],
+      [CameraApi, camera],
+    ],
+  });
 
-  injected.input = input;
-  injected.camera = camera;
-  injected.transform = transform;
+  harness.create();
 
-  return { aim, input, camera, transform };
+  return { aim: harness.script, input, camera, transform };
 }
 
 describe("AimScript", () => {
