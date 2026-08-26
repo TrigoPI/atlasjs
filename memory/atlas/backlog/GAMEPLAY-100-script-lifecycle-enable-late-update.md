@@ -1,0 +1,23 @@
+---
+id: GAMEPLAY-100
+status: todo
+domain: gameplay
+effort: S
+verified: 2026-08-26
+---
+
+# Deux trous dans le cycle de vie des scripts : activation et phase tardive
+
+`ScriptLifecycle` (`packages/gameplay/src/scripting/core/ScriptLifeCycle.ts:3-12`) déclare huit hooks : `onCreate`, `onUpdate`, `onFixedUpdate`, `onDestroy`, `onCollisionEnter`, `onCollisionExit`, `onTriggerEnter`, `onTriggerExit`. Deux manques, chacun avec un site d'usage qui le démontre.
+
+**`onEnable` / `onDisable`.** `ScriptManager.setEnabled` (`packages/gameplay/src/scripting/runtime/ScriptManager.ts:138-148`) et `isEnabled` (`:150-156`) existent, et la mise en quarantaine s'en sert : un script qui lève dans une phase voit son `isEnabled` passer à `false` (`:314-319`), de même qu'un script qui lève dans `onCreate` (`:340-345`). Mais le script n'est **jamais notifié** — `setEnabled` écrit un booléen et rend la main. Preuve du coût : `apps/dino-brawl/src/game/scripts/player/PlayerDashScript.ts` allume l'émission d'afterimages au départ du dash (`:126-128`) et prend soin de la rabattre dans son `onDestroy` (`:106-110`) ; rien ne le fait à la désactivation. Un script mis en quarantaine en plein dash laisse `AfterimageRenderer.emitting` à `true` pour toujours, le composant survivant à la désactivation de son script. Second manque lié : un script ne peut pas se désactiver lui-même — `ScriptContext` (`packages/gameplay/src/scripting/core/ScriptContext.ts:9-18`) n'expose ni `setEnabled` ni `isEnabled`, seul le propriétaire du `ScriptManager` peut le faire.
+
+**`onLateUpdate`.** `SwordScript` résout l'`AimScript` porté par l'ancre du joueur dans son `onCreate` (`apps/dino-brawl/src/game/scripts/weapon/SwordScript.ts:83,231-241`) puis lit `this.aim.angle` à chaque frame (`:228`) pour se positionner. Cet angle est recalculé par `AimScript.onUpdate` (`apps/dino-brawl/src/game/scripts/weapon/AimScript.ts:25-28`). Il n'est frais que parce que l'ancre est instanciée avant l'épée (`apps/dino-brawl/src/game/spawn/spawnPlayer.ts:79-96`), donc attachée avant elle, donc exécutée avant elle dans l'ordre d'insertion de la `Map` de `ScriptManager` — le mécanisme détaillé dans [[GAMEPLAY-99-atlas-script-get-script]]. `SwordSortingScript.ts:37` porte exactement la même dépendance. Une phase tardive rendrait explicite ce qui n'est aujourd'hui qu'une conséquence de l'ordre de spawn. *(À ne pas confondre avec la lecture de la position monde de l'ancre au même endroit, `SwordScript.ts:122,169,243-245` : celle-là est périmée d'une frame quel que soit l'ordre des scripts, pour la raison couverte par [[GAMEPLAY-87-world-transform-one-frame-stale]].)*
+
+Piste, mécaniquement légère dans les deux cas. `onEnable`/`onDisable` : deux appels dans `setEnabled` (`ScriptManager.ts:147`) et un dans chaque `catch` de quarantaine (`:315`, `:341`) — plus la question de savoir si `onCreate` doit être suivi d'un `onEnable` implicite, à trancher. `onLateUpdate` : une seconde itération dans `ScriptManager` et un enregistrement supplémentaire côté `GameplayPlugin`, à poser entre `gameplay:script-update` (`packages/gameplay/src/GameplayPlugin.ts:292-296`, stage `Logic`) et les consommateurs qui suivent — `gameplay:animator` (`:299-305`) et `gameplay:transform-propagation` (`:314-319`, stage `Late`) — ce qui contraint la phase à rester dans `Logic`, après `gameplay:script-update`.
+
+Question de conception à poser : une phase tardive coûte une itération complète de la `Map` des scripts par frame, alors que très peu de scripts l'implémenteront (deux dans l'app aujourd'hui). Un enregistrement par hook — n'itérer que les scripts qui définissent réellement `onLateUpdate` — est le compromis probable, et l'information est déjà disponible : `attach` (`ScriptManager.ts:68-113`) tient l'instance et peut tester la présence de la méthode au moment où il crée le `ScriptInstanceRecord` (`packages/gameplay/src/scripting/core/core-types.ts:9-17`). Le contre-argument est le coût de maintenance : une liste par hook doit être tenue à jour dans `tearDownScript` (`:384-417`) comme l'est déjà `recordsByEntity` (`:394-404`). À arbitrer selon qu'on veut ce découpage pour tous les hooks ou seulement pour la nouvelle phase.
+
+**Accroche :** `ScriptManager.ts:138-148` — `setEnabled` est le point unique par lequel passent la quarantaine et tout appel externe ; les deux notifications s'y posent, et c'est aussi de là qu'on verra si un `onEnable` implicite après `onCreate` est nécessaire. Le versant `onLateUpdate` commence à `:300-324`, la boucle unique que les deux lanes partagent.
+
+**À rapprocher de :** [[GAMEPLAY-99-atlas-script-get-script]], qui documente la dépendance à l'ordre d'insertion que la phase tardive rendrait explicite.
