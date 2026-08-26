@@ -9,6 +9,11 @@
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs",
       "default": "./dist/index.mjs"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.mts",
+      "import": "./dist/testing/index.mjs",
+      "default": "./dist/testing/index.mjs"
     }
   },
   "scripts": {

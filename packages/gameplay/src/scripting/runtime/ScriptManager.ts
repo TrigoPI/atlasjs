@@ -11,15 +11,14 @@ import type { AttachArgs } from "../core";
 
 import {
   AtlasScript,
-  ExposeFieldMetadata,
   GameEntity,
   ScriptConstructor,
   ScriptID,
   ScriptInstanceRecord,
-  ScriptMetadata,
+  ScriptPropsInjection,
   ScriptResolver,
   createGameEntity,
-  getScriptMetadata,
+  injectScriptProps,
 } from "../core";
 
 export class ScriptManager implements ScriptResolver {
@@ -30,6 +29,7 @@ export class ScriptManager implements ScriptResolver {
   private readonly world: NexusWorld;
   private readonly services: ServiceRegistry;
   private readonly logger: Logger;
+  private readonly propsInjection: ScriptPropsInjection;
 
   private readonly pendingCreate: ScriptID[];
   private readonly pendingDestroy: ScriptID[];
@@ -44,6 +44,11 @@ export class ScriptManager implements ScriptResolver {
     this.world = world;
     this.services = services;
     this.logger = logger ?? createLogger("ScriptManager");
+    this.propsInjection = {
+      logger: this.logger,
+      wrapEntity: (entity: Entity): GameEntity =>
+        createGameEntity(entity, this.world, this),
+    };
 
     this.pendingCreate = [];
     this.pendingDestroy = [];
@@ -79,7 +84,7 @@ export class ScriptManager implements ScriptResolver {
     );
 
     instance.__bindContext(context);
-    this.injectProps(instance, ScriptType, rest[0]);
+    injectScriptProps(instance, ScriptType, rest[0], this.propsInjection);
 
     if (!this.world.hasComponent(entityId, ScriptHost)) {
       this.world.addComponent(entityId, ScriptHost);
@@ -241,49 +246,6 @@ export class ScriptManager implements ScriptResolver {
     }
 
     return undefined;
-  }
-
-  private injectProps(
-    instance: AtlasScript,
-    ScriptType: ScriptConstructor,
-    props?: object,
-  ): void {
-    const metadata: ScriptMetadata | undefined = getScriptMetadata(ScriptType);
-    const exposed: Record<string, ExposeFieldMetadata> =
-      metadata?.exposed ?? {};
-    const source: Record<string, unknown> = (props ?? {}) as Record<
-      string,
-      unknown
-    >;
-    const target: Record<string, unknown> = instance as unknown as Record<
-      string,
-      unknown
-    >;
-
-    for (const field of Object.keys(exposed)) {
-      const meta: ExposeFieldMetadata = exposed[field];
-
-      const provided: unknown = source[field];
-
-      if (provided !== undefined) {
-        target[field] =
-          meta.type === "entity"
-            ? createGameEntity(provided as Entity, this.world, this)
-            : provided;
-      } else if (meta.required === true && target[field] === undefined) {
-        this.logger.warn(
-          `"${ScriptType.name}" exposes required field "${field}" but no value was provided.`,
-        );
-      }
-    }
-
-    for (const key of Object.keys(source)) {
-      if (!(key in exposed)) {
-        this.logger.warn(
-          `Prop "${key}" provided to "${ScriptType.name}" is not exposed and was ignored.`,
-        );
-      }
-    }
   }
 
   private describeFailure(

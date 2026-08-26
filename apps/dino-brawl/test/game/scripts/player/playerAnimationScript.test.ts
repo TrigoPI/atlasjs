@@ -1,15 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { Vec2 } from "@atlasjs/math";
+import { Animator, PlayerInput, SpriteRenderer } from "@atlasjs/gameplay";
 import {
-  Animator,
-  PlayerInput,
-  SpriteRenderer,
-  type ScriptContext,
-} from "@atlasjs/gameplay";
+  createScriptHarness,
+  type ScriptHarness,
+} from "@atlasjs/gameplay/testing";
 
 import { PlayerAnimationScript } from "../../../../src/game/scripts/player/PlayerAnimationScript";
-import type { PlayerDashScript } from "../../../../src/game/scripts/player/PlayerDashScript";
+import { PlayerDashScript } from "../../../../src/game/scripts/player/PlayerDashScript";
 
 class FakeVector2Action {
   private value: Vec2 = Vec2.zero();
@@ -59,33 +58,18 @@ class FakeSpriteRenderer {
   public flipX: boolean = false;
 }
 
-class FakeDash {
-  public dashing: boolean = false;
+/** A dash whose arbitration flags the test drives, injected as the real prop. */
+class FakeDash extends PlayerDashScript {
+  public active: boolean = false;
 
-  public readonly direction: Vec2 = new Vec2(1, 0);
+  public readonly facing: Vec2 = new Vec2(1, 0);
 
-  public get isDashing(): boolean {
-    return this.dashing;
+  public override get isDashing(): boolean {
+    return this.active;
   }
 
-  public get dashDirection(): Vec2 {
-    return this.direction;
-  }
-}
-
-class FakeContext {
-  private readonly components: Map<unknown, unknown>;
-
-  public constructor(components: Map<unknown, unknown>) {
-    this.components = components;
-  }
-
-  public getEntityId(): number {
-    return 1;
-  }
-
-  public getComponent(type: unknown): unknown {
-    return this.components.get(type);
+  public override get dashDirection(): Vec2 {
+    return this.facing;
   }
 }
 
@@ -99,32 +83,27 @@ type Rig = {
 };
 
 function createRig(): Rig {
-  const script: PlayerAnimationScript = new PlayerAnimationScript();
-
   const move: FakeVector2Action = new FakeVector2Action();
   const boost: FakeButtonAction = new FakeButtonAction();
   const animator: FakeAnimator = new FakeAnimator();
   const sprite: FakeSpriteRenderer = new FakeSpriteRenderer();
   const dash: FakeDash = new FakeDash();
 
-  const injected: Record<string, unknown> = script as unknown as Record<
-    string,
-    unknown
-  >;
+  const harness: ScriptHarness<PlayerAnimationScript> = createScriptHarness(
+    PlayerAnimationScript,
+    {
+      props: { dash },
+      components: [
+        [PlayerInput, new FakePlayerInput({ move, boost })],
+        [Animator, animator],
+        [SpriteRenderer, sprite],
+      ],
+    },
+  );
 
-  injected.dash = dash as unknown as PlayerDashScript;
+  harness.create();
 
-  const components: Map<unknown, unknown> = new Map<unknown, unknown>();
-
-  components.set(PlayerInput, new FakePlayerInput({ move, boost }) as unknown);
-  components.set(Animator, animator as unknown);
-  components.set(SpriteRenderer, sprite as unknown);
-
-  script.__bindContext(new FakeContext(components) as unknown as ScriptContext);
-
-  script.onCreate();
-
-  return { script, move, boost, animator, sprite, dash };
+  return { script: harness.script, move, boost, animator, sprite, dash };
 }
 
 describe("PlayerAnimationScript walk", () => {
@@ -153,7 +132,7 @@ describe("PlayerAnimationScript dash arbitration", () => {
 
     rig.move.set(1, 0);
     rig.boost.pressed = true;
-    rig.dash.dashing = true;
+    rig.dash.active = true;
     rig.script.onUpdate(0.1);
 
     expect(rig.animator.played).toEqual(["dash"]);
@@ -162,8 +141,8 @@ describe("PlayerAnimationScript dash arbitration", () => {
   it("faces the dash direction rather than the move input", () => {
     const rig: Rig = createRig();
 
-    rig.dash.direction.set(-1, 0);
-    rig.dash.dashing = true;
+    rig.dash.facing.set(-1, 0);
+    rig.dash.active = true;
     rig.script.onUpdate(0.1);
 
     expect(rig.sprite.flipX).toBe(true);
@@ -173,8 +152,8 @@ describe("PlayerAnimationScript dash arbitration", () => {
     const rig: Rig = createRig();
 
     rig.move.set(0, 0);
-    rig.dash.direction.set(-1, 0);
-    rig.dash.dashing = true;
+    rig.dash.facing.set(-1, 0);
+    rig.dash.active = true;
     rig.script.onUpdate(0.1);
 
     expect(rig.sprite.flipX).toBe(true);
@@ -183,8 +162,8 @@ describe("PlayerAnimationScript dash arbitration", () => {
   it("keeps facing the dash direction when the input opposes it", () => {
     const rig: Rig = createRig();
 
-    rig.dash.direction.set(1, 0);
-    rig.dash.dashing = true;
+    rig.dash.facing.set(1, 0);
+    rig.dash.active = true;
     rig.move.set(-1, 0);
     rig.script.onUpdate(0.1);
 
@@ -197,8 +176,8 @@ describe("PlayerAnimationScript dash arbitration", () => {
     rig.move.set(-1, 0);
     rig.script.onUpdate(0.1);
 
-    rig.dash.direction.set(0, -1);
-    rig.dash.dashing = true;
+    rig.dash.facing.set(0, -1);
+    rig.dash.active = true;
     rig.script.onUpdate(0.1);
 
     expect(rig.sprite.flipX).toBe(true);
@@ -207,10 +186,10 @@ describe("PlayerAnimationScript dash arbitration", () => {
   it("resumes the walk animation once the dash is over", () => {
     const rig: Rig = createRig();
 
-    rig.dash.dashing = true;
+    rig.dash.active = true;
     rig.script.onUpdate(0.1);
 
-    rig.dash.dashing = false;
+    rig.dash.active = false;
     rig.move.set(1, 0);
     rig.script.onUpdate(0.1);
 

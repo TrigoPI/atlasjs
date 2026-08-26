@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { Vec2 } from "@atlasjs/math";
+import { CharacterController, PlayerInput } from "@atlasjs/gameplay";
 import {
-  CharacterController,
-  PlayerInput,
-  type ScriptContext,
-} from "@atlasjs/gameplay";
+  createScriptHarness,
+  type ScriptHarness,
+} from "@atlasjs/gameplay/testing";
 
 import { PlayerMovementScript } from "../../../../src/game/scripts/player/PlayerMovementScript";
-import type { PlayerDashScript } from "../../../../src/game/scripts/player/PlayerDashScript";
+import { PlayerDashScript } from "../../../../src/game/scripts/player/PlayerDashScript";
 
 const WALKING_SPEED: number = 200;
 const RUNNING_SPEED: number = 205;
@@ -58,33 +58,18 @@ class FakeCharacter {
   }
 }
 
-class FakeDash {
-  public dashing: boolean = false;
+/** A dash whose arbitration flags the test drives, injected as the real prop. */
+class FakeDash extends PlayerDashScript {
+  public active: boolean = false;
 
-  public readonly direction: Vec2 = new Vec2(1, 0);
+  public readonly facing: Vec2 = new Vec2(1, 0);
 
-  public get isDashing(): boolean {
-    return this.dashing;
+  public override get isDashing(): boolean {
+    return this.active;
   }
 
-  public get dashDirection(): Vec2 {
-    return this.direction;
-  }
-}
-
-class FakeContext {
-  private readonly components: Map<unknown, unknown>;
-
-  public constructor(components: Map<unknown, unknown>) {
-    this.components = components;
-  }
-
-  public getEntityId(): number {
-    return 1;
-  }
-
-  public getComponent(type: unknown): unknown {
-    return this.components.get(type);
+  public override get dashDirection(): Vec2 {
+    return this.facing;
   }
 }
 
@@ -97,32 +82,29 @@ type Rig = {
 };
 
 function createRig(): Rig {
-  const script: PlayerMovementScript = new PlayerMovementScript();
-
   const move: FakeVector2Action = new FakeVector2Action();
   const boost: FakeButtonAction = new FakeButtonAction();
   const character: FakeCharacter = new FakeCharacter();
   const dash: FakeDash = new FakeDash();
 
-  const injected: Record<string, unknown> = script as unknown as Record<
-    string,
-    unknown
-  >;
+  const harness: ScriptHarness<PlayerMovementScript> = createScriptHarness(
+    PlayerMovementScript,
+    {
+      props: {
+        walkingSpeed: WALKING_SPEED,
+        runningSpeed: RUNNING_SPEED,
+        dash,
+      },
+      components: [
+        [PlayerInput, new FakePlayerInput({ move, boost })],
+        [CharacterController, character],
+      ],
+    },
+  );
 
-  injected.walkingSpeed = WALKING_SPEED;
-  injected.runningSpeed = RUNNING_SPEED;
-  injected.dash = dash as unknown as PlayerDashScript;
+  harness.create();
 
-  const components: Map<unknown, unknown> = new Map<unknown, unknown>();
-
-  components.set(PlayerInput, new FakePlayerInput({ move, boost }) as unknown);
-  components.set(CharacterController, character as unknown);
-
-  script.__bindContext(new FakeContext(components) as unknown as ScriptContext);
-
-  script.onCreate();
-
-  return { script, move, boost, character, dash };
+  return { script: harness.script, move, boost, character, dash };
 }
 
 describe("PlayerMovementScript walk", () => {
@@ -150,7 +132,7 @@ describe("PlayerMovementScript dash arbitration", () => {
     const rig: Rig = createRig();
 
     rig.move.set(1, 0);
-    rig.dash.dashing = true;
+    rig.dash.active = true;
     rig.script.onUpdate(0.1);
 
     expect(rig.character.moves).toHaveLength(0);
@@ -161,7 +143,7 @@ describe("PlayerMovementScript dash arbitration", () => {
 
     rig.move.set(-1, 0);
     rig.boost.pressed = true;
-    rig.dash.dashing = true;
+    rig.dash.active = true;
     rig.script.onUpdate(0.1);
 
     expect(rig.character.moves).toHaveLength(0);
@@ -171,10 +153,10 @@ describe("PlayerMovementScript dash arbitration", () => {
     const rig: Rig = createRig();
 
     rig.move.set(1, 0);
-    rig.dash.dashing = true;
+    rig.dash.active = true;
     rig.script.onUpdate(0.1);
 
-    rig.dash.dashing = false;
+    rig.dash.active = false;
     rig.script.onUpdate(0.1);
 
     expect(rig.character.moves).toHaveLength(1);

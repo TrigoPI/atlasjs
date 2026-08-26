@@ -10,3 +10,4 @@ export * from "./ScriptService";
 export * from "./ScriptLifeCycle";
 export * from "./core-types";
 export * from "./ScriptMetadata";
+export * from "./injectScriptProps";

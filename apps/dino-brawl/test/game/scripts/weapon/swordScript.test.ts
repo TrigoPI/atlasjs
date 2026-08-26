@@ -2,39 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import { Vec2 } from "@atlasjs/math";
 import type { CameraApi, GameEntity, InputApi } from "@atlasjs/gameplay";
-
 import {
-  type HitInfo,
-  HurtboxScript,
-} from "../../../../src/game/scripts/combat/HurtboxScript";
+  createScriptHarness,
+  type ScriptHarness,
+} from "@atlasjs/gameplay/testing";
+
+import { HurtboxScript } from "../../../../src/game/scripts/combat/HurtboxScript";
 import { SwordScript } from "../../../../src/game/scripts/weapon/SwordScript";
 import type { AttackPose } from "../../../../src/game/scripts/weapon/attacks/WeaponAttack";
 
 const DT: number = 0.05;
-
-/** A real hurtbox that records which hits it accepted. */
-class RecordingHurtbox extends HurtboxScript {
-  public accepted: number = 0;
-  public lastDirectionX: number = 0;
-  public lastKnockback: number = 0;
-  public lastHitstop: number = 0;
-
-  public override takeHit(hit: HitInfo): boolean {
-    const landed: boolean = super.takeHit(hit);
-
-    if (landed) {
-      this.lastDirectionX = hit.direction.x;
-      this.lastKnockback = hit.knockback ?? 0;
-      this.lastHitstop = hit.hitstop ?? 0;
-    }
-
-    if (landed) {
-      this.accepted += 1;
-    }
-
-    return landed;
-  }
-}
 
 class FakeHitbox {
   private targets: GameEntity[] = [];
@@ -83,11 +60,20 @@ class FakeAttack {
   }
 }
 
-function createTarget(id: number, hurtbox?: RecordingHurtbox): GameEntity {
+function createTarget(id: number, hurtbox?: HurtboxScript): GameEntity {
   return {
     id,
-    getScript: (): RecordingHurtbox | undefined => hurtbox,
+    getScript: (): HurtboxScript | undefined => hurtbox,
   } as unknown as GameEntity;
+}
+
+function createInvincibleHurtbox(duration: number): HurtboxScript {
+  const harness: ScriptHarness<HurtboxScript> = createScriptHarness(
+    HurtboxScript,
+    { props: { invincibilityDuration: duration } },
+  );
+
+  return harness.script;
 }
 
 type ShakeCall = { strength: number; x: number; y: number };
@@ -196,22 +182,22 @@ describe("SwordScript impact resolution", () => {
 
   it("hits a target that enters the hitbox mid-swing, not only on the first frame", () => {
     const rig: Rig = createRig();
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
 
     rig.frame();
     rig.frame();
     rig.frame();
-    expect(hurtbox.accepted).toBe(0);
+    expect(hurtbox.hitCount).toBe(0);
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
     rig.frame();
 
-    expect(hurtbox.accepted).toBe(1);
+    expect(hurtbox.hitCount).toBe(1);
   });
 
   it("lands exactly one blow per swing, however long contact lasts", () => {
     const rig: Rig = createRig();
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
@@ -221,12 +207,12 @@ describe("SwordScript impact resolution", () => {
       hurtbox.onUpdate(DT);
     }
 
-    expect(hurtbox.accepted).toBe(1);
+    expect(hurtbox.hitCount).toBe(1);
   });
 
   it("lands one blow per swing, so a three-step combo deals three", () => {
     const rig: Rig = createRig();
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
@@ -239,14 +225,12 @@ describe("SwordScript impact resolution", () => {
       }
     }
 
-    expect(hurtbox.accepted).toBe(3);
+    expect(hurtbox.hitCount).toBe(3);
   });
 
   it("still respects a target that has its own invincibility", () => {
     const rig: Rig = createRig();
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
-
-    (hurtbox as unknown as Record<string, unknown>).invincibilityDuration = 10;
+    const hurtbox: HurtboxScript = createInvincibleHurtbox(10);
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
@@ -260,12 +244,12 @@ describe("SwordScript impact resolution", () => {
     }
 
     // Three swings, but the target shrugs the last two off.
-    expect(hurtbox.accepted).toBe(1);
+    expect(hurtbox.hitCount).toBe(1);
   });
 
   it("only shakes the camera on the swing that actually connects", () => {
     const rig: Rig = createRig();
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
@@ -292,14 +276,14 @@ describe("SwordScript impact resolution", () => {
 
   it("describes the blow it deals: aim direction plus knockback", () => {
     const rig: Rig = createRig();
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
     rig.frame();
 
     // The rig aims at (100, 0) from the origin, so straight to the right.
-    expect(hurtbox.lastDirectionX).toBeCloseTo(1);
-    expect(hurtbox.lastKnockback).toBeGreaterThan(0);
+    expect(hurtbox.hitDirection.x).toBeCloseTo(1);
+    expect(hurtbox.hitKnockback).toBeGreaterThan(0);
   });
 
   it("punches the camera along the blow only when the blow lands", () => {
@@ -309,7 +293,7 @@ describe("SwordScript impact resolution", () => {
     rig.frame();
     expect(rig.shakes).toHaveLength(0);
 
-    rig.hitbox.setTargets([createTarget(1, new RecordingHurtbox())]);
+    rig.hitbox.setTargets([createTarget(1, new HurtboxScript())]);
     rig.frame();
 
     expect(rig.shakes).toHaveLength(1);
@@ -329,14 +313,14 @@ describe("SwordScript impact resolution", () => {
 
   it("hits every target present in the hitbox on the same frame", () => {
     const rig: Rig = createRig();
-    const first: RecordingHurtbox = new RecordingHurtbox();
-    const second: RecordingHurtbox = new RecordingHurtbox();
+    const first: HurtboxScript = new HurtboxScript();
+    const second: HurtboxScript = new HurtboxScript();
 
     rig.hitbox.setTargets([createTarget(1, first), createTarget(2, second)]);
     rig.frame();
 
-    expect(first.accepted).toBe(1);
-    expect(second.accepted).toBe(1);
+    expect(first.hitCount).toBe(1);
+    expect(second.hitCount).toBe(1);
   });
 });
 
@@ -356,21 +340,21 @@ describe("SwordScript hit-window rearming", () => {
   it("hits the same target again once the attack signals a rearm", () => {
     const attack: FakeAttack = new FakeAttack();
     const rig: Rig = createRig({ attack });
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
     rig.frame();
-    expect(hurtbox.accepted).toBe(1);
+    expect(hurtbox.hitCount).toBe(1);
 
     // Those two frames burn the 0.07 hitstop; no rearm, so no second blow.
     rig.frame();
     rig.frame();
-    expect(hurtbox.accepted).toBe(1);
+    expect(hurtbox.hitCount).toBe(1);
 
     attack.rearm = true;
     rig.frame();
-    expect(hurtbox.accepted).toBe(2);
+    expect(hurtbox.hitCount).toBe(2);
 
     // The second blow re-armed the hitstop: burn it off before checking, or
     // the early return would pass this assertion without ever reaching the
@@ -379,12 +363,12 @@ describe("SwordScript hit-window rearming", () => {
     rig.frame();
     rig.frame();
     rig.frame();
-    expect(hurtbox.accepted).toBe(2);
+    expect(hurtbox.hitCount).toBe(2);
   });
 
   it("still lands exactly one blow per swing when nothing ever rearms", () => {
     const rig: Rig = createRig({ attack: new FakeAttack() });
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
@@ -393,7 +377,7 @@ describe("SwordScript hit-window rearming", () => {
       hurtbox.onUpdate(DT);
     }
 
-    expect(hurtbox.accepted).toBe(1);
+    expect(hurtbox.hitCount).toBe(1);
   });
 });
 
@@ -403,13 +387,13 @@ describe("SwordScript per-attack impact override", () => {
     attack.knockbackOverride = 2200;
 
     const rig: Rig = createRig({ attack, knockback: 500 });
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
     rig.swing();
     rig.frame();
 
-    expect(hurtbox.lastKnockback).toBe(2200);
+    expect(hurtbox.hitKnockback).toBe(2200);
   });
 
   it("keeps its own knockback when the attack overrides nothing", () => {
@@ -417,13 +401,13 @@ describe("SwordScript per-attack impact override", () => {
       attack: new FakeAttack(),
       knockback: 500,
     });
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
     rig.swing();
     rig.frame();
 
-    expect(hurtbox.lastKnockback).toBe(500);
+    expect(hurtbox.hitKnockback).toBe(500);
   });
 
   it("freezes for the attack hitstop rather than its own", () => {
@@ -431,7 +415,7 @@ describe("SwordScript per-attack impact override", () => {
     attack.hitstopOverride = 0.3;
 
     const rig: Rig = createRig({ attack, hitstopDuration: 0.07 });
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
     const injected: Record<string, unknown> = rig.sword as unknown as Record<
       string,
       unknown
@@ -449,13 +433,13 @@ describe("SwordScript per-attack impact override", () => {
     attack.hitstopOverride = 0.3;
 
     const rig: Rig = createRig({ attack, hitstopDuration: 0.07 });
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
     rig.swing();
     rig.frame();
 
-    expect(hurtbox.lastHitstop).toBe(0.3);
+    expect(hurtbox.hitHitstop).toBe(0.3);
   });
 
   it("hands its own hitstop to the victim when the attack overrides nothing", () => {
@@ -463,13 +447,13 @@ describe("SwordScript per-attack impact override", () => {
       attack: new FakeAttack(),
       hitstopDuration: 0.07,
     });
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
     rig.swing();
     rig.frame();
 
-    expect(hurtbox.lastHitstop).toBe(0.07);
+    expect(hurtbox.hitHitstop).toBe(0.07);
   });
 });
 

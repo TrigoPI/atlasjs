@@ -2,19 +2,22 @@
 
 ## Type-check
 
-A bare `tsc --noEmit` **is a no-op in this app**: it doesn't pick up the right configuration and checks nothing. Always:
+A bare `tsc --noEmit` **is a no-op in this app**: it doesn't pick up the right configuration and checks nothing. Use the solution-wide build, which walks every project referenced by `tsconfig.json` — `src` (`tsconfig.app.json`), the config files (`tsconfig.node.json`) and `test` (`tsconfig.test.json`) :
 
 ```bash
-pnpm exec tsc --noEmit -p tsconfig.app.json
+pnpm --filter dino-brawl typecheck   # = tsc -b, same as the first half of `build`
 ```
 
-**Cette commande ne couvre pas `test/`.** `tsconfig.app.json` déclare `include: ["src"]`, et vitest efface les types sans les vérifier : **aucune configuration ne type-check les specs** (dette suivie par `memory/atlas/backlog/APP-04-dino-brawl-specs-not-typechecked.md`). Une spec peut donc être rouge au compilateur tout en passant `pnpm --filter dino-brawl test`. Pour vérifier un fichier de test, créer une configuration temporaire, la lancer, puis **la supprimer** :
+`tsc -b` writes its `.tsbuildinfo` files under `node_modules/.tmp/` only, so it leaves no artefact in the tree.
+
+Pour ne vérifier qu'une cible, passer le projet explicitement — un `-p` sans projet ne couvre rien :
 
 ```bash
-cd apps/dino-brawl && printf '{"extends":"./tsconfig.app.json","include":["test"]}' > tsconfig.tmp.json && npx tsc --noEmit -p tsconfig.tmp.json; rm tsconfig.tmp.json
+pnpm exec tsc --noEmit -p tsconfig.app.json    # src uniquement
+pnpm exec tsc --noEmit -p tsconfig.test.json   # test/ uniquement
 ```
 
-Deux erreurs `TS2415` préexistantes sortent aujourd'hui (`meleeHitResolver.test.ts`, `swordScript.test.ts`) : elles sont connues, hors périmètre, et ne signalent rien sur le fichier qu'on vient d'écrire.
+`test/` **est** type-checké depuis que `tsconfig.test.json` est référencé : un renommage dans `src/` casse désormais `tsc -b` si une spec le suit encore.
 
 ## Lint — paramètre non utilisé
 

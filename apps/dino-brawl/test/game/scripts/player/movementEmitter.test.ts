@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { Vec2 } from "@atlasjs/math";
-import type { Prefab, ScriptContext } from "@atlasjs/gameplay";
+import { PlayerInput, Transform } from "@atlasjs/gameplay";
+import type { Prefab, ScriptConstructor } from "@atlasjs/gameplay";
+import { createScriptHarness, stubEntity } from "@atlasjs/gameplay/testing";
+import type {
+  InstantiateRecord,
+  ScriptHarness,
+  ScriptHarnessOptions,
+} from "@atlasjs/gameplay/testing";
 
 import { MovementEmitterScript } from "../../../../src/game/scripts/player/MovementEmitterScript";
 import { RunningAudioPlayerScript } from "../../../../src/game/scripts/player/RunningAudioPlayerScript";
@@ -10,8 +17,6 @@ import type { RunningParticlePrefabProps } from "../../../../src/game/prefabs/fx
 
 const DT: number = 0.1;
 const OWNER: number = 7;
-
-type InstantiateCall = { prefab: unknown; props: unknown };
 
 class FakeVector2Action {
   private value: Vec2 = Vec2.zero();
@@ -33,16 +38,15 @@ class FakeButtonAction {
   }
 }
 
-class FakeContext {
-  public readonly calls: InstantiateCall[] = [];
+class FakePlayerInput {
+  private readonly actions: Record<string, unknown>;
 
-  public getEntityId(): number {
-    return OWNER;
+  public constructor(actions: Record<string, unknown>) {
+    this.actions = actions;
   }
 
-  public instantiate(prefab: unknown, props?: unknown): unknown {
-    this.calls.push({ prefab, props });
-    return undefined;
+  public get(name: string): unknown {
+    return this.actions[name];
   }
 }
 
@@ -61,37 +65,36 @@ type Rig<TScript> = {
   script: TScript;
   move: FakeVector2Action;
   boost: FakeButtonAction;
-  context: FakeContext;
+  instantiations: readonly InstantiateRecord[];
   frame: () => void;
   frames: (count: number) => void;
 };
 
-function inject(script: object, fields: Record<string, unknown>): void {
-  const target: Record<string, unknown> = script as Record<string, unknown>;
-
-  for (const key of Object.keys(fields)) {
-    target[key] = fields[key];
-  }
-}
-
 function createRig<TScript extends MovementEmitterScript<object>>(
-  script: TScript,
-  extra: Record<string, unknown> = {},
+  ScriptType: ScriptConstructor<TScript>,
+  options: ScriptHarnessOptions<TScript> = {},
 ): Rig<TScript> {
   const move: FakeVector2Action = new FakeVector2Action();
   const boost: FakeButtonAction = new FakeButtonAction();
-  const context: FakeContext = new FakeContext();
 
-  inject(script, { move, boost, ...extra });
-  script.__bindContext(context as unknown as ScriptContext);
+  const harness: ScriptHarness<TScript> = createScriptHarness(ScriptType, {
+    ...options,
+    entityId: stubEntity(OWNER),
+    components: [
+      [PlayerInput, new FakePlayerInput({ move, boost })],
+      ...(options.components ?? []),
+    ],
+  });
 
-  const frame = (): void => script.onUpdate(DT);
+  harness.create();
+
+  const frame = (): void => harness.script.onUpdate(DT);
 
   return {
-    script,
+    script: harness.script,
     move,
     boost,
-    context,
+    instantiations: harness.instantiations,
     frame,
     frames: (count: number): void => {
       for (let i: number = 0; i < count; i++) {
@@ -103,7 +106,7 @@ function createRig<TScript extends MovementEmitterScript<object>>(
 
 describe("MovementEmitterScript timing", () => {
   it("never emits while the movement vector is zero", () => {
-    const rig: Rig<CountingEmitter> = createRig(new CountingEmitter());
+    const rig: Rig<CountingEmitter> = createRig(CountingEmitter);
 
     rig.frames(50);
 
@@ -111,7 +114,7 @@ describe("MovementEmitterScript timing", () => {
   });
 
   it("emits first exactly when the walk interval is reached, not before", () => {
-    const rig: Rig<CountingEmitter> = createRig(new CountingEmitter());
+    const rig: Rig<CountingEmitter> = createRig(CountingEmitter);
 
     rig.move.set(1, 0);
 
@@ -123,7 +126,7 @@ describe("MovementEmitterScript timing", () => {
   });
 
   it("resets the clock after an emission, so emissions stay periodic", () => {
-    const rig: Rig<CountingEmitter> = createRig(new CountingEmitter());
+    const rig: Rig<CountingEmitter> = createRig(CountingEmitter);
 
     rig.move.set(0, 1);
     rig.frames(15);
@@ -132,7 +135,7 @@ describe("MovementEmitterScript timing", () => {
   });
 
   it("uses the run interval while boost is down", () => {
-    const rig: Rig<CountingEmitter> = createRig(new CountingEmitter());
+    const rig: Rig<CountingEmitter> = createRig(CountingEmitter);
 
     rig.move.set(1, 0);
     rig.boost.down = true;
@@ -143,7 +146,7 @@ describe("MovementEmitterScript timing", () => {
   });
 
   it("uses the walk interval as soon as boost is released", () => {
-    const rig: Rig<CountingEmitter> = createRig(new CountingEmitter());
+    const rig: Rig<CountingEmitter> = createRig(CountingEmitter);
 
     rig.move.set(1, 0);
     rig.frames(2);
@@ -152,7 +155,7 @@ describe("MovementEmitterScript timing", () => {
   });
 
   it("drops a partial charge when movement stops", () => {
-    const rig: Rig<CountingEmitter> = createRig(new CountingEmitter());
+    const rig: Rig<CountingEmitter> = createRig(CountingEmitter);
 
     rig.move.set(1, 0);
     rig.frames(4);
@@ -169,7 +172,7 @@ describe("MovementEmitterScript timing", () => {
   });
 
   it("emits on schedule on a fresh instance that was never idle first", () => {
-    const rig: Rig<CountingEmitter> = createRig(new CountingEmitter());
+    const rig: Rig<CountingEmitter> = createRig(CountingEmitter);
 
     rig.move.set(1, 0);
     rig.frames(5);
@@ -185,20 +188,20 @@ describe("RunningParticleSpawnerScript emission", () => {
     const worldPosition: Vec2 = new Vec2(12, -5);
 
     const rig: Rig<RunningParticleSpawnerScript> = createRig(
-      new RunningParticleSpawnerScript(),
+      RunningParticleSpawnerScript,
       {
-        runningParticlePrefab: prefab,
-        transform: { worldPosition },
+        props: { runningParticlePrefab: prefab },
+        components: [[Transform, { worldPosition }]],
       },
     );
 
     rig.move.set(1, 0);
     rig.frames(2);
-    expect(rig.context.calls).toHaveLength(1);
+    expect(rig.instantiations).toHaveLength(1);
 
-    const call: InstantiateCall = rig.context.calls[0];
+    const call: InstantiateRecord = rig.instantiations[0];
     const props: RunningParticlePrefabProps =
-      call.props as RunningParticlePrefabProps;
+      call.params as RunningParticlePrefabProps;
 
     expect(call.prefab).toBe(prefab);
     expect(props.owner).toBe(OWNER);
@@ -209,19 +212,21 @@ describe("RunningParticleSpawnerScript emission", () => {
 
   it("keeps its 0.15s walk cadence", () => {
     const rig: Rig<RunningParticleSpawnerScript> = createRig(
-      new RunningParticleSpawnerScript(),
+      RunningParticleSpawnerScript,
       {
-        runningParticlePrefab: {} as Prefab<RunningParticlePrefabProps>,
-        transform: { worldPosition: Vec2.zero() },
+        props: {
+          runningParticlePrefab: {} as Prefab<RunningParticlePrefabProps>,
+        },
+        components: [[Transform, { worldPosition: Vec2.zero() }]],
       },
     );
 
     rig.move.set(1, 0);
     rig.frame();
-    expect(rig.context.calls).toHaveLength(0);
+    expect(rig.instantiations).toHaveLength(0);
 
     rig.frame();
-    expect(rig.context.calls).toHaveLength(1);
+    expect(rig.instantiations).toHaveLength(1);
   });
 });
 
@@ -230,31 +235,31 @@ describe("RunningAudioPlayerScript emission", () => {
     const prefab: Prefab = {} as Prefab;
 
     const rig: Rig<RunningAudioPlayerScript> = createRig(
-      new RunningAudioPlayerScript(),
-      { audioPrefab: prefab },
+      RunningAudioPlayerScript,
+      { props: { audioPrefab: prefab } },
     );
 
     rig.move.set(1, 0);
     rig.frames(5);
 
-    expect(rig.context.calls).toHaveLength(1);
-    expect(rig.context.calls[0].prefab).toBe(prefab);
-    expect(rig.context.calls[0].props).toBeUndefined();
+    expect(rig.instantiations).toHaveLength(1);
+    expect(rig.instantiations[0].prefab).toBe(prefab);
+    expect(rig.instantiations[0].params).toBeUndefined();
   });
 
   it("keeps its 0.4s run cadence while boost is down", () => {
     const rig: Rig<RunningAudioPlayerScript> = createRig(
-      new RunningAudioPlayerScript(),
-      { audioPrefab: {} as Prefab },
+      RunningAudioPlayerScript,
+      { props: { audioPrefab: {} as Prefab } },
     );
 
     rig.move.set(1, 0);
     rig.boost.down = true;
 
     rig.frames(3);
-    expect(rig.context.calls).toHaveLength(0);
+    expect(rig.instantiations).toHaveLength(0);
 
     rig.frame();
-    expect(rig.context.calls).toHaveLength(1);
+    expect(rig.instantiations).toHaveLength(1);
   });
 });
