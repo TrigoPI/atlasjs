@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { Vec2 } from "@atlasjs/math";
 import type { GameEntity } from "@atlasjs/gameplay";
-
 import {
-  type HitInfo,
-  HurtboxScript,
-} from "../../../../src/game/scripts/combat/HurtboxScript";
+  createScriptHarness,
+  type ScriptHarness,
+} from "@atlasjs/gameplay/testing";
+
+import { HurtboxScript } from "../../../../src/game/scripts/combat/HurtboxScript";
 import {
   type MeleeTargetSource,
   MeleeHitResolver,
@@ -15,29 +16,6 @@ import {
 const KNOCKBACK: number = 220;
 const HITSTOP: number = 0.07;
 const DT: number = 0.05;
-
-/** A real hurtbox that records which hits it accepted. */
-class RecordingHurtbox extends HurtboxScript {
-  public accepted: number = 0;
-  public lastDirectionX: number = 0;
-  public lastDirectionY: number = 0;
-  public lastKnockback: number = 0;
-  public lastHitstop: number = 0;
-
-  public override takeHit(hit: HitInfo): boolean {
-    const landed: boolean = super.takeHit(hit);
-
-    if (landed) {
-      this.lastDirectionX = hit.direction.x;
-      this.lastDirectionY = hit.direction.y;
-      this.lastKnockback = hit.knockback ?? 0;
-      this.lastHitstop = hit.hitstop ?? 0;
-      this.accepted += 1;
-    }
-
-    return landed;
-  }
-}
 
 class FakeHitbox implements MeleeTargetSource {
   private targets: GameEntity[] = [];
@@ -51,18 +29,20 @@ class FakeHitbox implements MeleeTargetSource {
   }
 }
 
-function createTarget(id: number, hurtbox?: RecordingHurtbox): GameEntity {
+function createTarget(id: number, hurtbox?: HurtboxScript): GameEntity {
   return {
     id,
-    getScript: (): RecordingHurtbox | undefined => hurtbox,
+    getScript: (): HurtboxScript | undefined => hurtbox,
   } as unknown as GameEntity;
 }
 
-function createInvincibleHurtbox(duration: number): RecordingHurtbox {
-  const hurtbox: RecordingHurtbox = new RecordingHurtbox();
-  (hurtbox as unknown as Record<string, unknown>).invincibilityDuration =
-    duration;
-  return hurtbox;
+function createInvincibleHurtbox(duration: number): HurtboxScript {
+  const harness: ScriptHarness<HurtboxScript> = createScriptHarness(
+    HurtboxScript,
+    { props: { invincibilityDuration: duration } },
+  );
+
+  return harness.script;
 }
 
 type Rig = {
@@ -96,17 +76,17 @@ describe("MeleeHitResolver", () => {
 
   it("lands one blow on the single target it touches", () => {
     const rig: Rig = createRig();
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
     expect(rig.resolve()).toBe(true);
-    expect(hurtbox.accepted).toBe(1);
+    expect(hurtbox.hitCount).toBe(1);
   });
 
   it("never strikes the same target twice within one swing", () => {
     const rig: Rig = createRig();
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
@@ -117,12 +97,12 @@ describe("MeleeHitResolver", () => {
       hurtbox.onUpdate(DT);
     }
 
-    expect(hurtbox.accepted).toBe(1);
+    expect(hurtbox.hitCount).toBe(1);
   });
 
   it("re-arms on beginSwing, so the next swing lands again", () => {
     const rig: Rig = createRig();
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
@@ -133,7 +113,7 @@ describe("MeleeHitResolver", () => {
       expect(rig.resolve()).toBe(false);
     }
 
-    expect(hurtbox.accepted).toBe(3);
+    expect(hurtbox.hitCount).toBe(3);
   });
 
   it("skips a target that carries no hurtbox", () => {
@@ -146,29 +126,30 @@ describe("MeleeHitResolver", () => {
 
   it("does not record a target whose invincibility shrugged the blow off", () => {
     const rig: Rig = createRig();
-    const hurtbox: RecordingHurtbox = createInvincibleHurtbox(10);
+    const hurtbox: HurtboxScript = createInvincibleHurtbox(10);
 
     hurtbox.takeHit({ direction: new Vec2(1, 0) });
-    hurtbox.accepted = 0;
+
+    const primed: number = hurtbox.hitCount;
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
     // Rejected while invincible: the swing must not count it as struck.
     expect(rig.resolve()).toBe(false);
-    expect(hurtbox.accepted).toBe(0);
+    expect(hurtbox.hitCount).toBe(primed);
 
     hurtbox.onUpdate(20);
 
     // Same swing, no beginSwing: the blow it dodged still reaches it.
     expect(rig.resolve()).toBe(true);
-    expect(hurtbox.accepted).toBe(1);
+    expect(hurtbox.hitCount).toBe(primed + 1);
   });
 
   it("hits every target present on the same resolve", () => {
     const rig: Rig = createRig();
-    const first: RecordingHurtbox = new RecordingHurtbox();
-    const second: RecordingHurtbox = new RecordingHurtbox();
-    const third: RecordingHurtbox = new RecordingHurtbox();
+    const first: HurtboxScript = new HurtboxScript();
+    const second: HurtboxScript = new HurtboxScript();
+    const third: HurtboxScript = new HurtboxScript();
 
     rig.hitbox.setTargets([
       createTarget(1, first),
@@ -177,28 +158,28 @@ describe("MeleeHitResolver", () => {
     ]);
 
     expect(rig.resolve()).toBe(true);
-    expect(first.accepted).toBe(1);
-    expect(second.accepted).toBe(1);
-    expect(third.accepted).toBe(1);
+    expect(first.hitCount).toBe(1);
+    expect(second.hitCount).toBe(1);
+    expect(third.hitCount).toBe(1);
   });
 
   it("describes the blow it deals: direction, knockback and hitstop", () => {
     const rig: Rig = createRig();
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
     rig.resolver.resolve(new Vec2(0, 1));
 
-    expect(hurtbox.lastDirectionX).toBeCloseTo(0);
-    expect(hurtbox.lastDirectionY).toBeCloseTo(1);
-    expect(hurtbox.lastKnockback).toBe(KNOCKBACK);
-    expect(hurtbox.lastHitstop).toBe(HITSTOP);
+    expect(hurtbox.hitDirection.x).toBeCloseTo(0);
+    expect(hurtbox.hitDirection.y).toBeCloseTo(1);
+    expect(hurtbox.hitKnockback).toBe(KNOCKBACK);
+    expect(hurtbox.hitHitstop).toBe(HITSTOP);
   });
 
   it("reports true only when at least one blow landed", () => {
     const rig: Rig = createRig();
-    const struck: RecordingHurtbox = new RecordingHurtbox();
-    const immune: RecordingHurtbox = createInvincibleHurtbox(10);
+    const struck: HurtboxScript = new HurtboxScript();
+    const immune: HurtboxScript = createInvincibleHurtbox(10);
 
     immune.takeHit({ direction: new Vec2(1, 0) });
 
@@ -216,7 +197,7 @@ describe("MeleeHitResolver", () => {
     const rig: Rig = createRig();
     const direction: Vec2 = new Vec2(3, 4);
 
-    rig.hitbox.setTargets([createTarget(1, new RecordingHurtbox())]);
+    rig.hitbox.setTargets([createTarget(1, new HurtboxScript())]);
     rig.resolver.resolve(direction);
 
     expect(direction.x).toBe(3);
@@ -227,7 +208,7 @@ describe("MeleeHitResolver", () => {
 describe("MeleeHitResolver per-swing impact override", () => {
   it("uses the constructor values when beginSwing is called bare", () => {
     const hitbox: FakeHitbox = new FakeHitbox();
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
     const resolver: MeleeHitResolver = new MeleeHitResolver(
       hitbox,
       KNOCKBACK,
@@ -238,13 +219,13 @@ describe("MeleeHitResolver per-swing impact override", () => {
     resolver.beginSwing();
     resolver.resolve(new Vec2(1, 0));
 
-    expect(hurtbox.lastKnockback).toBe(KNOCKBACK);
-    expect(hurtbox.lastHitstop).toBe(HITSTOP);
+    expect(hurtbox.hitKnockback).toBe(KNOCKBACK);
+    expect(hurtbox.hitHitstop).toBe(HITSTOP);
   });
 
   it("applies the values handed to beginSwing for that swing", () => {
     const hitbox: FakeHitbox = new FakeHitbox();
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
     const resolver: MeleeHitResolver = new MeleeHitResolver(
       hitbox,
       KNOCKBACK,
@@ -255,13 +236,13 @@ describe("MeleeHitResolver per-swing impact override", () => {
     resolver.beginSwing(2200, 0.2);
     resolver.resolve(new Vec2(1, 0));
 
-    expect(hurtbox.lastKnockback).toBe(2200);
-    expect(hurtbox.lastHitstop).toBe(0.2);
+    expect(hurtbox.hitKnockback).toBe(2200);
+    expect(hurtbox.hitHitstop).toBe(0.2);
   });
 
   it("falls back per field, not all-or-nothing", () => {
     const hitbox: FakeHitbox = new FakeHitbox();
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
     const resolver: MeleeHitResolver = new MeleeHitResolver(
       hitbox,
       KNOCKBACK,
@@ -272,13 +253,13 @@ describe("MeleeHitResolver per-swing impact override", () => {
     resolver.beginSwing(2200, undefined);
     resolver.resolve(new Vec2(1, 0));
 
-    expect(hurtbox.lastKnockback).toBe(2200);
-    expect(hurtbox.lastHitstop).toBe(HITSTOP);
+    expect(hurtbox.hitKnockback).toBe(2200);
+    expect(hurtbox.hitHitstop).toBe(HITSTOP);
   });
 
   it("reverts to the constructor values on the next bare beginSwing", () => {
     const hitbox: FakeHitbox = new FakeHitbox();
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
     const resolver: MeleeHitResolver = new MeleeHitResolver(
       hitbox,
       KNOCKBACK,
@@ -294,15 +275,15 @@ describe("MeleeHitResolver per-swing impact override", () => {
     resolver.beginSwing();
     resolver.resolve(new Vec2(1, 0));
 
-    expect(hurtbox.lastKnockback).toBe(KNOCKBACK);
-    expect(hurtbox.lastHitstop).toBe(HITSTOP);
+    expect(hurtbox.hitKnockback).toBe(KNOCKBACK);
+    expect(hurtbox.hitHitstop).toBe(HITSTOP);
   });
 
   // An explicit 0 is a legitimate authoring choice, so the fallback must be
   // nullish (??) and not truthiness (||), which would silently discard it.
   it("honours an explicit 0 instead of falling back to the default", () => {
     const hitbox: FakeHitbox = new FakeHitbox();
-    const hurtbox: RecordingHurtbox = new RecordingHurtbox();
+    const hurtbox: HurtboxScript = new HurtboxScript();
     const resolver: MeleeHitResolver = new MeleeHitResolver(
       hitbox,
       KNOCKBACK,
@@ -313,7 +294,7 @@ describe("MeleeHitResolver per-swing impact override", () => {
     resolver.beginSwing(0, 0);
     resolver.resolve(new Vec2(1, 0));
 
-    expect(hurtbox.lastKnockback).toBe(0);
-    expect(hurtbox.lastHitstop).toBe(0);
+    expect(hurtbox.hitKnockback).toBe(0);
+    expect(hurtbox.hitHitstop).toBe(0);
   });
 });
