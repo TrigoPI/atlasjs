@@ -7,8 +7,12 @@ import {
   CharacterController,
   PlayerInput,
   SpriteRenderer,
-  type ScriptContext,
 } from "@atlasjs/gameplay";
+import { createScriptHarness } from "@atlasjs/gameplay/testing";
+import type {
+  ScriptHarness,
+  ScriptHarnessOptions,
+} from "@atlasjs/gameplay/testing";
 import type { AudioClip } from "@atlasjs/audio";
 
 import { HurtboxScript } from "../../../../src/game/scripts/combat/HurtboxScript";
@@ -94,37 +98,17 @@ class FakeAudioApi {
   }
 }
 
-class FakeContext {
-  private readonly components: Map<unknown, unknown>;
-  private readonly services: Map<unknown, unknown>;
-
-  public constructor(
-    components: Map<unknown, unknown>,
-    services: Map<unknown, unknown>,
-  ) {
-    this.components = components;
-    this.services = services;
-  }
-
-  public getEntityId(): number {
-    return 1;
-  }
-
-  public getComponent(type: unknown): unknown {
-    return this.components.get(type);
-  }
-
-  public getService(type: unknown): unknown {
-    return this.services.get(type);
-  }
-}
+type DashProps = ScriptHarnessOptions<PlayerDashScript>["props"];
 
 type RigOptions = {
   afterimages?: AfterimageRenderer | null;
   woosh?: AudioClip | null;
   hurtbox?: HurtboxScript | null;
   audio?: FakeAudioApi | null;
-  overrides?: Record<string, unknown>;
+  /** Exposed props, injected through the real prop-injection path. */
+  props?: DashProps;
+  /** Internals with no exposed prop behind them. */
+  fields?: Readonly<Record<string, unknown>>;
 };
 
 type Rig = {
@@ -143,8 +127,6 @@ type Rig = {
 };
 
 function createRig(options: RigOptions = {}): Rig {
-  const script: PlayerDashScript = new PlayerDashScript();
-
   const move: FakeVector2Action = new FakeVector2Action();
   const dash: FakeButtonAction = new FakeButtonAction();
   const character: FakeCharacter = new FakeCharacter();
@@ -168,37 +150,25 @@ function createRig(options: RigOptions = {}): Rig {
       ? undefined
       : (options.woosh ?? ({} as unknown as AudioClip));
 
-  const injected: Record<string, unknown> = script as unknown as Record<
-    string,
-    unknown
-  >;
-
-  injected.afterimages = afterimages;
-  injected.woosh = clip;
-  injected.hurtbox = hurtbox;
-
-  const overrides: Record<string, unknown> = options.overrides ?? {};
-
-  for (const key of Object.keys(overrides)) {
-    injected[key] = overrides[key];
-  }
-
-  const components: Map<unknown, unknown> = new Map<unknown, unknown>();
-  const services: Map<unknown, unknown> = new Map<unknown, unknown>();
-
-  components.set(PlayerInput, new FakePlayerInput({ move, dash }) as unknown);
-  components.set(CharacterController, character as unknown);
-  components.set(SpriteRenderer, sprite as unknown);
-
-  if (audio !== undefined) {
-    services.set(AudioApi, audio as unknown);
-  }
-
-  script.__bindContext(
-    new FakeContext(components, services) as unknown as ScriptContext,
+  const harness: ScriptHarness<PlayerDashScript> = createScriptHarness(
+    PlayerDashScript,
+    {
+      props: { afterimages, woosh: clip, hurtbox, ...options.props },
+      fields: options.fields,
+      components: [
+        [PlayerInput, new FakePlayerInput({ move, dash })],
+        [CharacterController, character],
+        [SpriteRenderer, sprite],
+      ],
+      // Registered even when undefined: the runtime never hands back a
+      // missing façade, so the absence has to be spelled out.
+      services: [[AudioApi, audio]],
+    },
   );
 
-  script.onCreate();
+  const script: PlayerDashScript = harness.script;
+
+  harness.create();
 
   const frame = (dt: number): void => {
     script.onUpdate(dt);
@@ -318,7 +288,7 @@ describe("PlayerDashScript trigger and cooldown", () => {
   });
 
   it("keeps blocking a restart while dashing, even with no cooldown", () => {
-    const rig: Rig = createRig({ overrides: { cooldown: 0 } });
+    const rig: Rig = createRig({ props: { cooldown: 0 } });
 
     rig.move.set(1, 0);
 
@@ -468,7 +438,7 @@ describe("PlayerDashScript distance", () => {
   });
 
   it("honours an overridden distance and duration", () => {
-    const rig: Rig = createRig({ overrides: { distance: 50, duration: 0.5 } });
+    const rig: Rig = createRig({ props: { distance: 50, duration: 0.5 } });
 
     rig.move.set(1, 0);
     runDash(rig, [0.2, 0.1, 0.3]);
@@ -622,7 +592,7 @@ describe("PlayerDashScript woosh", () => {
 
   it("never drops the pitch to zero or below, whatever the jitter", () => {
     const rig: Rig = createRig({
-      overrides: { wooshPitch: 0.02, wooshPitchJitter: 5 },
+      fields: { wooshPitch: 0.02, wooshPitchJitter: 5 },
     });
     const audio: FakeAudioApi = rig.audio as FakeAudioApi;
 
