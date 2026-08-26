@@ -22,6 +22,7 @@
 - **Reconstruire le `dist` du package après toute modification d'API publique** : `pnpm --filter @atlasjs/gameplay build`. `apps/dino-brawl` résout `@atlasjs/gameplay` par son champ `exports` → `./dist`, et verra l'ancienne API sans ça.
 - **Prettier avant de rendre la main**, sur les fichiers `.ts` touchés uniquement : `pnpm exec prettier --write <chemins>`. Jamais sur le dépôt entier, jamais sur les `.md` du vault.
 - Le fichier `ScriptManager.ts` et `AtlasScript.ts` portent des directives `// prettier-ignore` sur certaines classes : les conserver.
+- **Descriptions de test en anglais.** Les chaînes `describe(...)`/`it(...)` s'écrivent en anglais, comme le reste du dépôt — jamais en français.
 
 **Commandes de référence**
 
@@ -842,11 +843,9 @@ const time: TimeControl = await engine.services.wait(TIME);
 const timeScaleManager: TimeScaleManager = new TimeScaleManager(world, time);
 ```
 
-Ajouter `TIME` et `TimeControl` à l'import de `@atlasjs/core` en tête de fichier. Ajouter `TIME` à `requires` dans le constructeur du plugin :
+Ajouter `TIME` et `TimeControl` à l'import de `@atlasjs/core` en tête de fichier.
 
-```ts
-requires: [NEXUS, NEBULA_RENDERER, INERTIAL_ENGINE, TIME],
-```
+> **Correction (constatée à l'implémentation) :** ne **pas** ajouter `TIME` à `requires`. `TIME` est injecté directement dans `services` par le constructeur d'`Engine` (`packages/core/src/public/engine/Engine.ts:78`), hors du graphe `provides`/`requires`. Comme aucun plugin ne le déclare en `provides`, `resolveInstallOrder` lève `MissingDependencyError` au boot : 222 tests sur 468 tombent. Le `await engine.services.wait(TIME)` fonctionne sans cette déclaration, le service étant disponible avant toute installation de plugin.
 
 - [ ] **Step 4: Réécrire `TimeApi`**
 
@@ -942,7 +941,7 @@ class DtProbe extends AtlasScript {
 }
 
 describe("ScriptManager scoped dt", () => {
-  it("livre le dt brut quand aucune échelle n'est posée", async () => {
+  it("delivers the raw dt when no scale is set", async () => {
     const harness: Harness = await createHarness();
     const entity: Entity = harness.world.createEntity();
     const probe: DtProbe = harness.scripts.attach(entity, DtProbe);
@@ -952,7 +951,7 @@ describe("ScriptManager scoped dt", () => {
     expect(probe.seen).toEqual([0.15]);
   });
 
-  it("livre 0 à un script gelé", async () => {
+  it("delivers 0 to a frozen script", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -964,7 +963,7 @@ describe("ScriptManager scoped dt", () => {
     expect(probe.seen).toEqual([0]);
   });
 
-  it("appelle quand même onUpdate sur un script gelé", async () => {
+  it("still calls onUpdate on a frozen script", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -977,7 +976,7 @@ describe("ScriptManager scoped dt", () => {
     expect(probe.seen.length).toBe(2);
   });
 
-  it("un sous-arbre gelé n'affecte pas son voisin", async () => {
+  it("a frozen subtree does not affect its sibling", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
 
@@ -997,7 +996,7 @@ describe("ScriptManager scoped dt", () => {
     expect(running.seen).toEqual([0.15]);
   });
 
-  it("applique une échelle fractionnaire", async () => {
+  it("applies a fractional scale", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -1121,8 +1120,8 @@ function twoFrameClip(): Clip {
   };
 }
 
-describe("AnimatorSystem et TimeScale", () => {
-  it("avance l'animation au dt brut sans échelle", async () => {
+describe("AnimatorSystem and TimeScale", () => {
+  it("advances the animation at the raw dt with no scale", async () => {
     const harness: Harness = await createHarness();
     const texture = fakeTexture("sheet", 64, 32);
     const { clip, frames }: Clip = twoFrameClip();
@@ -1138,7 +1137,7 @@ describe("AnimatorSystem et TimeScale", () => {
     expect(animator.currentFrame()).toBe(frames[1]);
   });
 
-  it("ne fait pas avancer l'animation d'une entité gelée", async () => {
+  it("does not advance the animation of a frozen entity", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const texture = fakeTexture("sheet", 64, 32);
@@ -1158,7 +1157,7 @@ describe("AnimatorSystem et TimeScale", () => {
     expect(animator.currentFrame()).toBe(frames[0]);
   });
 
-  it("gèle l'animation d'un enfant via l'échelle du parent", async () => {
+  it("freezes a child's animation through its parent's scale", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const texture = fakeTexture("sheet", 64, 32);
@@ -1305,7 +1304,7 @@ Ajouter un `describe` à la fin de `apps/dino-brawl/test/game/scripts/combat/mel
 
 ```ts
 describe("MeleeHitResolver.lastStruck", () => {
-  it("liste les entités touchées par le dernier resolve", () => {
+  it("lists the entities hit by the last resolve", () => {
     const rig: Rig = createRig();
 
     rig.hitbox.setTargets([
@@ -1317,7 +1316,7 @@ describe("MeleeHitResolver.lastStruck", () => {
     expect([...rig.resolver.lastStruck]).toEqual([7, 9]);
   });
 
-  it("se vide quand un resolve ne touche rien", () => {
+  it("empties when a resolve hits nothing", () => {
     const rig: Rig = createRig();
 
     rig.hitbox.setTargets([createTarget(7, new HurtboxScript())]);
@@ -1327,7 +1326,7 @@ describe("MeleeHitResolver.lastStruck", () => {
     expect(rig.resolver.lastStruck.length).toBe(0);
   });
 
-  it("ne compte pas une cible qui a esquivé le coup", () => {
+  it("does not count a target that dodged the hit", () => {
     const rig: Rig = createRig();
     const immune: HurtboxScript = createInvincibleHurtbox(10);
 
@@ -1487,7 +1486,7 @@ Dans `apps/dino-brawl/src/game/content/weapons/defaultSwordCombo.ts`, ajouter `h
 Dans `apps/dino-brawl/test/game/scripts/combat/hurtReactionScript.test.ts` : supprimer les cas qui assertent `animator.paused` pendant le hitstop et l'injection de `hitstopRemaining`. Remplacer par un cas qui vérifie que le knockback n'avance pas quand `onUpdate` reçoit `dt === 0` :
 
 ```ts
-it("n'avance pas le knockback sur un dt nul", () => {
+it("does not advance the knockback on a zero dt", () => {
   const rig: Rig = createRig();
 
   rig.hit(100, 0.1);
@@ -1528,7 +1527,7 @@ Ajouter le cas qui verrouille le gel simultané :
 
 ```ts
 describe("SwordScript hitstop", () => {
-  it("gèle l'attaquant et sa victime dans le même appel", () => {
+  it("freezes the attacker and its victim in the same call", () => {
     const rig: Rig = createRig();
 
     (rig.sword as unknown as { attack: FakeAttack }).attack.hitstopOverride = 0.12;
@@ -1541,7 +1540,7 @@ describe("SwordScript hitstop", () => {
     expect(rig.time.freezes[0].entities).toHaveLength(2);
   });
 
-  it("ne gèle rien quand l'attaque ne déclare aucun hitstop", () => {
+  it("freezes nothing when the attack declares no hitstop", () => {
     const rig: Rig = createRig({ hitstopDuration: 0 });
 
     rig.hitbox.setTargets([createTarget(42, new HurtboxScript())]);
@@ -1550,7 +1549,7 @@ describe("SwordScript hitstop", () => {
     expect(rig.time.freezes).toHaveLength(0);
   });
 
-  it("fige la pose sur l'angle mémorisé pendant le gel", () => {
+  it("locks the pose to the memorized angle during the freeze", () => {
     const rig: Rig = createRig();
     const attack: FakeAttack = (rig.sword as unknown as { attack: FakeAttack }).attack;
 
@@ -1634,7 +1633,7 @@ import {
 } from "../src/scripting/timers";
 
 describe("StopwatchTimer", () => {
-  it("accumule le temps", () => {
+  it("accumulates time", () => {
     const timer: StopwatchTimer = new StopwatchTimer();
 
     timer.advance(0.1);
@@ -1643,7 +1642,7 @@ describe("StopwatchTimer", () => {
     expect(timer.elapsed).toBeCloseTo(0.3);
   });
 
-  it("repart de zéro après reset", () => {
+  it("restarts from zero after reset", () => {
     const timer: StopwatchTimer = new StopwatchTimer();
 
     timer.advance(0.5);
@@ -1652,7 +1651,7 @@ describe("StopwatchTimer", () => {
     expect(timer.elapsed).toBe(0);
   });
 
-  it("n'avance pas sur un dt nul", () => {
+  it("does not advance on a zero dt", () => {
     const timer: StopwatchTimer = new StopwatchTimer();
 
     timer.advance(0);
@@ -1662,7 +1661,7 @@ describe("StopwatchTimer", () => {
 });
 
 describe("CountdownTimer", () => {
-  it("décompte et se déclare done à zéro", () => {
+  it("counts down and declares itself done at zero", () => {
     const timer: CountdownTimer = new CountdownTimer(0.3);
 
     expect(timer.done).toBe(false);
@@ -1675,7 +1674,7 @@ describe("CountdownTimer", () => {
     expect(timer.done).toBe(true);
   });
 
-  it("ne descend pas sous zéro", () => {
+  it("does not go below zero", () => {
     const timer: CountdownTimer = new CountdownTimer(0.1);
 
     timer.advance(10);
@@ -1683,7 +1682,7 @@ describe("CountdownTimer", () => {
     expect(timer.remaining).toBe(0);
   });
 
-  it("expose le temps écoulé depuis le dernier reset", () => {
+  it("exposes the time elapsed since the last reset", () => {
     const timer: CountdownTimer = new CountdownTimer(0.5);
 
     timer.advance(0.2);
@@ -1691,7 +1690,7 @@ describe("CountdownTimer", () => {
     expect(timer.elapsed).toBeCloseTo(0.2);
   });
 
-  it("reset sans argument reprend la durée d'origine", () => {
+  it("reset with no argument resumes the original duration", () => {
     const timer: CountdownTimer = new CountdownTimer(0.5);
 
     timer.advance(10);
@@ -1701,7 +1700,7 @@ describe("CountdownTimer", () => {
     expect(timer.done).toBe(false);
   });
 
-  it("reset avec argument change la durée", () => {
+  it("reset with an argument changes the duration", () => {
     const timer: CountdownTimer = new CountdownTimer(0.5);
 
     timer.reset(0.2);
@@ -1709,7 +1708,7 @@ describe("CountdownTimer", () => {
     expect(timer.remaining).toBe(0.2);
   });
 
-  it("un countdown créé à zéro est done immédiatement", () => {
+  it("a countdown created at zero is done immediately", () => {
     const timer: CountdownTimer = new CountdownTimer(0);
 
     expect(timer.done).toBe(true);
@@ -1717,7 +1716,7 @@ describe("CountdownTimer", () => {
 });
 
 describe("RepeaterTimer", () => {
-  it("déclenche le callback quand l'intervalle est atteint", () => {
+  it("triggers the callback when the interval is reached", () => {
     let fired: number = 0;
     const timer: RepeaterTimer = new RepeaterTimer(0.1, () => {
       fired += 1;
@@ -1730,7 +1729,7 @@ describe("RepeaterTimer", () => {
     expect(fired).toBe(1);
   });
 
-  it("ne tire qu'une fois par avance, même sur une frame longue", () => {
+  it("fires only once per advance, even on a long frame", () => {
     let fired: number = 0;
     const timer: RepeaterTimer = new RepeaterTimer(0.1, () => {
       fired += 1;
@@ -1741,7 +1740,7 @@ describe("RepeaterTimer", () => {
     expect(fired).toBe(1);
   });
 
-  it("conserve le reste sans le laisser dépasser un intervalle", () => {
+  it("keeps the remainder without letting it exceed one interval", () => {
     let fired: number = 0;
     const timer: RepeaterTimer = new RepeaterTimer(0.1, () => {
       fired += 1;
@@ -1754,7 +1753,7 @@ describe("RepeaterTimer", () => {
     expect(fired).toBe(2);
   });
 
-  it("prend en compte un intervalle changé à chaud", () => {
+  it("picks up an interval changed on the fly", () => {
     let fired: number = 0;
     const timer: RepeaterTimer = new RepeaterTimer(1, () => {
       fired += 1;
@@ -1767,7 +1766,7 @@ describe("RepeaterTimer", () => {
     expect(fired).toBe(1);
   });
 
-  it("reset remet l'horloge à zéro sans tirer", () => {
+  it("reset puts the clock back to zero without firing", () => {
     let fired: number = 0;
     const timer: RepeaterTimer = new RepeaterTimer(0.1, () => {
       fired += 1;
@@ -1780,7 +1779,7 @@ describe("RepeaterTimer", () => {
     expect(fired).toBe(0);
   });
 
-  it("un intervalle nul ou négatif ne tire jamais", () => {
+  it("a zero or negative interval never fires", () => {
     let fired: number = 0;
     const timer: RepeaterTimer = new RepeaterTimer(0, () => {
       fired += 1;
@@ -2010,8 +2009,8 @@ class ThrowingRepeater extends AtlasScript {
   }
 }
 
-describe("timers de script", () => {
-  it("avance le stopwatch avec le dt de la frame", async () => {
+describe("script timers", () => {
+  it("advances the stopwatch with the frame's dt", async () => {
     const harness: Harness = await createHarness();
     const entity: Entity = harness.world.createEntity();
     const probe: TimerProbe = harness.scripts.attach(entity, TimerProbe);
@@ -2021,7 +2020,7 @@ describe("timers de script", () => {
     expect(probe.watch.elapsed).toBeCloseTo(0.15);
   });
 
-  it("avance les timers AVANT onUpdate", async () => {
+  it("advances the timers BEFORE onUpdate", async () => {
     const harness: Harness = await createHarness();
     const entity: Entity = harness.world.createEntity();
     const probe: TimerProbe = harness.scripts.attach(entity, TimerProbe);
@@ -2031,7 +2030,7 @@ describe("timers de script", () => {
     expect(probe.elapsedAtUpdate[0]).toBeCloseTo(0.15);
   });
 
-  it("décompte le countdown et le déclare done", async () => {
+  it("counts down the countdown and declares it done", async () => {
     const harness: Harness = await createHarness();
     const entity: Entity = harness.world.createEntity();
     const probe: TimerProbe = harness.scripts.attach(entity, TimerProbe);
@@ -2043,7 +2042,7 @@ describe("timers de script", () => {
     expect(probe.down.done).toBe(true);
   });
 
-  it("déclenche le repeater", async () => {
+  it("triggers the repeater", async () => {
     const harness: Harness = await createHarness();
     const entity: Entity = harness.world.createEntity();
     const probe: TimerProbe = harness.scripts.attach(entity, TimerProbe);
@@ -2054,7 +2053,7 @@ describe("timers de script", () => {
     expect(probe.ticks).toBe(1);
   });
 
-  it("gèle les timers d'une entité gelée", async () => {
+  it("freezes the timers of a frozen entity", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -2068,7 +2067,7 @@ describe("timers de script", () => {
     expect(probe.watch.elapsed).toBeCloseTo(0.15);
   });
 
-  it("cancel arrête l'avance d'un timer", async () => {
+  it("cancel stops a timer's advance", async () => {
     const harness: Harness = await createHarness();
     const entity: Entity = harness.world.createEntity();
     const probe: TimerProbe = harness.scripts.attach(entity, TimerProbe);
@@ -2082,7 +2081,7 @@ describe("timers de script", () => {
     expect(probe.watch.elapsed).toBeCloseTo(frozen);
   });
 
-  it("met le script en quarantaine si un callback de repeater lève", async () => {
+  it("quarantines the script when a repeater callback throws", async () => {
     const harness: Harness = await createHarness();
     const entity: Entity = harness.world.createEntity();
     const probe: ThrowingRepeater = harness.scripts.attach(
@@ -2095,7 +2094,7 @@ describe("timers de script", () => {
     expect(harness.scripts.isEnabled(probe)).toBe(false);
   });
 
-  it("cesse d'avancer les timers d'un script détruit", async () => {
+  it("stops advancing the timers of a destroyed script", async () => {
     const harness: Harness = await createHarness();
     const entity: Entity = harness.world.createEntity();
     const probe: TimerProbe = harness.scripts.attach(entity, TimerProbe);
@@ -2340,14 +2339,14 @@ function rig(invincibilityDuration: number = 0): ScriptHarness<HurtboxScript> {
 }
 
 describe("HurtboxScript", () => {
-  it("refuse un second coup pendant l'invincibilité", () => {
+  it("refuses a second hit during invincibility", () => {
     const harness: ScriptHarness<HurtboxScript> = rig(0.5);
 
     expect(harness.script.takeHit({ direction: new Vec2(1, 0) })).toBe(true);
     expect(harness.script.takeHit({ direction: new Vec2(1, 0) })).toBe(false);
   });
 
-  it("redevient vulnérable après la durée", () => {
+  it("becomes vulnerable again after the duration", () => {
     const harness: ScriptHarness<HurtboxScript> = rig(0.5);
 
     harness.script.takeHit({ direction: new Vec2(1, 0) });
@@ -2356,7 +2355,7 @@ describe("HurtboxScript", () => {
     expect(harness.script.isInvincible).toBe(false);
   });
 
-  it("grantInvincibility ne raccourcit jamais une invincibilité en cours", () => {
+  it("grantInvincibility never shortens an invincibility already in progress", () => {
     const harness: ScriptHarness<HurtboxScript> = rig(0.5);
 
     harness.script.takeHit({ direction: new Vec2(1, 0) });
@@ -2366,7 +2365,7 @@ describe("HurtboxScript", () => {
     expect(harness.script.isInvincible).toBe(true);
   });
 
-  it("n'avance pas l'invincibilité sur un dt nul", () => {
+  it("does not advance invincibility on a zero dt", () => {
     const harness: ScriptHarness<HurtboxScript> = rig(0.5);
 
     harness.script.takeHit({ direction: new Vec2(1, 0) });

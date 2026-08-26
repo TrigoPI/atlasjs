@@ -6,7 +6,7 @@ import { TimeScaleManager, TIME_SCALE_MANAGER } from "../src/time";
 import { createHarness, Harness } from "./helpers/harness";
 
 describe("TimeScaleManager.scaleOf", () => {
-  it("rend 1 pour une entité sans TimeScale nulle part", async () => {
+  it("returns 1 for an entity with no TimeScale anywhere", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -16,7 +16,7 @@ describe("TimeScaleManager.scaleOf", () => {
     expect(manager.scaleOf(entity)).toBe(1);
   });
 
-  it("applique l'échelle portée par l'entité elle-même", async () => {
+  it("applies the scale carried by the entity itself", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -27,7 +27,7 @@ describe("TimeScaleManager.scaleOf", () => {
     expect(manager.scaleOf(entity)).toBe(0.5);
   });
 
-  it("hérite l'échelle d'un ancêtre", async () => {
+  it("inherits the scale from an ancestor", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const root: Entity = harness.world.createEntity();
@@ -43,7 +43,7 @@ describe("TimeScaleManager.scaleOf", () => {
     expect(manager.scaleOf(grandChild)).toBe(0);
   });
 
-  it("multiplie les échelles imbriquées", async () => {
+  it("multiplies nested scales", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const root: Entity = harness.world.createEntity();
@@ -58,7 +58,7 @@ describe("TimeScaleManager.scaleOf", () => {
     expect(manager.scaleOf(child)).toBe(0.25);
   });
 
-  it("laisse un sous-arbre voisin à 1", async () => {
+  it("leaves a sibling subtree at 1", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const frozen: Entity = harness.world.createEntity();
@@ -72,7 +72,7 @@ describe("TimeScaleManager.scaleOf", () => {
     expect(manager.scaleOf(other)).toBe(1);
   });
 
-  it("clampe une valeur négative à 0", async () => {
+  it("clamps a negative value to 0", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -83,7 +83,7 @@ describe("TimeScaleManager.scaleOf", () => {
     expect(manager.scaleOf(entity)).toBe(0);
   });
 
-  it("ne remonte aucun parent quand le monde ne porte aucun TimeScale", async () => {
+  it("walks no parent when the world carries no TimeScale", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const root: Entity = harness.world.createEntity();
@@ -103,7 +103,7 @@ describe("TimeScaleManager.scaleOf", () => {
     expect(parentLookups).toBe(0);
   });
 
-  it("prend en compte un TimeScale ajouté après le beginFrame de la frame précédente", async () => {
+  it("picks up a TimeScale added after the previous frame's beginFrame", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -117,7 +117,7 @@ describe("TimeScaleManager.scaleOf", () => {
     expect(manager.scaleOf(entity)).toBe(0);
   });
 
-  it("invalide le mémo entre deux frames quand la valeur change", async () => {
+  it("invalidates the memo across frames when the value changes", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -132,7 +132,7 @@ describe("TimeScaleManager.scaleOf", () => {
     expect(manager.scaleOf(entity)).toBe(1);
   });
 
-  it("rend 1 pour une entité détruite quand le monde porte un TimeScale", async () => {
+  it("returns 1 for a destroyed entity when the world carries a TimeScale", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const scaled: Entity = harness.world.createEntity();
@@ -147,11 +147,11 @@ describe("TimeScaleManager.scaleOf", () => {
 });
 
 describe("TimeScale", () => {
-  it("vaut 1 par défaut", () => {
+  it("defaults to 1", () => {
     expect(new TimeScale().value).toBe(1);
   });
 
-  it("clampe une valeur négative assignée via le setter à 0", () => {
+  it("clamps a negative value assigned through the setter to 0", () => {
     const scale: TimeScale = new TimeScale(1);
 
     scale.value = -1;
@@ -159,11 +159,11 @@ describe("TimeScale", () => {
     expect(scale.value).toBe(0);
   });
 
-  it("clampe NaN à 0 dans le constructeur", () => {
+  it("clamps NaN to 0 in the constructor", () => {
     expect(new TimeScale(NaN).value).toBe(0);
   });
 
-  it("clampe NaN à 0 via le setter", () => {
+  it("clamps NaN to 0 through the setter", () => {
     const scale: TimeScale = new TimeScale(1);
 
     scale.value = NaN;

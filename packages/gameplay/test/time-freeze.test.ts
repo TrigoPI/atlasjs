@@ -12,7 +12,7 @@ function freezeCount(manager: TimeScaleManager): number {
 }
 
 describe("TimeScaleManager.freeze", () => {
-  it("met l'échelle à 0 puis la restaure après la durée", async () => {
+  it("sets the scale to 0 then restores it after the duration", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -28,7 +28,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(manager.scaleOf(entity)).toBe(1);
   });
 
-  it("un gel de 0.1s est déjà fini quand le décompte atteint exactement 0", async () => {
+  it("a 0.1s freeze is already over when the countdown reaches exactly 0", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -39,7 +39,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(manager.scaleOf(entity)).toBe(1);
   });
 
-  it("retire le composant quand l'entité n'en portait pas avant", async () => {
+  it("removes the component when the entity did not carry one before", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -50,7 +50,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(harness.world.getComponent(entity, TimeScale)).toBeUndefined();
   });
 
-  it("restaure la valeur précédente, pas 1", async () => {
+  it("restores the previous value, not 1", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -63,7 +63,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(manager.scaleOf(entity)).toBe(0.5);
   });
 
-  it("gèle plusieurs entités dans le même appel", async () => {
+  it("freezes multiple entities in the same call", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const attacker: Entity = harness.world.createEntity();
@@ -76,7 +76,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(manager.scaleOf(victim)).toBe(0);
   });
 
-  it("un second freeze prolonge sans mémoriser 0 comme valeur précédente", async () => {
+  it("a second freeze extends it without memoizing 0 as the previous value", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -93,7 +93,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(manager.scaleOf(entity)).toBe(0.5);
   });
 
-  it("un freeze de durée nulle ou négative ne gèle rien", async () => {
+  it("a freeze with a zero or negative duration freezes nothing", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -104,7 +104,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(manager.scaleOf(entity)).toBe(1);
   });
 
-  it("freeze(0) ne pose aucun composant TimeScale, même transitoirement", async () => {
+  it("freeze(0) sets no TimeScale component, even transiently", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -114,7 +114,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(harness.world.getComponent(entity, TimeScale)).toBeUndefined();
   });
 
-  it("setScale et clearScale posent et retirent le composant", async () => {
+  it("setScale and clearScale set and remove the component", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -132,7 +132,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(manager.scaleOf(entity)).toBe(1);
   });
 
-  it("une entité détruite pendant son gel ne fait pas lever d'exception", async () => {
+  it("an entity destroyed during its freeze does not throw", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -143,7 +143,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(() => manager.update(0.2)).not.toThrow();
   });
 
-  it("freeze sur une entité déjà détruite ne fait pas lever d'exception", async () => {
+  it("freeze on an already destroyed entity does not throw", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -153,7 +153,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(() => manager.freeze(0.1, [entity])).not.toThrow();
   });
 
-  it("setScale sur une entité déjà détruite ne fait pas lever d'exception", async () => {
+  it("setScale on an already destroyed entity does not throw", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -163,7 +163,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(() => manager.setScale(entity, 0.5)).not.toThrow();
   });
 
-  it("clearScale sur une entité déjà détruite ne fait pas lever d'exception", async () => {
+  it("clearScale on an already destroyed entity does not throw", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -173,7 +173,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(() => manager.clearScale(entity)).not.toThrow();
   });
 
-  it("purge l'entrée d'une entité détruite pendant son gel, sans fuite dans la table interne", async () => {
+  it("purges the entry of an entity destroyed during its freeze, leaving no leak in the internal table", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -185,7 +185,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(freezeCount(manager)).toBe(0);
   });
 
-  it("freeze(NaN) ne gèle rien", async () => {
+  it("freeze(NaN) freezes nothing", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -196,7 +196,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(manager.scaleOf(entity)).toBe(1);
   });
 
-  it("freeze avec une durée négative ne gèle rien", async () => {
+  it("freeze with a negative duration freezes nothing", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -207,7 +207,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(manager.scaleOf(entity)).toBe(1);
   });
 
-  it("un freeze posé sans beginFrame() intermédiaire est actif immédiatement", async () => {
+  it("a freeze set with no intervening beginFrame() is active immediately", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -217,7 +217,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(manager.scaleOf(entity)).toBe(0);
   });
 
-  it("geler une entité qui portait déjà un TimeScale est actif sans update() préalable", async () => {
+  it("freezing an entity that already carried a TimeScale is active without a prior update()", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -228,7 +228,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(manager.scaleOf(entity)).toBe(0);
   });
 
-  it("setScale sur une entité sans TimeScale invalide une valeur déjà mémoïsée", async () => {
+  it("setScale on an entity with no TimeScale invalidates an already memoized value", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const memoized: Entity = harness.world.createEntity();
@@ -243,7 +243,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(manager.scaleOf(target)).toBe(0.25);
   });
 
-  it("un freeze invalide une valeur déjà mémoïsée dans la même frame", async () => {
+  it("a freeze invalidates an already memoized value within the same frame", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -257,7 +257,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(manager.scaleOf(entity)).toBe(0);
   });
 
-  it("clearScale invalide une valeur déjà mémoïsée dans la même frame", async () => {
+  it("clearScale invalidates an already memoized value within the same frame", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -271,7 +271,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(manager.scaleOf(entity)).toBe(1);
   });
 
-  it("geler un parent invalide aussi l'échelle déjà mémoïsée de son enfant", async () => {
+  it("freezing a parent also invalidates its child's already memoized scale", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const parent: Entity = harness.world.createEntity();
@@ -288,7 +288,7 @@ describe("TimeScaleManager.freeze", () => {
     expect(manager.scaleOf(parent)).toBe(0);
   });
 
-  it("un freeze plus court ne raccourcit pas un gel plus long en cours", async () => {
+  it("a shorter freeze does not shorten a longer freeze already in progress", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -306,7 +306,7 @@ describe("TimeScaleManager.freeze", () => {
 });
 
 describe("gameplay:time-scale", () => {
-  it("avance le décompte une fois par frame", async () => {
+  it("advances the countdown once per frame", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();
@@ -320,7 +320,7 @@ describe("gameplay:time-scale", () => {
     expect(manager.scaleOf(entity)).toBe(1);
   });
 
-  it("une pause globale suspend aussi le décompte d'un gel", async () => {
+  it("a global pause also suspends a freeze's countdown", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const time: TimeControl = harness.services.get(TIME);
@@ -342,7 +342,7 @@ describe("gameplay:time-scale", () => {
     expect(manager.scaleOf(entity)).toBe(1);
   });
 
-  it("tourne au stage Early, avant les scripts au stage Logic", async () => {
+  it("runs at the Early stage, before scripts at the Logic stage", async () => {
     const harness: Harness = await createHarness();
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
     const entity: Entity = harness.world.createEntity();

@@ -7,11 +7,11 @@ import { TimeApi } from "../src/scripting/services";
 import { createHarness, Harness } from "./helpers/harness";
 
 describe("TimeApi", () => {
-  it("expose le token TIME_SCALE_MANAGER", () => {
+  it("exposes the TIME_SCALE_MANAGER token", () => {
     expect(TimeApi.token).toBe(TIME_SCALE_MANAGER);
   });
 
-  it("relaie le scale global au TimeControl du coeur", async () => {
+  it("relays the global scale to the core's TimeControl", async () => {
     const harness: Harness = await createHarness();
     const api: TimeApi = new TimeApi(harness.services);
     const time: TimeControl = harness.services.get(TIME);
@@ -22,7 +22,7 @@ describe("TimeApi", () => {
     expect(api.scale).toBe(0.25);
   });
 
-  it("freeze gèle les entités passées et les libère après la durée", async () => {
+  it("freeze freezes the passed entities and releases them after the duration", async () => {
     const harness: Harness = await createHarness();
     const api: TimeApi = new TimeApi(harness.services);
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
@@ -41,7 +41,7 @@ describe("TimeApi", () => {
     expect(api.scaleOf(victim)).toBe(1);
   });
 
-  it("setScale puis clearScale font l'aller-retour", async () => {
+  it("setScale then clearScale round-trip", async () => {
     const harness: Harness = await createHarness();
     const api: TimeApi = new TimeApi(harness.services);
     const manager: TimeScaleManager = harness.services.get(TIME_SCALE_MANAGER);
@@ -56,7 +56,7 @@ describe("TimeApi", () => {
     expect(api.scaleOf(entity)).toBe(1);
   });
 
-  it("ignore silencieusement une entité détruite", async () => {
+  it("silently ignores a destroyed entity", async () => {
     const harness: Harness = await createHarness();
     const api: TimeApi = new TimeApi(harness.services);
     const entity: Entity = harness.world.createEntity();
