@@ -263,12 +263,14 @@ export class ScriptManager implements ScriptResolver {
     for (const field of Object.keys(exposed)) {
       const meta: ExposeFieldMetadata = exposed[field];
 
-      if (field in source) {
+      const provided: unknown = source[field];
+
+      if (provided !== undefined) {
         target[field] =
           meta.type === "entity"
-            ? createGameEntity(source[field] as Entity, this.world, this)
-            : source[field];
-      } else if (meta.required === true) {
+            ? createGameEntity(provided as Entity, this.world, this)
+            : provided;
+      } else if (meta.required === true && target[field] === undefined) {
         this.logger.warn(
           `"${ScriptType.name}" exposes required field "${field}" but no value was provided.`,
         );

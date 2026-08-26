@@ -34,6 +34,13 @@ class NoProps extends AtlasScript {
   }
 }
 
+class Defaulted extends AtlasScript<{ scale?: number }> {
+  public scale: number = 1;
+}
+registerScriptMetadata(Defaulted, {
+  exposed: { scale: ScriptMetadata.field({ required: true }) },
+});
+
 describe("attach — exposed prop injection", () => {
   let h: Harness;
 
@@ -69,6 +76,20 @@ describe("attach — exposed prop injection", () => {
     });
 
     expect(s.plain).toBe("untouched");
+  });
+
+  it("leaves the class default intact when a prop is explicitly undefined", () => {
+    const e: Entity = h.world.createEntity();
+    const s: Defaulted = h.scripts.attach(e, Defaulted, { scale: undefined });
+
+    expect(s.scale).toBe(1);
+  });
+
+  it("still assigns a provided value over the class default", () => {
+    const e: Entity = h.world.createEntity();
+    const s: Defaulted = h.scripts.attach(e, Defaulted, { scale: 1.5 });
+
+    expect(s.scale).toBe(1.5);
   });
 
   it("supports scripts without props (no third argument)", () => {
