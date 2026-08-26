@@ -18,6 +18,7 @@ import {
 
 import { SCRIPT_MANAGER, INSTANTIATOR } from "./tokens";
 import { CameraManager, CAMERA_MANAGER } from "./camera";
+import { TimeScaleManager, TIME_SCALE_MANAGER } from "./time";
 import { SortingLayers, SORTING_LAYERS } from "./rendering";
 
 import { ScriptManager } from "./scripting";
@@ -56,6 +57,7 @@ import {
   SpriteRender,
   TileMap,
   TileMapRenderer,
+  TimeScale,
   TrailRenderer,
   Transform2D,
   WorldTransform2D,
@@ -73,7 +75,13 @@ export class GameplayPlugin extends Plugin {
   public constructor() {
     super("gameplay-plugin", {
       requires: [NEXUS, NEBULA_RENDERER, INERTIAL_ENGINE],
-      provides: [SCRIPT_MANAGER, INSTANTIATOR, CAMERA_MANAGER, SORTING_LAYERS],
+      provides: [
+        SCRIPT_MANAGER,
+        INSTANTIATOR,
+        CAMERA_MANAGER,
+        SORTING_LAYERS,
+        TIME_SCALE_MANAGER,
+      ],
     });
     this.logger = createLogger(GameplayPlugin.name);
     this.handles = [];
@@ -85,6 +93,9 @@ export class GameplayPlugin extends Plugin {
     const world: NexusWorld = await engine.services.wait(NEXUS);
     const nebula: NebulaRenderer = await engine.services.wait(NEBULA_RENDERER);
     const inertia: PhysicsWorld = await engine.services.wait(INERTIAL_ENGINE);
+
+    const timeScaleManager: TimeScaleManager = new TimeScaleManager(world);
+    engine.services.provide(TIME_SCALE_MANAGER, timeScaleManager);
 
     this.scriptManager = new ScriptManager(world, engine.services);
     const instantiator: Instantiator = new Instantiator(world, this.scriptManager);
@@ -169,7 +180,8 @@ export class GameplayPlugin extends Plugin {
       .defineComponent(TileMapRenderer)
       .defineComponent(TrailRenderer)
       .defineComponent(AfterimageRenderer)
-      .defineComponent(OccluderStrip);
+      .defineComponent(OccluderStrip)
+      .defineComponent(TimeScale);
   }
 
   // prettier-ignore
