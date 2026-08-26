@@ -1,5 +1,3 @@
-import type { Entity } from "@atlasjs/nexus";
-
 import { PI } from "@atlasjs/math";
 
 import {
@@ -13,7 +11,7 @@ import {
 import { AimScript } from "./AimScript";
 
 type SwordSortingScriptProps = {
-  anchor: Entity;
+  anchor: GameEntity;
   sortingFront: number;
   sortingBehind: number;
 };

@@ -9,7 +9,7 @@ verified: 2026-08-25
 
 # Trancher le sort de `getExposedFields`
 
-`getExposedFields` (`packages/gameplay/src/scripting/core/ScriptMetadata.ts:55`) est exporté par le barrel `scripting/core/index.ts`, donc par `@atlasjs/gameplay`, et son **seul consommateur du monorepo est `packages/gameplay/test/script-metadata.test.ts`** (12 usages) — aucun appel dans `src/`, aucun dans `apps/`. `ScriptManager.injectProps` consomme directement `getScriptMetadata`, pas ce helper.
+`getExposedFields` (`packages/gameplay/src/scripting/core/ScriptMetadata.ts:73`) est exporté par le barrel `scripting/core/index.ts`, donc par `@atlasjs/gameplay`, et son **seul consommateur du monorepo est `packages/gameplay/test/script-metadata.test.ts`** (12 usages) — aucun appel dans `src/`, aucun dans `apps/`. `ScriptManager.injectProps` consomme directement `getScriptMetadata`, pas ce helper.
 
 `memory/atlas/gameplay/exposed-script-variables.md:82` le décrit explicitement comme une commodité pour « les tests et les consommateurs externes (futur éditeur) », retournant une copie `Map` pour isoler l'appelant. Ce n'est donc pas du code mort par accident : c'est une API d'outillage posée en avance, dont il faut décider si on la garde en vue d'un éditeur ou si on la retire de la surface publique en attendant qu'un besoin réel apparaisse. Le paquet `editor` ayant été supprimé, personne ne la réclame aujourd'hui.
 

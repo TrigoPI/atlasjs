@@ -1,0 +1,26 @@
+---
+id: GAMEPLAY-110
+status: todo
+domain: gameplay
+source: "[[input-scripting]]"
+effort: M
+verified: 2026-08-26
+---
+
+# `requireComponent` sur un composant générique accepte n'importe quelle instanciation
+
+`AtlasScript.requireComponent` a deux surcharges, dont celle qui s'applique aux composants ordinaires : `requireComponent<TComponent extends object>(type: Component<TComponent, any[]>): TComponent` (`packages/gameplay/src/scripting/core/AtlasScript.ts:90`). `Component<T, TArgs>` n'est qu'un type de constructeur, `new (...args: TArgs) => T` (`packages/nexus/src/types.ts:6-9`). Quand la classe passée est elle-même générique, son propre paramètre de type n'est contraint par **rien** dans cet appel : il n'y a pas d'argument à inférer, seulement une position de retour. TypeScript le résout donc à partir du **type attendu à gauche de l'affectation**. L'annotation ne vérifie pas, elle décide — c'est un cast déguisé.
+
+C'est exactement le cas de `PlayerInput<T extends Record<string, AnyActionSpec> = Record<string, AnyActionSpec>>` (`packages/gameplay/src/components/PlayerInput.ts:8-10`). J'ai monté une reproduction minimale des deux surcharges et de la classe, et lancé `tsc --noEmit --strict` : `const a: PlayerInput<DinoControls> = s.requireComponent(PlayerInput)` **et** `const b: PlayerInput<OtherControls> = s.requireComponent(PlayerInput)` passent toutes les deux sans un mot, sur des jeux de clés disjoints. Sans annotation, le paramètre retombe sur son défaut `Record<string, AnyActionSpec>` : `get("n_importe_quoi")` est alors accepté, donc le nom d'action n'est plus vérifié du tout. Une fois l'annotation posée, `get("does-not-exist")` est bien rejeté — mais contre un type que personne n'a confronté au composant réellement présent sur l'entité.
+
+L'asymétrie est nette avec le site de construction. `EntityBuilder.add<TComponent, TArgs>(type: Component<TComponent, TArgs>, ...args: TArgs)` (`packages/gameplay/src/scripting/core/EntityBuilder.ts:12`) a, lui, un argument : `entity.add(PlayerInput, dinoControls)` (`apps/dino-brawl/src/game/prefabs/player/PlayerPrefab.ts:79`) infère le paramètre depuis le descripteur produit par `defineActions` (`packages/input/src/public/actions/defineActions.ts:13`), et je l'ai vérifié dans la même reproduction — une clé absente y est bien rejetée. Le vrai type est donc connu à la construction et perdu à la lecture.
+
+Quatre sites de `dino-brawl` reposent sur l'annotation non vérifiée : `PlayerMovementScript.ts:34`, `PlayerAnimationScript.ts:31-32`, `PlayerDashScript.ts:68-69`, `MovementEmitterScript.ts:30-31`, tous écrivant `const actions: PlayerInput<DinoControls> = this.requireComponent(PlayerInput)`. Le défaut est **latent** : l'app n'a qu'un seul jeu de contrôles, `dinoControls` (`apps/dino-brawl/src/game/controls.ts:3-9`), et il est posé par le seul prefab joueur — les quatre annotations disent donc la vérité par construction. Il deviendra actif au premier second jeu de contrôles, et il échouera alors au runtime (`actions.get("dash")` rendant `undefined`) sans que `tsc` n'ait rien signalé.
+
+La piste : sortir le descripteur du générique et le porter par un **token**, comme le dépôt le fait déjà pour les composants scriptés (`packages/gameplay/src/scripting/core/ScriptComponentToken.ts:13-23`). Une fabrique `defineControls(spec)` rendrait un `Component<PlayerInput<TSpec>, []>` — un constructeur **non générique**, dont le paramètre est fixé à la définition — utilisable en `const actions = this.requireComponent(DinoInput)` sans annotation, avec inférence exacte. La surcharge `ScriptComponentToken` de `requireComponent` (`AtlasScript.ts:89`) est déjà là pour accueillir ce genre d'objet si la fabrique doit faire plus qu'emballer un constructeur. Deux alternatives moins bonnes : faire porter le descripteur par le token de service plutôt que par le composant (ça déplace le problème vers `getService`), ou exiger le descripteur en argument de lecture (`requireComponent(PlayerInput, dinoControls)`), ce qui redonne l'inférence au prix d'un argument redondant à chaque appel. La fabrique est le meilleur rapport valeur/coût, mais elle touche l'API publique de `PlayerInput` et se paie en migration des quatre sites.
+
+Un point vérifié qui ferme une fausse piste : **supprimer le paramètre par défaut de `PlayerInput` ne corrige rien**. Je l'ai testé dans la même reproduction — sans défaut, les deux affectations divergentes passent toujours, parce que le paramètre est instancié depuis le type attendu et non depuis le défaut. Le défaut n'aggrave que le cas *non annoté*. Il n'y a donc pas de correctif local à `PlayerInput` : soit on change la forme du composant (la fabrique), soit on vit avec.
+
+**Accroche :** `packages/gameplay/src/scripting/core/AtlasScript.ts:89-90` — les deux surcharges de `requireComponent` sont le contrat en cause, et c'est là qu'il faut décider si un composant générique se lit par sa classe ou par un token. Le même couple de surcharges est dupliqué sur `GameEntity` (`packages/gameplay/src/scripting/core/GameEntity.ts:15-16`) et sur `ComponentAccess` (`packages/gameplay/src/scripting/core/ComponentAccess.ts:9-10`) : toute décision devra les suivre.
+
+**À rapprocher de :** [[GAMEPLAY-27-input-control-schemes-rebinding]] — un second jeu de contrôles est précisément ce qui rendrait ce défaut actif.

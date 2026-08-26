@@ -18,6 +18,13 @@ registerScriptMetadata(Required, {
   exposed: { needed: ScriptMetadata.field({ required: true }) },
 });
 
+class RequiredWithDefault extends AtlasScript<{ needed?: string }> {
+  public needed: string = "fallback";
+}
+registerScriptMetadata(RequiredWithDefault, {
+  exposed: { needed: ScriptMetadata.field({ required: true }) },
+});
+
 class SingleField extends AtlasScript<{ a: string }> {
   public a!: string;
 }
@@ -50,6 +57,23 @@ describe("attach — prop/metadata validation", () => {
 
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0][0]).toContain("needed");
+  });
+
+  it("warns when a required field is provided as undefined and has no default", () => {
+    const e: Entity = h.world.createEntity();
+    sm.attach(e, Required, { needed: undefined } as unknown as {
+      needed: string;
+    });
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn.mock.calls[0][0]).toContain("needed");
+  });
+
+  it("stays silent when a required field falls back to its class default", () => {
+    const e: Entity = h.world.createEntity();
+    sm.attach(e, RequiredWithDefault, { needed: undefined });
+
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it("warns when a provided key is not exposed", () => {

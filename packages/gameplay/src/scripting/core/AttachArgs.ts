@@ -3,7 +3,7 @@ import type { Entity } from "@atlasjs/nexus";
 import type { AtlasScript } from "./AtlasScript";
 import type { GameEntity } from "./GameEntity";
 
-type PropsOf<T> = T extends AtlasScript<infer P> ? P : {};
+export type PropsOf<T> = T extends AtlasScript<infer P> ? P : {};
 
 export type AttachProps<P> = {
   [K in keyof P]: P[K] extends GameEntity ? Entity : P[K];

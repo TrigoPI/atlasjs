@@ -27,6 +27,7 @@ type HurtReactionScriptProps = {
   restClip?: string;
   hitClip?: AudioClip;
   hitPitch?: number;
+  hitPitchJitter?: number;
   hitVolume?: number;
   knockbackScale?: number;
   knockbackDamping?: number;
