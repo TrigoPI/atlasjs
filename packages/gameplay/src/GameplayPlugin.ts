@@ -136,6 +136,7 @@ export class GameplayPlugin extends Plugin {
     this.registerSteps(
       engine.scheduler,
       world,
+      timeScaleManager,
       playerInputSystem,
       animatorSystem,
       audioSystem,
@@ -271,6 +272,7 @@ export class GameplayPlugin extends Plugin {
   private registerSteps(
     scheduler: Scheduler,
     world: NexusWorld,
+    timeScaleManager: TimeScaleManager,
     playerInputSystem: PlayerInputSystem,
     animatorSystem: AnimatorSystem,
     audioSystem: AudioSystem,
@@ -286,6 +288,13 @@ export class GameplayPlugin extends Plugin {
     afterimageRenderSystem: AfterimageRenderSystem,
   ): void {
     const { fixed, update, render } = scheduler;
+
+    this.handles.push(
+      update.add((ctx: StepContext) => timeScaleManager.update(ctx.dt), {
+        name: "gameplay:time-scale",
+        stage: "Early",
+      }),
+    );
 
     this.handles.push(
       fixed.add(() => this.scriptManager.fixedUpdate(), {
