@@ -4,15 +4,19 @@ import { registerScriptMetadata, ScriptMetadata } from "@atlasjs/gameplay";
 
 import type { AttackPhase } from "./AttackTimeline";
 import { TimelineAttack } from "./TimelineAttack";
-import type { WeaponAttackAudioProps } from "./WeaponAttack";
+import type {
+  WeaponAttackAudioProps,
+  WeaponAttackImpactProps,
+} from "./WeaponAttack";
 
-type ThrustAttackProps = WeaponAttackAudioProps & {
-  thrustDuration?: number;
-  holdDuration?: number;
-  recoverDuration?: number;
-  pullbackRadius?: number;
-  thrustRadius?: number;
-};
+type ThrustAttackProps = WeaponAttackAudioProps &
+  WeaponAttackImpactProps & {
+    thrustDuration?: number;
+    holdDuration?: number;
+    recoverDuration?: number;
+    pullbackRadius?: number;
+    thrustRadius?: number;
+  };
 
 export class ThrustAttack extends TimelineAttack<ThrustAttackProps> {
   private readonly thrustDuration: number = 0.07;

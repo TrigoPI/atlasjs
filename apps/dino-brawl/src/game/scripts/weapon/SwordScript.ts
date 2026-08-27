@@ -1,4 +1,5 @@
 import { Vec2 } from "@atlasjs/math";
+import type { Entity } from "@atlasjs/nexus";
 
 import { readAimAngle } from "./aim";
 import { AimScript } from "./AimScript";
@@ -16,6 +17,7 @@ import {
   Key,
   registerScriptMetadata,
   ScriptMetadata,
+  TimeApi,
   Transform,
   TrailRenderer,
 } from "@atlasjs/gameplay";
@@ -70,10 +72,11 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
   private input: InputApi;
   private camera: CameraApi;
   private aim: AimScript;
+  private time: TimeApi;
+  private selfId: Entity;
 
   private state: SwordState;
   private buffered: boolean;
-  private hitstopRemaining: number;
 
   public onCreate(): void {
     this.transform = this.requireComponent(Transform);
@@ -81,6 +84,8 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     this.input = this.getService(InputApi);
     this.camera = this.getService(CameraApi);
     this.aim = this.requireAnchorAim();
+    this.time = this.getService(TimeApi);
+    this.selfId = this.entityId;
 
     this.clock = 0;
     this.offsetAmplitude = 8;
@@ -94,7 +99,6 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
 
     this.state = "idle";
     this.buffered = false;
-    this.hitstopRemaining = 0;
   }
 
   public onUpdate(dt: number): void {
@@ -131,8 +135,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
 
   // prettier-ignore
   private updateAttackingState(dt: number): void {
-    if (this.hitstopRemaining > 0) {
-      this.hitstopRemaining -= dt;
+    if (this.time.scaleOf(this.selfId) === 0) {
       this.applyAttackPose(this.frozenAimAngle);
       return;
     }
@@ -151,9 +154,9 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     this.blowDirection.set(Math.cos(aimAngle), Math.sin(aimAngle));
 
     if (this.getResolver().resolve(this.blowDirection)) {
-      this.hitstopRemaining = this.attack.impactHitstop ?? this.hitstopDuration;
       this.frozenAimAngle = aimAngle;
       this.camera.shake(this.shake, this.blowDirection);
+      this.applyHitstop();
     }
 
     this.applyAttackPose(aimAngle);
@@ -162,6 +165,16 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
       this.state = "idle";
       this.trail.emitting = false;
     }
+  }
+
+  private applyHitstop(): void {
+    const seconds: number = this.attack.impactHitstop ?? this.hitstopDuration;
+
+    if (seconds <= 0) {
+      return;
+    }
+
+    this.time.freeze(seconds, this.selfId, ...this.getResolver().lastStruck);
   }
 
   // prettier-ignore
@@ -182,7 +195,6 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     this.trail.emitting = true;
     this.attackClock = 0;
     this.swingDirection = Math.cos(this.getAimAngle()) >= 0 ? -1 : 1;
-    this.hitstopRemaining = 0;
     this.pose.angleOffset = 0;
     this.pose.radiusScale = 1;
     this.pose.scale = 1;

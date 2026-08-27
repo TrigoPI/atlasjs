@@ -25,9 +25,9 @@ export function defaultSwordCombo(clips: SwordComboClips): WeaponAttackFactory {
   return (entity: EntityBuilder): WeaponAttack =>
     entity.attach(AttackChain, {
       attacks: [
-        entity.attach(ThrustAttack, { clip: clips.thrust, pitch: THRUST_PITCH }),
-        entity.attach(SwingAttack, { clip: clips.swing, pitch: SWING_PITCH }),
-        entity.attach(SpinAttack, { clip: clips.spin, pitch: SPIN_PITCH }),
+        entity.attach(ThrustAttack, { clip: clips.thrust, pitch: THRUST_PITCH, hitstop: 0.08 }),
+        entity.attach(SwingAttack, { clip: clips.swing, pitch: SWING_PITCH, hitstop: 0.08 }),
+        entity.attach(SpinAttack, { clip: clips.spin, pitch: SPIN_PITCH, hitstop: 0.08 }),
       ],
     });
 }

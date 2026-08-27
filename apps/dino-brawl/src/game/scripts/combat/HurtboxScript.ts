@@ -1,4 +1,5 @@
 import { Vec2 } from "@atlasjs/math";
+import type { Entity } from "@atlasjs/nexus";
 
 import {
   AtlasScript,
@@ -15,10 +16,12 @@ export type HitInfo = {
 
 type HurtboxScriptProps = {
   invincibilityDuration?: number;
+  owner?: Entity;
 };
 
 export class HurtboxScript extends AtlasScript<HurtboxScriptProps> {
   private readonly invincibilityDuration: number = 0;
+  public readonly owner?: Entity;
 
   private readonly lastDirection: Vec2 = new Vec2();
 
@@ -81,5 +84,6 @@ export class HurtboxScript extends AtlasScript<HurtboxScriptProps> {
 registerScriptMetadata(HurtboxScript, {
   exposed: {
     invincibilityDuration: ScriptMetadata.field(),
+    owner: ScriptMetadata.field(),
   },
 });

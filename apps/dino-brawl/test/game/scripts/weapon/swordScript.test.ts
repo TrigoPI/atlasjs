@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Vec2 } from "@atlasjs/math";
+import type { Entity } from "@atlasjs/nexus";
 import type { CameraApi, GameEntity, InputApi } from "@atlasjs/gameplay";
 import {
   createScriptHarness,
@@ -22,6 +23,20 @@ class FakeHitbox {
 
   public getTargets(): readonly GameEntity[] {
     return this.targets;
+  }
+}
+
+class FakeTimeApi {
+  public readonly freezes: { seconds: number; entities: unknown[] }[] = [];
+
+  public frozen: boolean = false;
+
+  public scaleOf(): number {
+    return this.frozen ? 0 : 1;
+  }
+
+  public freeze(seconds: number, ...entities: unknown[]): void {
+    this.freezes.push({ seconds, entities });
   }
 }
 
@@ -76,6 +91,12 @@ function createInvincibleHurtbox(duration: number): HurtboxScript {
   return harness.script;
 }
 
+function createHurtbox(entityId?: number): HurtboxScript {
+  return createScriptHarness(HurtboxScript, {
+    entityId: entityId === undefined ? undefined : (entityId as Entity),
+  }).script;
+}
+
 type ShakeCall = { strength: number; x: number; y: number };
 
 type ShakeSpecLike = { strength: number };
@@ -86,7 +107,15 @@ function createAnchor(): GameEntity {
   } as unknown as GameEntity;
 }
 
-function createTransform(): object {
+type TransformLike = {
+  position: Vec2;
+  scale: Vec2;
+  rotation: number;
+  worldPosition: Vec2;
+  setScale: (x: number, y: number) => void;
+};
+
+function createTransform(): TransformLike {
   return {
     position: new Vec2(0, 0),
     scale: new Vec2(1, 1),
@@ -102,6 +131,7 @@ type Rig = {
   swing: () => void;
   hitbox: FakeHitbox;
   shakes: ShakeCall[];
+  time: FakeTimeApi;
   frame: () => void;
 };
 
@@ -113,6 +143,7 @@ function createRig(overrides: Record<string, unknown> = {}): Rig {
   const sword: SwordScript = new SwordScript();
   const hitbox: FakeHitbox = new FakeHitbox();
   const shakes: ShakeCall[] = [];
+  const time: FakeTimeApi = new FakeTimeApi();
 
   const injected: Record<string, unknown> = sword as unknown as Record<
     string,
@@ -136,6 +167,8 @@ function createRig(overrides: Record<string, unknown> = {}): Rig {
   injected.attackDuration = 1;
   injected.swingDirection = 1;
   injected.frozenAimAngle = 0;
+  injected.selfId = 1;
+  injected.time = time;
 
   injected.input = {
     mousePosition: new Vec2(0, 0),
@@ -157,7 +190,6 @@ function createRig(overrides: Record<string, unknown> = {}): Rig {
 
   injected.state = "attacking";
   injected.buffered = false;
-  injected.hitstopRemaining = 0;
 
   return {
     sword,
@@ -165,6 +197,7 @@ function createRig(overrides: Record<string, unknown> = {}): Rig {
       (sword as unknown as { startAttack: () => void }).startAttack(),
     hitbox,
     shakes,
+    time,
     frame: (): void => sword.onUpdate(DT),
   };
 }
@@ -182,7 +215,7 @@ describe("SwordScript impact resolution", () => {
 
   it("hits a target that enters the hitbox mid-swing, not only on the first frame", () => {
     const rig: Rig = createRig();
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     rig.frame();
     rig.frame();
@@ -197,7 +230,7 @@ describe("SwordScript impact resolution", () => {
 
   it("lands exactly one blow per swing, however long contact lasts", () => {
     const rig: Rig = createRig();
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
@@ -212,7 +245,7 @@ describe("SwordScript impact resolution", () => {
 
   it("lands one blow per swing, so a three-step combo deals three", () => {
     const rig: Rig = createRig();
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
@@ -249,7 +282,7 @@ describe("SwordScript impact resolution", () => {
 
   it("only shakes the camera on the swing that actually connects", () => {
     const rig: Rig = createRig();
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
@@ -276,7 +309,7 @@ describe("SwordScript impact resolution", () => {
 
   it("describes the blow it deals: aim direction plus knockback", () => {
     const rig: Rig = createRig();
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
     rig.frame();
@@ -293,7 +326,7 @@ describe("SwordScript impact resolution", () => {
     rig.frame();
     expect(rig.shakes).toHaveLength(0);
 
-    rig.hitbox.setTargets([createTarget(1, new HurtboxScript())]);
+    rig.hitbox.setTargets([createTarget(1, createHurtbox())]);
     rig.frame();
 
     expect(rig.shakes).toHaveLength(1);
@@ -313,8 +346,8 @@ describe("SwordScript impact resolution", () => {
 
   it("hits every target present in the hitbox on the same frame", () => {
     const rig: Rig = createRig();
-    const first: HurtboxScript = new HurtboxScript();
-    const second: HurtboxScript = new HurtboxScript();
+    const first: HurtboxScript = createHurtbox();
+    const second: HurtboxScript = createHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, first), createTarget(2, second)]);
     rig.frame();
@@ -340,7 +373,7 @@ describe("SwordScript hit-window rearming", () => {
   it("hits the same target again once the attack signals a rearm", () => {
     const attack: FakeAttack = new FakeAttack();
     const rig: Rig = createRig({ attack });
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
@@ -368,7 +401,7 @@ describe("SwordScript hit-window rearming", () => {
 
   it("still lands exactly one blow per swing when nothing ever rearms", () => {
     const rig: Rig = createRig({ attack: new FakeAttack() });
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
@@ -387,7 +420,7 @@ describe("SwordScript per-attack impact override", () => {
     attack.knockbackOverride = 2200;
 
     const rig: Rig = createRig({ attack, knockback: 500 });
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
     rig.swing();
@@ -401,7 +434,7 @@ describe("SwordScript per-attack impact override", () => {
       attack: new FakeAttack(),
       knockback: 500,
     });
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
     rig.swing();
@@ -415,17 +448,14 @@ describe("SwordScript per-attack impact override", () => {
     attack.hitstopOverride = 0.3;
 
     const rig: Rig = createRig({ attack, hitstopDuration: 0.07 });
-    const hurtbox: HurtboxScript = new HurtboxScript();
-    const injected: Record<string, unknown> = rig.sword as unknown as Record<
-      string,
-      unknown
-    >;
+    const hurtbox: HurtboxScript = createHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
     rig.swing();
     rig.frame();
 
-    expect(injected.hitstopRemaining).toBeCloseTo(0.3);
+    expect(rig.time.freezes).toHaveLength(1);
+    expect(rig.time.freezes[0].seconds).toBeCloseTo(0.3);
   });
 
   it("hands the attack hitstop to the victim, not only to the sword", () => {
@@ -433,7 +463,7 @@ describe("SwordScript per-attack impact override", () => {
     attack.hitstopOverride = 0.3;
 
     const rig: Rig = createRig({ attack, hitstopDuration: 0.07 });
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
     rig.swing();
@@ -447,13 +477,57 @@ describe("SwordScript per-attack impact override", () => {
       attack: new FakeAttack(),
       hitstopDuration: 0.07,
     });
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
     rig.swing();
     rig.frame();
 
     expect(hurtbox.hitHitstop).toBe(0.07);
+  });
+});
+
+describe("SwordScript hitstop", () => {
+  it("freezes the attacker and its victim in the same call", () => {
+    const rig: Rig = createRig();
+
+    (rig.sword as unknown as { attack: FakeAttack }).attack.hitstopOverride =
+      0.12;
+    rig.hitbox.setTargets([createTarget(42, createHurtbox(42))]);
+
+    rig.frame();
+
+    expect(rig.time.freezes).toHaveLength(1);
+    expect(rig.time.freezes[0].seconds).toBe(0.12);
+    expect(rig.time.freezes[0].entities).toEqual([1, 42]);
+  });
+
+  it("freezes nothing when the attack declares no hitstop", () => {
+    const rig: Rig = createRig({ hitstopDuration: 0 });
+
+    rig.hitbox.setTargets([createTarget(42, createHurtbox(42))]);
+    rig.frame();
+
+    expect(rig.time.freezes).toHaveLength(0);
+  });
+
+  it("locks the pose to the memorized angle during the freeze", () => {
+    const transform: TransformLike = createTransform();
+    const rig: Rig = createRig({
+      frozenAimAngle: Math.PI / 2,
+      transform,
+      aim: { angle: 0 },
+    });
+    const attack: FakeAttack = (rig.sword as unknown as { attack: FakeAttack })
+      .attack;
+
+    rig.time.frozen = true;
+    const before: number = attack.advanceCalls.length;
+
+    rig.frame();
+
+    expect(attack.advanceCalls.length).toBe(before);
+    expect(transform.rotation).toBeCloseTo(Math.PI / 2 + Math.PI / 4, 10);
   });
 });
 

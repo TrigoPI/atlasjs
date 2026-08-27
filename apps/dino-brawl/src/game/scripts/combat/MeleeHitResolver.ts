@@ -14,10 +14,15 @@ export class MeleeHitResolver {
   private readonly defaultHitstop: number;
 
   private readonly struck: Set<Entity> = new Set<Entity>();
+  private readonly struckThisResolve: Entity[] = [];
   private readonly hit: HitInfo = { direction: new Vec2() };
 
   private knockback: number;
   private hitstop: number;
+
+  public get lastStruck(): readonly Entity[] {
+    return this.struckThisResolve;
+  }
 
   public constructor(
     targets: MeleeTargetSource,
@@ -41,6 +46,8 @@ export class MeleeHitResolver {
     const targets: readonly GameEntity[] = this.targets.getTargets();
     let landed: boolean = false;
 
+    this.struckThisResolve.length = 0;
+
     this.hit.direction.copyFrom(direction);
     this.hit.knockback = this.knockback;
     this.hit.hitstop = this.hitstop;
@@ -59,6 +66,7 @@ export class MeleeHitResolver {
 
       if (hurtbox.takeHit(this.hit)) {
         this.struck.add(target.id);
+        this.struckThisResolve.push(hurtbox.owner ?? target.id);
         landed = true;
       }
     }
