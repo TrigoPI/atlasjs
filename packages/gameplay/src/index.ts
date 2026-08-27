@@ -9,6 +9,7 @@ export * from "./tokens";
 export * from "./authoring";
 export * from "./components";
 export * from "./camera";
+export * from "./time";
 export * from "./rendering";
 export * from "./scripting";
 export * from "./prefab";

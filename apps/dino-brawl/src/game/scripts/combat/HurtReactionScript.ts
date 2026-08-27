@@ -56,7 +56,6 @@ export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
   private audio?: AudioApi;
   private unsubscribe: Unsubscribe;
   private lastHitCount: number = 0;
-  private hitstopRemaining: number = 0;
 
   public onCreate(): void {
     this.animator = this.target.requireComponent(Animator);
@@ -64,7 +63,6 @@ export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
     this.character = this.target.getComponent(CharacterController);
     this.audio = this.getService(AudioApi);
     this.lastHitCount = this.hurtbox.hitCount;
-    this.hitstopRemaining = 0;
 
     this.unsubscribe = this.animator.on("finished", (clip: string) =>
       this.onClipFinished(clip),
@@ -81,27 +79,7 @@ export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
       this.onHit();
     }
 
-    if (this.advanceHitstop(dt)) {
-      return;
-    }
-
     this.advanceKnockback(dt);
-  }
-
-  /** Holds the victim still on impact. Returns true while frozen. */
-  private advanceHitstop(dt: number): boolean {
-    if (this.hitstopRemaining <= 0) {
-      return false;
-    }
-
-    this.hitstopRemaining -= dt;
-
-    if (this.hitstopRemaining > 0) {
-      return true;
-    }
-
-    this.animator.resume();
-    return false;
   }
 
   /** The hurt clip does not loop, so its end is the cue to stand back up. */
@@ -120,12 +98,6 @@ export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
     this.knockbackVelocity
       .copyFrom(this.hurtbox.hitDirection)
       .mult(this.hurtbox.hitKnockback * this.knockbackScale);
-
-    this.hitstopRemaining = this.hurtbox.hitHitstop;
-
-    if (this.hitstopRemaining > 0) {
-      this.animator.pause();
-    }
   }
 
   private advanceKnockback(dt: number): void {
@@ -134,7 +106,7 @@ export class HurtReactionScript extends AtlasScript<HurtReactionScriptProps> {
       return;
     }
 
-    if (this.character !== undefined) {
+    if (this.character !== undefined && dt > 0) {
       this.knockbackDelta.copyFrom(this.knockbackVelocity).mult(dt);
       this.character.move(this.knockbackDelta);
     }

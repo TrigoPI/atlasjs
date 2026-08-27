@@ -69,7 +69,9 @@ export const createEnemyPrefab = () =>
         hitboxCollider.isSensor = true;
         hitboxCollider.offset.set(0, -28);
 
-        const hurtbox: HurtboxScript = e.attach(HurtboxScript);
+        const hurtbox: HurtboxScript = e.attach(HurtboxScript, {
+          owner: entity.entity,
+        });
 
         e.attach(HurtReactionScript, {
           hurtbox,

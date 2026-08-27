@@ -2,3 +2,4 @@ export * from "./core";
 export * from "./components";
 export * from "./services";
 export * from "./runtime";
+export * from "./timers";

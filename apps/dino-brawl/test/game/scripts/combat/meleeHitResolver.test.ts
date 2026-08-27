@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { Vec2 } from "@atlasjs/math";
+import type { Entity } from "@atlasjs/nexus";
 import type { GameEntity } from "@atlasjs/gameplay";
 import {
   createScriptHarness,
   type ScriptHarness,
+  type ScriptHarnessOptions,
 } from "@atlasjs/gameplay/testing";
 
 import { HurtboxScript } from "../../../../src/game/scripts/combat/HurtboxScript";
@@ -36,13 +38,46 @@ function createTarget(id: number, hurtbox?: HurtboxScript): GameEntity {
   } as unknown as GameEntity;
 }
 
-function createInvincibleHurtbox(duration: number): HurtboxScript {
+const mounted: WeakMap<
+  HurtboxScript,
+  ScriptHarness<HurtboxScript>
+> = new WeakMap<HurtboxScript, ScriptHarness<HurtboxScript>>();
+
+/** Mounts a hurtbox on the unit seam so its timers can be advanced. */
+function mountHurtbox(
+  options: ScriptHarnessOptions<HurtboxScript>,
+): HurtboxScript {
   const harness: ScriptHarness<HurtboxScript> = createScriptHarness(
     HurtboxScript,
-    { props: { invincibilityDuration: duration } },
+    options,
   );
 
+  harness.create();
+  mounted.set(harness.script, harness);
+
   return harness.script;
+}
+
+/** Runs the hurtbox's own timers, as the script runtime would. */
+function advanceHurtbox(hurtbox: HurtboxScript, dt: number): void {
+  const harness: ScriptHarness<HurtboxScript> | undefined =
+    mounted.get(hurtbox);
+
+  if (harness === undefined) {
+    throw new Error("This hurtbox was not mounted by mountHurtbox.");
+  }
+
+  harness.advance(dt);
+}
+
+function createInvincibleHurtbox(duration: number): HurtboxScript {
+  return mountHurtbox({ props: { invincibilityDuration: duration } });
+}
+
+function createHurtbox(entityId?: number): HurtboxScript {
+  return mountHurtbox({
+    entityId: entityId === undefined ? undefined : (entityId as Entity),
+  });
 }
 
 type Rig = {
@@ -76,7 +111,7 @@ describe("MeleeHitResolver", () => {
 
   it("lands one blow on the single target it touches", () => {
     const rig: Rig = createRig();
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
@@ -86,7 +121,7 @@ describe("MeleeHitResolver", () => {
 
   it("never strikes the same target twice within one swing", () => {
     const rig: Rig = createRig();
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
@@ -94,7 +129,7 @@ describe("MeleeHitResolver", () => {
 
     for (let i: number = 0; i < 10; i++) {
       expect(rig.resolve()).toBe(false);
-      hurtbox.onUpdate(DT);
+      advanceHurtbox(hurtbox, DT);
     }
 
     expect(hurtbox.hitCount).toBe(1);
@@ -102,7 +137,7 @@ describe("MeleeHitResolver", () => {
 
   it("re-arms on beginSwing, so the next swing lands again", () => {
     const rig: Rig = createRig();
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
 
@@ -138,7 +173,7 @@ describe("MeleeHitResolver", () => {
     expect(rig.resolve()).toBe(false);
     expect(hurtbox.hitCount).toBe(primed);
 
-    hurtbox.onUpdate(20);
+    advanceHurtbox(hurtbox, 20);
 
     // Same swing, no beginSwing: the blow it dodged still reaches it.
     expect(rig.resolve()).toBe(true);
@@ -147,9 +182,9 @@ describe("MeleeHitResolver", () => {
 
   it("hits every target present on the same resolve", () => {
     const rig: Rig = createRig();
-    const first: HurtboxScript = new HurtboxScript();
-    const second: HurtboxScript = new HurtboxScript();
-    const third: HurtboxScript = new HurtboxScript();
+    const first: HurtboxScript = createHurtbox();
+    const second: HurtboxScript = createHurtbox();
+    const third: HurtboxScript = createHurtbox();
 
     rig.hitbox.setTargets([
       createTarget(1, first),
@@ -165,7 +200,7 @@ describe("MeleeHitResolver", () => {
 
   it("describes the blow it deals: direction, knockback and hitstop", () => {
     const rig: Rig = createRig();
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     rig.hitbox.setTargets([createTarget(1, hurtbox)]);
     rig.resolver.resolve(new Vec2(0, 1));
@@ -178,7 +213,7 @@ describe("MeleeHitResolver", () => {
 
   it("reports true only when at least one blow landed", () => {
     const rig: Rig = createRig();
-    const struck: HurtboxScript = new HurtboxScript();
+    const struck: HurtboxScript = createHurtbox();
     const immune: HurtboxScript = createInvincibleHurtbox(10);
 
     immune.takeHit({ direction: new Vec2(1, 0) });
@@ -197,7 +232,7 @@ describe("MeleeHitResolver", () => {
     const rig: Rig = createRig();
     const direction: Vec2 = new Vec2(3, 4);
 
-    rig.hitbox.setTargets([createTarget(1, new HurtboxScript())]);
+    rig.hitbox.setTargets([createTarget(1, createHurtbox())]);
     rig.resolver.resolve(direction);
 
     expect(direction.x).toBe(3);
@@ -208,7 +243,7 @@ describe("MeleeHitResolver", () => {
 describe("MeleeHitResolver per-swing impact override", () => {
   it("uses the constructor values when beginSwing is called bare", () => {
     const hitbox: FakeHitbox = new FakeHitbox();
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
     const resolver: MeleeHitResolver = new MeleeHitResolver(
       hitbox,
       KNOCKBACK,
@@ -225,7 +260,7 @@ describe("MeleeHitResolver per-swing impact override", () => {
 
   it("applies the values handed to beginSwing for that swing", () => {
     const hitbox: FakeHitbox = new FakeHitbox();
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
     const resolver: MeleeHitResolver = new MeleeHitResolver(
       hitbox,
       KNOCKBACK,
@@ -242,7 +277,7 @@ describe("MeleeHitResolver per-swing impact override", () => {
 
   it("falls back per field, not all-or-nothing", () => {
     const hitbox: FakeHitbox = new FakeHitbox();
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
     const resolver: MeleeHitResolver = new MeleeHitResolver(
       hitbox,
       KNOCKBACK,
@@ -259,7 +294,7 @@ describe("MeleeHitResolver per-swing impact override", () => {
 
   it("reverts to the constructor values on the next bare beginSwing", () => {
     const hitbox: FakeHitbox = new FakeHitbox();
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
     const resolver: MeleeHitResolver = new MeleeHitResolver(
       hitbox,
       KNOCKBACK,
@@ -271,7 +306,7 @@ describe("MeleeHitResolver per-swing impact override", () => {
     resolver.beginSwing(2200, 0.2);
     resolver.resolve(new Vec2(1, 0));
 
-    hurtbox.onUpdate(DT);
+    advanceHurtbox(hurtbox, DT);
     resolver.beginSwing();
     resolver.resolve(new Vec2(1, 0));
 
@@ -283,7 +318,7 @@ describe("MeleeHitResolver per-swing impact override", () => {
   // nullish (??) and not truthiness (||), which would silently discard it.
   it("honours an explicit 0 instead of falling back to the default", () => {
     const hitbox: FakeHitbox = new FakeHitbox();
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
     const resolver: MeleeHitResolver = new MeleeHitResolver(
       hitbox,
       KNOCKBACK,
@@ -296,5 +331,64 @@ describe("MeleeHitResolver per-swing impact override", () => {
 
     expect(hurtbox.hitKnockback).toBe(0);
     expect(hurtbox.hitHitstop).toBe(0);
+  });
+});
+
+describe("MeleeHitResolver.lastStruck", () => {
+  it("lists the entities hit by the last resolve", () => {
+    const rig: Rig = createRig();
+
+    rig.hitbox.setTargets([
+      createTarget(7, createHurtbox(7)),
+      createTarget(9, createHurtbox(9)),
+    ]);
+
+    expect(rig.resolve()).toBe(true);
+    expect([...rig.resolver.lastStruck]).toEqual([7, 9]);
+  });
+
+  it("empties when a resolve hits nothing", () => {
+    const rig: Rig = createRig();
+
+    rig.hitbox.setTargets([createTarget(7, createHurtbox(7))]);
+    rig.resolve();
+    rig.resolve();
+
+    expect(rig.resolver.lastStruck.length).toBe(0);
+  });
+
+  it("does not count a target that dodged the hit", () => {
+    const rig: Rig = createRig();
+    const immune: HurtboxScript = createInvincibleHurtbox(10);
+
+    immune.takeHit({ direction: new Vec2(1, 0) });
+    rig.hitbox.setTargets([createTarget(7, immune)]);
+
+    rig.resolve();
+
+    expect(rig.resolver.lastStruck.length).toBe(0);
+  });
+
+  it("credits the hurtbox's owner, not the collider entity carrying it", () => {
+    const rig: Rig = createRig();
+    const childHurtbox: HurtboxScript = mountHurtbox({
+      entityId: 99 as Entity,
+      props: { owner: 1 as Entity },
+    });
+
+    rig.hitbox.setTargets([createTarget(99, childHurtbox)]);
+
+    expect(rig.resolve()).toBe(true);
+    expect([...rig.resolver.lastStruck]).toEqual([1]);
+  });
+
+  it("falls back to the collider's own entity when the hurtbox has no owner", () => {
+    const rig: Rig = createRig();
+    const hurtbox: HurtboxScript = createHurtbox();
+
+    rig.hitbox.setTargets([createTarget(7, hurtbox)]);
+
+    expect(rig.resolve()).toBe(true);
+    expect([...rig.resolver.lastStruck]).toEqual([7]);
   });
 });

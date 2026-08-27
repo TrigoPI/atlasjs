@@ -6,6 +6,13 @@ import { ScriptLifecycle } from "./ScriptLifeCycle";
 import type { GameEntity } from "./GameEntity";
 import type { InstantiateArgs, Prefab } from "./Prefab";
 
+import type {
+  Countdown,
+  Repeater,
+  Stopwatch,
+  TimerHandle,
+} from "../timers/types";
+
 import {
   ScriptComponentToken,
   isScriptComponentToken,
@@ -58,6 +65,22 @@ export abstract class AtlasScript<TProps extends object = {}> implements ScriptL
 
   public destroy(): void {
     this.context.destroy();
+  }
+
+  protected stopwatch(): Stopwatch {
+    return this.context.stopwatch();
+  }
+
+  protected countdown(seconds: number): Countdown {
+    return this.context.countdown(seconds);
+  }
+
+  protected every(seconds: number, callback: () => void): Repeater {
+    return this.context.every(seconds, callback);
+  }
+
+  protected cancel(handle: TimerHandle): void {
+    this.context.cancel(handle);
   }
 
   public getService<TFacade, TService>(

@@ -5,6 +5,15 @@ import { INSTANTIATOR } from "../../tokens";
 
 import type { InstantiateArgs, Prefab } from "../core";
 
+import type {
+  Countdown,
+  Repeater,
+  Stopwatch,
+  TimerHandle,
+} from "../timers/types";
+
+import { TimerBag } from "../timers/TimerBag";
+
 import {
   GameEntity,
   ScriptComponentToken,
@@ -21,6 +30,7 @@ export class RuntimeScriptContext implements ScriptContext {
   private readonly services: ServiceRegistry;
   private readonly scripts: ScriptResolver;
   private readonly self: GameEntity;
+  private readonly bag: TimerBag = new TimerBag();
 
   public constructor(entity: Entity, world: NexusWorld, services: ServiceRegistry, scripts: ScriptResolver) {
     this.entity = entity;
@@ -68,5 +78,25 @@ export class RuntimeScriptContext implements ScriptContext {
 
   public destroy(): void {
     this.self.destroy();
+  }
+
+  public stopwatch(): Stopwatch {
+    return this.bag.stopwatch();
+  }
+
+  public countdown(seconds: number): Countdown {
+    return this.bag.countdown(seconds);
+  }
+
+  public every(seconds: number, callback: () => void): Repeater {
+    return this.bag.every(seconds, callback);
+  }
+
+  public cancel(handle: TimerHandle): void {
+    this.bag.cancel(handle);
+  }
+
+  public advanceTimers(dt: number): void {
+    this.bag.advance(dt);
   }
 }

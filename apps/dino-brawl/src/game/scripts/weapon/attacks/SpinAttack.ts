@@ -4,17 +4,21 @@ import { registerScriptMetadata, ScriptMetadata } from "@atlasjs/gameplay";
 
 import type { AttackPhase } from "./AttackTimeline";
 import { TimelineAttack } from "./TimelineAttack";
-import type { WeaponAttackAudioProps } from "./WeaponAttack";
+import type {
+  WeaponAttackAudioProps,
+  WeaponAttackImpactProps,
+} from "./WeaponAttack";
 
-type SpinAttackProps = WeaponAttackAudioProps & {
-  windupDuration?: number;
-  spinDuration?: number;
-  recoverDuration?: number;
-  windupAngle?: number;
-  spinRadius?: number;
-  spinScale?: number;
-  revolutions?: number;
-};
+type SpinAttackProps = WeaponAttackAudioProps &
+  WeaponAttackImpactProps & {
+    windupDuration?: number;
+    spinDuration?: number;
+    recoverDuration?: number;
+    windupAngle?: number;
+    spinRadius?: number;
+    spinScale?: number;
+    revolutions?: number;
+  };
 
 export class SpinAttack extends TimelineAttack<SpinAttackProps> {
   private readonly windupDuration: number = 0.16;

@@ -3,23 +3,18 @@ import { describe, expect, it } from "vitest";
 import { Vec2 } from "@atlasjs/math";
 
 import type { AudioClip } from "@atlasjs/audio";
+import {
+  createScriptHarness,
+  type ScriptHarness,
+} from "@atlasjs/gameplay/testing";
 
 import { HurtboxScript } from "../../../../src/game/scripts/combat/HurtboxScript";
 import { HurtReactionScript } from "../../../../src/game/scripts/combat/HurtReactionScript";
 
 class FakeAnimator {
   public readonly played: string[] = [];
-  public paused: boolean = false;
   public restarts: number = 0;
   private current: string = "idle";
-
-  public pause(): void {
-    this.paused = true;
-  }
-
-  public resume(): void {
-    this.paused = false;
-  }
 
   public play(name: string, restart: boolean = false): void {
     if (restart) {
@@ -76,7 +71,7 @@ type Rig = {
   audio: FakeAudioApi;
   character: FakeCharacter;
   clip: AudioClip;
-  hit: (knockback?: number, hitstop?: number) => void;
+  hit: (knockback?: number) => void;
   /** Advances the hurtbox timer then the observer, as the runtime does. */
   frame: (dt: number) => void;
 };
@@ -88,9 +83,19 @@ function finishClip(rig: Rig, clip: string): void {
   ).onClipFinished(clip);
 }
 
-function createRig(overrides: Record<string, unknown> = {}): Rig {
+function createRig(
+  overrides: Record<string, unknown> = {},
+  invincibilityDuration: number = 0,
+): Rig {
   const script: HurtReactionScript = new HurtReactionScript();
-  const hurtbox: HurtboxScript = new HurtboxScript();
+  const hurtboxHarness: ScriptHarness<HurtboxScript> = createScriptHarness(
+    HurtboxScript,
+    { props: { invincibilityDuration } },
+  );
+
+  hurtboxHarness.create();
+
+  const hurtbox: HurtboxScript = hurtboxHarness.script;
   const animator: FakeAnimator = new FakeAnimator();
   const audio: FakeAudioApi = new FakeAudioApi();
   const character: FakeCharacter = new FakeCharacter();
@@ -134,11 +139,11 @@ function createRig(overrides: Record<string, unknown> = {}): Rig {
     audio,
     character,
     clip,
-    hit: (knockback: number = 200, hitstop: number = 0): void => {
-      hurtbox.takeHit({ direction: new Vec2(1, 0), knockback, hitstop });
+    hit: (knockback: number = 200): void => {
+      hurtbox.takeHit({ direction: new Vec2(1, 0), knockback });
     },
     frame: (dt: number): void => {
-      hurtbox.onUpdate(dt);
+      hurtboxHarness.advance(dt);
       script.onUpdate(dt);
     },
   };
@@ -177,8 +182,8 @@ describe("HurtReactionScript", () => {
     expect(rig.audio.calls[0].params).toEqual({ pitch: 1.3, volume: 0.6 });
   });
 
-  it("holds the hurt clip for the whole invincibility window", () => {
-    const rig: Rig = createRig();
+  it("keeps the hurt clip playing past the end of the invincibility window", () => {
+    const rig: Rig = createRig({}, 0.4);
 
     rig.hit();
 
@@ -186,9 +191,15 @@ describe("HurtReactionScript", () => {
       rig.frame(0.05);
     }
 
+    expect(rig.hurtbox.isInvincible).toBe(true);
     expect(rig.animator.played).toEqual(["hurt"]);
     expect(rig.animator.playing).toBe("hurt");
     expect(rig.audio.calls).toHaveLength(1);
+
+    rig.frame(0.1);
+
+    expect(rig.hurtbox.isInvincible).toBe(false);
+    expect(rig.animator.playing).toBe("hurt");
   });
 
   it("stands back up when the hurt clip ends, without a second sound", () => {
@@ -324,46 +335,37 @@ describe("HurtReactionScript", () => {
     expect(rig.audio.calls).toHaveLength(1);
   });
 
-  it("freezes the victim on impact instead of pushing it straight away", () => {
+  it("does not advance the knockback on a zero dt", () => {
     const rig: Rig = createRig();
 
-    rig.hit(200, 0.1);
-    rig.frame(0.02);
+    rig.hit(100);
+    rig.frame(0);
 
-    expect(rig.animator.paused).toBe(true);
-    expect(rig.character.moves).toHaveLength(0);
-    expect(rig.animator.played).toEqual(["hurt"]);
-    expect(rig.audio.calls).toHaveLength(1);
+    expect(rig.character.moves.length).toBe(0);
   });
 
-  it("launches the victim at full speed once the freeze ends", () => {
-    const rig: Rig = createRig();
+  it("resumes the knockback at full speed once the freeze lifts, moving exactly as far as if it had never frozen", () => {
+    const frozen: Rig = createRig();
+    const steady: Rig = createRig();
 
-    rig.hit(200, 0.1);
+    frozen.hit(200);
+    frozen.frame(0);
+    frozen.frame(0);
+    frozen.frame(0.02);
 
-    for (let i: number = 0; i < 4; i++) {
-      rig.frame(0.02);
-    }
+    steady.hit(200);
+    steady.frame(0.02);
 
-    expect(rig.animator.paused).toBe(true);
-    expect(rig.character.moves).toHaveLength(0);
-
-    rig.frame(0.02);
-
-    expect(rig.animator.paused).toBe(false);
-    expect(rig.character.moves).toHaveLength(1);
-    // Undamped during the freeze, so the first step carries the full speed.
-    expect(rig.character.moves[0].x).toBeCloseTo(200 * 0.02);
-  });
-
-  it("does not freeze when the weapon asked for no hitstop", () => {
-    const rig: Rig = createRig();
-
-    rig.hit(200, 0);
-    rig.frame(0.02);
-
-    expect(rig.animator.paused).toBe(false);
-    expect(rig.character.moves).toHaveLength(1);
+    expect(frozen.character.moves).toHaveLength(1);
+    expect(steady.character.moves).toHaveLength(1);
+    expect(frozen.character.moves[0].x).toBeCloseTo(
+      steady.character.moves[0].x,
+      10,
+    );
+    expect(frozen.character.moves[0].y).toBeCloseTo(
+      steady.character.moves[0].y,
+      10,
+    );
   });
 
   it("varies the pitch from hit to hit so chains stop sounding mechanical", () => {

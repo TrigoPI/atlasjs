@@ -110,7 +110,7 @@ describe("PlayerAnimationScript walk", () => {
   it("plays idle without an input", () => {
     const rig: Rig = createRig();
 
-    rig.script.onUpdate(0.1);
+    rig.script.onUpdate();
 
     expect(rig.animator.played).toEqual(["idle"]);
   });
@@ -119,7 +119,7 @@ describe("PlayerAnimationScript walk", () => {
     const rig: Rig = createRig();
 
     rig.move.set(-1, 0);
-    rig.script.onUpdate(0.1);
+    rig.script.onUpdate();
 
     expect(rig.animator.played).toEqual(["run"]);
     expect(rig.sprite.flipX).toBe(true);
@@ -133,7 +133,7 @@ describe("PlayerAnimationScript dash arbitration", () => {
     rig.move.set(1, 0);
     rig.boost.pressed = true;
     rig.dash.active = true;
-    rig.script.onUpdate(0.1);
+    rig.script.onUpdate();
 
     expect(rig.animator.played).toEqual(["dash"]);
   });
@@ -143,7 +143,7 @@ describe("PlayerAnimationScript dash arbitration", () => {
 
     rig.dash.facing.set(-1, 0);
     rig.dash.active = true;
-    rig.script.onUpdate(0.1);
+    rig.script.onUpdate();
 
     expect(rig.sprite.flipX).toBe(true);
   });
@@ -154,7 +154,7 @@ describe("PlayerAnimationScript dash arbitration", () => {
     rig.move.set(0, 0);
     rig.dash.facing.set(-1, 0);
     rig.dash.active = true;
-    rig.script.onUpdate(0.1);
+    rig.script.onUpdate();
 
     expect(rig.sprite.flipX).toBe(true);
   });
@@ -165,7 +165,7 @@ describe("PlayerAnimationScript dash arbitration", () => {
     rig.dash.facing.set(1, 0);
     rig.dash.active = true;
     rig.move.set(-1, 0);
-    rig.script.onUpdate(0.1);
+    rig.script.onUpdate();
 
     expect(rig.sprite.flipX).toBe(false);
   });
@@ -174,11 +174,11 @@ describe("PlayerAnimationScript dash arbitration", () => {
     const rig: Rig = createRig();
 
     rig.move.set(-1, 0);
-    rig.script.onUpdate(0.1);
+    rig.script.onUpdate();
 
     rig.dash.facing.set(0, -1);
     rig.dash.active = true;
-    rig.script.onUpdate(0.1);
+    rig.script.onUpdate();
 
     expect(rig.sprite.flipX).toBe(true);
   });
@@ -187,11 +187,11 @@ describe("PlayerAnimationScript dash arbitration", () => {
     const rig: Rig = createRig();
 
     rig.dash.active = true;
-    rig.script.onUpdate(0.1);
+    rig.script.onUpdate();
 
     rig.dash.active = false;
     rig.move.set(1, 0);
-    rig.script.onUpdate(0.1);
+    rig.script.onUpdate();
 
     expect(rig.animator.played).toEqual(["dash", "run"]);
   });

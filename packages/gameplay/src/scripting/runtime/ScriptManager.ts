@@ -3,6 +3,7 @@ import { Entity, NexusWorld, Unsubscribe } from "@atlasjs/nexus";
 import { Logger, createLogger } from "@atlasjs/utils";
 
 import { ScriptHost } from "../../components/ScriptHost";
+import { TIME_SCALE_MANAGER, TimeScaleManager } from "../../time";
 
 import { RuntimeScriptContext } from "./RuntimeScriptContext";
 import { IncrementalScriptIdGenerator } from "./IncrementalScriptIdGenerator";
@@ -30,6 +31,7 @@ export class ScriptManager implements ScriptResolver {
   private readonly services: ServiceRegistry;
   private readonly logger: Logger;
   private readonly propsInjection: ScriptPropsInjection;
+  private readonly timeScale: TimeScaleManager | undefined;
 
   private readonly pendingCreate: ScriptID[];
   private readonly pendingDestroy: ScriptID[];
@@ -43,6 +45,9 @@ export class ScriptManager implements ScriptResolver {
   ) {
     this.world = world;
     this.services = services;
+    this.timeScale = services.has(TIME_SCALE_MANAGER)
+      ? services.get(TIME_SCALE_MANAGER)
+      : undefined;
     this.logger = logger ?? createLogger("ScriptManager");
     this.propsInjection = {
       logger: this.logger,
@@ -98,6 +103,7 @@ export class ScriptManager implements ScriptResolver {
       isEnabled: true,
       entityId,
       instance,
+      context,
     };
 
     this.records.set(record.scriptId, record);
@@ -130,7 +136,10 @@ export class ScriptManager implements ScriptResolver {
 
   public update(dt: number): void {
     this.runLifecycle("onUpdate", (record: ScriptInstanceRecord): void => {
-      record.instance.onUpdate?.(dt);
+      const scaled: number = dt * this.scaleFor(record.entityId);
+
+      record.context.advanceTimers(scaled);
+      record.instance.onUpdate?.(scaled);
     });
   }
 
@@ -171,6 +180,10 @@ export class ScriptManager implements ScriptResolver {
     }
 
     return this.records.get(scriptId);
+  }
+
+  private scaleFor(entityId: Entity): number {
+    return this.timeScale === undefined ? 1 : this.timeScale.scaleOf(entityId);
   }
 
   public getScriptsByEntity(entityId: Entity): readonly AtlasScript[] {

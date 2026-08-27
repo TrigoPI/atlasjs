@@ -20,4 +20,4 @@ Le correctif attendu est un `else if` : `pre_sprint` est le cas d'inactivité *a
 
 **Accroche :** `PlayerAnimationScript.ts:53-63` — les onze lignes contiennent le défaut entier, et le test à ajouter (boost maintenu, entrée nulle, un seul `play` par frame) se pose dans le `describe` existant de `playerAnimationScript.test.ts:130`.
 
-**À rapprocher de :** [[GAMEPLAY-96-script-timers]] — cette note documente déjà le `clock` mort de ce fichier comme le cas qui justifie l'API de timers.
+**À rapprocher de :** `GAMEPLAY-96`, **livré** (voir [[scoped-time-and-timers]]) et donc sorti du backlog. Il citait le `clock` mort de ce fichier comme le cas justifiant l'API de timers ; ce champ a été supprimé à la migration, mais le défaut décrit ici — deux `play` dans la même frame — lui est indépendant et reste entier.

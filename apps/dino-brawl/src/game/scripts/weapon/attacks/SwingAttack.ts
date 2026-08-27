@@ -4,14 +4,18 @@ import { registerScriptMetadata, ScriptMetadata } from "@atlasjs/gameplay";
 
 import type { AttackPhase } from "./AttackTimeline";
 import { TimelineAttack } from "./TimelineAttack";
-import type { WeaponAttackAudioProps } from "./WeaponAttack";
+import type {
+  WeaponAttackAudioProps,
+  WeaponAttackImpactProps,
+} from "./WeaponAttack";
 
-type SwingAttackProps = WeaponAttackAudioProps & {
-  strikeDuration?: number;
-  recoverDuration?: number;
-  windupAngle?: number;
-  strikeAngle?: number;
-};
+type SwingAttackProps = WeaponAttackAudioProps &
+  WeaponAttackImpactProps & {
+    strikeDuration?: number;
+    recoverDuration?: number;
+    windupAngle?: number;
+    strikeAngle?: number;
+  };
 
 export class SwingAttack extends TimelineAttack<SwingAttackProps> {
   private readonly strikeDuration: number = 0.09;
