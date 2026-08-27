@@ -1,14 +1,32 @@
 ---
-status: planned
-summary: "Échelle de temps par périmètre et timers de script : design validé, implémentation à venir en deux étapes (97 puis 96)."
+status: implemented
+shipped: 2026-08-27
+summary: "Échelle de temps héritée par sous-arbre et timers portés par le ScriptContext : les deux hitstops et les dix horloges écrits à la main dans dino-brawl ont disparu."
 ---
 # Temps périmétré et timers de script (`@atlasjs/gameplay`)
 
-> **Statut : planifié.** Design validé, rien n'est implémenté. Couvre deux items de backlog
-> qui ne sont séparables que dans cet ordre : [[GAMEPLAY-97-scoped-hitstop-timescale]]
-> (l'échelle de temps par périmètre) puis [[GAMEPLAY-96-script-timers]] (les timers, qui
-> consomment le `dt` défini par la première). Ferme aussi
-> [[APP-15-attack-chain-reset-ignores-hitstop]], mécaniquement.
+> **Statut : implémenté** (2026-08-27). Livré dans l'ordre annoncé — l'échelle de temps par
+> périmètre d'abord, les timers ensuite — et vérifié en jeu. `GAMEPLAY-97`, `GAMEPLAY-96` et
+> `APP-15` sont sortis du backlog. Ce dernier n'a reçu aucun traitement propre : sa cause de
+> fond a disparu, `AttackChain` et `SwordScript` lisant désormais le même `dt` gelé.
+>
+> **Portée réellement livrée.** Côté moteur : le composant `TimeScale`, le `TimeScaleManager`
+> qui résout l'échelle héritée à la lecture, `TimeApi.freeze(seconds, ...entities)`, et le `dt`
+> scopé consommé par `ScriptManager.update` et `AnimatorSystem`. Côté scripts :
+> `StopwatchTimer`, `CountdownTimer`, `RepeaterTimer`, exposés en `stopwatch()`/`countdown()`/
+> `every()`/`cancel()` sur `AtlasScript` et avancés par le runtime. Côté app : les deux hitstops
+> divergents et les dix horloges à la main ont disparu de `dino-brawl` — un `grep` sur
+> `apps/dino-brawl/src/` ne trouve plus aucun accumulateur.
+>
+> **Écart avec le design.** Les cinq méthodes de timer ne sont pas dupliquées dans les deux
+> implémentations de `ScriptContext` : une classe interne `TimerBag` (non exportée, donc hors
+> API publique) les porte et les deux y délèguent. Les autres méthodes de `StubScriptContext`
+> sont des faux assumés, mais le comportement des timers doit être **réel** — un stub qui
+> dériverait du runtime donnerait des tests verts et un jeu cassé.
+>
+> Ce qui reste hors périmètre est inchangé, cf. §8, plus trois dettes ouvertes à la clôture :
+> [[APP-22-hitinfo-hitstop-channel-is-write-only]], [[CORE-06-no-plugin-provides-time]] et
+> [[APP-23-hurtbox-test-helpers-duplicated]].
 
 ---
 
@@ -44,8 +62,10 @@ d'une frame, et aucun test ne le verrait.
 **Actif — la fenêtre de combo.** `AttackChain.onUpdate`
 (`scripts/weapon/attacks/AttackChain.ts:70-72`) accumule `elapsedSinceBegin` en temps mur,
 alors que le seuil qu'il alimente (`:85-90`) est comparé à une durée d'attaque mesurée sur
-l'horloge **gelée** de `SwordScript`. Détail complet dans
-[[APP-15-attack-chain-reset-ignores-hitstop]].
+l'horloge **gelée** de `SwordScript`. Un hitstop long consomme donc la fenêtre de reset du
+combo : le joueur ne dispose que de `0,5 − hitstop` seconde pour enchaîner au lieu de `0,5`, et
+le hitstop se cumule dans un même swing dès qu'une attaque réarme ses touches. C'était `APP-15`,
+fermé par cette feature sans traitement propre.
 
 Second problème, indépendant mais lié : **`AtlasScript` n'offre aucune planification
 temporelle.** `ScriptLifecycle` (`packages/gameplay/src/scripting/core/ScriptLifeCycle.ts:3-12`)
@@ -233,6 +253,26 @@ cooldown de dash qui continue de couler pendant un hitstop recrée exactement le
 d'`AttackChain` »*. C'est aussi la raison pour laquelle 96 ne peut pas être livré avant 97 —
 poser l'API des timers d'abord reviendrait à figer le mauvais `dt` dans la signature.
 
+### 4.4 Un timer remis à zéro pendant une frame compte à partir de la suivante
+
+Conséquence directe du §4.1 — le runtime avance les timers **avant** `onUpdate` — et découverte
+à l'implémentation, pas anticipée ici : un `reset()` appelé *depuis* `onUpdate` laisse
+`elapsed` à zéro pour le reste de cette frame. Un script qui démarrait une action et consommait
+`dt` dans la foulée gagne donc une frame. Mesuré sur l'épée : le premier échantillon de pose
+passe de `t = dt` à `t = 0`, et le swing dure une frame de plus (16 ms à 60 fps).
+
+C'est la sémantique retenue, uniforme pour tous les scripts migrés. `Stopwatch.reset()` ne prend
+délibérément pas de graine : ajouter un paramètre à l'API pour rattraper la frame de départ
+d'un seul appelant coûterait plus que le décalage.
+
+**Le piège que ça crée.** Un champ de progression accumulé (`progress += dt / duration`) signifie
+« progression **déjà consommée** » ; le getter qui le remplace (`elapsed / duration`) signifie
+« progression **disponible cette frame** ». Un test de fin de course écrit contre le premier sens
+et laissé en tête de frame s'exécute alors **avant** le pas qu'il devait autoriser. Sur le dash,
+cette inversion coûtait 14 % de la distance sur des frames inégales, et jusqu'à 86 % sur une
+frame longue — sans qu'aucun type ne bronche. Migrer un accumulateur vers un timer demande donc
+de vérifier *où* son seuil est testé, pas seulement de remplacer le champ.
+
 ---
 
 ## 5. Migration de `dino-brawl`
@@ -302,8 +342,9 @@ victime se figent ensemble tandis que le shake de caméra continue.
 
 L'ordre inverse ne compile pas : 96 consomme le `dt` scopé introduit par 97.
 
-À la clôture, [[APP-15-attack-chain-reset-ignores-hitstop]] quitte le backlog sans
-traitement propre — la cause de fond ayant disparu.
+À la clôture, `APP-15` a quitté le backlog sans traitement propre — la cause de fond ayant
+disparu. `AttackChain` et `SwordScript` lisent le même `dt` scopé, donc leurs deux horloges
+gèlent ensemble et la fenêtre de reset du combo ne peut plus être rognée par un hitstop.
 
 ---
 
