@@ -23,6 +23,7 @@
 - **Prettier avant de rendre la main**, sur les fichiers `.ts` touchés uniquement : `pnpm exec prettier --write <chemins>`. Jamais sur le dépôt entier, jamais sur les `.md` du vault.
 - Le fichier `ScriptManager.ts` et `AtlasScript.ts` portent des directives `// prettier-ignore` sur certaines classes : les conserver.
 - **Jamais d'égalité exacte sur un `dt` calculé.** `frame()` produit `0.15000000000000002`, pas `0.15` : un `toEqual([0.15])` échoue même sur le code non modifié. Utiliser `toHaveLength(n)` + `toBeCloseTo(valeur, 10)` — la précision par défaut de `toBeCloseTo` vaut 2 décimales, bien trop lâche pour distinguer deux échelles. Une valeur exacte comme `0` garde son `toEqual`.
+- **Borner une durée avec `x > 0 ? x : 0`, jamais avec `Math.max(0, x)`.** `Math.max(0, NaN)` vaut `NaN` : un `CountdownTimer(NaN)` clampé au `Math.max` n'est jamais `done`. Le bug a déjà été corrigé sous cette forme dans `TimeScale` et `TimeScaleManager` — le dépôt est cohérent là-dessus. Chaque site de clamp se teste séparément : un test sur le constructeur ne couvre pas celui de `reset`.
 - **Descriptions de test en anglais.** Les chaînes `describe(...)`/`it(...)` s'écrivent en anglais, comme le reste du dépôt — jamais en français.
 
 **Commandes de référence**
@@ -1716,6 +1717,27 @@ describe("CountdownTimer", () => {
 
     expect(timer.done).toBe(true);
   });
+
+  it("a negative duration is clamped to zero", () => {
+    const timer: CountdownTimer = new CountdownTimer(-5);
+
+    expect(timer.remaining).toBe(0);
+    expect(timer.done).toBe(true);
+  });
+
+  it("a non-numeric duration is treated as zero rather than never finishing", () => {
+    const timer: CountdownTimer = new CountdownTimer(NaN);
+
+    expect(timer.done).toBe(true);
+  });
+
+  it("reset to a non-numeric duration does not resurrect the timer", () => {
+    const timer: CountdownTimer = new CountdownTimer(1);
+
+    timer.reset(NaN);
+
+    expect(timer.done).toBe(true);
+  });
 });
 
 describe("RepeaterTimer", () => {
@@ -1743,7 +1765,7 @@ describe("RepeaterTimer", () => {
     expect(fired).toBe(1);
   });
 
-  it("keeps the remainder without letting it exceed one interval", () => {
+  it("keeps the remainder across frames", () => {
     let fired: number = 0;
     const timer: RepeaterTimer = new RepeaterTimer(0.1, () => {
       fired += 1;
@@ -1752,7 +1774,20 @@ describe("RepeaterTimer", () => {
     timer.advance(0.15);
     expect(fired).toBe(1);
 
-    timer.advance(0.05);
+    timer.advance(0.06);
+    expect(fired).toBe(2);
+  });
+
+  it("does not bank more than one interval of catch-up", () => {
+    let fired: number = 0;
+    const timer: RepeaterTimer = new RepeaterTimer(0.1, () => {
+      fired += 1;
+    });
+
+    timer.advance(5);
+    timer.advance(0);
+    timer.advance(0);
+
     expect(fired).toBe(2);
   });
 
@@ -1778,6 +1813,42 @@ describe("RepeaterTimer", () => {
     timer.advance(0.09);
     timer.reset();
     timer.advance(0.05);
+
+    expect(fired).toBe(0);
+  });
+
+  it("a non-numeric interval never fires", () => {
+    let fired: number = 0;
+    const timer: RepeaterTimer = new RepeaterTimer(NaN, () => {
+      fired += 1;
+    });
+
+    timer.advance(1);
+
+    expect(fired).toBe(0);
+  });
+
+  it("an interval made non-numeric after construction never fires", () => {
+    let fired: number = 0;
+    const timer: RepeaterTimer = new RepeaterTimer(0.5, () => {
+      fired += 1;
+    });
+
+    timer.interval = NaN;
+    timer.advance(1);
+
+    expect(fired).toBe(0);
+  });
+
+  it("a single non-numeric dt does not turn the repeater into a per-frame callback", () => {
+    let fired: number = 0;
+    const timer: RepeaterTimer = new RepeaterTimer(0.5, () => {
+      fired += 1;
+    });
+
+    timer.advance(NaN);
+    timer.advance(0.016);
+    timer.advance(0.016);
 
     expect(fired).toBe(0);
   });
@@ -1862,7 +1933,7 @@ export class CountdownTimer implements Countdown, AdvancingTimer {
   private spent: number;
 
   public constructor(seconds: number) {
-    this.initial = Math.max(0, seconds);
+    this.initial = seconds > 0 ? seconds : 0;
     this.left = this.initial;
     this.spent = 0;
   }
@@ -1885,7 +1956,7 @@ export class CountdownTimer implements Countdown, AdvancingTimer {
   }
 
   public reset(seconds?: number): void {
-    this.left = seconds === undefined ? this.initial : Math.max(0, seconds);
+    this.left = seconds === undefined ? this.initial : seconds > 0 ? seconds : 0;
     this.spent = 0;
   }
 }
@@ -1905,7 +1976,7 @@ export class RepeaterTimer implements Repeater, AdvancingTimer {
   public advance(dt: number): void {
     this.accumulated += dt;
 
-    if (this.interval <= 0 || this.accumulated < this.interval) {
+    if (!(this.interval > 0) || !(this.accumulated >= this.interval)) {
       return;
     }
 
@@ -1938,13 +2009,14 @@ export * from "./timers";
 pnpm --filter @atlasjs/gameplay exec vitest run test/timers-unit.test.ts
 ```
 
-Attendu : 16 tests PASS.
+Attendu : 22 tests PASS.
 
 - [ ] **Step 6: Vérifier et rendre la main**
 
 ```bash
 pnpm --filter @atlasjs/gameplay test
 pnpm --filter @atlasjs/gameplay typecheck
+pnpm --filter @atlasjs/gameplay build
 pnpm exec prettier --write packages/gameplay/src/scripting/timers/types.ts packages/gameplay/src/scripting/timers/timers.ts packages/gameplay/src/scripting/timers/index.ts packages/gameplay/src/scripting/index.ts packages/gameplay/test/timers-unit.test.ts
 ```
 
@@ -1985,9 +2057,9 @@ import { TIME_SCALE_MANAGER, TimeScaleManager } from "../src/time";
 import { createHarness, Harness } from "./helpers/harness";
 
 class TimerProbe extends AtlasScript {
-  public watch: Stopwatch;
-  public down: Countdown;
-  public repeat: Repeater;
+  public watch!: Stopwatch;
+  public down!: Countdown;
+  public repeat!: Repeater;
   public ticks: number = 0;
   public elapsedAtUpdate: number[] = [];
 
@@ -2020,7 +2092,7 @@ describe("script timers", () => {
 
     harness.frame();
 
-    expect(probe.watch.elapsed).toBeCloseTo(0.15);
+    expect(probe.watch.elapsed).toBeCloseTo(0.15, 10);
   });
 
   it("advances the timers BEFORE onUpdate", async () => {
@@ -2030,7 +2102,7 @@ describe("script timers", () => {
 
     harness.frame();
 
-    expect(probe.elapsedAtUpdate[0]).toBeCloseTo(0.15);
+    expect(probe.elapsedAtUpdate[0]).toBeCloseTo(0.15, 10);
   });
 
   it("counts down the countdown and declares it done", async () => {
@@ -2067,7 +2139,7 @@ describe("script timers", () => {
     harness.frame();
     harness.frame();
 
-    expect(probe.watch.elapsed).toBeCloseTo(0.15);
+    expect(probe.watch.elapsed).toBeCloseTo(0.15, 10);
   });
 
   it("cancel stops a timer's advance", async () => {
@@ -2081,7 +2153,7 @@ describe("script timers", () => {
     (probe as unknown as { cancel: (h: Stopwatch) => void }).cancel(probe.watch);
     harness.frame();
 
-    expect(probe.watch.elapsed).toBeCloseTo(frozen);
+    expect(probe.watch.elapsed).toBeCloseTo(frozen, 10);
   });
 
   it("quarantines the script when a repeater callback throws", async () => {
@@ -2108,7 +2180,7 @@ describe("script timers", () => {
     harness.world.destroyEntity(entity);
     harness.frame();
 
-    expect(probe.watch.elapsed).toBeCloseTo(frozen);
+    expect(probe.watch.elapsed).toBeCloseTo(frozen, 10);
   });
 });
 ```
@@ -2259,6 +2331,8 @@ Dans `tearDownScript`, le record est déjà retiré de `this.records` avant l'ap
 - [ ] **Step 7: Étendre le seam de test**
 
 Dans `packages/gameplay/src/testing/StubScriptContext.ts`, ajouter exactement les mêmes cinq méthodes que `RuntimeScriptContext` (même code, mêmes imports), avec un champ `private readonly timers: AdvancingTimer[]` initialisé à `[]`.
+
+> La classe `StubScriptContext` porte un `// prettier-ignore` juste au-dessus de sa déclaration : le conserver, et écrire les nouvelles méthodes dans le style déjà présent (signatures sur une seule ligne).
 
 Dans `packages/gameplay/src/testing/createScriptHarness.ts`, ajouter à `ScriptHarness` :
 
