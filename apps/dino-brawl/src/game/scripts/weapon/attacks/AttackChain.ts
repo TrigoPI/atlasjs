@@ -1,4 +1,8 @@
-import { registerScriptMetadata, ScriptMetadata } from "@atlasjs/gameplay";
+import {
+  type Stopwatch,
+  registerScriptMetadata,
+  ScriptMetadata,
+} from "@atlasjs/gameplay";
 
 import { type AttackPose, WeaponAttack } from "./WeaponAttack";
 
@@ -12,8 +16,15 @@ export class AttackChain extends WeaponAttack<AttackChainProps> {
   private readonly resetDelay: number = 0.5;
 
   private currentIndex: number = 0;
-  private elapsedSinceBegin: number = 0;
   private hasPlayedStep: boolean = false;
+
+  private sinceBegin: Stopwatch;
+
+  public override onCreate(): void {
+    super.onCreate();
+
+    this.sinceBegin = this.stopwatch();
+  }
 
   public get duration(): number {
     const current: WeaponAttack | undefined = this.getCurrentAttack();
@@ -42,7 +53,7 @@ export class AttackChain extends WeaponAttack<AttackChainProps> {
       return;
     }
 
-    this.elapsedSinceBegin = 0;
+    this.sinceBegin.reset();
     this.hasPlayedStep = true;
     next.begin();
   }
@@ -67,10 +78,6 @@ export class AttackChain extends WeaponAttack<AttackChainProps> {
     current.advance(t);
   }
 
-  public onUpdate(dt: number): void {
-    this.elapsedSinceBegin += dt;
-  }
-
   private selectNextAttack(): WeaponAttack | undefined {
     if (this.attacks.length === 0) {
       return undefined;
@@ -85,7 +92,7 @@ export class AttackChain extends WeaponAttack<AttackChainProps> {
     const resetThreshold: number = current.duration + this.resetDelay;
 
     this.currentIndex =
-      this.elapsedSinceBegin > resetThreshold
+      this.sinceBegin.elapsed > resetThreshold
         ? 0
         : (this.currentIndex + 1) % this.attacks.length;
 

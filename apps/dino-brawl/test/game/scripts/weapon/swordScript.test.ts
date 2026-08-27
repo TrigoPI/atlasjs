@@ -2,7 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import { Vec2 } from "@atlasjs/math";
 import type { Entity } from "@atlasjs/nexus";
-import type { CameraApi, GameEntity, InputApi } from "@atlasjs/gameplay";
+import {
+  type GameEntity,
+  type TrailRenderer,
+  CameraApi,
+  InputApi,
+  TimeApi,
+  Transform,
+} from "@atlasjs/gameplay";
 import {
   createScriptHarness,
   type ScriptHarness,
@@ -11,7 +18,11 @@ import {
 
 import { HurtboxScript } from "../../../../src/game/scripts/combat/HurtboxScript";
 import { SwordScript } from "../../../../src/game/scripts/weapon/SwordScript";
-import type { AttackPose } from "../../../../src/game/scripts/weapon/attacks/WeaponAttack";
+import type { SwordHitboxScript } from "../../../../src/game/scripts/weapon/SwordHitboxScript";
+import type {
+  AttackPose,
+  WeaponAttack,
+} from "../../../../src/game/scripts/weapon/attacks/WeaponAttack";
 
 const DT: number = 0.05;
 
@@ -132,6 +143,7 @@ type ShakeSpecLike = { strength: number };
 function createAnchor(): GameEntity {
   return {
     requireComponent: (): object => ({ worldPosition: Vec2.zero() }),
+    getScript: (): object => ({ angle: 0 }),
   } as unknown as GameEntity;
 }
 
@@ -157,60 +169,66 @@ type Rig = {
   sword: SwordScript;
   /** Begins a fresh swing, as clicking again would. */
   swing: () => void;
+  /** Drops the sword back to its idle state without ending the swing. */
+  goIdle: () => void;
   hitbox: FakeHitbox;
   shakes: ShakeCall[];
   time: FakeTimeApi;
   frame: () => void;
+  frames: (count: number) => void;
 };
 
 /**
- * Puts a SwordScript straight into its "attacking" state without an ECS world,
- * mirroring how the other weapon test files inject private fields.
+ * Mounts a SwordScript on the unit seam so its own timers are advanced, then
+ * puts it straight into its "attacking" state.
  */
 function createRig(overrides: Record<string, unknown> = {}): Rig {
-  const sword: SwordScript = new SwordScript();
   const hitbox: FakeHitbox = new FakeHitbox();
   const shakes: ShakeCall[] = [];
   const time: FakeTimeApi = new FakeTimeApi();
+  const anchor: GameEntity = createAnchor();
 
-  const injected: Record<string, unknown> = sword as unknown as Record<
-    string,
-    unknown
-  >;
-
-  injected.playerAnchor = createAnchor();
-  injected.radius = 40;
-  injected.angleOffset = 0;
-  injected.attack = new FakeAttack();
-  injected.hitbox = hitbox;
-  injected.hitstopDuration = 0.07;
-  injected.aim = { angle: 0 };
-
-  injected.transform = createTransform();
-  injected.baseScale = new Vec2(1, 1);
-  injected.clock = 0;
-  injected.offsetAmplitude = 8;
-  injected.offsetFrequency = 0.7;
-  injected.attackClock = 0;
-  injected.attackDuration = 1;
-  injected.swingDirection = 1;
-  injected.frozenAimAngle = 0;
-  injected.selfId = 1;
-  injected.time = time;
-
-  injected.input = {
+  const input: InputApi = {
     mousePosition: new Vec2(0, 0),
     isPressed: (): boolean => false,
   } as unknown as InputApi;
 
-  injected.camera = {
+  const camera: CameraApi = {
     screenToWorld: (): Vec2 => new Vec2(100, 0),
     shake: (spec: ShakeSpecLike, direction: Vec2): void => {
       shakes.push({ strength: spec.strength, x: direction.x, y: direction.y });
     },
   } as unknown as CameraApi;
 
-  injected.trail = { emitting: false };
+  const harness: ScriptHarness<SwordScript> = createScriptHarness(SwordScript, {
+    props: {
+      playerAnchor: 1 as Entity,
+      radius: 40,
+      angleOffset: 0,
+      attack: new FakeAttack() as unknown as WeaponAttack,
+      hitbox: hitbox as unknown as SwordHitboxScript,
+      trail: { emitting: false } as unknown as TrailRenderer,
+      hitstopDuration: 0.07,
+    },
+    components: [[Transform, createTransform()]],
+    services: [
+      [InputApi, input],
+      [CameraApi, camera],
+      [TimeApi, time],
+    ],
+    wrapEntity: (): GameEntity => anchor,
+  });
+
+  const sword: SwordScript = harness.script;
+
+  harness.create();
+
+  const injected: Record<string, unknown> = sword as unknown as Record<
+    string,
+    unknown
+  >;
+
+  injected.attackDuration = 1;
 
   for (const key of Object.keys(overrides)) {
     injected[key] = overrides[key];
@@ -219,14 +237,24 @@ function createRig(overrides: Record<string, unknown> = {}): Rig {
   injected.state = "attacking";
   injected.buffered = false;
 
+  const frame = (): void => harness.advance(DT);
+
   return {
     sword,
     swing: (): void =>
       (sword as unknown as { startAttack: () => void }).startAttack(),
+    goIdle: (): void => {
+      injected.state = "idle";
+    },
     hitbox,
     shakes,
     time,
-    frame: (): void => sword.onUpdate(DT),
+    frame,
+    frames: (count: number): void => {
+      for (let i: number = 0; i < count; i++) {
+        frame();
+      }
+    },
   };
 }
 
@@ -398,6 +426,18 @@ describe("SwordScript hit-window rearming", () => {
     expect(attack.advanceCalls[1]).toBeCloseTo(DT * 2);
   });
 
+  it("restarts the swing clock on every new swing", () => {
+    const attack: FakeAttack = new FakeAttack();
+    const rig: Rig = createRig({ attack });
+
+    rig.frames(3);
+    rig.swing();
+    rig.frame();
+
+    expect(attack.advanceCalls).toHaveLength(4);
+    expect(attack.advanceCalls[3]).toBeCloseTo(DT);
+  });
+
   it("hits the same target again once the attack signals a rearm", () => {
     const attack: FakeAttack = new FakeAttack();
     const rig: Rig = createRig({ attack });
@@ -556,6 +596,22 @@ describe("SwordScript hitstop", () => {
 
     expect(attack.advanceCalls.length).toBe(before);
     expect(transform.rotation).toBeCloseTo(Math.PI / 2 + Math.PI / 4, 10);
+  });
+});
+
+describe("SwordScript idle bob", () => {
+  it("bobs the idle sword on its own clock, not on the swing clock", () => {
+    const transform: TransformLike = createTransform();
+    const rig: Rig = createRig({ transform });
+
+    rig.frames(4);
+    rig.swing();
+    rig.goIdle();
+    rig.frame();
+
+    const w: number = 2 * Math.PI * 0.7;
+
+    expect(transform.position.y).toBeCloseTo(Math.sin(w * (5 * DT)) * 8, 10);
   });
 });
 

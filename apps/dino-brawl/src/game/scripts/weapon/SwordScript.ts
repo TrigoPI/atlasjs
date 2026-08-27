@@ -11,6 +11,7 @@ import type { SwordHitboxScript } from "./SwordHitboxScript";
 import {
   type GameEntity,
   type ShakeSpec,
+  type Stopwatch,
   AtlasScript,
   CameraApi,
   InputApi,
@@ -55,10 +56,10 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
   private transform: Transform;
   private offsetAmplitude: number;
   private offsetFrequency: number;
-  private clock: number;
+  private floatClock: Stopwatch;
 
   private baseScale: Vec2;
-  private attackClock: number;
+  private attackClock: Stopwatch;
   private swingDirection: number;
   private attackDuration: number;
   private frozenAimAngle: number;
@@ -87,12 +88,12 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     this.time = this.getService(TimeApi);
     this.selfId = this.entityId;
 
-    this.clock = 0;
+    this.floatClock = this.stopwatch();
     this.offsetAmplitude = 8;
     this.offsetFrequency = 0.7;
 
     this.baseScale = this.transform.scale.clone();
-    this.attackClock = 0;
+    this.attackClock = this.stopwatch();
     this.swingDirection = 1;
     this.attackDuration = 0;
     this.frozenAimAngle = 0;
@@ -101,9 +102,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     this.buffered = false;
   }
 
-  public onUpdate(dt: number): void {
-    this.clock += dt;
-
+  public onUpdate(): void {
     const clicked: boolean = this.input.isPressed(Key.MouseLeft);
 
     if (clicked && this.state === "attacking") {
@@ -116,7 +115,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
     }
 
     if (this.state === "attacking") {
-      this.updateAttackingState(dt);
+      this.updateAttackingState();
     } else {
       this.updateIdleState();
     }
@@ -134,20 +133,19 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
   }
 
   // prettier-ignore
-  private updateAttackingState(dt: number): void {
+  private updateAttackingState(): void {
     if (this.time.scaleOf(this.selfId) === 0) {
       this.applyAttackPose(this.frozenAimAngle);
       return;
     }
 
-    this.attackClock += dt;
-    this.attack.advance(this.attackClock);
+    this.attack.advance(this.attackClock.elapsed);
 
     if (this.attack.rearmsHits) {
       this.armResolver();
     }
 
-    this.attack.sample(this.attackClock, this.pose);
+    this.attack.sample(this.attackClock.elapsed, this.pose);
 
     const aimAngle: number = this.getAimAngle();
 
@@ -161,7 +159,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
 
     this.applyAttackPose(aimAngle);
 
-    if (this.attackClock >= this.attackDuration) {
+    if (this.attackClock.elapsed >= this.attackDuration) {
       this.state = "idle";
       this.trail.emitting = false;
     }
@@ -193,7 +191,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
   private startAttack(): void {
     this.state = "attacking";
     this.trail.emitting = true;
-    this.attackClock = 0;
+    this.attackClock.reset();
     this.swingDirection = Math.cos(this.getAimAngle()) >= 0 ? -1 : 1;
     this.pose.angleOffset = 0;
     this.pose.radiusScale = 1;
@@ -228,7 +226,7 @@ export class SwordScript extends AtlasScript<SwordScriptProps> {
 
   private getFloatingOffset(): number {
     const w: number = 2 * Math.PI * this.offsetFrequency;
-    return Math.sin(w * this.clock) * this.offsetAmplitude;
+    return Math.sin(w * this.floatClock.elapsed) * this.offsetAmplitude;
   }
 
   private getSwordRotation(): number {
