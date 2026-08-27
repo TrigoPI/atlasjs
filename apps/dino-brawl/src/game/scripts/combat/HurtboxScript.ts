@@ -1,6 +1,7 @@
 import { Vec2 } from "@atlasjs/math";
 import type { Entity } from "@atlasjs/nexus";
 
+import type { Countdown } from "@atlasjs/gameplay";
 import {
   AtlasScript,
   registerScriptMetadata,
@@ -25,13 +26,13 @@ export class HurtboxScript extends AtlasScript<HurtboxScriptProps> {
 
   private readonly lastDirection: Vec2 = new Vec2();
 
-  private invincibilityRemaining: number = 0;
+  private invincibility: Countdown;
   private lastKnockback: number = 0;
   private lastHitstop: number = 0;
   private hits: number = 0;
 
   public get isInvincible(): boolean {
-    return this.invincibilityRemaining > 0;
+    return !this.invincibility.done;
   }
 
   public get hitCount(): number {
@@ -50,27 +51,22 @@ export class HurtboxScript extends AtlasScript<HurtboxScriptProps> {
     return this.lastHitstop;
   }
 
-  public onUpdate(dt: number): void {
-    if (this.invincibilityRemaining <= 0) {
-      return;
-    }
-
-    this.invincibilityRemaining -= dt;
+  public onCreate(): void {
+    this.invincibility = this.countdown(0);
   }
 
   public grantInvincibility(duration: number): void {
-    this.invincibilityRemaining = Math.max(
-      this.invincibilityRemaining,
-      duration,
-    );
+    if (duration > this.invincibility.remaining) {
+      this.invincibility.reset(duration);
+    }
   }
 
   public takeHit(hit: HitInfo): boolean {
-    if (this.invincibilityRemaining > 0) {
+    if (!this.invincibility.done) {
       return false;
     }
 
-    this.invincibilityRemaining = this.invincibilityDuration;
+    this.invincibility.reset(this.invincibilityDuration);
 
     this.lastDirection.copyFrom(hit.direction).normalize();
     this.lastKnockback = hit.knockback ?? 0;

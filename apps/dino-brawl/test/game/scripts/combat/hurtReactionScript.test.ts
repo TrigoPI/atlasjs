@@ -3,6 +3,10 @@ import { describe, expect, it } from "vitest";
 import { Vec2 } from "@atlasjs/math";
 
 import type { AudioClip } from "@atlasjs/audio";
+import {
+  createScriptHarness,
+  type ScriptHarness,
+} from "@atlasjs/gameplay/testing";
 
 import { HurtboxScript } from "../../../../src/game/scripts/combat/HurtboxScript";
 import { HurtReactionScript } from "../../../../src/game/scripts/combat/HurtReactionScript";
@@ -79,9 +83,19 @@ function finishClip(rig: Rig, clip: string): void {
   ).onClipFinished(clip);
 }
 
-function createRig(overrides: Record<string, unknown> = {}): Rig {
+function createRig(
+  overrides: Record<string, unknown> = {},
+  invincibilityDuration: number = 0,
+): Rig {
   const script: HurtReactionScript = new HurtReactionScript();
-  const hurtbox: HurtboxScript = new HurtboxScript();
+  const hurtboxHarness: ScriptHarness<HurtboxScript> = createScriptHarness(
+    HurtboxScript,
+    { props: { invincibilityDuration } },
+  );
+
+  hurtboxHarness.create();
+
+  const hurtbox: HurtboxScript = hurtboxHarness.script;
   const animator: FakeAnimator = new FakeAnimator();
   const audio: FakeAudioApi = new FakeAudioApi();
   const character: FakeCharacter = new FakeCharacter();
@@ -129,7 +143,7 @@ function createRig(overrides: Record<string, unknown> = {}): Rig {
       hurtbox.takeHit({ direction: new Vec2(1, 0), knockback });
     },
     frame: (dt: number): void => {
-      hurtbox.onUpdate(dt);
+      hurtboxHarness.advance(dt);
       script.onUpdate(dt);
     },
   };
@@ -168,8 +182,8 @@ describe("HurtReactionScript", () => {
     expect(rig.audio.calls[0].params).toEqual({ pitch: 1.3, volume: 0.6 });
   });
 
-  it("holds the hurt clip for the whole invincibility window", () => {
-    const rig: Rig = createRig();
+  it("keeps the hurt clip playing past the end of the invincibility window", () => {
+    const rig: Rig = createRig({}, 0.4);
 
     rig.hit();
 
@@ -177,9 +191,15 @@ describe("HurtReactionScript", () => {
       rig.frame(0.05);
     }
 
+    expect(rig.hurtbox.isInvincible).toBe(true);
     expect(rig.animator.played).toEqual(["hurt"]);
     expect(rig.animator.playing).toBe("hurt");
     expect(rig.audio.calls).toHaveLength(1);
+
+    rig.frame(0.1);
+
+    expect(rig.hurtbox.isInvincible).toBe(false);
+    expect(rig.animator.playing).toBe("hurt");
   });
 
   it("stands back up when the hurt clip ends, without a second sound", () => {

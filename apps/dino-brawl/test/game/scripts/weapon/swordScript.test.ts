@@ -6,6 +6,7 @@ import type { CameraApi, GameEntity, InputApi } from "@atlasjs/gameplay";
 import {
   createScriptHarness,
   type ScriptHarness,
+  type ScriptHarnessOptions,
 } from "@atlasjs/gameplay/testing";
 
 import { HurtboxScript } from "../../../../src/game/scripts/combat/HurtboxScript";
@@ -82,19 +83,46 @@ function createTarget(id: number, hurtbox?: HurtboxScript): GameEntity {
   } as unknown as GameEntity;
 }
 
-function createInvincibleHurtbox(duration: number): HurtboxScript {
+const mounted: WeakMap<
+  HurtboxScript,
+  ScriptHarness<HurtboxScript>
+> = new WeakMap<HurtboxScript, ScriptHarness<HurtboxScript>>();
+
+/** Mounts a hurtbox on the unit seam so its timers can be advanced. */
+function mountHurtbox(
+  options: ScriptHarnessOptions<HurtboxScript>,
+): HurtboxScript {
   const harness: ScriptHarness<HurtboxScript> = createScriptHarness(
     HurtboxScript,
-    { props: { invincibilityDuration: duration } },
+    options,
   );
+
+  harness.create();
+  mounted.set(harness.script, harness);
 
   return harness.script;
 }
 
+/** Runs the hurtbox's own timers, as the script runtime would. */
+function advanceHurtbox(hurtbox: HurtboxScript, dt: number): void {
+  const harness: ScriptHarness<HurtboxScript> | undefined =
+    mounted.get(hurtbox);
+
+  if (harness === undefined) {
+    throw new Error("This hurtbox was not mounted by mountHurtbox.");
+  }
+
+  harness.advance(dt);
+}
+
+function createInvincibleHurtbox(duration: number): HurtboxScript {
+  return mountHurtbox({ props: { invincibilityDuration: duration } });
+}
+
 function createHurtbox(entityId?: number): HurtboxScript {
-  return createScriptHarness(HurtboxScript, {
+  return mountHurtbox({
     entityId: entityId === undefined ? undefined : (entityId as Entity),
-  }).script;
+  });
 }
 
 type ShakeCall = { strength: number; x: number; y: number };
@@ -237,7 +265,7 @@ describe("SwordScript impact resolution", () => {
     // The target has no invincibility at all: only the swing limits itself.
     for (let i: number = 0; i < 30; i++) {
       rig.frame();
-      hurtbox.onUpdate(DT);
+      advanceHurtbox(hurtbox, DT);
     }
 
     expect(hurtbox.hitCount).toBe(1);
@@ -254,7 +282,7 @@ describe("SwordScript impact resolution", () => {
 
       for (let i: number = 0; i < 6; i++) {
         rig.frame();
-        hurtbox.onUpdate(DT);
+        advanceHurtbox(hurtbox, DT);
       }
     }
 
@@ -272,7 +300,7 @@ describe("SwordScript impact resolution", () => {
 
       for (let i: number = 0; i < 6; i++) {
         rig.frame();
-        hurtbox.onUpdate(DT);
+        advanceHurtbox(hurtbox, DT);
       }
     }
 
@@ -288,7 +316,7 @@ describe("SwordScript impact resolution", () => {
 
     for (let i: number = 0; i < 20; i++) {
       rig.frame();
-      hurtbox.onUpdate(DT);
+      advanceHurtbox(hurtbox, DT);
     }
 
     // One blow, one hitstop, one camera punch.
@@ -407,7 +435,7 @@ describe("SwordScript hit-window rearming", () => {
 
     for (let i: number = 0; i < 30; i++) {
       rig.frame();
-      hurtbox.onUpdate(DT);
+      advanceHurtbox(hurtbox, DT);
     }
 
     expect(hurtbox.hitCount).toBe(1);

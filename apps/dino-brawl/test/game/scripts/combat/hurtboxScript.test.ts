@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { Vec2 } from "@atlasjs/math";
+import {
+  createScriptHarness,
+  type ScriptHarness,
+} from "@atlasjs/gameplay/testing";
 
 import { HurtboxScript } from "../../../../src/game/scripts/combat/HurtboxScript";
 
@@ -13,17 +17,21 @@ function hit(overrides: Record<string, unknown> = {}): {
   return { direction: new Vec2(1, 0), ...overrides };
 }
 
-function injectField(
-  hurtbox: HurtboxScript,
-  field: string,
-  value: unknown,
-): void {
-  const injected: Record<string, unknown> = hurtbox as unknown as Record<
-    string,
-    unknown
-  >;
+function mount(
+  invincibilityDuration: number = 0,
+): ScriptHarness<HurtboxScript> {
+  const harness: ScriptHarness<HurtboxScript> = createScriptHarness(
+    HurtboxScript,
+    { props: { invincibilityDuration } },
+  );
 
-  injected[field] = value;
+  harness.create();
+
+  return harness;
+}
+
+function createHurtbox(invincibilityDuration: number = 0): HurtboxScript {
+  return mount(invincibilityDuration).script;
 }
 
 describe("HurtboxScript", () => {
@@ -32,14 +40,14 @@ describe("HurtboxScript", () => {
   });
 
   it("counts no hit before it is struck", () => {
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     expect(hurtbox.hitCount).toBe(0);
     expect(hurtbox.isInvincible).toBe(false);
   });
 
   it("takes every blow by default, since weapons already limit themselves", () => {
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     expect(hurtbox.takeHit(hit())).toBe(true);
     expect(hurtbox.takeHit(hit())).toBe(true);
@@ -49,7 +57,7 @@ describe("HurtboxScript", () => {
   });
 
   it("carries the blow's knockback and hitstop", () => {
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     hurtbox.takeHit(hit({ knockback: 200, hitstop: 0.1 }));
 
@@ -58,7 +66,7 @@ describe("HurtboxScript", () => {
   });
 
   it("stores the hit direction as a unit vector", () => {
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     hurtbox.takeHit({ direction: new Vec2(0, -8) });
 
@@ -67,14 +75,14 @@ describe("HurtboxScript", () => {
   });
 
   it("survives a zero-length direction instead of producing NaN", () => {
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     expect(hurtbox.takeHit({ direction: new Vec2(0, 0) })).toBe(true);
     expect(Number.isNaN(hurtbox.hitDirection.x)).toBe(false);
   });
 
   it("reports no knockback when the weapon did not ask for any", () => {
-    const hurtbox: HurtboxScript = new HurtboxScript();
+    const hurtbox: HurtboxScript = createHurtbox();
 
     hurtbox.takeHit(hit());
 
@@ -83,21 +91,21 @@ describe("HurtboxScript", () => {
   });
 
   describe("with an invincibility window configured", () => {
-    function createArmoured(duration: number = 0.4): HurtboxScript {
-      const hurtbox: HurtboxScript = new HurtboxScript();
-      injectField(hurtbox, "invincibilityDuration", duration);
-      return hurtbox;
+    function createArmoured(
+      duration: number = 0.4,
+    ): ScriptHarness<HurtboxScript> {
+      return mount(duration);
     }
 
     it("becomes invincible on the first blow", () => {
-      const hurtbox: HurtboxScript = createArmoured();
+      const hurtbox: HurtboxScript = createArmoured().script;
 
       expect(hurtbox.takeHit(hit())).toBe(true);
       expect(hurtbox.isInvincible).toBe(true);
     });
 
     it("shrugs off every blow received while still invincible", () => {
-      const hurtbox: HurtboxScript = createArmoured();
+      const hurtbox: HurtboxScript = createArmoured().script;
 
       hurtbox.takeHit(hit());
 
@@ -107,27 +115,27 @@ describe("HurtboxScript", () => {
     });
 
     it("still shrugs one off just before the window elapses", () => {
-      const hurtbox: HurtboxScript = createArmoured();
+      const harness: ScriptHarness<HurtboxScript> = createArmoured();
 
-      hurtbox.takeHit(hit());
-      hurtbox.onUpdate(0.39);
+      harness.script.takeHit(hit());
+      harness.advance(0.39);
 
-      expect(hurtbox.takeHit(hit())).toBe(false);
+      expect(harness.script.takeHit(hit())).toBe(false);
     });
 
     it("takes a new blow once the window has elapsed", () => {
-      const hurtbox: HurtboxScript = createArmoured();
+      const harness: ScriptHarness<HurtboxScript> = createArmoured();
 
-      hurtbox.takeHit(hit());
-      hurtbox.onUpdate(0.4);
+      harness.script.takeHit(hit());
+      harness.advance(0.4);
 
-      expect(hurtbox.isInvincible).toBe(false);
-      expect(hurtbox.takeHit(hit())).toBe(true);
-      expect(hurtbox.hitCount).toBe(2);
+      expect(harness.script.isInvincible).toBe(false);
+      expect(harness.script.takeHit(hit())).toBe(true);
+      expect(harness.script.hitCount).toBe(2);
     });
 
     it("keeps the previous blow's data when one is shrugged off", () => {
-      const hurtbox: HurtboxScript = createArmoured();
+      const hurtbox: HurtboxScript = createArmoured().script;
 
       hurtbox.takeHit({ direction: new Vec2(1, 0), knockback: 200 });
       hurtbox.takeHit({ direction: new Vec2(-1, 0), knockback: 999 });
@@ -137,19 +145,19 @@ describe("HurtboxScript", () => {
     });
 
     it("does not drift below zero while idle", () => {
-      const hurtbox: HurtboxScript = createArmoured();
+      const harness: ScriptHarness<HurtboxScript> = createArmoured();
 
-      hurtbox.onUpdate(10);
-      hurtbox.onUpdate(10);
+      harness.advance(10);
+      harness.advance(10);
 
-      expect(hurtbox.takeHit(hit())).toBe(true);
-      expect(hurtbox.isInvincible).toBe(true);
+      expect(harness.script.takeHit(hit())).toBe(true);
+      expect(harness.script.isInvincible).toBe(true);
     });
   });
 
   describe("grantInvincibility", () => {
     it("shrugs off hits during a granted invincibility window", () => {
-      const hurtbox: HurtboxScript = new HurtboxScript();
+      const hurtbox: HurtboxScript = createHurtbox();
 
       hurtbox.grantInvincibility(0.3);
 
@@ -157,40 +165,40 @@ describe("HurtboxScript", () => {
       expect(hurtbox.hitCount).toBe(0);
     });
 
-    it("is invincible during a granted window and stops once onUpdate consumes it", () => {
-      const hurtbox: HurtboxScript = new HurtboxScript();
+    it("is invincible during a granted window and vulnerable again once it runs out", () => {
+      const harness: ScriptHarness<HurtboxScript> = mount();
 
-      hurtbox.grantInvincibility(0.3);
+      harness.script.grantInvincibility(0.3);
 
-      expect(hurtbox.isInvincible).toBe(true);
+      expect(harness.script.isInvincible).toBe(true);
 
-      hurtbox.onUpdate(0.3);
+      harness.advance(0.3);
 
-      expect(hurtbox.isInvincible).toBe(false);
+      expect(harness.script.isInvincible).toBe(false);
     });
 
     it("extends an invincibility window shorter than the granted duration", () => {
-      const hurtbox: HurtboxScript = new HurtboxScript();
+      const harness: ScriptHarness<HurtboxScript> = mount();
 
-      injectField(hurtbox, "invincibilityRemaining", 0.1);
-      hurtbox.grantInvincibility(0.3);
-      hurtbox.onUpdate(0.29);
+      harness.script.grantInvincibility(0.1);
+      harness.script.grantInvincibility(0.3);
+      harness.advance(0.29);
 
-      expect(hurtbox.isInvincible).toBe(true);
+      expect(harness.script.isInvincible).toBe(true);
     });
 
     it("never shortens an invincibility window already longer than the granted duration", () => {
-      const hurtbox: HurtboxScript = new HurtboxScript();
+      const harness: ScriptHarness<HurtboxScript> = mount();
 
-      injectField(hurtbox, "invincibilityRemaining", 0.4);
-      hurtbox.grantInvincibility(0.1);
-      hurtbox.onUpdate(0.39);
+      harness.script.grantInvincibility(0.4);
+      harness.script.grantInvincibility(0.1);
+      harness.advance(0.39);
 
-      expect(hurtbox.isInvincible).toBe(true);
+      expect(harness.script.isInvincible).toBe(true);
     });
 
     it("does nothing when the granted duration is zero or negative", () => {
-      const hurtbox: HurtboxScript = new HurtboxScript();
+      const hurtbox: HurtboxScript = createHurtbox();
 
       hurtbox.grantInvincibility(0);
       expect(hurtbox.isInvincible).toBe(false);
@@ -200,13 +208,30 @@ describe("HurtboxScript", () => {
     });
 
     it("does not make an already-invincible hurtbox vulnerable when granted a non-positive duration", () => {
-      const hurtbox: HurtboxScript = new HurtboxScript();
+      const hurtbox: HurtboxScript = createHurtbox();
 
       hurtbox.grantInvincibility(0.3);
       hurtbox.grantInvincibility(0);
 
       expect(hurtbox.isInvincible).toBe(true);
       expect(hurtbox.takeHit(hit())).toBe(false);
+    });
+
+    it("ignores a NaN duration instead of granting an endless window", () => {
+      const harness: ScriptHarness<HurtboxScript> = mount();
+
+      harness.script.grantInvincibility(Number.NaN);
+
+      expect(harness.script.isInvincible).toBe(false);
+
+      harness.script.grantInvincibility(0.3);
+      harness.script.grantInvincibility(Number.NaN);
+
+      expect(harness.script.isInvincible).toBe(true);
+
+      harness.advance(0.3);
+
+      expect(harness.script.isInvincible).toBe(false);
     });
   });
 });

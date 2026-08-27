@@ -119,6 +119,7 @@ type Rig = {
   sprite: FakeSpriteRenderer;
   afterimages?: AfterimageRenderer;
   hurtbox?: HurtboxScript;
+  hurtboxHarness?: ScriptHarness<HurtboxScript>;
   audio?: FakeAudioApi;
   clip?: AudioClip;
   /** Runs one frame, then consumes the button edge as the runtime would. */
@@ -137,10 +138,15 @@ function createRig(options: RigOptions = {}): Rig {
       ? undefined
       : (options.afterimages ?? new AfterimageRenderer());
 
+  const hurtboxHarness: ScriptHarness<HurtboxScript> | undefined =
+    options.hurtbox === null ? undefined : createScriptHarness(HurtboxScript);
+
+  hurtboxHarness?.create();
+
   const hurtbox: HurtboxScript | undefined =
     options.hurtbox === null
       ? undefined
-      : (options.hurtbox ?? new HurtboxScript());
+      : (options.hurtbox ?? hurtboxHarness?.script);
 
   const audio: FakeAudioApi | undefined =
     options.audio === null ? undefined : (options.audio ?? new FakeAudioApi());
@@ -183,6 +189,7 @@ function createRig(options: RigOptions = {}): Rig {
     sprite,
     afterimages,
     hurtbox,
+    hurtboxHarness,
     audio,
     clip,
     frame,
@@ -629,16 +636,18 @@ describe("PlayerDashScript invincibility", () => {
   it("grants invincibility for the length of the dash", () => {
     const rig: Rig = createRig();
     const hurtbox: HurtboxScript = rig.hurtbox as HurtboxScript;
+    const harness: ScriptHarness<HurtboxScript> =
+      rig.hurtboxHarness as ScriptHarness<HurtboxScript>;
 
     rig.dash.pressed = true;
     rig.frame(0.01);
 
     expect(hurtbox.isInvincible).toBe(true);
 
-    hurtbox.onUpdate(DURATION - 0.01);
+    harness.advance(DURATION - 0.01);
     expect(hurtbox.isInvincible).toBe(true);
 
-    hurtbox.onUpdate(0.02);
+    harness.advance(0.02);
     expect(hurtbox.isInvincible).toBe(false);
   });
 
