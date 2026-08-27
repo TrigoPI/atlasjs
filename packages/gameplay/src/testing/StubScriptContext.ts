@@ -11,6 +11,15 @@ import type {
 
 import { isScriptComponentToken } from "../scripting/core";
 
+import type {
+  Countdown,
+  Repeater,
+  Stopwatch,
+  TimerHandle,
+} from "../scripting/timers/types";
+
+import { TimerBag } from "../scripting/timers/TimerBag";
+
 import { createDetachedGameEntity } from "./DetachedGameEntity";
 import { stubEntity } from "./stubEntity";
 
@@ -51,6 +60,7 @@ export class StubScriptContext implements ScriptContext {
   private readonly components: Map<object, unknown>;
   private readonly services: Map<object, unknown>;
   private readonly wrapEntity: WrapEntity;
+  private readonly bag: TimerBag = new TimerBag();
 
   private destroyCount: number;
 
@@ -123,6 +133,26 @@ export class StubScriptContext implements ScriptContext {
 
   public destroy(): void {
     this.destroyCount += 1;
+  }
+
+  public stopwatch(): Stopwatch {
+    return this.bag.stopwatch();
+  }
+
+  public countdown(seconds: number): Countdown {
+    return this.bag.countdown(seconds);
+  }
+
+  public every(seconds: number, callback: () => void): Repeater {
+    return this.bag.every(seconds, callback);
+  }
+
+  public cancel(handle: TimerHandle): void {
+    this.bag.cancel(handle);
+  }
+
+  public advanceTimers(dt: number): void {
+    this.bag.advance(dt);
   }
 
   private nameOf(type: object): string {

@@ -103,6 +103,7 @@ export class ScriptManager implements ScriptResolver {
       isEnabled: true,
       entityId,
       instance,
+      context,
     };
 
     this.records.set(record.scriptId, record);
@@ -135,7 +136,10 @@ export class ScriptManager implements ScriptResolver {
 
   public update(dt: number): void {
     this.runLifecycle("onUpdate", (record: ScriptInstanceRecord): void => {
-      record.instance.onUpdate?.(dt * this.scaleFor(record.entityId));
+      const scaled: number = dt * this.scaleFor(record.entityId);
+
+      record.context.advanceTimers(scaled);
+      record.instance.onUpdate?.(scaled);
     });
   }
 

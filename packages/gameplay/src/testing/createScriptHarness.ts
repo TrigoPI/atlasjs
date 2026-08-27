@@ -41,6 +41,7 @@ export interface ScriptHarness<TScript extends AtlasScript> {
   readonly errors: readonly string[];
 
   create(): void;
+  advance(dt: number): void;
 }
 
 export function createScriptHarness<TScript extends AtlasScript>(
@@ -76,6 +77,10 @@ export function createScriptHarness<TScript extends AtlasScript>(
     errors: recording.transport.errors,
     create: (): void => {
       script.onCreate?.();
+    },
+    advance: (dt: number): void => {
+      context.advanceTimers(dt);
+      script.onUpdate?.(dt);
     },
   };
 }
