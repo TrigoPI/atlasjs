@@ -21,6 +21,9 @@ import { PlayerDashScript } from "../../../../src/game/scripts/player/PlayerDash
 const DISTANCE: number = 220;
 const DURATION: number = 0.18;
 
+/** The frame the button is pressed on. It starts the dash without moving it. */
+const TRIGGER: number = 0.02;
+
 class FakeVector2Action {
   private value: Vec2 = Vec2.zero();
 
@@ -177,7 +180,7 @@ function createRig(options: RigOptions = {}): Rig {
   harness.create();
 
   const frame = (dt: number): void => {
-    script.onUpdate(dt);
+    harness.advance(dt);
     dash.pressed = false;
   };
 
@@ -220,14 +223,13 @@ describe("PlayerDashScript trigger and cooldown", () => {
     expect(rig.character.moves).toHaveLength(0);
   });
 
-  it("dashes on the frame the button is pressed", () => {
+  it("enters the dash on the frame the button is pressed", () => {
     const rig: Rig = createRig();
 
     rig.dash.pressed = true;
-    rig.frame(0.02);
+    rig.frame(TRIGGER);
 
     expect(rig.script.isDashing).toBe(true);
-    expect(rig.character.moves).toHaveLength(1);
   });
 
   it("refuses a second dash while the first one is still running", () => {
@@ -249,7 +251,7 @@ describe("PlayerDashScript trigger and cooldown", () => {
   it("refuses a new dash while the cooldown has not elapsed", () => {
     const rig: Rig = createRig();
 
-    runDash(rig, [DURATION, 0.02]);
+    runDash(rig, [TRIGGER, DURATION, 0.02]);
     expect(rig.script.isDashing).toBe(false);
 
     const moves: number = rig.character.moves.length;
@@ -264,7 +266,7 @@ describe("PlayerDashScript trigger and cooldown", () => {
   it("counts the cooldown from the start of the dash, not from its end", () => {
     const rig: Rig = createRig();
 
-    runDash(rig, [DURATION, 0.02]);
+    runDash(rig, [TRIGGER, DURATION, 0.02]);
 
     // 0.20s of dash then 0.50s idle: past the cooldown counted from the
     // start, still inside it if it were counted from the end.
@@ -279,12 +281,13 @@ describe("PlayerDashScript trigger and cooldown", () => {
   it("allows a new dash once the cooldown has elapsed", () => {
     const rig: Rig = createRig();
 
-    runDash(rig, [DURATION, 0.02]);
+    runDash(rig, [TRIGGER, DURATION, 0.02]);
     rig.frames(10, 0.1);
 
     rig.character.moves.length = 0;
 
     rig.dash.pressed = true;
+    rig.frame(TRIGGER);
     rig.frame(0.06);
     rig.frame(0.06);
     rig.frame(0.06);
@@ -299,7 +302,7 @@ describe("PlayerDashScript trigger and cooldown", () => {
 
     rig.move.set(1, 0);
 
-    for (let i: number = 0; i < 4; i++) {
+    for (let i: number = 0; i < 5; i++) {
       rig.dash.pressed = true;
       rig.frame(0.05);
     }
@@ -311,7 +314,7 @@ describe("PlayerDashScript trigger and cooldown", () => {
   it("keeps refusing while the cooldown is still counting down", () => {
     const rig: Rig = createRig();
 
-    runDash(rig, [DURATION, 0.02]);
+    runDash(rig, [TRIGGER, DURATION, 0.02]);
     rig.frames(3, 0.1);
 
     rig.dash.pressed = true;
@@ -326,7 +329,7 @@ describe("PlayerDashScript direction", () => {
     const rig: Rig = createRig();
 
     rig.move.set(3, 4);
-    runDash(rig, [DURATION]);
+    runDash(rig, [TRIGGER, DURATION]);
 
     expect(rig.character.total.x).toBeCloseTo(DISTANCE * 0.6, 10);
     expect(rig.character.total.y).toBeCloseTo(DISTANCE * 0.8, 10);
@@ -338,9 +341,10 @@ describe("PlayerDashScript direction", () => {
 
     rig.move.set(1, 0);
     rig.dash.pressed = true;
-    rig.frame(0.06);
+    rig.frame(TRIGGER);
 
     rig.move.set(0, -1);
+    rig.frame(0.06);
     rig.frame(0.06);
     rig.move.set(-1, 0);
     rig.frame(0.06);
@@ -357,7 +361,7 @@ describe("PlayerDashScript direction", () => {
   it("falls back to the facing direction when no move input is held", () => {
     const rig: Rig = createRig();
 
-    runDash(rig, [DURATION]);
+    runDash(rig, [TRIGGER, DURATION]);
 
     expect(rig.character.total.x).toBeCloseTo(DISTANCE, 10);
     expect(rig.character.total.y).toBeCloseTo(0, 10);
@@ -367,7 +371,7 @@ describe("PlayerDashScript direction", () => {
     const rig: Rig = createRig();
 
     rig.sprite.flipX = true;
-    runDash(rig, [DURATION]);
+    runDash(rig, [TRIGGER, DURATION]);
 
     expect(rig.character.total.x).toBeCloseTo(-DISTANCE, 10);
     expect(rig.character.total.y).toBeCloseTo(0, 10);
@@ -394,7 +398,7 @@ describe("PlayerDashScript distance", () => {
     const rig: Rig = createRig();
 
     rig.move.set(1, 0);
-    runDash(rig, [0.003, 0.05, 0.011, 0.09, 0.004, 0.031]);
+    runDash(rig, [TRIGGER, 0.003, 0.05, 0.011, 0.09, 0.004, 0.031]);
 
     expect(rig.character.travelled).toBeCloseTo(DISTANCE, 10);
     expect(rig.character.total.x).toBeCloseTo(DISTANCE, 10);
@@ -414,7 +418,7 @@ describe("PlayerDashScript distance", () => {
     const rig: Rig = createRig();
 
     rig.move.set(1, 0);
-    runDash(rig, [5]);
+    runDash(rig, [TRIGGER, 5]);
 
     expect(rig.character.moves).toHaveLength(1);
     expect(rig.character.total.x).toBeCloseTo(DISTANCE, 10);
@@ -425,7 +429,7 @@ describe("PlayerDashScript distance", () => {
     const rig: Rig = createRig();
 
     rig.move.set(1, 0);
-    runDash(rig, [0.05, 10]);
+    runDash(rig, [TRIGGER, 0.05, 10]);
 
     expect(rig.character.total.x).toBeCloseTo(DISTANCE, 10);
     expect(rig.character.total.x).toBeLessThanOrEqual(DISTANCE + 1e-9);
@@ -435,7 +439,7 @@ describe("PlayerDashScript distance", () => {
     const rig: Rig = createRig();
 
     rig.move.set(1, 0);
-    runDash(rig, [DURATION]);
+    runDash(rig, [TRIGGER, DURATION]);
 
     const moves: number = rig.character.moves.length;
     rig.frames(20, 0.02);
@@ -448,7 +452,7 @@ describe("PlayerDashScript distance", () => {
     const rig: Rig = createRig({ props: { distance: 50, duration: 0.5 } });
 
     rig.move.set(1, 0);
-    runDash(rig, [0.2, 0.1, 0.3]);
+    runDash(rig, [TRIGGER, 0.2, 0.1, 0.3]);
 
     expect(rig.character.total.x).toBeCloseTo(50, 10);
   });
@@ -465,6 +469,9 @@ describe("PlayerDashScript isDashing", () => {
     const rig: Rig = createRig();
 
     rig.dash.pressed = true;
+
+    rig.frame(TRIGGER);
+    expect(rig.script.isDashing).toBe(true);
 
     rig.frame(0.06);
     expect(rig.script.isDashing).toBe(true);
@@ -483,7 +490,7 @@ describe("PlayerDashScript isDashing", () => {
   it("releases the dash after a frame longer than the whole duration", () => {
     const rig: Rig = createRig();
 
-    runDash(rig, [1]);
+    runDash(rig, [TRIGGER, 1]);
     expect(rig.script.isDashing).toBe(true);
 
     rig.frame(0.02);
@@ -507,6 +514,9 @@ describe("PlayerDashScript afterimages", () => {
     const trail: AfterimageRenderer = rig.afterimages as AfterimageRenderer;
 
     rig.dash.pressed = true;
+    rig.frame(TRIGGER);
+    expect(trail.emitting).toBe(true);
+
     rig.frame(0.06);
     expect(trail.emitting).toBe(true);
 
@@ -528,7 +538,7 @@ describe("PlayerDashScript afterimages", () => {
     });
 
     const rig: Rig = createRig({ afterimages: trail });
-    runDash(rig, [DURATION, 0.02]);
+    runDash(rig, [TRIGGER, DURATION, 0.02]);
 
     expect(trail.interval).toBe(0.03);
     expect(trail.time).toBe(0.4);
@@ -540,7 +550,7 @@ describe("PlayerDashScript afterimages", () => {
     const rig: Rig = createRig({ afterimages: null });
 
     rig.move.set(1, 0);
-    expect(() => runDash(rig, [DURATION, 0.02])).not.toThrow();
+    expect(() => runDash(rig, [TRIGGER, DURATION, 0.02])).not.toThrow();
     expect(rig.character.total.x).toBeCloseTo(DISTANCE, 10);
   });
 
@@ -569,7 +579,7 @@ describe("PlayerDashScript woosh", () => {
     const rig: Rig = createRig();
     const audio: FakeAudioApi = rig.audio as FakeAudioApi;
 
-    runDash(rig, [0.06, 0.06, 0.06, 0.02]);
+    runDash(rig, [TRIGGER, 0.06, 0.06, 0.06, 0.02]);
 
     expect(audio.calls).toHaveLength(1);
     expect(audio.calls[0].clip).toBe(rig.clip);
@@ -581,7 +591,7 @@ describe("PlayerDashScript woosh", () => {
     const pitches: Set<number> = new Set<number>();
 
     for (let i: number = 0; i < 20; i++) {
-      runDash(rig, [DURATION]);
+      runDash(rig, [TRIGGER, DURATION]);
       rig.frames(8, 0.1);
     }
 
@@ -604,7 +614,7 @@ describe("PlayerDashScript woosh", () => {
     const audio: FakeAudioApi = rig.audio as FakeAudioApi;
 
     for (let i: number = 0; i < 20; i++) {
-      runDash(rig, [DURATION]);
+      runDash(rig, [TRIGGER, DURATION]);
       rig.frames(8, 0.1);
     }
 
@@ -619,7 +629,7 @@ describe("PlayerDashScript woosh", () => {
     const rig: Rig = createRig({ woosh: null });
     const audio: FakeAudioApi = rig.audio as FakeAudioApi;
 
-    expect(() => runDash(rig, [DURATION, 0.02])).not.toThrow();
+    expect(() => runDash(rig, [TRIGGER, DURATION, 0.02])).not.toThrow();
     expect(audio.calls).toHaveLength(0);
   });
 
@@ -627,7 +637,7 @@ describe("PlayerDashScript woosh", () => {
     const rig: Rig = createRig({ audio: null });
 
     rig.move.set(1, 0);
-    expect(() => runDash(rig, [DURATION, 0.02])).not.toThrow();
+    expect(() => runDash(rig, [TRIGGER, DURATION, 0.02])).not.toThrow();
     expect(rig.character.total.x).toBeCloseTo(DISTANCE, 10);
   });
 });
@@ -664,7 +674,7 @@ describe("PlayerDashScript invincibility", () => {
     const rig: Rig = createRig({ hurtbox: null });
 
     rig.move.set(1, 0);
-    expect(() => runDash(rig, [DURATION, 0.02])).not.toThrow();
+    expect(() => runDash(rig, [TRIGGER, DURATION, 0.02])).not.toThrow();
     expect(rig.character.total.x).toBeCloseTo(DISTANCE, 10);
   });
 });

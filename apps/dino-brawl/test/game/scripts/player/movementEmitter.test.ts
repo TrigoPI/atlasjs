@@ -88,7 +88,7 @@ function createRig<TScript extends MovementEmitterScript<object>>(
 
   harness.create();
 
-  const frame = (): void => harness.script.onUpdate(DT);
+  const frame = (): void => harness.advance(DT);
 
   return {
     script: harness.script,
@@ -169,6 +169,35 @@ describe("MovementEmitterScript timing", () => {
 
     rig.frame();
     expect(rig.script.emissions).toBe(1);
+  });
+
+  it("clears the pending charge across an idle stretch", () => {
+    const rig: Rig<CountingEmitter> = createRig(CountingEmitter);
+
+    rig.move.set(1, 0);
+    rig.frames(4);
+
+    rig.move.set(0, 0);
+    rig.frames(2);
+
+    rig.move.set(1, 0);
+    rig.frames(4);
+    expect(rig.script.emissions).toBe(0);
+
+    rig.frame();
+    expect(rig.script.emissions).toBe(1);
+  });
+
+  it("never emits on the frame movement stops, interval landing there or not", () => {
+    const rig: Rig<CountingEmitter> = createRig(CountingEmitter);
+
+    rig.move.set(1, 0);
+    rig.frames(4);
+
+    rig.move.set(0, 0);
+    rig.frame();
+
+    expect(rig.script.emissions).toBe(0);
   });
 
   it("emits on schedule on a fresh instance that was never idle first", () => {

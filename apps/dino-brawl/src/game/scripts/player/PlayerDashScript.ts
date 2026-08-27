@@ -11,6 +11,8 @@ import {
   SpriteRenderer,
   type AfterimageRenderer,
   type ButtonAction,
+  type Countdown,
+  type Stopwatch,
   type Vector2Action,
 } from "@atlasjs/gameplay";
 
@@ -50,10 +52,15 @@ export class PlayerDashScript extends AtlasScript<PlayerDashScriptProps> {
   private move: Vector2Action;
 
   private dashing: boolean = false;
-  private progress: number = 0;
+  private completed: boolean = false;
   private travelled: number = 0;
 
-  private cooldownRemaining: number = 0;
+  private dashClock: Stopwatch;
+  private cooldownTimer: Countdown;
+
+  private get progress(): number {
+    return Math.min(1, this.dashClock.elapsed / this.duration);
+  }
 
   public get isDashing(): boolean {
     return this.dashing;
@@ -76,17 +83,19 @@ export class PlayerDashScript extends AtlasScript<PlayerDashScriptProps> {
     this.move = actions.get("move");
 
     this.dashing = false;
-    this.progress = 0;
+    this.completed = false;
     this.travelled = 0;
-    this.cooldownRemaining = 0;
+
+    this.dashClock = this.stopwatch();
+    this.cooldownTimer = this.countdown(0);
 
     if (this.afterimages !== undefined) {
       this.afterimages.emitting = false;
     }
   }
 
-  public onUpdate(dt: number): void {
-    if (this.dashing && this.progress >= 1) {
+  public onUpdate(): void {
+    if (this.dashing && this.completed) {
       this.stop();
     }
 
@@ -95,11 +104,7 @@ export class PlayerDashScript extends AtlasScript<PlayerDashScriptProps> {
     }
 
     if (this.dashing) {
-      this.advance(dt);
-    }
-
-    if (this.cooldownRemaining > 0) {
-      this.cooldownRemaining -= dt;
+      this.advance();
     }
   }
 
@@ -110,18 +115,18 @@ export class PlayerDashScript extends AtlasScript<PlayerDashScriptProps> {
   }
 
   private canStart(): boolean {
-    return (
-      this.dash.isPressed() && !this.dashing && this.cooldownRemaining <= 0
-    );
+    return this.dash.isPressed() && !this.dashing && this.cooldownTimer.done;
   }
 
   private start(): void {
     this.captureDirection();
 
     this.dashing = true;
-    this.progress = 0;
+    this.completed = false;
     this.travelled = 0;
-    this.cooldownRemaining = this.cooldown;
+
+    this.dashClock.reset();
+    this.cooldownTimer.reset(this.cooldown);
 
     if (this.afterimages !== undefined) {
       this.afterimages.emitting = true;
@@ -155,13 +160,17 @@ export class PlayerDashScript extends AtlasScript<PlayerDashScriptProps> {
   }
 
   /** Steps by the gap between this frame's covered distance and the last. */
-  private advance(dt: number): void {
-    this.progress = Math.min(1, this.progress + dt / this.duration);
-
-    const covered: number = this.distance * this.curveAt(this.progress);
+  private advance(): void {
+    const progress: number = this.progress;
+    const covered: number = this.distance * this.curveAt(progress);
     const step: number = covered - this.travelled;
 
     this.travelled = covered;
+    this.completed = progress >= 1;
+
+    if (step === 0) {
+      return;
+    }
 
     this.moveDelta.copyFrom(this.direction).mult(step);
     this.character.move(this.moveDelta);
