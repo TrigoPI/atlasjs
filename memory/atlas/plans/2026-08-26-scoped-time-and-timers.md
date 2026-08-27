@@ -22,6 +22,7 @@
 - **Reconstruire le `dist` du package après toute modification d'API publique** : `pnpm --filter @atlasjs/gameplay build`. `apps/dino-brawl` résout `@atlasjs/gameplay` par son champ `exports` → `./dist`, et verra l'ancienne API sans ça.
 - **Prettier avant de rendre la main**, sur les fichiers `.ts` touchés uniquement : `pnpm exec prettier --write <chemins>`. Jamais sur le dépôt entier, jamais sur les `.md` du vault.
 - Le fichier `ScriptManager.ts` et `AtlasScript.ts` portent des directives `// prettier-ignore` sur certaines classes : les conserver.
+- **Jamais d'égalité exacte sur un `dt` calculé.** `frame()` produit `0.15000000000000002`, pas `0.15` : un `toEqual([0.15])` échoue même sur le code non modifié. Utiliser `toHaveLength(n)` + `toBeCloseTo(valeur, 10)` — la précision par défaut de `toBeCloseTo` vaut 2 décimales, bien trop lâche pour distinguer deux échelles. Une valeur exacte comme `0` garde son `toEqual`.
 - **Descriptions de test en anglais.** Les chaînes `describe(...)`/`it(...)` s'écrivent en anglais, comme le reste du dépôt — jamais en français.
 
 **Commandes de référence**
@@ -948,7 +949,8 @@ describe("ScriptManager scoped dt", () => {
 
     harness.frame();
 
-    expect(probe.seen).toEqual([0.15]);
+    expect(probe.seen).toHaveLength(1);
+    expect(probe.seen[0]).toBeCloseTo(0.15, 10);
   });
 
   it("delivers 0 to a frozen script", async () => {
@@ -993,7 +995,8 @@ describe("ScriptManager scoped dt", () => {
     harness.frame();
 
     expect(frozen.seen).toEqual([0]);
-    expect(running.seen).toEqual([0.15]);
+    expect(running.seen).toHaveLength(1);
+    expect(running.seen[0]).toBeCloseTo(0.15, 10);
   });
 
   it("applies a fractional scale", async () => {
