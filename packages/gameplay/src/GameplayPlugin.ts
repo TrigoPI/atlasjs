@@ -115,7 +115,7 @@ export class GameplayPlugin extends Plugin {
     const afterimageRenderSystem: AfterimageRenderSystem = new AfterimageRenderSystem(nebula, sortingLayers);
     this.afterimageRenderSystem = afterimageRenderSystem;
     const playerInputSystem: PlayerInputSystem = new PlayerInputSystem(engine.services);
-    const animatorSystem: AnimatorSystem = new AnimatorSystem();
+    const animatorSystem: AnimatorSystem = new AnimatorSystem(timeScaleManager);
     const audioSystem: AudioSystem = new AudioSystem(engine.services);
     const cameraManager: CameraManager = new CameraManager(nebula);
     const transformPropagationSystem: TransformPropagationSystem = new TransformPropagationSystem();
