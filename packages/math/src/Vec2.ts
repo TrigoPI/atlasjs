@@ -69,6 +69,45 @@ export class Vec2 {
     return this;
   }
 
+  public moveTowards(target: Vec2, maxDelta: number): Vec2 {
+    if (maxDelta <= 0) return this;
+
+    const dx: number = target.x - this.x;
+    const dy: number = target.y - this.y;
+    const dist: number = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist === 0) return this;
+
+    if (dist <= maxDelta) {
+      this.x = target.x;
+      this.y = target.y;
+      return this;
+    }
+
+    const k: number = maxDelta / dist;
+    this.x += dx * k;
+    this.y += dy * k;
+    return this;
+  }
+
+  /**
+   * Framerate-dependent: `lerp(target, k * dt)` smooths faster as the
+   * framerate rises. Framerate-independent smoothing needs `1 - exp(-k * dt)`.
+   */
+  public lerp(target: Vec2, t: number): Vec2 {
+    if (t <= 0) return this;
+
+    if (t >= 1) {
+      this.x = target.x;
+      this.y = target.y;
+      return this;
+    }
+
+    this.x += (target.x - this.x) * t;
+    this.y += (target.y - this.y) * t;
+    return this;
+  }
+
   public swap(): Vec2 {
     const temp: number = this.x;
     this.x = this.y;
