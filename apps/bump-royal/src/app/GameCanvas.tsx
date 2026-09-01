@@ -43,7 +43,7 @@ export function GameCanvas({
     const nexusPlugin: NexusPlugin = new NexusPlugin();
     const gameplayPlugin: GameplayPlugin = new GameplayPlugin();
     const gizmoPlugin: GizmoPlugin = new GizmoPlugin({
-      showColliders: false,
+      showColliders: true,
     });
 
     // prettier-ignore

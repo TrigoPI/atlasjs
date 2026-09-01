@@ -21,11 +21,11 @@ export class PlayerMovementScript extends AtlasScript<PlayerMovementScriptProps>
   private readonly acceleration: number;
   private readonly deceleration: number;
 
-  private rigidBody: RigidBody;
-  private move: Vector2Action;
-
   private readonly direction: Vec2 = new Vec2();
   private readonly target: Vec2 = new Vec2();
+
+  private rigidBody: RigidBody;
+  private move: Vector2Action;
 
   public onCreate(): void {
     const controls: PlayerInput<PlayerControls> =
@@ -36,20 +36,22 @@ export class PlayerMovementScript extends AtlasScript<PlayerMovementScriptProps>
   }
 
   public onUpdate(): void {
-    this.direction.copyFrom(this.move.readValue()).normalize();
+    const v: Vec2 = this.move.readValue();
+    this.direction.copyFrom(v).normalize();
   }
 
   public onFixedUpdate(dt: number): void {
     const velocity: Vec2 = this.rigidBody.velocity;
-
     this.target.copyFrom(this.direction).mult(this.maxSpeed);
 
-    const rate: number =
-      this.target.mag() >= velocity.mag()
-        ? this.acceleration
-        : this.deceleration;
-
+    const rate: number = this.getRate();
     velocity.moveTowards(this.target, rate * dt);
+  }
+
+  private getRate(): number {
+    return this.target.mag() >= this.rigidBody.velocity.mag()
+      ? this.acceleration
+      : this.deceleration;
   }
 }
 
