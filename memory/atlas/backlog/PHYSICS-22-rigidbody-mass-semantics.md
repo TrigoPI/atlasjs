@@ -4,7 +4,7 @@ status: todo
 domain: physics
 source: "[[gameplay-redesign]]"
 effort: M
-verified: 2026-08-25
+verified: 2026-09-01
 ---
 
 # `RigidBody2D.mass` ne veut pas dire la même chose des deux côtés du pont
@@ -18,6 +18,16 @@ masse sans collider                    : 0
 masse avec un collider 10×10 densité 1 : 100
 après setMass(5)                       : 100     <- inchangé
 ```
+
+**Re-sondé le 2026-09-01 : le tableau ci-dessus est incomplet, et sa conclusion trop dure.**
+`Collider2D.density` vaut **0 par défaut**, et avec une densité nulle la masse dérivée vaut 0,
+donc `setMass` devient de fait autoritatif — mesuré `base 0` → `setMass(5)` → **5**. Avec une
+densité de 1, `setMass(5)` ne laisse pas non plus la masse inchangée : il l'**additionne**,
+`0.080` → **5.080**. L'écart avec la sonde d'origine vient probablement du `step()` — la mesure
+ci-dessus lit la masse après un pas, l'autre la lisait sans doute avant que rapier ait recomposé
+ses propriétés de masse. Conséquence pratique : dans la configuration par défaut du dépôt,
+`RigidBody2D.mass` **fonctionne** comme masse totale, et ne ment qu'à partir du moment où une
+densité non nulle entre en jeu. La sémantique reste à trancher, mais l'urgence baisse.
 
 Le faux moteur, lui, stocke et rend la valeur telle quelle : `mass` y est parfaitement autoritatif. Le contrat du composant est donc **implémenté dans le double et pas dans le backend réel**, et il est intestable — c'est le point n°6 de l'audit [[PHYSICS-20-audit-physics-fake-fidelity]].
 
