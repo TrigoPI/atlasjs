@@ -7,11 +7,13 @@ export class RigidBody2D {
 
   public velocity: Vec2;
   public angularVelocity: number;
+  public lockRotation: boolean;
 
   public constructor() {
     this.mass = 1;
     this.velocity = new Vec2(0, 0);
     this.angularVelocity = 0;
     this.type = "dynamic";
+    this.lockRotation = false;
   }
 }

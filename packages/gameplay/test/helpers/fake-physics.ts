@@ -18,8 +18,11 @@ export class FakeRigidBody implements RigidBody {
   public setBodyTypeCount: number;
   public setTranslationCount: number;
   public setNextKinematicTranslationCount: number;
+  public setRotationLockedCount: number;
+  public setAngularVelocityCount: number;
 
   private bodyType: RigidBodyType;
+  private rotationLocked: boolean;
 
   private readonly translation: Vec2;
   private readonly nextKinematicTranslation: Vec2;
@@ -37,13 +40,18 @@ export class FakeRigidBody implements RigidBody {
     this.setBodyTypeCount = 0;
     this.setTranslationCount = 0;
     this.setNextKinematicTranslationCount = 0;
+    this.setRotationLockedCount = 0;
+    this.setAngularVelocityCount = 0;
+    this.rotationLocked = descriptor.lockRotation ?? false;
 
     this.translation = descriptor.translation?.clone() ?? new Vec2(0, 0);
     this.nextKinematicTranslation = this.translation.clone();
     this.hasNextKinematicTranslation = false;
     this.linearVelocity = descriptor.linearVelocity?.clone() ?? new Vec2(0, 0);
     this.rotation = descriptor.rotation ?? 0;
-    this.angularVelocity = descriptor.angularVelocity ?? 0;
+    this.angularVelocity = this.rotationLocked
+      ? 0
+      : (descriptor.angularVelocity ?? 0);
     this.mass = 1;
     this.enabled = descriptor.enabled ?? true;
     this.userData = descriptor.userData;
@@ -70,6 +78,10 @@ export class FakeRigidBody implements RigidBody {
 
   public isEnabled(): boolean {
     return this.enabled;
+  }
+
+  public isRotationLocked(): boolean {
+    return this.rotationLocked;
   }
 
   public getTranslation(): Vec2 {
@@ -134,6 +146,7 @@ export class FakeRigidBody implements RigidBody {
   }
 
   public setAngularVelocity(value: number): this {
+    this.setAngularVelocityCount++;
     this.angularVelocity = value;
     return this;
   }
@@ -157,6 +170,17 @@ export class FakeRigidBody implements RigidBody {
 
   public setEnabled(value: boolean): this {
     this.enabled = value;
+    return this;
+  }
+
+  public setRotationLocked(value: boolean): this {
+    this.setRotationLockedCount++;
+    this.rotationLocked = value;
+
+    if (value) {
+      this.angularVelocity = 0;
+    }
+
     return this;
   }
 

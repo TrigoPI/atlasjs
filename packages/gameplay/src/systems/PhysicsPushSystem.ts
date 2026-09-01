@@ -65,6 +65,7 @@ export class PhysicsPushSystem implements NexusSystem {
         rotation: place.rotation,
         linearVelocity: rigidBody.velocity,
         angularVelocity: rigidBody.angularVelocity,
+        lockRotation: rigidBody.lockRotation,
       });
 
       world.addComponent(entity, PhysicsBodyRef, body);
@@ -79,9 +80,16 @@ export class PhysicsPushSystem implements NexusSystem {
         body.setBodyType(rigidBody.type);
       }
 
+      if (body.isRotationLocked() !== rigidBody.lockRotation) {
+        body.setRotationLocked(rigidBody.lockRotation);
+      }
+
       body.setMass(rigidBody.mass);
       body.setLinearVelocity(rigidBody.velocity.x, rigidBody.velocity.y);
-      body.setAngularVelocity(rigidBody.angularVelocity);
+
+      if (!rigidBody.lockRotation) {
+        body.setAngularVelocity(rigidBody.angularVelocity);
+      }
 
       if (rigidBody.type === "kinematic" || rigidBody.type === "static") {
         const place: ResolvedPlacement = this.resolvePlacement(world, entity, transform);

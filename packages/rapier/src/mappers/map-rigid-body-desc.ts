@@ -65,6 +65,11 @@ export function mapRigidBodyDesc(
     rb.setCanSleep(descScale.canSleep);
   }
 
+  if (descScale.lockRotation === true) {
+    rb.lockRotations();
+    rb.setAngvel(0);
+  }
+
   if (descScale.enabled !== undefined) {
     rb.setEnabled(descScale.enabled);
   }

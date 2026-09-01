@@ -12,6 +12,7 @@ export class RapierRigidBody implements RigidBody {
   public readonly rapierBody: RAPIER.RigidBody;
 
   private bodyType: RigidBodyType;
+  private rotationLocked: boolean;
 
   private readonly translation: Vec2;
   private readonly velocity: Vec2;
@@ -25,6 +26,7 @@ export class RapierRigidBody implements RigidBody {
   ) {
     this.id = options.id;
     this.bodyType = options.type;
+    this.rotationLocked = options.lockRotation;
     this.rapierBody = rapierBody;
 
     this.converter = new PhysicsUnitConverter(options.unitScale);
@@ -43,6 +45,10 @@ export class RapierRigidBody implements RigidBody {
 
   public isSleeping(): boolean {
     return this.rapierBody.isSleeping();
+  }
+
+  public isRotationLocked(): boolean {
+    return this.rotationLocked;
   }
 
   public getTranslation(): Vec2 {
@@ -155,6 +161,17 @@ export class RapierRigidBody implements RigidBody {
 
   public setEnabled(value: boolean): this {
     this.rapierBody.setEnabled(value);
+    return this;
+  }
+
+  public setRotationLocked(value: boolean): this {
+    this.rapierBody.lockRotations(value, true);
+
+    if (value) {
+      this.rapierBody.setAngvel(0, true);
+    }
+
+    this.rotationLocked = value;
     return this;
   }
 

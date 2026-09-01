@@ -19,6 +19,7 @@ export type RigidBodyDesc = {
   angularDamping?: number;
   gravityScale?: number;
   canSleep?: boolean;
+  lockRotation?: boolean;
   enabled?: boolean;
   userData?: unknown;
 };

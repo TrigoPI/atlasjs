@@ -118,6 +118,7 @@ export class RapierPhysicsWorld implements PhysicsWorld {
       id,
       type,
       unitScale,
+      lockRotation: descriptor.lockRotation ?? false,
     });
 
     this.bodies.set(rb.handle, wrapper);

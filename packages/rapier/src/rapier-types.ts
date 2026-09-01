@@ -8,6 +8,7 @@ export type RapierRigidBodyOption = {
   id: string;
   type: RigidBodyType;
   unitScale: number;
+  lockRotation: boolean;
 };
 
 export type RapierColliderOption = {

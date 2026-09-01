@@ -7,6 +7,7 @@ export interface RigidBody {
 
   isSleeping(): boolean;
   isEnabled(): boolean;
+  isRotationLocked(): boolean;
   getTranslation(): Vec2;
   getLinearVelocity(): Vec2;
   getRotation(): number;
@@ -27,6 +28,7 @@ export interface RigidBody {
   setLinearDamping(value: number): this;
   setMass(value: number): this;
   setEnabled(value: boolean): this;
+  setRotationLocked(value: boolean): this;
   setUserData(data: unknown): this;
   setBodyType(type: RigidBodyType): this;
 
