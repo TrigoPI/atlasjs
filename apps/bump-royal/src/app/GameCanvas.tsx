@@ -1,6 +1,7 @@
 import { type ReactNode, type RefObject, useEffect, useRef } from "react";
 
 import { Engine } from "@atlasjs/core";
+import { Vec2 } from "@atlasjs/math";
 import { AssetPlugin } from "@atlasjs/assets";
 import { AudioPlugin } from "@atlasjs/audio";
 import { InputPlugin } from "@atlasjs/input";
@@ -46,7 +47,7 @@ export function GameCanvas({
     });
 
     // prettier-ignore
-    const rapierWorld: RapierPhysicsWorld = new RapierPhysicsWorld({ unitsPerMeter: 100 });
+    const rapierWorld: RapierPhysicsWorld = new RapierPhysicsWorld({ unitsPerMeter: 100, gravity: new Vec2(0, 0) });
     const inertiaPlugin: InertialPlugin = new InertialPlugin(rapierWorld);
 
     const inputPlugin: InputPlugin = new InputPlugin({

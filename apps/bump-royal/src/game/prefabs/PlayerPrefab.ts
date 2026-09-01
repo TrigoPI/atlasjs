@@ -4,7 +4,6 @@ import { playerControls } from "../controls";
 import { PlayerMovementScript } from "../script/player";
 
 import {
-  CharacterController2D,
   Collider2D,
   Color,
   definePrefab,
@@ -34,14 +33,16 @@ export const createPlayerPrefab = () =>
       renderer.color = props.color;
 
       const body: RigidBody = entity.add(RigidBody);
-      body.type = "kinematic";
+      body.type = "dynamic";
+      body.lockRotation = true;
 
-      entity.add(Collider2D, { type: "box", width: 32, height: 16 });
-      entity.add(CharacterController2D);
+      entity.add(Collider2D, { type: "circle", radius: 16 });
       entity.add(PlayerInput, playerControls);
 
       entity.attach(PlayerMovementScript, {
-        speed: 5,
+        maxSpeed: 300,
+        acceleration: 600,
+        deceleration: 300,
       });
     },
   });

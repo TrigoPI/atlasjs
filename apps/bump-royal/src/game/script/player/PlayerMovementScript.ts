@@ -4,48 +4,59 @@ import type { PlayerControls } from "@bump-royal/game/controls";
 import {
   AtlasScript,
   PlayerInput,
+  RigidBody,
   Vector2Action,
-  CharacterController,
   registerScriptMetadata,
   ScriptMetadata,
 } from "@atlasjs/gameplay";
 
 type PlayerMovementScriptProps = {
-  speed: number;
+  maxSpeed: number;
+  acceleration: number;
+  deceleration: number;
 };
 
 export class PlayerMovementScript extends AtlasScript<PlayerMovementScriptProps> {
-  private readonly speed: number;
+  private readonly maxSpeed: number;
+  private readonly acceleration: number;
+  private readonly deceleration: number;
 
-  private character: CharacterController;
-  private controls: PlayerInput<PlayerControls>;
-
+  private rigidBody: RigidBody;
   private move: Vector2Action;
-  private velocity: Vec2;
+
+  private readonly direction: Vec2 = new Vec2();
+  private readonly target: Vec2 = new Vec2();
 
   public onCreate(): void {
-    this.velocity = new Vec2();
+    const controls: PlayerInput<PlayerControls> =
+      this.requireComponent(PlayerInput);
 
-    this.controls = this.requireComponent(PlayerInput);
-    this.character = this.requireComponent(CharacterController);
-
-    this.move = this.controls.get("move");
+    this.rigidBody = this.requireComponent(RigidBody);
+    this.move = controls.get("move");
   }
 
-  public onUpdate(dt: number): void {
-    const acc: Vec2 = this.move
-      .readValue()
-      .clone()
-      .normalize()
-      .mult(this.speed * dt);
+  public onUpdate(): void {
+    this.direction.copyFrom(this.move.readValue()).normalize();
+  }
 
-    this.velocity.add(acc).clamp(10);
-    this.character.move(this.velocity);
+  public onFixedUpdate(dt: number): void {
+    const velocity: Vec2 = this.rigidBody.velocity;
+
+    this.target.copyFrom(this.direction).mult(this.maxSpeed);
+
+    const rate: number =
+      this.target.mag() >= velocity.mag()
+        ? this.acceleration
+        : this.deceleration;
+
+    velocity.moveTowards(this.target, rate * dt);
   }
 }
 
 registerScriptMetadata(PlayerMovementScript, {
   exposed: {
-    speed: ScriptMetadata.field({ required: true }),
+    maxSpeed: ScriptMetadata.field({ required: true }),
+    acceleration: ScriptMetadata.field({ required: true }),
+    deceleration: ScriptMetadata.field({ required: true }),
   },
 });
