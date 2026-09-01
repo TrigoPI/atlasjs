@@ -26,3 +26,4 @@ Corrige librement : une note fausse ici vaut une erreur répétée à chaque ses
 - [[node-test-directory-arg]] — `node --test <dossier>` ne découvre rien sous Node 26.3 ; il charge le dossier comme un module et échoue sur un `'test failed'` trompeur — passer les fichiers ou un glob quoté
 - [[pnpm-test-skips-repo-scripts]] — `pnpm test` (turbo) ne couvre que `apps/*` et `packages/*` : `scripts/` et `.claude/hooks/` doivent être lancés à la main
 - [[scoped-time-and-timers-feature]] — livré 2026-08-27 ; un test peut décrire le bon scénario et l'exercer dans le seul ordre où le bug est invisible ; corriger du code peut rendre un test aveugle
+- [[inertial-movement-feature]] — bump-royal en dynamique piloté par la vélocité (mergé dans dev le 2026-09-01, non poussé) ; `lockRotations` n'annule pas une angvel existante ; `RigidBody2D.mass` est bien autoritatif à densité 0 ; les deux apps divergent volontairement sur le mouvement
