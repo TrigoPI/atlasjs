@@ -26,7 +26,7 @@ export abstract class AtlasScript<TProps extends object = {}> implements ScriptL
 
   public onCreate?(): void;
   public onUpdate?(dt: number): void;
-  public onFixedUpdate?(): void;
+  public onFixedUpdate?(dt: number): void;
   public onDestroy?(): void;
   public onCollisionEnter?(other: GameEntity): void;
   public onCollisionExit?(other: GameEntity): void;

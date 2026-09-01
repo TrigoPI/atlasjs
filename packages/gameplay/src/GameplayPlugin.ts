@@ -300,7 +300,7 @@ export class GameplayPlugin extends Plugin {
     );
 
     this.handles.push(
-      fixed.add(() => this.scriptManager.fixedUpdate(), {
+      fixed.add((ctx: StepContext) => this.scriptManager.fixedUpdate(ctx.dt), {
         name: "gameplay:script-fixed",
         stage: "ScriptFixed",
       }),

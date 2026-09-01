@@ -3,7 +3,7 @@ import type { GameEntity } from "./GameEntity";
 export interface ScriptLifecycle {
   onCreate?(): void;
   onUpdate?(dt: number): void;
-  onFixedUpdate?(): void;
+  onFixedUpdate?(dt: number): void;
   onDestroy?(): void;
   onCollisionEnter?(other: GameEntity): void;
   onCollisionExit?(other: GameEntity): void;

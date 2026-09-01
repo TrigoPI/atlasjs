@@ -143,9 +143,9 @@ export class ScriptManager implements ScriptResolver {
     });
   }
 
-  public fixedUpdate(): void {
+  public fixedUpdate(dt: number): void {
     this.runLifecycle("onFixedUpdate", (record: ScriptInstanceRecord): void => {
-      record.instance.onFixedUpdate?.();
+      record.instance.onFixedUpdate?.(dt);
     });
   }
 

@@ -158,9 +158,10 @@ L'`Animator` est dans le périmètre parce que c'est lui qui fait disparaître l
 comprise. Le shake reste hors périmètre parce que c'est exactement ce que la note 97
 exige — la caméra doit continuer de bouger pendant que les combattants sont figés.
 
-La lane fixe est hors périmètre pour cette livraison : `onFixedUpdate()` ne reçoit aucun
-`dt` aujourd'hui, et la physique passe par rapier, qui ne sait pas ralentir un corps
-isolément.
+La lane fixe est hors périmètre pour cette livraison : `onFixedUpdate()` ne recevait
+alors aucun `dt`, et la physique passe par rapier, qui ne sait pas ralentir un corps
+isolément. Le `dt` lui a été ajouté depuis, délibérément **non scalé** — le scope time
+reste donc absent de la lane fixe.
 
 ### 3.4 Gel n'est pas désactivation
 
@@ -350,7 +351,7 @@ gèlent ensemble et la fenêtre de reset du combo ne peut plus être rognée par
 
 ## 8. Hors périmètre
 
-- La lane fixe (`onFixedUpdate` n'a pas de `dt`) et la physique rapier.
+- La lane fixe et la physique rapier. `onFixedUpdate` a reçu son `dt` depuis, non scalé.
 - Les traînées et les afterimages, laissées sur le `dt` brut faute de pouvoir juger l'effet
   visuel avant de l'avoir vu. À rouvrir si le gel des FX manque à l'écran.
 - `after(seconds, cb)`, sans site d'usage — voir §2.
