@@ -33,6 +33,91 @@ importers:
         specifier: ^4.1.10
         version: 4.1.10(@types/node@24.10.13)(vite@8.0.0(@types/node@24.10.13)(esbuild@0.27.3))
 
+  apps/bump-royal:
+    dependencies:
+      '@atlasjs/assets':
+        specifier: workspace:*
+        version: link:../../packages/assets
+      '@atlasjs/audio':
+        specifier: workspace:*
+        version: link:../../packages/audio
+      '@atlasjs/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@atlasjs/gameplay':
+        specifier: workspace:*
+        version: link:../../packages/gameplay
+      '@atlasjs/gizmos':
+        specifier: workspace:*
+        version: link:../../packages/gizmos
+      '@atlasjs/inertia':
+        specifier: workspace:*
+        version: link:../../packages/inertia
+      '@atlasjs/input':
+        specifier: workspace:*
+        version: link:../../packages/input
+      '@atlasjs/math':
+        specifier: workspace:*
+        version: link:../../packages/math
+      '@atlasjs/nebula':
+        specifier: workspace:*
+        version: link:../../packages/nebula
+      '@atlasjs/nebula-webgpu':
+        specifier: workspace:*
+        version: link:../../packages/nebula-webgpu
+      '@atlasjs/nexus':
+        specifier: workspace:*
+        version: link:../../packages/nexus
+      '@atlasjs/rapier':
+        specifier: workspace:*
+        version: link:../../packages/rapier
+      '@atlasjs/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
+      react:
+        specifier: ^19.2.0
+        version: 19.2.4
+      react-dom:
+        specifier: ^19.2.0
+        version: 19.2.4(react@19.2.4)
+    devDependencies:
+      '@eslint/js':
+        specifier: ^9.39.1
+        version: 9.39.2
+      '@types/node':
+        specifier: ^24.10.1
+        version: 24.10.13
+      '@types/react':
+        specifier: ^19.2.7
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.2.3(@types/react@19.2.14)
+      '@vitejs/plugin-react':
+        specifier: ^5.1.1
+        version: 5.1.4(vite@7.3.1(@types/node@24.10.13)(lightningcss@1.32.0))
+      eslint:
+        specifier: ^9.39.1
+        version: 9.39.2
+      eslint-plugin-react-hooks:
+        specifier: ^7.0.1
+        version: 7.0.1(eslint@9.39.2)
+      eslint-plugin-react-refresh:
+        specifier: ^0.4.24
+        version: 0.4.26(eslint@9.39.2)
+      globals:
+        specifier: ^16.5.0
+        version: 16.5.0
+      typescript:
+        specifier: ~5.9.3
+        version: 5.9.3
+      typescript-eslint:
+        specifier: ^8.48.0
+        version: 8.55.0(eslint@9.39.2)(typescript@5.9.3)
+      vite:
+        specifier: ^7.3.1
+        version: 7.3.1(@types/node@24.10.13)(lightningcss@1.32.0)
+
   apps/dino-brawl:
     dependencies:
       '@atlasjs/assets':
