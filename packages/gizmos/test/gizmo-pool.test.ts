@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { SceneGraph } from "@atlasjs/nebula";
 import type {
   CircleNode,
+  LineNode,
   NebulaRenderer,
   Node,
   RectNode,
@@ -115,6 +116,75 @@ describe("GizmoNodePool", () => {
 
     gizmos.drawRect(0, 0, 10, 10, 0);
     gizmos.drawCircle(0, 0, 5);
+    pool.dispose();
+
+    expect(scene.root.getChildren().length).toBe(0);
+  });
+});
+
+describe("Gizmos.drawLine", () => {
+  it("acquiert un LineNode et l'ajoute à la scène", () => {
+    const { scene, gizmos } = setup();
+
+    gizmos.drawLine(0, 0, 10, 0);
+
+    const line: LineNode = scene.root.getChildren()[0] as LineNode;
+    expect(scene.root.getChildren().length).toBe(1);
+    expect(line.sortingLayer).toBe(GIZMO_SORTING_LAYER);
+  });
+
+  it("applique la couleur courante, les extrémités et l'épaisseur", () => {
+    const { scene, gizmos } = setup();
+
+    gizmos.color.set(1, 0, 0, 0.5);
+    gizmos.lineThickness = 4;
+    gizmos.drawLine(-10, 20, 30, -40);
+
+    const line: LineNode = scene.root.getChildren()[0] as LineNode;
+    expect(line.color.r).toBe(1);
+    expect(line.color.a).toBe(0.5);
+    expect(line.start.x).toBe(-10);
+    expect(line.start.y).toBe(20);
+    expect(line.end.x).toBe(30);
+    expect(line.end.y).toBe(-40);
+    expect(line.thickness).toBe(4);
+  });
+
+  it("laisse le nœud à l'origine pour que start/end soient en coordonnées monde", () => {
+    const { scene, gizmos } = setup();
+
+    gizmos.drawLine(100, 200, 300, 400);
+
+    const line: LineNode = scene.root.getChildren()[0] as LineNode;
+    expect(line.transform.position.x).toBe(0);
+    expect(line.transform.position.y).toBe(0);
+    expect(line.transform.rotation).toBe(0);
+    expect(line.borderWidth).toBe(0);
+  });
+
+  it("recycle les lignes indépendamment des autres formes", () => {
+    const { scene, pool, gizmos } = setup();
+
+    gizmos.drawRect(0, 0, 10, 10, 0);
+    gizmos.drawLine(0, 0, 1, 1);
+    const line: LineNode = scene.root.getChildren()[1] as LineNode;
+
+    pool.hideUnused();
+    pool.reset();
+
+    gizmos.drawLine(2, 2, 3, 3);
+    pool.hideUnused();
+
+    expect(scene.root.getChildren().length).toBe(2);
+    expect(scene.root.getChildren()[1]).toBe(line);
+    expect(line.visible).toBe(true);
+    expect(scene.root.getChildren()[0].visible).toBe(false);
+  });
+
+  it("dispose retire aussi les lignes", () => {
+    const { scene, pool, gizmos } = setup();
+
+    gizmos.drawLine(0, 0, 1, 1);
     pool.dispose();
 
     expect(scene.root.getChildren().length).toBe(0);

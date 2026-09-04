@@ -1,5 +1,5 @@
 import { Color } from "@atlasjs/nebula";
-import type { CircleNode, RectNode } from "@atlasjs/nebula";
+import type { CircleNode, LineNode, RectNode } from "@atlasjs/nebula";
 
 import { GizmoNodePool } from "./GizmoNodePool";
 import { GizmoSettings } from "./GizmoSettings";
@@ -8,6 +8,7 @@ export class Gizmos {
   public readonly settings: GizmoSettings;
   public readonly color: Color;
   public borderWidth: number;
+  public lineThickness: number;
 
   private readonly pool: GizmoNodePool;
 
@@ -16,6 +17,7 @@ export class Gizmos {
     this.settings = settings;
     this.color = new Color(1, 1, 1, 1);
     this.borderWidth = settings.borderWidth;
+    this.lineThickness = settings.lineThickness;
   }
 
   public drawRect(
@@ -44,5 +46,17 @@ export class Gizmos {
 
     node.setPosition(x, y).setRotation(0);
     node.setRadius(radius);
+  }
+
+  public drawLine(x1: number, y1: number, x2: number, y2: number): void {
+    const node: LineNode = this.pool.acquireLine();
+
+    node
+      .setColor(this.color.r, this.color.g, this.color.b, this.color.a)
+      .setBorderWidth(0);
+
+    node.setPosition(0, 0).setRotation(0);
+    node.setPoints(x1, y1, x2, y2);
+    node.setThickness(this.lineThickness);
   }
 }

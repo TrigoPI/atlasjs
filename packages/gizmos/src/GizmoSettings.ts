@@ -8,6 +8,7 @@ export class GizmoSettings {
   public pivotColor: Color;
   public pivotRadius: number;
   public borderWidth: number;
+  public lineThickness: number;
 
   public constructor(options: GizmoPluginOptions = {}) {
     this.showColliders = options.showColliders ?? false;
@@ -17,6 +18,7 @@ export class GizmoSettings {
     this.pivotColor = options.pivotColor ?? new Color(1, 0, 1, 1);
     this.pivotRadius = options.pivotRadius ?? 2;
     this.borderWidth = options.borderWidth ?? 1;
+    this.lineThickness = options.lineThickness ?? 1;
   }
 }
 
@@ -28,4 +30,5 @@ export type GizmoPluginOptions = Partial<{
   pivotColor: Color;
   pivotRadius: number;
   borderWidth: number;
+  lineThickness: number;
 }>;
