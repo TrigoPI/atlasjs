@@ -106,7 +106,9 @@ Par pas fixe, dans `apps/bump-royal/src/game/script/player/PlayerMovementScript.
 
 ```
 target = dir̂ × maxSpeed
-rate   = (|target| >= |velocity|) ? acceleration : deceleration
+rate   = |velocity| > maxSpeed        ? overspeedDeceleration
+       : |target|   >= |velocity|     ? acceleration
+       :                                deceleration
 velocity.moveTowards(target, rate × dt)
 ```
 
@@ -199,6 +201,7 @@ Un commit par brique.
 | 8 | `dt` de la lane fixe | **`fixedDelta` brut**, ni échelle globale ni `TimeScale` d'entité |
 | 9 | Taux de virage séparé | **Refusé** — voir §12 |
 | 10 | Rotation du joueur | **`RigidBody2D.lockRotation = true`**, le verrou remettant la vitesse angulaire à zéro |
+| 11 | Décélération au-dessus de `maxSpeed` | **`overspeedDeceleration`**, troisième voie de la règle de taux, prioritaire. Sous-ensemble strict de l'ancienne branche `deceleration` — la marche est intouchée. Voir §13 |
 
 ## 9. La divergence entre les deux apps, dite clairement
 
@@ -237,10 +240,11 @@ Deux choses sont livrées sans preuve, et il faut le savoir :
 - **Le ressenti.** Le panneau de preview de bump-royal tourne à **4 fps**, ce qui étrangle
   l'accumulateur fixe. La **glisse est prouvée** (on relâche, le joueur continue et s'arrête), le
   **réglage** `0,5 s / 1 s / 150 unités` ne l'est pas. Voir [[sandbox-browser-verify-gotchas]].
-- **La branche `|velocity| > maxSpeed`.** Rien dans la scène ne peut la déclencher aujourd'hui : un
-  seul joueur, aucun autre collider, donc jamais de vélocité au-delà de la cible. C'est exactement
-  la branche que [[PHYSICS-24-momentum-exchange-on-bump]] ouvrira, et que
-  [[APP-24-bump-royal-no-test-infra]] devrait couvrir en spec avant.
+- **La branche `|velocity| > maxSpeed`.** ~~Rien dans la scène ne peut la déclencher~~ — **plus vrai
+  depuis le dash** (§13), qui pose la vélocité au-delà de `maxSpeed` et emprunte donc cette branche à
+  chaque sortie de fenêtre. Elle reste non couverte par une spec
+  ([[APP-24-bump-royal-no-test-infra]]), et un knockback du solveur l'empruntera aussi
+  ([[PHYSICS-24-momentum-exchange-on-bump]]).
 
 ## 12. Non-objectifs / backlog
 
@@ -258,3 +262,41 @@ Deux choses sont livrées sans preuve, et il faut le savoir :
   corps (la gravité est nulle au niveau du monde), arbitrage générique du mouvement pour (A)
   ([[GAMEPLAY-64-movement-arbitration]]), et sampling d'input en lane fixe
   ([[GAMEPLAY-29-input-fixed-lane-sampling]]).
+
+## 13. Le dash, et la troisième voie de la règle de taux
+
+Le dash de `apps/bump-royal` est une **fenêtre sans contrôle** : au front de touche la vélocité est
+**posée** à `facing × dashSpeed` (au-dessus de `maxSpeed`), et pendant `dashDuration` le script **ne
+pilote pas du tout** — il rend la main. Le solveur garde donc la vitesse pleine sur toute la fenêtre,
+ce qui donne deux propriétés : l'impact transfère la **totalité** de la quantité de mouvement, et un
+bump reçu en pleine fenêtre **compose** au lieu d'être écrasé.
+
+Le press est **latché dans `onUpdate`** et consommé dans `onFixedUpdate` — `isPressed()` est une arête
+valable une frame d'update, donc la lire depuis la lane fixe la raterait ou la doublerait. Le latch
+est effacé inconditionnellement à la consommation, ce qui rend une lane fixe tournant deux fois dans
+la frame incapable de double-déclencher, tout en gardant le press vivant si elle ne tourne pas du
+tout. La fenêtre et le cooldown sont comptés en **nombres bruts sur le `dt` fixe**, pas avec
+`this.countdown(...)` : les timers de script n'avancent que sur la lane `update`, et une fenêtre
+comptée là dériverait de la lane où le modèle tourne.
+
+**Ce que la fenêtre ne borne pas, c'est la queue.** À sa fermeture la vélocité vaut encore
+`dashSpeed`, et l'ancienne règle à deux voies la ramenait à `deceleration` — réglée pour la glisse de
+marche. Le dash traînait alors `dashSpeed²/(2·deceleration)`, soit plus que la largeur du viewport
+(~1270 unités) : caméra fixe, aucun mur, le joueur sortait de l'écran et paraissait partir à l'infini.
+
+D'où la troisième voie. Mesuré, `dashSpeed = 700` et `overspeedDeceleration = 3000` : 8 pas fixes à
+3000 amènent 650 → 300 en 0,133 s et 58 unités, puis `deceleration = 300` reprend en dessous de
+`maxSpeed`, et la vélocité atteint **exactement 0** — repos à 350,8 unités, dans l'écran. La distance
+de knockback reste calculable, en **deux segments** :
+`(v₀² − maxSpeed²)/(2·overspeedDecel)` puis `maxSpeed²/(2·decel)`.
+
+**Le caveat à assumer.** Cette voie est aussi celle qu'emprunte un knockback, et `3000` le fait
+décroître **dix fois plus vite** que `deceleration` vers `maxSpeed`. C'est une version douce de
+l'effacement de knockback que la décision #4 refuse à un clamp — moins brutale, mais de même nature.
+Le jour où le bump devient une impulsion conçue ([[PHYSICS-24-momentum-exchange-on-bump]]), il faudra
+soit assumer ce réglage, soit distinguer « je dashe » de « je me suis fait bumper » pour leur donner
+deux taux.
+
+Non borné en revanche : **le cumul**. Deux dashs consécutifs dans la même direction sortent encore du
+viewport. Ce que ça réclame n'est pas un troisième taux mais une **arène finie** — quatre
+`Collider2D` sans body, décidé contre pour l'instant.
