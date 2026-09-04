@@ -82,7 +82,7 @@ export const createSwordPrefab = () =>
             endColor: new Color(0.6, 0.85, 1, 0),
             emitting: true,
             maxPoints: 48,
-            blend: "additive",
+            blend: "alpha",
             sortingLayer: SortingLayer.Entities,
             sortingOrder: SortingOrder.SwordFront,
           });
