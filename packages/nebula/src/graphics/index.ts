@@ -1,3 +1,4 @@
+export * from "./CPUParticleNode";
 export * from "./CircleNode";
 export * from "./LineNode";
 export * from "./Node";
@@ -8,3 +9,4 @@ export * from "./TileMapNode";
 export * from "./TrailNode";
 export * from "./Transformable";
 export * from "./graphics-types";
+export * from "./particle-types";
