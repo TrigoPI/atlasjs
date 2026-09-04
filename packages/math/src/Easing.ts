@@ -1,4 +1,8 @@
+import { PI_2 } from "./Math";
+
 const BACK_OVERSHOOT: number = 1.70158;
+const SPRING_DAMPING: number = 6;
+const SPRING_FREQUENCY: number = 1.5;
 
 export class Easing {
   public static inOutQuad(t: number): number {
@@ -14,6 +18,14 @@ export class Easing {
   public static outQuint(t: number): number {
     const inv: number = 1 - t;
     return 1 - inv * inv * inv * inv * inv;
+  }
+
+  public static spring(
+    t: number,
+    damping: number = SPRING_DAMPING,
+    frequency: number = SPRING_FREQUENCY,
+  ): number {
+    return 1 - Math.exp(-damping * t) * Math.cos(PI_2 * frequency * t);
   }
 
   public static outBack(t: number): number {
