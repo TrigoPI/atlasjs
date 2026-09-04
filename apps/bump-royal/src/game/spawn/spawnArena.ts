@@ -15,5 +15,6 @@ export function spawnArena(
 
   instantiator.instantiate(arenaPrefab, {
     sprite: arenaSprite,
+    showBounds: true,
   });
 }
