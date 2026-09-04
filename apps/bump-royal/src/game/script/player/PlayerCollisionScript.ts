@@ -9,6 +9,8 @@ import {
   type GameEntity,
 } from "@atlasjs/gameplay";
 
+import { PlayerFallScript } from "./PlayerFallScript";
+
 type PlayerCollisionScriptProps = {
   squishScale: number;
   squishDuration: number;
@@ -25,16 +27,23 @@ export class PlayerCollisionScript extends AtlasScript<PlayerCollisionScriptProp
   private readonly baseScale: Vec2 = new Vec2();
 
   private transform: Transform2D;
+  private fall: PlayerFallScript | undefined;
   private elapsed: number;
 
   public onCreate(): void {
     this.transform = this.requireComponent(Transform2D);
     this.baseScale.copyFrom(this.transform.scale);
     this.elapsed = this.squishDuration;
+    this.fall = this.getEntity(this.entityId).getScript(PlayerFallScript);
   }
 
   // prettier-ignore
   public onUpdate(dt: number): void {
+    if (this.fall?.isFalling === true) {
+      this.elapsed = this.squishDuration;
+      return;
+    }
+
     if (this.elapsed >= this.squishDuration) {
       return;
     }

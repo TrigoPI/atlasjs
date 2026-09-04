@@ -11,6 +11,8 @@ import {
   ButtonAction,
 } from "@atlasjs/gameplay";
 
+import { PlayerFallScript } from "./PlayerFallScript";
+
 type PlayerMovementScriptProps = {
   maxSpeed: number;
   acceleration: number;
@@ -41,6 +43,7 @@ export class PlayerMovementScript extends AtlasScript<PlayerMovementScriptProps>
   private rigidBody: RigidBody;
   private move: Vector2Action;
   private dash: ButtonAction;
+  private fall: PlayerFallScript | undefined;
 
   public onCreate(): void {
     const controls: PlayerInput<PlayerControlsType> =
@@ -49,9 +52,14 @@ export class PlayerMovementScript extends AtlasScript<PlayerMovementScriptProps>
     this.rigidBody = this.requireComponent(RigidBody);
     this.move = controls.get("move");
     this.dash = controls.get("dash");
+    this.fall = this.getEntity(this.entityId).getScript(PlayerFallScript);
   }
 
   public onUpdate(): void {
+    if (this.fall?.isFalling === true) {
+      return;
+    }
+
     const v: Vec2 = this.move.readValue();
     this.direction.copyFrom(v).normalize();
 
@@ -65,6 +73,11 @@ export class PlayerMovementScript extends AtlasScript<PlayerMovementScriptProps>
   }
 
   public onFixedUpdate(dt: number): void {
+    if (this.fall?.isFalling === true) {
+      this.dashRequested = false;
+      return;
+    }
+
     if (this.dashRequested && this.canDash()) {
       this.dashRequested = false;
       this.startDash();

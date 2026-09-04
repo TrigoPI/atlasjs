@@ -2,11 +2,13 @@ import { Vec2 } from "@atlasjs/math";
 import type { AudioClip } from "@atlasjs/audio";
 
 import { SortingOrder } from "../config";
+import { ARENA_BOUNDS } from "../arena";
 import type { PlayerControlsType } from "../controls";
 
 import {
   PlayerCollisionScript,
   PlayerEyesScript,
+  PlayerFallScript,
   PlayerMovementScript,
   PlayerSoundScript,
 } from "../script/player";
@@ -38,6 +40,7 @@ export type PlayerPrefabProps = {
 const SCALE = 3.5;
 const RADIUS = 8;
 const COLLIDER_RADIUS = SCALE * RADIUS;
+const FALL_DURATION = 0.35;
 
 // prettier-ignore
 export const createPlayerPrefab = () =>
@@ -93,6 +96,13 @@ export const createPlayerPrefab = () =>
         playerEyes: playerEyes.entity,
         radius: 2,
         rotationSpeed: 5,
+      });
+
+      entity.attach(PlayerFallScript, {
+        bounds: ARENA_BOUNDS,
+        radius: COLLIDER_RADIUS,
+        fallDuration: FALL_DURATION,
+        respawnPosition: props.position.clone(),
       });
 
       entity.attach(PlayerMovementScript, {
