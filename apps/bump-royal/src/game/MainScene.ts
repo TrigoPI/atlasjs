@@ -1,9 +1,12 @@
 import { type SceneContext, Scene } from "@atlasjs/core";
 
-import { spawnCamera, spawnPlayer } from "./spawn";
+import { spawnArena, spawnCamera, spawnPlayer } from "./spawn";
 import { ASSET_MANAGER, type AssetManager } from "@atlasjs/assets";
-import { AssetsLoader, SpriteList, type AssetName } from "./loaders";
+import { AssetsLoader, AudioList, SpriteList, type AssetName } from "./loaders";
 import { Vec2 } from "@atlasjs/math";
+
+import { PlayerControls } from "./controls";
+import { Color } from "@atlasjs/nebula";
 
 export class MainScene extends Scene {
   private fpsCallback: (fps: number) => void;
@@ -23,7 +26,19 @@ export class MainScene extends Scene {
     await this.loadAssets(assetsLoader);
 
     spawnCamera(ctx);
-    spawnPlayer(ctx, Vec2.create(0, 0), assetsLoader);
+    spawnArena(ctx, assetsLoader);
+
+    spawnPlayer(ctx, assetsLoader, {
+      position:  Vec2.create(0, 0),
+      controls: PlayerControls.Player1,
+      color: Color.White(),
+    });
+
+    spawnPlayer(ctx, assetsLoader, {
+      position:  Vec2.create(0, 100),
+      controls: PlayerControls.Player2,
+      color: Color.Blue(),
+    });
 
     this.onReady();
   }
@@ -42,6 +57,10 @@ export class MainScene extends Scene {
   private initAssets(assetLoader: AssetsLoader<AssetName>): void {
     for (const asset of SpriteList) {
       assetLoader.addSprite(asset.name, asset.path);
+    }
+
+    for (const audio of AudioList) {
+      assetLoader.addAudio(audio.name, audio.path);
     }
   }
 }

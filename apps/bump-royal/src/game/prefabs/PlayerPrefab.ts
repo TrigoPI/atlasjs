@@ -1,9 +1,19 @@
 import { Vec2 } from "@atlasjs/math";
+import type { AudioClip } from "@atlasjs/audio";
 
-import { playerControls } from "../controls";
-import { PlayerMovementScript } from "../script/player";
+import { SortingOrder } from "../config";
+import type { PlayerControlsType } from "../controls";
 
 import {
+  PlayerCollisionScript,
+  PlayerEyesScript,
+  PlayerMovementScript,
+  PlayerSoundScript,
+} from "../script/player";
+
+import {
+  AfterimageRenderer,
+  AudioSource,
   Collider2D,
   Color,
   definePrefab,
@@ -11,38 +21,88 @@ import {
   RigidBody,
   Sprite,
   SpriteRenderer,
+  Tag,
   Transform2D,
+  type ActionMapDescriptor,
   type EntityBuilder,
 } from "@atlasjs/gameplay";
 
 export type PlayerPrefabProps = {
-  sprite: Sprite;
-  color: Color;
   position: Vec2;
+  playerSprite: Sprite;
+  playerEyesSprite: Sprite;
+  bumpAudio: AudioClip;
+  controls: ActionMapDescriptor<PlayerControlsType>;
 };
 
+const SCALE = 3.5;
+const RADIUS = 8;
+const COLLIDER_RADIUS = SCALE * RADIUS;
+
+// prettier-ignore
 export const createPlayerPrefab = () =>
   definePrefab<PlayerPrefabProps>({
     name: "player",
     build: (entity: EntityBuilder, props: PlayerPrefabProps): void => {
       const transform: Transform2D = entity.add(Transform2D);
       transform.position.copyFrom(props.position);
-      transform.scale.set(1.5, 1.5);
+      transform.scale.set(SCALE, SCALE);
 
-      const renderer: SpriteRenderer = entity.add(SpriteRenderer, props.sprite);
-      renderer.color = props.color;
+      const renderer: SpriteRenderer = entity.add(SpriteRenderer, props.playerSprite);
+      renderer.sortingOrder = SortingOrder.Player;
 
       const body: RigidBody = entity.add(RigidBody);
       body.type = "dynamic";
       body.lockRotation = true;
 
-      entity.add(Collider2D, { type: "circle", radius: 16 });
-      entity.add(PlayerInput, playerControls);
+
+      const collider: Collider2D = entity.add(Collider2D, { type: "circle", radius: COLLIDER_RADIUS });
+      collider.restitution = 1;
+      collider.friction = 0.05;
+
+      entity.add(AudioSource, props.bumpAudio);
+      entity.add(PlayerInput, props.controls);
+      entity.add(Tag, "Player");
+
+      const playerEyes: EntityBuilder = entity.child((e: EntityBuilder) => {
+        const t: Transform2D = e.add(Transform2D);
+        t.position.set(0, 0);
+
+        const r: SpriteRenderer = e.add(SpriteRenderer, props.playerEyesSprite);
+        r.sortingOrder = SortingOrder.PlayerEyes;
+      });
+
+      entity.add(AfterimageRenderer, {
+        interval: 0.04,
+        time: 0.22,
+        startColor: Color.White().setAlpha(0.5),
+        endColor: Color.White().setAlpha(0),
+        sortingOrder: SortingOrder.Trail,
+        maxImages: 15,
+      });
+
+      entity.attach(PlayerSoundScript);
+      entity.attach(PlayerCollisionScript, {
+        squishScale: 0.85,
+        squishDuration: 0.5,
+        squishDamping: 2,
+        squishFrequency: 2,
+      });
+
+      entity.attach(PlayerEyesScript, {
+        playerEyes: playerEyes.entity,
+        radius: 2,
+        rotationSpeed: 5,
+      });
 
       entity.attach(PlayerMovementScript, {
         maxSpeed: 300,
         acceleration: 600,
         deceleration: 300,
+        dashSpeed: 700,
+        dashDuration: 0.18,
+        dashCooldown: 0.6,
+        overspeedDeceleration: 5000,
       });
     },
   });
