@@ -98,7 +98,7 @@ export const createPlayerPrefab = () =>
 
       const dust: ParticleEmitter = entity.add(ParticleEmitter, {
         frames: [props.dustSprite],
-        blend: "additive",
+        blend: "alpha",
         sortingOrder: SortingOrder.Dust,
         playOnAwake: false,
         config: {
@@ -107,16 +107,16 @@ export const createPlayerPrefab = () =>
           duration: 1,
           maxParticles: 64,
           simulationSpace: "world",
-          shape: { kind: "circle", radius: 8 },
-          startLifetime: { min: 0.22, max: 0.4 },
-          startSpeed: { min: 60, max: 190 },
-          startSize: { min: 5, max: 11 },
-          startColor: Color.White().setAlpha(0.55),
-          drag: 5,
-          sizeOverLifetime: { from: 1, to: 0.15, easing: "outCubic" },
+          shape: { kind: "circle", radius: 10 },
+          startLifetime: { min: 0.35, max: 0.6 },
+          startSpeed: { min: 130, max: 300 },
+          startSize: { min: 14, max: 26 },
+          startColor: new Color(0.42, 0.38, 0.34, 0.95),
+          drag: 3.5,
+          sizeOverLifetime: { from: 1, to: 0.2, easing: "outCubic" },
           colorOverLifetime: {
-            from: Color.White().setAlpha(0.55),
-            to: Color.White().setAlpha(0),
+            from: new Color(0.42, 0.38, 0.34, 0.95),
+            to: new Color(0.55, 0.52, 0.48, 0),
           },
         },
       });
@@ -133,7 +133,7 @@ export const createPlayerPrefab = () =>
 
       entity.attach(PlayerCollisionScript, {
         dust,
-        dustBurst: 14,
+        dustBurst: 22,
         squishScale: 0.85,
         squishDuration: 0.5,
         squishDamping: 2,

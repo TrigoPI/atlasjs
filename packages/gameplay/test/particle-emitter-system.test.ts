@@ -623,3 +623,71 @@ describe("ParticleEmitterSystem time scale", () => {
     expect(nodeOf(scene).getLifeT(0)).toBeCloseTo(0.01, 6);
   });
 });
+
+describe("ParticleEmitterSystem burst on a stopped emitter", () => {
+  it("emits while the state is stopped, the pattern a gameplay driven burst uses", () => {
+    const { world, scene, system } = setup();
+    const entity: Entity = world.createEntity();
+    world.addComponent(entity, WorldTransform2D);
+    const emitter: ParticleEmitter = world.addComponent(
+      entity,
+      ParticleEmitter,
+      {
+        playOnAwake: false,
+        config: {
+          rate: 0,
+          looping: false,
+          maxParticles: 64,
+          startLifetime: 0.3,
+        },
+      },
+    );
+
+    system.update({ world, dt: DT });
+
+    const node: CPUParticleNode =
+      scene.root.getChildren()[0] as CPUParticleNode;
+
+    expect(emitter.state).toBe("stopped");
+    expect(node.aliveCount).toEqual(0);
+
+    emitter.emit(14);
+    system.update({ world, dt: DT });
+
+    expect(node.aliveCount).toEqual(14);
+    expect(emitter.pendingEmit).toEqual(0);
+    expect(emitter.state).toBe("stopped");
+  });
+
+  it("lets a stopped emitter's particles age and die without any play call", () => {
+    const { world, scene, system } = setup();
+    const entity: Entity = world.createEntity();
+    world.addComponent(entity, WorldTransform2D);
+    const emitter: ParticleEmitter = world.addComponent(
+      entity,
+      ParticleEmitter,
+      {
+        playOnAwake: false,
+        config: {
+          rate: 0,
+          looping: false,
+          maxParticles: 64,
+          startLifetime: 0.2,
+        },
+      },
+    );
+
+    system.update({ world, dt: DT });
+    emitter.emit(5);
+    system.update({ world, dt: DT });
+
+    const node: CPUParticleNode =
+      scene.root.getChildren()[0] as CPUParticleNode;
+
+    expect(node.aliveCount).toEqual(5);
+
+    system.update({ world, dt: 0.5 });
+
+    expect(node.aliveCount).toEqual(0);
+  });
+});
