@@ -8,9 +8,15 @@ type Ev = string;
 
 function recorder(tag: string, log: Ev[]): Batcher {
   return {
-    begin: (c: DrawCommand): void => log.push(`${tag}.begin:${c.batchKey}`),
-    add: (c: DrawCommand): void => log.push(`${tag}.add:${c.batchKey}`),
-    draw: (): void => log.push(`${tag}.draw`),
+    begin: (c: DrawCommand): void => {
+      log.push(`${tag}.begin:${c.batchKey}`);
+    },
+    add: (c: DrawCommand): void => {
+      log.push(`${tag}.add:${c.batchKey}`);
+    },
+    draw: (): void => {
+      log.push(`${tag}.draw`);
+    },
   };
 }
 
