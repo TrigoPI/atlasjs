@@ -12,6 +12,7 @@ export * from "./PhysicsColliderRef";
 export * from "./PlayerInput";
 export * from "./RigidBody2D";
 export * from "./SpriteRender";
+export * from "./Tag";
 export * from "./TileMap";
 export * from "./TileMapRenderer";
 export * from "./TimeScale";

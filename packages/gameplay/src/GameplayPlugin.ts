@@ -57,6 +57,7 @@ import {
   PlayerInput,
   RigidBody2D,
   SpriteRender,
+  Tag,
   TileMap,
   TileMapRenderer,
   TimeScale,
@@ -185,7 +186,8 @@ export class GameplayPlugin extends Plugin {
       .defineComponent(TrailRenderer)
       .defineComponent(AfterimageRenderer)
       .defineComponent(OccluderStrip)
-      .defineComponent(TimeScale);
+      .defineComponent(TimeScale)
+      .defineComponent(Tag);
   }
 
   // prettier-ignore
