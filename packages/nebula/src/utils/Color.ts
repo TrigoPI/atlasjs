@@ -41,11 +41,36 @@ export class Color {
     this.data[3] = value;
   }
 
-  public set(r: number, g: number, b: number, a: number = 1): void {
+  public setRed(r: number): Color {
+    this.data[0] = r;
+    return this;
+  }
+
+  public setGreen(g: number): Color {
+    this.data[1] = g;
+    return this;
+  }
+
+  public setBlue(b: number): Color {
+    this.data[2] = b;
+    return this;
+  }
+
+  public setAlpha(a: number): Color {
+    this.data[3] = a;
+    return this;
+  }
+
+  public set(r: number, g: number, b: number, a: number = 1): Color {
     this.data[0] = r;
     this.data[1] = g;
     this.data[2] = b;
     this.data[3] = a;
+    return this;
+  }
+
+  public clone(): Color {
+    return new Color(this.r, this.g, this.b, this.a);
   }
 
   public static White(): Color {
