@@ -2,6 +2,7 @@ import { Easing, Vec2 } from "@atlasjs/math";
 
 import {
   AtlasScript,
+  ParticleEmitter,
   registerScriptMetadata,
   ScriptMetadata,
   Tag,
@@ -12,6 +13,8 @@ import {
 import { PlayerFallScript } from "./PlayerFallScript";
 
 type PlayerCollisionScriptProps = {
+  dust: ParticleEmitter;
+  dustBurst: number;
   squishScale: number;
   squishDuration: number;
   squishDamping: number;
@@ -19,6 +22,8 @@ type PlayerCollisionScriptProps = {
 };
 
 export class PlayerCollisionScript extends AtlasScript<PlayerCollisionScriptProps> {
+  private readonly dust: ParticleEmitter;
+  private readonly dustBurst: number;
   private readonly squishScale: number;
   private readonly squishDuration: number;
   private readonly squishDamping: number;
@@ -74,11 +79,14 @@ export class PlayerCollisionScript extends AtlasScript<PlayerCollisionScriptProp
     }
 
     this.elapsed = 0;
+    this.dust.emit(this.dustBurst);
   }
 }
 
 registerScriptMetadata(PlayerCollisionScript, {
   exposed: {
+    dust: ScriptMetadata.field({ required: true }),
+    dustBurst: ScriptMetadata.field({ required: true }),
     squishScale: ScriptMetadata.field({ required: true }),
     squishDuration: ScriptMetadata.field({ required: true }),
     squishDamping: ScriptMetadata.field({ required: true }),

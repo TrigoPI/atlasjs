@@ -17,6 +17,7 @@ import {
   AfterimageRenderer,
   Collider2D,
   Color,
+  ParticleEmitter,
   definePrefab,
   PlayerInput,
   RigidBody,
@@ -33,6 +34,7 @@ export type PlayerPrefabProps = {
   playerSprite: Sprite;
   playerEyesSprite: Sprite;
   shadowSprite: Sprite;
+  dustSprite: Sprite;
   bumpAudio: AudioClip;
   fallAudio: AudioClip;
   controls: ActionMapDescriptor<PlayerControlsType>;
@@ -94,6 +96,31 @@ export const createPlayerPrefab = () =>
         maxImages: 15,
       });
 
+      const dust: ParticleEmitter = entity.add(ParticleEmitter, {
+        frames: [props.dustSprite],
+        blend: "additive",
+        sortingOrder: SortingOrder.Dust,
+        playOnAwake: false,
+        config: {
+          rate: 0,
+          looping: false,
+          duration: 1,
+          maxParticles: 64,
+          simulationSpace: "world",
+          shape: { kind: "circle", radius: 8 },
+          startLifetime: { min: 0.22, max: 0.4 },
+          startSpeed: { min: 60, max: 190 },
+          startSize: { min: 5, max: 11 },
+          startColor: Color.White().setAlpha(0.55),
+          drag: 5,
+          sizeOverLifetime: { from: 1, to: 0.15, easing: "outCubic" },
+          colorOverLifetime: {
+            from: Color.White().setAlpha(0.55),
+            to: Color.White().setAlpha(0),
+          },
+        },
+      });
+
       entity.attach(PlayerSoundScript, {
         bumpAudio: props.bumpAudio,
         maxImpactSpeed: 700,
@@ -105,6 +132,8 @@ export const createPlayerPrefab = () =>
       });
 
       entity.attach(PlayerCollisionScript, {
+        dust,
+        dustBurst: 14,
         squishScale: 0.85,
         squishDuration: 0.5,
         squishDamping: 2,

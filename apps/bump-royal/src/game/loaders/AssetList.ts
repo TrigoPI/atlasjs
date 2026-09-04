@@ -7,6 +7,7 @@ export const SpriteList = [
   { name: "sprite:player_eyes", path: Textures.PlayerEyes },
   { name: "sprite:arena", path: Textures.Arena },
   { name: "sprite:shadow", path: Textures.Shadow },
+  { name: "sprite:dust", path: Textures.Dust },
 ] as const satisfies readonly ResourceDescriptor[];
 
 export const AudioList = [
