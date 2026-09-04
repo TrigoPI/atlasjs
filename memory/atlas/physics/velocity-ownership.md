@@ -100,6 +100,29 @@ changement moteur n'a été nécessaire sur ce chemin.
 Le pull utilise `copyFrom`, donc **l'identité du `Vec2` est stable** : le script peut garder la
 référence obtenue une fois et la muter en place, ce qu'il fait (`velocity.moveTowards(...)`).
 
+### 4.1 Le corollaire : on ne téléporte pas un corps dynamique par son `Transform2D`
+
+L'aller-retour n'est **pas symétrique sur la pose**. `PhysicsPushSystem` ne pousse une translation
+vers le corps que pour les types `kinematic` et `static`
+(`packages/gameplay/src/systems/PhysicsPushSystem.ts`, branche
+`rigidBody.type === "kinematic" || rigidBody.type === "static"`) : pour un dynamique, le corps est
+placé **une seule fois**, à sa création, depuis le `Transform2D` du moment. Écrire
+`Transform2D.position` ensuite ne déplace donc rien — le pull réécrit le composant depuis le corps au
+pas suivant, et la valeur écrite disparaît sans erreur.
+
+Repositionner un joueur (respawn, retour au centre) passe par `PhysicsBodyRef.body.setTranslation()`.
+Trouvé en livrant la sortie d'arène de `apps/bump-royal`, où il faut **en plus** écrire
+`Transform2D.position` dans la même foulée : sinon l'update suivant relit l'ancienne position, avant
+que le pull n'ait eu lieu, et redéclenche la chute qu'on vient de terminer. Aucune API publique
+n'exprime « téléporte ce corps » aujourd'hui — un script doit atteindre le composant du pont
+([[PHYSICS-25-teleport-dynamic-body]]).
+
+L'autre moitié du pont est en revanche bien re-synchronisée : `PhysicsColliderRef.sync(col)` tourne
+sur chaque `(Collider2D, PhysicsColliderRef)` à chaque tour, et pousse tout champ modifié (`isSensor`,
+`layer`, `collidesWith`, friction, restitution, densité). Muter `Collider2D` depuis un script marche
+donc, et c'est ainsi qu'un joueur en train de tomber cesse de bloquer les autres
+(`collidesWith = 0`).
+
 ## 5. Le modèle de mouvement
 
 Par pas fixe, dans `apps/bump-royal/src/game/script/player/PlayerMovementScript.ts` :
@@ -297,6 +320,10 @@ Le jour où le bump devient une impulsion conçue ([[PHYSICS-24-momentum-exchang
 soit assumer ce réglage, soit distinguer « je dashe » de « je me suis fait bumper » pour leur donner
 deux taux.
 
-Non borné en revanche : **le cumul**. Deux dashs consécutifs dans la même direction sortent encore du
-viewport. Ce que ça réclame n'est pas un troisième taux mais une **arène finie** — quatre
-`Collider2D` sans body, décidé contre pour l'instant.
+Non borné par la règle de taux : **le cumul**. Deux dashs consécutifs dans la même direction sortent
+encore du viewport. Ce que ça réclamait n'était pas un quatrième taux mais une **arène finie** —
+livré le 2026-09-04, mais **par élimination plutôt que par des murs** : la sortie d'arène de
+`apps/bump-royal` (`PlayerFallScript`) teste la position contre la forme de la dalle et fait tomber
+puis respawner le joueur dès que son disque entier a franchi le bord. Le joueur ne part donc plus à
+l'infini, et les quatre `Collider2D` sans body restent écartés — un mur rendrait le bord infranchissable,
+ce qui retirerait au jeu son unique condition de défaite.

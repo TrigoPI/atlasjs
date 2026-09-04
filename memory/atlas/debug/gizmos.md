@@ -1,10 +1,12 @@
 ---
 status: implemented
-summary: "Gizmos de debug (colliders et pivots) implémentés en v1 ; extensions V2 au backlog."
+shipped: 2026-08-19
+summary: "Gizmos de debug (colliders et pivots) implémentés en v1 ; `drawLine` livré depuis (2026-09-04, `DEBUG-02`), reste des extensions V2 au backlog."
 ---
 # Debug — Gizmos (colliders & pivots)
 
-> Statut : **implémenté** (v1). Les extensions V2 sont dans le [backlog](../backlog.base) (domaine `debug`).
+> Statut : **implémenté** (v1, 2026-08-19). Les extensions V2 sont dans le [backlog](../backlog.base) (domaine `debug`).
+> Livré depuis la v1 : **`Gizmos.drawLine` + pool de `LineNode`** (2026-09-04), `DEBUG-02` sorti du backlog — voir § 5.2 et § 9. Son premier consommateur est le contour d'arène de `apps/bump-royal`, qui est aussi le premier écart à la décision « pas d'accès depuis les scripts » (§ 1).
 > Portée : nouveau package `@atlasjs/gizmos` + extension **stroke** de `@atlasjs/nebula` / `@atlasjs/nebula-webgpu`. Vérification dans `apps/webgpu` et `apps/dino-brawl`.
 > Contexte : avant cette feature, un collider était invisible et un pivot ne se devinait qu'en collant un sprite `debug.png` en enfant de l'entité (workaround qui vivait dans `apps/dino-brawl`, `SwordWithShadowPrefab`, **supprimé par cette feature**). Ce design remplace ce bricolage par des gizmos moteur, en posant la brique dont le futur éditeur aura besoin.
 
@@ -29,6 +31,8 @@ Le package doit être **opt-in total** : si le plugin n'est pas installé, aucun
 **Hors périmètre v1** (→ § 9) : gizmos de sélection / poignées d'éditeur, gizmos de raycast, texte à l'écran, gizmos de hiérarchie, épaisseur de contour constante à l'écran, capsule/segment/polygon exacts, façade de scripting.
 
 **Explicitement écarté** : l'accès aux gizmos depuis les scripts de gameplay. Les gizmos sont **100 % pilotés moteur** (app hôte / éditeur via `engine.services`). Pas de `ScriptService`, pas de façade `GizmoApi`.
+
+> **Écart constaté (2026-09-04), à trancher.** `apps/bump-royal` dessine son contour d'arène depuis un script (`ArenaBoundsGizmoScript`) via une façade `GizmosApi extends ScriptService<Gizmos>` **définie dans l'app**. La lettre de la décision tient — `@atlasjs/gizmos` n'expose toujours aucune façade, et rien du package n'a bougé — mais son esprit est contourné : rien n'empêche une app de se fabriquer la sienne, puisque `GIZMOS` est un token de service comme un autre. Deux issues possibles : assumer et le dire ici (la décision ne porte que sur ce que le package fournit), ou déplacer ce gizmo vers un système `PreRender` `before: "gizmos:flush"` comme les deux systèmes v1. Rien ne dépend du choix côté package.
 
 ---
 
@@ -119,6 +123,7 @@ export class Gizmos {
 
   public drawRect(x: number, y: number, width: number, height: number, rotation: number): void;
   public drawCircle(x: number, y: number, radius: number): void;
+  public drawLine(x1: number, y1: number, x2: number, y2: number): void;   // livré 2026-09-04
 }
 ```
 
@@ -181,9 +186,12 @@ lane render / stage Main :
 
 ### 5.2 Pool
 
-Deux pools distincts (les types de nœuds diffèrent) : `RectNode` et `CircleNode`. Chacun a un curseur ; `acquire` renvoie le nœud courant, ou en crée un et l'ajoute à `nebula.scene` si le pool est épuisé.
+Trois pools distincts (les types de nœuds diffèrent) : `RectNode`, `CircleNode` et, depuis le 2026-09-04, `LineNode`. Chacun a un curseur ; `acquire` renvoie le nœud courant, ou en crée un et l'ajoute à `nebula.scene` si le pool est épuisé.
 
-Pas de `drawLine` ni de pool de `LineNode` en v1 : **aucun gizmo v1 ne dessine de ligne**. L'ajouter est un pool de plus et une méthode de plus, sans changement d'architecture — ça viendra avec le premier consommateur réel (hiérarchie, raycast, vecteurs → § 9).
+`drawLine` était écarté de la v1 faute de consommateur ; le contour d'arène de `apps/bump-royal` en a été le premier. L'ajout n'a rien changé à l'architecture, mais deux détails ne se devinent pas :
+
+- **L'épaisseur n'est pas `borderWidth`.** Le `ShapeRenderer` classe un `LineNode` en `SHAPE_KIND_FILL` : `borderWidth` n'a donc aucun effet sur une ligne. L'épaisseur passe par un réglage à part, `settings.lineThickness` (miroité en `Gizmos.lineThickness`), et `drawLine` pose `borderWidth = 0` sur le nœud.
+- **Les deux extrémités sont en coordonnées monde.** `ShapeRenderer.updateLineMatrix` compose la `worldMatrix` du nœud avec une matrice déduite de `start`/`end`, donc `drawLine` laisse le nœud à l'origine sans rotation. Y poser une position doublerait la translation.
 
 ### 5.3 Tri
 
@@ -369,7 +377,7 @@ Enfin, sur `apps/dino-brawl` la boucle est en RAF et se fait fortement throttler
 - **Gizmos d'éditeur** : poignées de sélection/déplacement/échelle, contour de l'entité sélectionnée, preview de collider en cours d'édition. Le seam est posé (`before: "gizmos:flush"`), rien n'est implémenté.
 
   Contexte historique : un `packages/editor` portait un vocabulaire concurrent (`Gizmo`, `GizmoTool`, `SelectionOverlayTool`, `ScaleTool`, `DragTool`) en lane `update` avec son propre modèle `renderer.overlay`. Il ne compilait plus contre l'API nebula et a été **supprimé** au merge de cette feature, pour ne pas laisser deux modèles de gizmos cohabiter avec des noms qui se frôlent (`Gizmo` / `Gizmos`). Détail utile pour la reprise : cet éditeur réclamait précisément les deux briques que la v1 des gizmos n'a pas — une **passe overlay** hors scene-graph et une **épaisseur constante à l'écran**, toutes deux ci-dessus. Un futur éditeur devrait donc être **producteur** de l'API immediate-mode, pas un second chemin de rendu.
-- **`Gizmos.drawLine` + pool de `LineNode`** : débloque d'un coup les gizmos de raycast / vecteurs (direction, vitesse, normales de contact) et les lignes de hiérarchie. Écarté en v1 faute de consommateur (§ 5.2).
+- ~~**`Gizmos.drawLine` + pool de `LineNode`**~~ : **livré** le 2026-09-04 (`DEBUG-02`, sorti du backlog), premier consommateur le contour d'arène de `apps/bump-royal` (§ 5.2). Ce qu'il débloquait reste à écrire : gizmos de **raycast** et de **vecteurs** (direction, vitesse, normales de contact) et lignes de **hiérarchie** — désormais `DEBUG-09`.
 - **Texte à l'écran** (labels d'entité, valeurs) : dépend du rendu de texte (item backlog A2).
 - **Épaisseur de contour constante à l'écran** : aujourd'hui `borderWidth` est en unités monde, donc le contour s'épaissit visuellement au zoom. Une épaisseur constante en pixels demanderait le facteur de zoom caméra dans le shader.
 - **`capsule` / `segment` / `polygon` exacts** : capsule via un 3ᵉ `shapeKind` SDF, segment/polygon via une boucle de `LineNode`.
