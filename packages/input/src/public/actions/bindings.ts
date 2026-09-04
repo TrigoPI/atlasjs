@@ -45,6 +45,7 @@ export interface ValueBuilder {
 export interface Vector2Builder {
   keys(composite: Vector2Composite): Vector2ActionSpec;
   wasd(): Vector2ActionSpec;
+  arrows(): Vector2ActionSpec;
 }
 
 export function button(): ButtonBuilder {
@@ -75,6 +76,17 @@ export function vector2(): Vector2Builder {
       return {
         kind: "vector2",
         composite: { up: Key.W, down: Key.S, left: Key.A, right: Key.D },
+      };
+    },
+    arrows(): Vector2ActionSpec {
+      return {
+        kind: "vector2",
+        composite: {
+          up: Key.ArrowUp,
+          down: Key.ArrowDown,
+          left: Key.ArrowLeft,
+          right: Key.ArrowRight,
+        },
       };
     },
   };
