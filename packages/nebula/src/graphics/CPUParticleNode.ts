@@ -26,6 +26,7 @@ const PREWARM_STEP: number = 1 / 60;
 const MAX_PREWARM_STEPS: number = 600;
 const MAX_LOOP_STEPS: number = 64;
 const DEFAULT_SHAPE: ParticleShape = { kind: "point" };
+const EMPTY_BURSTS: readonly ParticleBurst[] = [];
 
 function mulberry32(seed: number): () => number {
   let state: number = seed >>> 0;
@@ -89,26 +90,26 @@ function resolveCycles(cycles: number | undefined): number {
 }
 
 export class CPUParticleNode extends Node {
-  public duration: number;
-  public looping: boolean;
-  public prewarm: boolean;
-  public rate: number;
-  public shape: ParticleShape;
-  public startLifetime: ScalarRange;
-  public startSpeed: ScalarRange;
-  public startSize: ScalarRange;
-  public startRotation: ScalarRange;
-  public startColor: ColorRange;
-  public angularVelocity: ScalarRange;
+  public duration!: number;
+  public looping!: boolean;
+  public prewarm!: boolean;
+  public rate!: number;
+  public shape!: ParticleShape;
+  public startLifetime!: ScalarRange;
+  public startSpeed!: ScalarRange;
+  public startSize!: ScalarRange;
+  public startRotation!: ScalarRange;
+  public startColor!: ColorRange;
+  public angularVelocity!: ScalarRange;
   public readonly gravity: Vec2;
-  public drag: number;
-  public sizeOverLifetime: Ramp<number> | null;
-  public colorOverLifetime: Ramp<Color> | null;
-  public velocityOverLifetime: Ramp<ParticleVector2> | null;
-  public simulationSpace: ParticleSimulationSpace;
-  public alignment: ParticleAlignment;
-  public blend: BlendMode;
-  public textureSheet: ParticleTextureSheet | null;
+  public drag!: number;
+  public sizeOverLifetime!: Ramp<number> | null;
+  public colorOverLifetime!: Ramp<Color> | null;
+  public velocityOverLifetime!: Ramp<ParticleVector2> | null;
+  public simulationSpace!: ParticleSimulationSpace;
+  public alignment!: ParticleAlignment;
+  public blend!: BlendMode;
+  public textureSheet!: ParticleTextureSheet | null;
   public texture: Texture2D | null;
   public sampler?: Sampler;
 
@@ -133,7 +134,7 @@ export class CPUParticleNode extends Node {
   private living: number;
   private currentState: ParticleState;
   private emitterTime: number;
-  private requestedMax: number;
+  private requestedMax!: number;
   private rateAccumulator: number;
   private burstList: readonly ParticleBurst[];
   private burstCyclesDone: Int32Array;
@@ -148,51 +149,10 @@ export class CPUParticleNode extends Node {
   public constructor(config: ParticleEmitterConfig = {}) {
     super();
 
-    const requested: number =
-      config.maxParticles !== undefined
-        ? config.maxParticles
-        : DEFAULT_CAPACITY;
-    const size: number = clampCapacity(requested);
+    const size: number = clampCapacity(0);
 
-    this.duration = config.duration !== undefined ? config.duration : 1;
-    this.looping = config.looping !== undefined ? config.looping : true;
-    this.prewarm = config.prewarm !== undefined ? config.prewarm : false;
-    this.requestedMax = requested;
-    this.rate = config.rate !== undefined ? config.rate : 10;
-    this.shape = config.shape !== undefined ? config.shape : DEFAULT_SHAPE;
-    this.startLifetime =
-      config.startLifetime !== undefined ? config.startLifetime : 1;
-    this.startSpeed = config.startSpeed !== undefined ? config.startSpeed : 100;
-    this.startSize = config.startSize !== undefined ? config.startSize : 8;
-    this.startRotation =
-      config.startRotation !== undefined ? config.startRotation : 0;
-    this.startColor =
-      config.startColor !== undefined
-        ? config.startColor
-        : new Color(1, 1, 1, 1);
-    this.angularVelocity =
-      config.angularVelocity !== undefined ? config.angularVelocity : 0;
-    this.gravity = new Vec2(
-      config.gravity !== undefined ? config.gravity.x : 0,
-      config.gravity !== undefined ? config.gravity.y : 0,
-    );
-    this.drag = config.drag !== undefined ? config.drag : 0;
-    this.sizeOverLifetime =
-      config.sizeOverLifetime !== undefined ? config.sizeOverLifetime : null;
-    this.colorOverLifetime =
-      config.colorOverLifetime !== undefined ? config.colorOverLifetime : null;
-    this.velocityOverLifetime =
-      config.velocityOverLifetime !== undefined
-        ? config.velocityOverLifetime
-        : null;
-    this.simulationSpace =
-      config.simulationSpace !== undefined ? config.simulationSpace : "local";
-    this.alignment =
-      config.alignment !== undefined ? config.alignment : "fixed";
-    this.blend = config.blend !== undefined ? config.blend : "alpha";
-    this.textureSheet =
-      config.textureSheet !== undefined ? config.textureSheet : null;
     this.texture = null;
+    this.gravity = new Vec2(0, 0);
 
     this.rects = [];
     this.fullRect = new Vec4(0, 0, 1, 1);
@@ -216,9 +176,9 @@ export class CPUParticleNode extends Node {
     this.currentState = "stopped";
     this.emitterTime = 0;
     this.rateAccumulator = 0;
-    this.burstList = config.bursts !== undefined ? config.bursts : [];
-    this.burstCyclesDone = new Int32Array(this.burstList.length);
-    this.burstNextTime = new Float32Array(this.burstList.length);
+    this.burstList = EMPTY_BURSTS;
+    this.burstCyclesDone = new Int32Array(0);
+    this.burstNextTime = new Float32Array(0);
     this.rng =
       config.seed !== undefined && Number.isFinite(config.seed)
         ? mulberry32(config.seed)
@@ -229,7 +189,54 @@ export class CPUParticleNode extends Node {
     this.directionX = 0;
     this.directionY = 0;
 
-    this.armBursts();
+    this.applyConfig(config);
+  }
+
+  public applyConfig(config: ParticleEmitterConfig): this {
+    this.duration = config.duration !== undefined ? config.duration : 1;
+    this.looping = config.looping !== undefined ? config.looping : true;
+    this.prewarm = config.prewarm !== undefined ? config.prewarm : false;
+    this.maxParticles =
+      config.maxParticles !== undefined
+        ? config.maxParticles
+        : DEFAULT_CAPACITY;
+    this.rate = config.rate !== undefined ? config.rate : 10;
+    this.bursts = config.bursts !== undefined ? config.bursts : EMPTY_BURSTS;
+    this.shape = config.shape !== undefined ? config.shape : DEFAULT_SHAPE;
+    this.startLifetime =
+      config.startLifetime !== undefined ? config.startLifetime : 1;
+    this.startSpeed = config.startSpeed !== undefined ? config.startSpeed : 100;
+    this.startSize = config.startSize !== undefined ? config.startSize : 8;
+    this.startRotation =
+      config.startRotation !== undefined ? config.startRotation : 0;
+    this.startColor =
+      config.startColor !== undefined
+        ? config.startColor
+        : new Color(1, 1, 1, 1);
+    this.angularVelocity =
+      config.angularVelocity !== undefined ? config.angularVelocity : 0;
+    this.gravity.set(
+      config.gravity !== undefined ? config.gravity.x : 0,
+      config.gravity !== undefined ? config.gravity.y : 0,
+    );
+    this.drag = config.drag !== undefined ? config.drag : 0;
+    this.sizeOverLifetime =
+      config.sizeOverLifetime !== undefined ? config.sizeOverLifetime : null;
+    this.colorOverLifetime =
+      config.colorOverLifetime !== undefined ? config.colorOverLifetime : null;
+    this.velocityOverLifetime =
+      config.velocityOverLifetime !== undefined
+        ? config.velocityOverLifetime
+        : null;
+    this.simulationSpace =
+      config.simulationSpace !== undefined ? config.simulationSpace : "local";
+    this.alignment =
+      config.alignment !== undefined ? config.alignment : "fixed";
+    this.blend = config.blend !== undefined ? config.blend : "alpha";
+    this.textureSheet =
+      config.textureSheet !== undefined ? config.textureSheet : null;
+
+    return this;
   }
 
   public get aliveCount(): number {
