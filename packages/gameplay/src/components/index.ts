@@ -7,6 +7,7 @@ export * from "./CharacterControllerRef";
 export * from "./Collider2D";
 export * from "./Grid";
 export * from "./OccluderStrip";
+export * from "./ParticleEmitter";
 export * from "./PhysicsBodyRef";
 export * from "./PhysicsColliderRef";
 export * from "./PlayerInput";

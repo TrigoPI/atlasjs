@@ -6,10 +6,13 @@ export const SpriteList = [
   { name: "sprite:players", path: Textures.Players },
   { name: "sprite:player_eyes", path: Textures.PlayerEyes },
   { name: "sprite:arena", path: Textures.Arena },
+  { name: "sprite:shadow", path: Textures.Shadow },
+  { name: "sprite:dust", path: Textures.Dust },
 ] as const satisfies readonly ResourceDescriptor[];
 
 export const AudioList = [
   { name: "audio:bump", path: Audios.Bump },
+  { name: "audio:fall", path: Audios.Fall },
 ] as const satisfies readonly ResourceDescriptor[];
 
 export type AssetName =
