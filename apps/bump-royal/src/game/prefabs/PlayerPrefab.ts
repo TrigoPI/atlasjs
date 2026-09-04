@@ -111,12 +111,12 @@ export const createPlayerPrefab = () =>
           startLifetime: { min: 0.35, max: 0.6 },
           startSpeed: { min: 130, max: 300 },
           startSize: { min: 14, max: 26 },
-          startColor: new Color(0.42, 0.38, 0.34, 0.95),
+          startColor: Color.White().setAlpha(0.95),
           drag: 3.5,
           sizeOverLifetime: { from: 1, to: 0.2, easing: "outCubic" },
           colorOverLifetime: {
-            from: new Color(0.42, 0.38, 0.34, 0.95),
-            to: new Color(0.55, 0.52, 0.48, 0),
+            from: Color.White().setAlpha(0.95),
+            to: Color.White().setAlpha(0),
           },
         },
       });
