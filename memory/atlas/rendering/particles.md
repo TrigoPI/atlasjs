@@ -1,12 +1,14 @@
 ---
-status: partial
-summary: "Système de particules CPU livré côté moteur (nebula + gameplay) ; démo applicative et vérification navigateur non faites."
+status: implemented
+summary: "Système de particules CPU livré et vérifié au navigateur ; le rendu à la vitesse réelle de l'effet n'est pas capturable."
 ---
 # Nebula — Particules (simulation CPU, nuage instancié)
 
-> Statut : **partiel**. Le moteur est livré et testé — simulation, rendu, animation de feuille, composant, système, câblage plugin — sur la branche `feat/claude/cpu-particles`, non mergée. **Rien n'a jamais été affiché à l'écran.**
-> Livré : les étapes 1 à 6 du découpage (§9). 8 commits, `215` tests nebula et `598` tests gameplay verts, suite monorepo `27/27`.
-> Non fait : la démo applicative dans `apps/bump-royal` (§9, étape 7) et donc **toute vérification navigateur**. Aucun chiffre de frame time n'a été mesuré : les coûts de §7 sont arithmétiques, comptés dans le code, jamais observés.
+> Statut : **implémenté** (livré le 2026-09-04 sur la branche `feat/claude/cpu-particles`, non mergée, non poussée).
+> Livré : tout ce que décrit ce document. 12 commits, `215` tests nebula et `598` tests gameplay verts, suite monorepo `27/27`.
+> Vérifié navigateur : à 60 fps dans `apps/bump-royal`. Le nuage se monte, se simule et se dessine ; la forme `circle` disperse bien radialement ; le blend additif et la texture d'atlas sortent correctement ; le tri place la poussière au bon endroit. **`simulationSpace: "world"` est confirmé visuellement** — les particules restent en place pendant que le joueur s'éloigne, ce qui valide le rafraîchissement de `worldMatrix` de §6.2. Le déclencheur au bump est confirmé par une sonde source : `pendingEmit` vaut 14 après chaque impact et **jamais 28**, donc le drain par report fonctionne dans l'app.
+> Non vérifié : **le rendu de l'effet à sa vitesse réelle.** Une gerbe de 0,22 à 0,4 s n'est pas capturable — le pane retombe à 4 fps dès qu'on le pilote, et l'effet se termine entre deux frames. Toutes les captures ont été prises avec un réglage volontairement exagéré (durée de vie 45 s, émission continue, tailles doublées), reverti aussitôt. Ça prouve le **chemin de rendu**, pas le réglage.
+> Non mesuré : aucun chiffre de frame time. Les coûts de §7 sont arithmétiques, comptés dans le code.
 > Portée : `@atlasjs/nebula` (nœud + renderer, backend-agnostic) + `@atlasjs/gameplay` (composant + système + plugin). **`@atlasjs/nebula-webgpu` n'est pas touché** — voir §2, c'est le résultat central de ce design.
 > Contexte : deuxième brique de VFX du moteur après `memory/atlas/rendering/trails.md`, dont ce document suit le grain — un nouveau `NodeRenderer` branché sur la file de rendu commune, sans nouveau mécanisme de batching. `memory/atlas/rendering/renderer-architecture.md` §7.2 (E3) anticipait explicitement le cas : « un nouveau kind (text, particules) se branche sans toucher la machinerie de dispatch ».
 > Décision renversée : la note backlog `GAMEPLAY-109` (`status: vision`, **sortie du backlog à la clôture de ce design**) argumentait **contre** ce chantier et exigeait de mesurer l'économie réelle avant d'écrire quoi que ce soit. Elle a été renversée sur décision de l'opérateur. §1.2 lui répond.
@@ -235,9 +237,11 @@ Un commit par étape, sur `feat/claude/cpu-particles`.
 | 5a | `feat(nebula): apply a config to a live particle node` | `applyConfig` |
 | 5b | `feat(gameplay): mount and drive particle emitters` | le système |
 | 6 | `feat(gameplay): register the particle emitter system` | câblage plugin |
-| **7** | **non fait** | **démo `apps/bump-royal` + vérification navigateur** |
+| 7 | `feat(bump-royal): puff dust when two players bump` | démo + vérification navigateur |
 
-L'étape 7 était bloquée par du travail non commité de l'opérateur sur les cinq fichiers qu'elle doit toucher (`config.ts`, `PlayerPrefab.ts`, `spawnPlayer.ts`, `AssetList.ts`, `ResourcesIndex.ts`).
+L'étape 7 a été livrée après que l'opérateur ait commité son travail en cours sur les cinq fichiers qu'elle touche.
+
+> **Piège rencontré à la vérification.** La première tentative réutilisait `shadow.png` comme sprite de poussière : **rien ne s'affichait**, ce qui ressemble trait pour trait à un chemin de rendu cassé. Un sprite quasi vide n'ajoute presque rien en blend additif. Le diagnostic tient à une seule manipulation : remplacer la texture par une dont la visibilité est certaine, sans rien changer d'autre. Les particules sont apparues immédiatement, ce qui a déplacé le soupçon du pipeline vers l'asset. Un `dust.png` généré (dégradé radial blanc 16×16, 246 o) a réglé le cas.
 
 ---
 
