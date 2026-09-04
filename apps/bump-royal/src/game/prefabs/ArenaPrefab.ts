@@ -7,6 +7,7 @@ import {
   definePrefab,
   Sprite,
   SpriteRenderer,
+  Tag,
   Transform2D,
   type EntityBuilder,
 } from "@atlasjs/gameplay";
@@ -29,11 +30,13 @@ export const createArenaPrefab = () =>
       const renderer: SpriteRenderer = entity.add(SpriteRenderer, props.sprite);
       renderer.sortingOrder = SortingOrder.Ground;
 
+      entity.add(Tag, "Arena");
+
       if (props.showBounds) {
         entity.attach(ArenaBoundsGizmoScript, {
           bounds: ARENA_BOUNDS,
-          color: new Color(1, 0, 1, 1),
           thickness: BOUNDS_GIZMO_THICKNESS,
+          color: new Color(1, 0, 1, 1),
         });
       }
     },
