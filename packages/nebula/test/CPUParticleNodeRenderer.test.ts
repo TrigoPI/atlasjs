@@ -281,7 +281,7 @@ describe("CPUParticleNodeRenderer per instance tints", () => {
     expect(cmd.uvRects[0].y).toEqual(0);
     expect(cmd.uvRects[0].z).toEqual(1);
     expect(cmd.uvRects[0].w).toEqual(1);
-    expect(cmd.uvRects[1]).not.toBe(cmd.uvRects[0]);
+    expect(cmd.uvRects[1]).toBe(cmd.uvRects[0]);
   });
 });
 
@@ -481,6 +481,65 @@ describe("ParticleBatcher", () => {
       expect(batch.entries[i].uvRect).toBe(cmd.uvRects[i]);
       expect(batch.entries[i].tint).toBe(cmd.tints[i]);
     }
+  });
+});
+
+describe("CPUParticleNodeRenderer texture sheet frames", () => {
+  function sheetRects(count: number): Vec4[] {
+    const rects: Vec4[] = [];
+
+    for (let i: number = 0; i < count; i++) {
+      rects.push(new Vec4(i / count, 0, 1 / count, 1));
+    }
+
+    return rects;
+  }
+
+  it("puts the node frame rect into the command by reference", () => {
+    const rects: Vec4[] = sheetRects(4);
+    const node: CPUParticleNode = emitterOf({
+      startLifetime: 1,
+      textureSheet: { mode: "overLifetime" },
+    });
+    node.setFrameRects(rects);
+    node.updateWorldMatrix();
+    node.emit(1);
+    node.advance(0.5);
+
+    const cmd: ParticleDrawCommand = collect(node) as ParticleDrawCommand;
+
+    expect(cmd.count).toEqual(1);
+    expect(cmd.uvRects[0]).toBe(rects[2]);
+  });
+
+  it("reflects the new particle frame after a slot is recycled", () => {
+    const rects: Vec4[] = sheetRects(4);
+    const node: CPUParticleNode = emitterOf({
+      textureSheet: { mode: "randomFrame" },
+      seed: 1,
+    });
+    node.setFrameRects(rects);
+    node.updateWorldMatrix();
+
+    node.startLifetime = 10;
+    node.emit(1);
+    node.startLifetime = 0.5;
+    node.emit(1);
+    node.startLifetime = 10;
+    node.emit(1);
+
+    const survivor: Vec4 = node.getFrameRect(2);
+    const dying: Vec4 = node.getFrameRect(1);
+
+    expect(survivor).not.toBe(dying);
+
+    node.advance(1);
+
+    const cmd: ParticleDrawCommand = collect(node) as ParticleDrawCommand;
+
+    expect(cmd.count).toEqual(2);
+    expect(cmd.uvRects[1]).toBe(survivor);
+    expect(cmd.uvRects[1]).not.toBe(dying);
   });
 });
 

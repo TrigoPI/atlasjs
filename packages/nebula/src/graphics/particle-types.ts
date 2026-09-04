@@ -53,6 +53,10 @@ export type ParticleShape =
       readonly rotation?: number;
     };
 
+export type ParticleTextureSheet =
+  | { readonly mode: "overLifetime"; readonly cycles?: number }
+  | { readonly mode: "randomFrame" };
+
 export type ParticleSimulationSpace = "local" | "world";
 
 export type ParticleAlignment = "fixed" | "velocity";
@@ -81,5 +85,6 @@ export type ParticleEmitterConfig = {
   readonly simulationSpace?: ParticleSimulationSpace;
   readonly alignment?: ParticleAlignment;
   readonly blend?: BlendMode;
+  readonly textureSheet?: ParticleTextureSheet;
   readonly seed?: number;
 };

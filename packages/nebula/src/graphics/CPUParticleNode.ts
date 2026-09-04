@@ -13,6 +13,7 @@ import {
   ParticleShape,
   ParticleSimulationSpace,
   ParticleState,
+  ParticleTextureSheet,
   ParticleVector2,
   Ramp,
   ScalarRange,
@@ -107,8 +108,12 @@ export class CPUParticleNode extends Node {
   public simulationSpace: ParticleSimulationSpace;
   public alignment: ParticleAlignment;
   public blend: BlendMode;
+  public textureSheet: ParticleTextureSheet | null;
   public texture: Texture2D | null;
   public sampler?: Sampler;
+
+  private readonly rects: Vec4[];
+  private readonly fullRect: Vec4;
 
   private xs: Float32Array;
   private ys: Float32Array;
@@ -123,6 +128,7 @@ export class CPUParticleNode extends Node {
   private g0s: Float32Array;
   private b0s: Float32Array;
   private a0s: Float32Array;
+  private frames: Float32Array;
 
   private living: number;
   private currentState: ParticleState;
@@ -184,7 +190,12 @@ export class CPUParticleNode extends Node {
     this.alignment =
       config.alignment !== undefined ? config.alignment : "fixed";
     this.blend = config.blend !== undefined ? config.blend : "alpha";
+    this.textureSheet =
+      config.textureSheet !== undefined ? config.textureSheet : null;
     this.texture = null;
+
+    this.rects = [];
+    this.fullRect = new Vec4(0, 0, 1, 1);
 
     this.xs = new Float32Array(size);
     this.ys = new Float32Array(size);
@@ -199,6 +210,7 @@ export class CPUParticleNode extends Node {
     this.g0s = new Float32Array(size);
     this.b0s = new Float32Array(size);
     this.a0s = new Float32Array(size);
+    this.frames = new Float32Array(size);
 
     this.living = 0;
     this.currentState = "stopped";
@@ -370,10 +382,25 @@ export class CPUParticleNode extends Node {
     this.g0s = CPUParticleNode.resize(this.g0s, size, kept);
     this.b0s = CPUParticleNode.resize(this.b0s, size, kept);
     this.a0s = CPUParticleNode.resize(this.a0s, size, kept);
+    this.frames = CPUParticleNode.resize(this.frames, size, kept);
 
     this.living = kept;
 
     return this;
+  }
+
+  public setFrameRects(rects: ReadonlyArray<Vec4>): this {
+    this.rects.length = 0;
+
+    for (let i: number = 0; i < rects.length; i++) {
+      this.rects.push(rects[i]);
+    }
+
+    return this;
+  }
+
+  public get frameCount(): number {
+    return this.rects.length;
   }
 
   public getX(index: number): number {
@@ -438,6 +465,57 @@ export class CPUParticleNode extends Node {
       this.b0s[index] * MathUtils.lerp(ramp.from.b, ramp.to.b, eased),
       this.a0s[index] * MathUtils.lerp(ramp.from.a, ramp.to.a, eased),
     );
+  }
+
+  public getFrameRect(index: number): Vec4 {
+    const sheet: ParticleTextureSheet | null = this.textureSheet;
+
+    if (sheet === null) {
+      return this.fullRect;
+    }
+
+    const count: number = this.rects.length;
+
+    if (!(count > 0)) {
+      return this.fullRect;
+    }
+
+    if (!Number.isInteger(index) || index < 0 || index >= this.frames.length) {
+      return this.fullRect;
+    }
+
+    if (sheet.mode === "randomFrame") {
+      const stored: number = this.frames[index];
+
+      if (!(stored >= 0) || stored >= count) {
+        return this.fullRect;
+      }
+
+      return this.rects[stored];
+    }
+
+    const total: number = count * resolveCycles(sheet.cycles);
+    const last: number = total - 1;
+    const raw: number = Math.floor(this.getLifeT(index) * total);
+    const step: number = raw < last ? raw : last;
+
+    return this.rects[step % count];
+  }
+
+  private sampleFrame(rng: () => number): number {
+    const sheet: ParticleTextureSheet | null = this.textureSheet;
+
+    if (sheet === null || sheet.mode !== "randomFrame") {
+      return 0;
+    }
+
+    const count: number = this.rects.length;
+
+    if (!(count > 0)) {
+      return 0;
+    }
+
+    return Math.floor(rng() * count);
   }
 
   private runEmitter(dt: number): void {
@@ -589,6 +667,7 @@ export class CPUParticleNode extends Node {
       this.g0s[index] = this.g0s[last];
       this.b0s[index] = this.b0s[last];
       this.a0s[index] = this.a0s[last];
+      this.frames[index] = this.frames[last];
     }
 
     this.living = last;
@@ -628,6 +707,7 @@ export class CPUParticleNode extends Node {
     this.size0s[index] = resolveScalar(this.startSize, rng);
     this.rotations[index] = resolveScalar(this.startRotation, rng);
     this.angularVelocities[index] = resolveScalar(this.angularVelocity, rng);
+    this.frames[index] = this.sampleFrame(rng);
 
     this.writeStartColor(index, rng);
 

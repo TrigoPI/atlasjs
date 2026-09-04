@@ -179,12 +179,6 @@ export class CPUParticleNodeRenderer
         data.models[i] = model;
       }
 
-      let uvRect: Vec4 | undefined = data.uvRects[i];
-      if (uvRect === undefined) {
-        uvRect = new Vec4(0, 0, 1, 1);
-        data.uvRects[i] = uvRect;
-      }
-
       let tint: Vec4 | undefined = data.tints[i];
       if (tint === undefined) {
         tint = new Vec4(1, 1, 1, 1);
@@ -201,6 +195,8 @@ export class CPUParticleNodeRenderer
         .translate(node.getX(i), node.getY(i), 0)
         .rotateZ(rotation)
         .scale(size, size);
+
+      data.uvRects[i] = node.getFrameRect(i);
 
       node.getColor(i, tint);
     }
