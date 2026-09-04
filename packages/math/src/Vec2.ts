@@ -90,10 +90,6 @@ export class Vec2 {
     return this;
   }
 
-  /**
-   * Framerate-dependent: `lerp(target, k * dt)` smooths faster as the
-   * framerate rises. Framerate-independent smoothing needs `1 - exp(-k * dt)`.
-   */
   public lerp(target: Vec2, t: number): Vec2 {
     if (t <= 0) return this;
 
