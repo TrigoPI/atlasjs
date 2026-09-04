@@ -28,6 +28,7 @@ import { Instantiator } from "./prefab";
 
 import {
   AfterimageRenderSystem,
+  ParticleEmitterSystem,
   AnimatorSystem,
   AudioSystem,
   CameraSyncSystem,
@@ -44,6 +45,7 @@ import {
 
 import {
   AfterimageRenderer,
+  ParticleEmitter,
   Animator,
   AudioSource,
   Camera,
@@ -72,6 +74,7 @@ export class GameplayPlugin extends Plugin {
   private scriptManager!: ScriptManager;
   private trailRenderSystem?: TrailRenderSystem;
   private afterimageRenderSystem?: AfterimageRenderSystem;
+  private particleEmitterSystem?: ParticleEmitterSystem;
   private handles: StepHandle[];
   private unsubscribers: Unsubscribe[];
 
@@ -115,6 +118,8 @@ export class GameplayPlugin extends Plugin {
     this.trailRenderSystem = trailRenderSystem;
     const afterimageRenderSystem: AfterimageRenderSystem = new AfterimageRenderSystem(nebula, sortingLayers);
     this.afterimageRenderSystem = afterimageRenderSystem;
+    const particleEmitterSystem: ParticleEmitterSystem = new ParticleEmitterSystem(nebula, sortingLayers, timeScaleManager);
+    this.particleEmitterSystem = particleEmitterSystem;
     const playerInputSystem: PlayerInputSystem = new PlayerInputSystem(engine.services);
     const animatorSystem: AnimatorSystem = new AnimatorSystem(timeScaleManager);
     const audioSystem: AudioSystem = new AudioSystem(engine.services);
@@ -124,7 +129,7 @@ export class GameplayPlugin extends Plugin {
 
     this.defineComponents(world);
 
-    this.registerCleanup(world, inertia, spriteRenderSystem, tileMapRenderSystem, occluderRenderSystem, cameraManager, trailRenderSystem, afterimageRenderSystem);
+    this.registerCleanup(world, inertia, spriteRenderSystem, tileMapRenderSystem, occluderRenderSystem, cameraManager, trailRenderSystem, afterimageRenderSystem, particleEmitterSystem);
 
     this.unsubscribers.push(
       world.onAdd(AudioSource, (_entity: Entity, source: AudioSource) => {
@@ -154,6 +159,7 @@ export class GameplayPlugin extends Plugin {
       occluderRenderSystem,
       trailRenderSystem,
       afterimageRenderSystem,
+      particleEmitterSystem,
     );
 
     this.logger.log("GameplayPlugin installed.");
@@ -185,6 +191,7 @@ export class GameplayPlugin extends Plugin {
       .defineComponent(TileMapRenderer)
       .defineComponent(TrailRenderer)
       .defineComponent(AfterimageRenderer)
+      .defineComponent(ParticleEmitter)
       .defineComponent(OccluderStrip)
       .defineComponent(TimeScale)
       .defineComponent(Tag);
@@ -200,6 +207,7 @@ export class GameplayPlugin extends Plugin {
     cameraManager: CameraManager,
     trailRenderSystem: TrailRenderSystem,
     afterimageRenderSystem: AfterimageRenderSystem,
+    particleEmitterSystem: ParticleEmitterSystem,
   ): void {
     this.unsubscribers.push(
       world.onRemove(PhysicsBodyRef, (_entity: Entity, ref: PhysicsBodyRef) => {
@@ -260,6 +268,10 @@ export class GameplayPlugin extends Plugin {
         afterimageRenderSystem.detach(entity);
       }),
 
+      world.onRemove(ParticleEmitter, (entity: Entity) => {
+        particleEmitterSystem.detach(entity);
+      }),
+
       world.onRemove(Transform2D, (entity: Entity) => {
         if (world.hasComponent(entity, WorldTransform2D)) {
           world.removeComponent(entity, WorldTransform2D);
@@ -291,6 +303,7 @@ export class GameplayPlugin extends Plugin {
     occluderRenderSystem: OccluderRenderSystem,
     trailRenderSystem: TrailRenderSystem,
     afterimageRenderSystem: AfterimageRenderSystem,
+    particleEmitterSystem: ParticleEmitterSystem,
   ): void {
     const { fixed, update, render } = scheduler;
 
@@ -406,6 +419,14 @@ export class GameplayPlugin extends Plugin {
         after: "gameplay:trail-render",
       }),
     );
+
+    this.handles.push(
+      registerSystem(render, world, particleEmitterSystem, {
+        name: "gameplay:particle-render",
+        stage: "PreRender",
+        after: "gameplay:afterimage-render",
+      }),
+    );
   }
 
   public uninstall(): void {
@@ -414,6 +435,7 @@ export class GameplayPlugin extends Plugin {
     for (const off of this.unsubscribers) off();
     this.trailRenderSystem?.clear();
     this.afterimageRenderSystem?.clear();
+    this.particleEmitterSystem?.clear();
     this.scriptManager.dispose();
     this.handles = [];
     this.unsubscribers = [];
