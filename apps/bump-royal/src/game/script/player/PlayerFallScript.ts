@@ -1,7 +1,10 @@
 import { Vec2 } from "@atlasjs/math";
+import { randomRange } from "@atlasjs/utils";
+import type { AudioClip } from "@atlasjs/audio";
 
 import {
   AtlasScript,
+  AudioApi,
   Collider,
   PhysicsBodyRef,
   registerScriptMetadata,
@@ -17,6 +20,7 @@ type PlayerFallScriptProps = {
   radius: number;
   fallDuration: number;
   respawnPosition: Vec2;
+  fallAudio: AudioClip;
 };
 
 export class PlayerFallScript extends AtlasScript<PlayerFallScriptProps> {
@@ -24,12 +28,14 @@ export class PlayerFallScript extends AtlasScript<PlayerFallScriptProps> {
   private readonly radius: number;
   private readonly fallDuration: number;
   private readonly respawnPosition: Vec2;
+  private readonly fallAudio: AudioClip;
 
   private readonly baseScale: Vec2 = new Vec2();
 
   private transform: Transform2D;
   private collider: Collider;
   private rigidBody: RigidBody;
+  private audio: AudioApi;
   private collidesWith: number;
   private falling: boolean;
   private elapsed: number;
@@ -38,6 +44,7 @@ export class PlayerFallScript extends AtlasScript<PlayerFallScriptProps> {
     this.transform = this.requireComponent(Transform2D);
     this.collider = this.requireComponent(Collider);
     this.rigidBody = this.requireComponent(RigidBody);
+    this.audio = this.getService(AudioApi);
 
     this.baseScale.copyFrom(this.transform.scale);
     this.collidesWith = this.collider.collidesWith;
@@ -73,6 +80,11 @@ export class PlayerFallScript extends AtlasScript<PlayerFallScriptProps> {
     this.falling = true;
     this.elapsed = 0;
     this.collider.collidesWith = 0;
+
+    this.audio.playOneShot(this.fallAudio, {
+      volume: randomRange(0.1, 0.2),
+      pitch: randomRange(0.9, 1.1),
+    });
   }
 
   private respawn(): void {
@@ -98,5 +110,6 @@ registerScriptMetadata(PlayerFallScript, {
     radius: ScriptMetadata.field({ required: true }),
     fallDuration: ScriptMetadata.field({ required: true }),
     respawnPosition: ScriptMetadata.field({ required: true }),
+    fallAudio: ScriptMetadata.field({ required: true }),
   },
 });

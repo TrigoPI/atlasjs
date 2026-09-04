@@ -15,7 +15,6 @@ import {
 
 import {
   AfterimageRenderer,
-  AudioSource,
   Collider2D,
   Color,
   definePrefab,
@@ -33,7 +32,9 @@ export type PlayerPrefabProps = {
   position: Vec2;
   playerSprite: Sprite;
   playerEyesSprite: Sprite;
+  shadowSprite: Sprite;
   bumpAudio: AudioClip;
+  fallAudio: AudioClip;
   controls: ActionMapDescriptor<PlayerControlsType>;
 };
 
@@ -63,7 +64,6 @@ export const createPlayerPrefab = () =>
       collider.restitution = 1;
       collider.friction = 0.05;
 
-      entity.add(AudioSource, props.bumpAudio);
       entity.add(PlayerInput, props.controls);
       entity.add(Tag, "Player");
 
@@ -75,16 +75,35 @@ export const createPlayerPrefab = () =>
         r.sortingOrder = SortingOrder.PlayerEyes;
       });
 
+      entity.child((e: EntityBuilder) => {
+        const t: Transform2D = e.add(Transform2D);
+        t.position.set(0, 5);
+        t.scale.set(1.15, 1);
+
+        const r: SpriteRenderer = e.add(SpriteRenderer, props.shadowSprite);
+        r.sortingOrder = SortingOrder.Shadow;
+        r.color = Color.Black().setAlpha(0.5);
+      });
+
       entity.add(AfterimageRenderer, {
         interval: 0.04,
-        time: 0.22,
+        time: 0.12,
         startColor: Color.White().setAlpha(0.5),
         endColor: Color.White().setAlpha(0),
         sortingOrder: SortingOrder.Trail,
         maxImages: 15,
       });
 
-      entity.attach(PlayerSoundScript);
+      entity.attach(PlayerSoundScript, {
+        bumpAudio: props.bumpAudio,
+        maxImpactSpeed: 700,
+        minVolume: 0.3,
+        maxVolume: 0.5,
+        minPitch: 0.8,
+        maxPitch: 1.25,
+        pitchJitter: 0.05,
+      });
+
       entity.attach(PlayerCollisionScript, {
         squishScale: 0.85,
         squishDuration: 0.5,
@@ -103,6 +122,7 @@ export const createPlayerPrefab = () =>
         radius: COLLIDER_RADIUS,
         fallDuration: FALL_DURATION,
         respawnPosition: props.position.clone(),
+        fallAudio: props.fallAudio,
       });
 
       entity.attach(PlayerMovementScript, {

@@ -30,14 +30,19 @@ export function spawnPlayer(
 
   const playerSprite: Sprite = assetsLoader.getAsset("sprite:players");
   const playerEyesSprite: Sprite = assetsLoader.getAsset("sprite:player_eyes");
+  const shadowSprite: Sprite = assetsLoader.getAsset("sprite:shadow");
+
   const bumpAudio: AudioClip = assetsLoader.getAsset("audio:bump");
+  const fallAudio: AudioClip = assetsLoader.getAsset("audio:fall");
 
   const playerPrefab: Prefab<PlayerPrefabProps> = createPlayerPrefab();
 
   instantiator.instantiate(playerPrefab, {
     bumpAudio: bumpAudio,
+    fallAudio: fallAudio,
     playerSprite: playerSprite,
     playerEyesSprite: playerEyesSprite,
+    shadowSprite: shadowSprite,
     position: props.position,
     controls: props.controls,
   });
