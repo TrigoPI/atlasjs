@@ -8,6 +8,7 @@ import { SpriteRenderer } from "./SpriteRenderer";
 import { ShapeRenderer } from "./ShapeRenderer";
 import { TileMapNodeRenderer } from "./TileMapNodeRenderer";
 import { TrailNodeRenderer } from "./TrailNodeRenderer";
+import { CPUParticleNodeRenderer } from "./CPUParticleNodeRenderer";
 import { NodeRenderer } from "./NodeRenderer";
 import { DrawCommand } from "./DrawCommand";
 
@@ -30,6 +31,7 @@ export class SceneRenderer {
       new ShapeRenderer(),
       new TileMapNodeRenderer(renderer),
       new TrailNodeRenderer(),
+      new CPUParticleNodeRenderer(renderer),
     ];
 
     for (let i: number = 0; i < this.nodeRenderers.length; i++) {

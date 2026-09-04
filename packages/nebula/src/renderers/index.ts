@@ -1,4 +1,5 @@
 export * from "./Batchers";
+export * from "./CPUParticleNodeRenderer";
 export * from "./DrawCommand";
 export * from "./NodeRenderer";
 export * from "./NodeRendererBase";

@@ -8,6 +8,7 @@ export const KIND_ORDER: Record<DrawCommand["kind"], number> = {
   shape: 1,
   tilemap: 2,
   trail: 3,
+  particle: 4,
 };
 
 export interface Batcher {

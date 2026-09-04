@@ -1,5 +1,6 @@
 import { Easing, MathUtils, PI_2, Vec2, Vec4 } from "@atlasjs/math";
 import { randomRange } from "@atlasjs/utils";
+import type { Sampler, Texture2D } from "../core";
 import { BlendMode } from "../core";
 import { Color } from "../utils";
 import { Node } from "./Node";
@@ -106,6 +107,8 @@ export class CPUParticleNode extends Node {
   public simulationSpace: ParticleSimulationSpace;
   public alignment: ParticleAlignment;
   public blend: BlendMode;
+  public texture: Texture2D | null;
+  public sampler?: Sampler;
 
   private xs: Float32Array;
   private ys: Float32Array;
@@ -181,6 +184,7 @@ export class CPUParticleNode extends Node {
     this.alignment =
       config.alignment !== undefined ? config.alignment : "fixed";
     this.blend = config.blend !== undefined ? config.blend : "alpha";
+    this.texture = null;
 
     this.xs = new Float32Array(size);
     this.ys = new Float32Array(size);
