@@ -107,7 +107,11 @@ export type CharacterControllerOptions = {
 export type ContactPoint = {
   /** Contact position in world space, in game units (already converted from rapier meters). */
   readonly point: Vec2;
-  /** Contact normal in world space. A direction: it carries no unit and is never scaled. */
+  /**
+   * Contact normal in world space, pointing from collider `a` towards collider
+   * `b` — the first and second arguments the handler received, in that order.
+   * A direction: it carries no unit and is never scaled.
+   */
   readonly normal: Vec2;
   /** Magnitude of the impulse applied at this contact by the solver. */
   readonly impulse: number;
