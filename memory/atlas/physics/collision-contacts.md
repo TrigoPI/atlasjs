@@ -48,9 +48,10 @@ Signature exposée :
 onCollisionEnter?(other: GameEntity, collision: Collision | null): void
 ```
 
-**La normale est retournée pour le second sens du dispatch.** `PhysicsCollisionSystem.update` appelle
+**La normale livrée pointe toujours de `other` vers soi.** `PhysicsCollisionSystem.update` appelle
 `dispatch` deux fois par paire (`packages/gameplay/src/systems/PhysicsCollisionSystem.ts:35-36`) ;
-la normale livrée pointe **toujours de `other` vers soi**. Conséquence pour l'auteur de script :
+la normale entrante allant de `a` vers `b`, c'est le **premier** sens (`self = a`) qui la retourne et
+le second qui la reprend telle quelle. Conséquence pour l'auteur de script :
 `collision.normal` est directement la direction dans laquelle projeter un effet — reculer, éjecter de
 la poussière, orienter un impact — sans avoir à deviner de quel côté de la paire il se trouve.
 
@@ -195,7 +196,7 @@ indépendants.
 
 1. Quatrième paramètre **additif** sur `CollisionHandler` — aucun handler existant ne casse.
 2. Type `Collision` **distinct** de `ContactPoint`, défini dans `@atlasjs/gameplay`.
-3. Normale **retournée pour le second sens** : elle pointe toujours de `other` vers soi.
+3. Normale orientée **de `other` vers soi** : retournée au premier sens du dispatch, brute au second.
 4. Contact sur **`onCollisionEnter` seul** ; les trois autres callbacks gardent un argument.
 5. **Un objet unique re-ciblé**, valide pour la durée du callback, JSDoc obligatoire.
 6. Point de **`contactImpulse(i)` maximal**, repli sur l'indice 0.
