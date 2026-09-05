@@ -92,4 +92,8 @@ export class Color {
   public static Blue(): Color {
     return new Color(0, 0, 1, 1);
   }
+
+  public static Orange(): Color {
+    return new Color(1, 0.65, 0, 1);
+  }
 }
