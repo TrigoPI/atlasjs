@@ -31,7 +31,7 @@ export class MainScene extends Scene {
     spawnPlayer(ctx, assetsLoader, {
       position:  Vec2.create(0, 0),
       controls: PlayerControls.Player1,
-      color: Color.White(),
+      color: Color.Orange(),
     });
 
     spawnPlayer(ctx, assetsLoader, {

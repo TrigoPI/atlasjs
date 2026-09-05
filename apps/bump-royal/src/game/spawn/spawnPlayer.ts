@@ -45,6 +45,7 @@ export function spawnPlayer(
     playerEyesSprite: playerEyesSprite,
     shadowSprite: shadowSprite,
     dustSprite: dustSprite,
+    color: props.color,
     position: props.position,
     controls: props.controls,
   });

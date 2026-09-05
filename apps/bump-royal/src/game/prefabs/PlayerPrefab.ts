@@ -31,6 +31,7 @@ import {
 
 export type PlayerPrefabProps = {
   position: Vec2;
+  color: Color;
   playerSprite: Sprite;
   playerEyesSprite: Sprite;
   shadowSprite: Sprite;
@@ -56,6 +57,7 @@ export const createPlayerPrefab = () =>
 
       const renderer: SpriteRenderer = entity.add(SpriteRenderer, props.playerSprite);
       renderer.sortingOrder = SortingOrder.Player;
+      renderer.color = props.color;
 
       const body: RigidBody = entity.add(RigidBody);
       body.type = "dynamic";
@@ -90,35 +92,40 @@ export const createPlayerPrefab = () =>
       entity.add(AfterimageRenderer, {
         interval: 0.04,
         time: 0.12,
-        startColor: Color.White().setAlpha(0.5),
-        endColor: Color.White().setAlpha(0),
+        startColor: props.color.clone().setAlpha(0.5),
+        endColor: props.color.clone().setAlpha(0),
         sortingOrder: SortingOrder.Trail,
         maxImages: 15,
       });
 
-      const dust: ParticleEmitter = entity.add(ParticleEmitter, {
-        frames: [props.dustSprite],
-        blend: "alpha",
-        sortingOrder: SortingOrder.Dust,
-        playOnAwake: false,
-        config: {
-          rate: 0,
-          looping: false,
-          duration: 1,
-          maxParticles: 64,
-          simulationSpace: "world",
-          shape: { kind: "circle", radius: 10 },
-          startLifetime: { min: 0.35, max: 0.6 },
-          startSpeed: { min: 130, max: 300 },
-          startSize: { min: 14, max: 26 },
-          startColor: Color.White().setAlpha(0.95),
-          drag: 3.5,
-          sizeOverLifetime: { from: 1, to: 0.2, easing: "outCubic" },
-          colorOverLifetime: {
-            from: Color.White().setAlpha(0.95),
-            to: Color.White().setAlpha(0),
+      const dust: EntityBuilder = entity.child((e: EntityBuilder) => {
+        const t: Transform2D = e.add(Transform2D);
+        t.position.set(0, 0);
+
+        e.add(ParticleEmitter, {
+          frames: [props.dustSprite],
+          blend: "alpha",
+          sortingOrder: SortingOrder.Dust,
+          playOnAwake: false,
+          config: {
+            rate: 0,
+            looping: false,
+            duration: 1,
+            maxParticles: 32,
+            simulationSpace: "world",
+            shape: { kind: "circle", radius: 10 },
+            startLifetime: { min: 0.35, max: 0.6 },
+            startSpeed: { min: 50, max: 100 },
+            startSize: { min: 14, max: 26 },
+            startColor: props.color.clone().setAlpha(0.9),
+            drag: 3.5,
+            sizeOverLifetime: { from: 1, to: 0.2, easing: "outCubic" },
+            colorOverLifetime: {
+              from: props.color.clone().setAlpha(0.9),
+              to: props.color.clone().setAlpha(0),
+            },
           },
-        },
+        });
       });
 
       entity.attach(PlayerSoundScript, {
@@ -132,7 +139,7 @@ export const createPlayerPrefab = () =>
       });
 
       entity.attach(PlayerCollisionScript, {
-        dust,
+        dust: dust.entity,
         dustBurst: 22,
         squishScale: 0.85,
         squishDuration: 0.5,

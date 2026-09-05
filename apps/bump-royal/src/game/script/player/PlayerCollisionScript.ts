@@ -6,14 +6,16 @@ import {
   registerScriptMetadata,
   ScriptMetadata,
   Tag,
+  Transform,
   Transform2D,
+  type Collision,
   type GameEntity,
 } from "@atlasjs/gameplay";
 
 import { PlayerFallScript } from "./PlayerFallScript";
 
 type PlayerCollisionScriptProps = {
-  dust: ParticleEmitter;
+  dust: GameEntity;
   dustBurst: number;
   squishScale: number;
   squishDuration: number;
@@ -22,7 +24,7 @@ type PlayerCollisionScriptProps = {
 };
 
 export class PlayerCollisionScript extends AtlasScript<PlayerCollisionScriptProps> {
-  private readonly dust: ParticleEmitter;
+  private readonly dust: GameEntity;
   private readonly dustBurst: number;
   private readonly squishScale: number;
   private readonly squishDuration: number;
@@ -32,11 +34,15 @@ export class PlayerCollisionScript extends AtlasScript<PlayerCollisionScriptProp
   private readonly baseScale: Vec2 = new Vec2();
 
   private transform: Transform2D;
+  private dustEmitter: ParticleEmitter;
+  private dustTransform: Transform;
   private fall: PlayerFallScript | undefined;
   private elapsed: number;
 
   public onCreate(): void {
     this.transform = this.requireComponent(Transform2D);
+    this.dustEmitter = this.dust.requireComponent(ParticleEmitter);
+    this.dustTransform = this.dust.requireComponent(Transform);
     this.baseScale.copyFrom(this.transform.scale);
     this.elapsed = this.squishDuration;
     this.fall = this.getEntity(this.entityId).getScript(PlayerFallScript);
@@ -67,7 +73,10 @@ export class PlayerCollisionScript extends AtlasScript<PlayerCollisionScriptProp
     this.transform.scale.copyFrom(this.baseScale).mult(factor);
   }
 
-  public onCollisionEnter(other: GameEntity): void {
+  public onCollisionEnter(
+    other: GameEntity,
+    collision: Collision | null,
+  ): void {
     if (!other.hasComponent(Tag)) {
       return;
     }
@@ -79,13 +88,28 @@ export class PlayerCollisionScript extends AtlasScript<PlayerCollisionScriptProp
     }
 
     this.elapsed = 0;
-    this.dust.emit(this.dustBurst);
+    this.placeDust(collision);
+    this.dustEmitter.emit(this.dustBurst);
+  }
+
+  private placeDust(collision: Collision | null): void {
+    if (collision === null) {
+      this.dustTransform.setPosition(0, 0);
+      return;
+    }
+
+    const inverseScale: number = 1 / this.baseScale.x;
+
+    this.dustTransform.setPosition(
+      (collision.point.x - this.transform.position.x) * inverseScale,
+      (collision.point.y - this.transform.position.y) * inverseScale,
+    );
   }
 }
 
 registerScriptMetadata(PlayerCollisionScript, {
   exposed: {
-    dust: ScriptMetadata.field({ required: true }),
+    dust: ScriptMetadata.entity({ required: true }),
     dustBurst: ScriptMetadata.field({ required: true }),
     squishScale: ScriptMetadata.field({ required: true }),
     squishDuration: ScriptMetadata.field({ required: true }),
