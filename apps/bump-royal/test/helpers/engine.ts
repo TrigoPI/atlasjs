@@ -1,38 +1,14 @@
-import { Engine, Plugin } from "@atlasjs/core";
-import type { ServiceToken, StepSet } from "@atlasjs/core";
-import { NEXUS, NexusPlugin } from "@atlasjs/nexus";
+import type { Engine, LoopFactory, StepSet, StopLoop } from "@atlasjs/core";
+import { NEXUS } from "@atlasjs/nexus";
 import type { NexusWorld } from "@atlasjs/nexus";
-import { NEBULA_RENDERER, SceneGraph } from "@atlasjs/nebula";
-import { InertialPlugin } from "@atlasjs/inertia";
-import { RapierPhysicsWorld } from "@atlasjs/rapier";
-import { GameplayPlugin, SCRIPT_MANAGER } from "@atlasjs/gameplay";
+import { SCRIPT_MANAGER } from "@atlasjs/gameplay";
 import type { ScriptManager } from "@atlasjs/gameplay";
-import { Vec2 } from "@atlasjs/math";
+
+import { createHeadlessEngine } from "../../src/server/createHeadlessEngine";
 
 export const FIXED: number = 0.125;
 
-type StubNebula = {
-  createSampler: () => object;
-  scene: SceneGraph;
-};
-
-class Provide extends Plugin {
-  private readonly token: ServiceToken<unknown>;
-  private readonly value: unknown;
-
-  public constructor(id: string, token: ServiceToken<unknown>, value: unknown) {
-    super(id, { provides: [token] });
-    this.token = token;
-    this.value = value;
-  }
-
-  public install(engine: Engine): void {
-    engine.services.provide(this.token, this.value);
-    this.deferred.resolve();
-  }
-
-  public uninstall(): void {}
-}
+const HARNESS_MAX_SUB_STEPS: number = 64;
 
 export type GameHarness = {
   engine: Engine;
@@ -48,37 +24,25 @@ export type GameHarnessOptions = {
   fixedDelta?: number;
 };
 
+/* Deliberately the server's own plugin set, not a parallel one: every spec that boots this
+   harness is therefore a spec about what src/server actually installs. Only the loop
+   differs — the harness drives frames by hand instead of off a timer. */
 export async function createGameHarness(
   options: GameHarnessOptions = {},
 ): Promise<GameHarness> {
   const fixedDelta: number = options.fixedDelta ?? FIXED;
   let onTick: ((dt: number) => void) | null = null;
 
-  const nebula: StubNebula = {
-    createSampler: (): object => ({}),
-    scene: new SceneGraph(),
+  const loop: LoopFactory = (cb: (dt: number) => void): StopLoop => {
+    onTick = cb;
+    return (): void => {};
   };
 
-  const physics: RapierPhysicsWorld = new RapierPhysicsWorld({
-    unitsPerMeter: 100,
-    gravity: new Vec2(0, 0),
-  });
-
-  const engine: Engine = new Engine({
+  const engine: Engine = await createHeadlessEngine({
     fixedDelta,
-    maxSubSteps: 64,
-    loop: (cb: (dt: number) => void): (() => void) => {
-      onTick = cb;
-      return (): void => {};
-    },
+    maxSubSteps: HARNESS_MAX_SUB_STEPS,
+    loop,
   });
-
-  engine.use(new NexusPlugin());
-  engine.use(new Provide("stub-nebula", NEBULA_RENDERER, nebula));
-  engine.use(new InertialPlugin(physics));
-  engine.use(new GameplayPlugin());
-
-  await engine.start();
 
   const world: NexusWorld = engine.services.get(NEXUS);
   const scripts: ScriptManager = engine.services.get(SCRIPT_MANAGER);

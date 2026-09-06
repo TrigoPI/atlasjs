@@ -53,13 +53,21 @@ Set de plugins headless vérifié par exécution :
 ```
 NexusPlugin
 Provide(NEBULA_RENDERER, fakeNebula)
-HeadlessInputPlugin                       // provides INPUT + le step input:end-frame
 InertialPlugin(new RapierPhysicsWorld({ unitsPerMeter: 100, gravity: Vec2(0, 0) }))
 GameplayPlugin
 ```
 
 Ni `AssetPlugin`, ni `AUDIO_ENGINE` (`AudioSystem` résout son moteur **paresseusement**, à la
-première commande d'un `AudioSource`), ni gizmos, ni caméra.
+première commande d'un `AudioSource`), ni gizmos, ni caméra — **ni aucun plugin d'input**.
+
+Ce dernier point a été établi après coup, et corrige une version antérieure de ce document qui
+listait un `HeadlessInputPlugin` : `PlayerInputSystem.update` résout `INPUT` **à l'intérieur du
+callback de query**, jamais au constructeur. Le service n'est donc demandé que s'il existe au
+moins une entité portant `PlayerInput` — et depuis le seam `MoveIntent`, `buildPlayerSim` n'en
+ajoute aucune. Sonde à l'appui : ajouter un `PlayerInput` à une entité du serveur fait bien
+remonter `Error: Service not found: Symbol(ALTAS_INPUT)`. Le serveur boote et tourne 600 ticks
+sans plugin d'input, et deux assertions verrouillent les prémisses (`services.has(INPUT)` faux,
+query `PlayerInput` vide) pour que la disparition de cette propriété soit bruyante.
 
 Coût mesuré des trois lanes à 8 joueurs : **0,02 ms par frame** sur un budget de 16,67 ms,
 dont 0,0006 ms pour la lane render qui tourne à vide sur le stub. Il n'y a rien à optimiser.
@@ -313,6 +321,14 @@ hors de l'arène se lit bien plus mal qu'un fantôme figé, et 150 ms à `dashSp
     import `@assets/*` échoue **et** au typecheck **et** au runtime, au lieu d'un seul des deux.
 12. **`pnpm --filter bump-royal server` ne lance pas le script** : `server` est une sous-commande
     native de pnpm et gagne. Toujours écrire `pnpm --filter bump-royal run server`.
+13. **Un test « zéro erreur loggée » est vide de sens tel quel.** `vitest.config.ts` pose
+    `__DEV__` à **`false`**, et c'est une vraie globale runtime, pas une substitution textuelle :
+    `createLogger` renvoie alors un `Logger` **sans aucun transport**, et `logger.error()`
+    n'atteint jamais `console.error`. Un `vi.spyOn(console, "error")` posé naïvement ne peut donc
+    pas se déclencher — le canari le plus important du projet passerait au vert sans rien
+    observer. Le harnais de capture doit forcer `__DEV__` et `__CONSOLE_TRANSPORT__` à `true`
+    avant le boot (les valeurs que `src/server/env.ts` pose dans le vrai serveur), et une spec
+    dédiée doit prouver que le canari **peut** tirer.
 
 ### Passer la chute en lane fixed corrige trois choses d'un coup
 
