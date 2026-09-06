@@ -283,6 +283,18 @@ hors de l'arène se lit bien plus mal qu'un fantôme figé, et 150 ms à `dashSp
 10. **Deux disques `restitution: 1` au même point explosent** à vitesse absurde. Le spawn est
     un round-robin sur huit points inscrits dans l'octogone, sautant tout slot à moins de
     `2 × COLLIDER_RADIUS` d'un joueur vivant.
+11. **`tsx` n'honore de son `--tsconfig` que les `paths`.** Mesuré dans les deux sens sur
+    tsx 4.23.13 : `target` et `useDefineForClassFields` sont **ignorés** — tsx épingle esbuild
+    sur le Node courant et émet toujours la sémantique `define`. Ça coïncide avec le
+    `useDefineForClassFields: true` de `tsconfig.app.json`, donc client et serveur s'accordent
+    aujourd'hui **par coïncidence, pas par configuration** : si l'app repassait un jour à
+    `false`, Vite changerait d'émission et tsx non, et les champs des `AtlasScript` divergeraient
+    silencieusement entre les deux runtimes. Le garde-fou réel serait un test de non-régression,
+    pas le flag. Le `--tsconfig` reste néanmoins load-bearing : il empêche tsx de découvrir un
+    tsconfig porteur de `paths`, et `tsconfig.server.json` n'en déclare aucun — de sorte qu'un
+    import `@assets/*` échoue **et** au typecheck **et** au runtime, au lieu d'un seul des deux.
+12. **`pnpm --filter bump-royal server` ne lance pas le script** : `server` est une sous-commande
+    native de pnpm et gagne. Toujours écrire `pnpm --filter bump-royal run server`.
 
 ### Passer la chute en lane fixed corrige trois choses d'un coup
 
