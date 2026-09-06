@@ -2,6 +2,7 @@ import type { Engine, StepContext, StepSet } from "@atlasjs/core";
 import { NEXUS } from "@atlasjs/nexus";
 import type { NexusWorld } from "@atlasjs/nexus";
 
+import { DEFAULT_SERVER_PORT } from "../net/protocol";
 import type { NetId, ServerSnapshot } from "../net/protocol";
 
 import { registerApplyNetIntents } from "./applyNetIntents";
@@ -17,7 +18,7 @@ import { ServerScene } from "./ServerScene";
 import { WebSocketTransport } from "./WebSocketTransport";
 import { registerWriteSnapshot } from "./writeSnapshot";
 
-export const DEFAULT_PORT: number = 8787;
+export const DEFAULT_PORT: number = DEFAULT_SERVER_PORT;
 
 const NET_STEP_SET: string = "server:net";
 const CLOCK_STEP: string = "bump-royal:server-clock";

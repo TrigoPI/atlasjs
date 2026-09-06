@@ -5,6 +5,10 @@ export const INPUT_REDUNDANCY: number = 3;
 export const MAX_PLAYERS: number = 8;
 export const MAX_NAME_LENGTH: number = 24;
 
+/* Shared by the server that binds it and the browser that builds its default URL from it, so
+   the two ends cannot drift apart on a magic number. */
+export const DEFAULT_SERVER_PORT: number = 8787;
+
 /* A snapshot spans SNAPSHOT_INTERVAL_TICKS ticks, and one tick can carry at most one bump per
    pair plus a fall and a respawn per player: 3 * (28 + 16) = 132 at MAX_PLAYERS. 256 is above
    anything the simulation can produce and still bounds a hostile payload. */

@@ -21,10 +21,13 @@ export type PlayerSimProps = {
   position: Vec2;
 };
 
-const SCALE: number = 3.5;
 const RADIUS: number = 8;
 
-export const COLLIDER_RADIUS: number = SCALE * RADIUS;
+/* Exported because the online view prefab has to reproduce it exactly: every child of
+   buildPlayerView is placed in a local space that assumes this root scale. */
+export const PLAYER_SCALE: number = 3.5;
+
+export const COLLIDER_RADIUS: number = PLAYER_SCALE * RADIUS;
 
 export const FALL_DURATION: number = 0.35;
 
@@ -45,7 +48,7 @@ export function buildPlayerSim(
 ): void {
   const transform: Transform2D = entity.add(Transform2D);
   transform.position.copyFrom(props.position);
-  transform.scale.set(SCALE, SCALE);
+  transform.scale.set(PLAYER_SCALE, PLAYER_SCALE);
 
   const body: RigidBody = entity.add(RigidBody);
   body.type = "dynamic";

@@ -33,11 +33,6 @@ export const SPAWN_SLOTS: readonly Vec2[] = arenaVertices(ARENA_BOUNDS).map(
    holding a live player is skipped rather than reused. */
 export const SPAWN_MIN_SEPARATION: number = 2 * COLLIDER_RADIUS;
 
-export const PLAYER_COLORS: readonly number[] = [
-  0xff8a3d, 0x4d9dff, 0x6ddf6d, 0xff5f8f, 0xffd93d, 0xb26dff, 0x3ddad7,
-  0xff4d4d,
-];
-
 export type RoomPlayer = {
   readonly id: NetId;
   readonly entity: Entity;
@@ -111,7 +106,9 @@ export class GameRoom {
       entity: entity.id,
       info: {
         id,
-        color: PLAYER_COLORS[(id - FIRST_NET_ID) % PLAYER_COLORS.length],
+        /* A palette *index*, never an RGBA: what the players look like is a client concern,
+           and shipping literal colours would make a re-skin a protocol change. */
+        color: (id - FIRST_NET_ID) % MAX_PLAYERS,
         name: sanitizeName(name, id),
         spawn: [spawn.x, spawn.y],
       },

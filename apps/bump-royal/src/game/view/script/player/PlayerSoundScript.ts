@@ -36,17 +36,24 @@ export class PlayerSoundScript extends AtlasScript<PlayerSoundScriptProps> {
   private readonly normal: Vec2 = new Vec2();
 
   private transform: Transform2D;
-  private rigidBody: RigidBody;
+  private rigidBody: RigidBody | undefined;
   private audio: AudioApi;
 
+  /* getComponent and not requireComponent: the online view prefab replicates its position and
+     carries no body at all. Requiring one would throw inside onCreate, and ScriptManager
+     answers that by disabling the script — silently, on every remote player. */
   public onCreate(): void {
     this.transform = this.requireComponent(Transform2D);
-    this.rigidBody = this.requireComponent(RigidBody);
+    this.rigidBody = this.getComponent(RigidBody);
     this.audio = this.getService(AudioApi);
   }
 
   // prettier-ignore
   public onCollisionEnter(other: GameEntity): void {
+    if (this.rigidBody === undefined) {
+      return;
+    }
+
     if (!other.hasComponent(Tag)) {
       return;
     }
@@ -69,7 +76,7 @@ export class PlayerSoundScript extends AtlasScript<PlayerSoundScriptProps> {
       return;
     }
 
-    const impactSpeed: number = this.impactSpeedAgainst(otherTransform, otherBody);
+    const impactSpeed: number = this.impactSpeedAgainst(this.rigidBody, otherTransform, otherBody);
     const t: number = MathUtils.clamp(impactSpeed / this.maxImpactSpeed, 0, 1);
     const pitch: number = MathUtils.lerp(this.maxPitch, this.minPitch, t);
     const jitter: number = randomRange(-this.pitchJitter, this.pitchJitter);
@@ -82,10 +89,11 @@ export class PlayerSoundScript extends AtlasScript<PlayerSoundScriptProps> {
 
   // prettier-ignore
   private impactSpeedAgainst(
+    body: RigidBody,
     otherTransform: Transform2D,
     otherBody: RigidBody,
   ): number {
-    Vec2.subTo(this.rigidBody.velocity, otherBody.velocity, this.relativeVelocity);
+    Vec2.subTo(body.velocity, otherBody.velocity, this.relativeVelocity);
     Vec2.subTo(otherTransform.position, this.transform.position, this.normal);
     this.normal.normalize();
 
