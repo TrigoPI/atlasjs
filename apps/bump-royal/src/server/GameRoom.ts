@@ -10,6 +10,7 @@ import { NetPlayer } from "../game/sim/NetPlayer";
 import { COLLIDER_RADIUS } from "../game/sim/prefabs/buildPlayerSim";
 import { createNetPlayerSimPrefab } from "../game/sim/prefabs/NetPlayerSimPrefab";
 import type { NetPlayerSimProps } from "../game/sim/prefabs/NetPlayerSimPrefab";
+import type { EventOutbox } from "../net/EventOutbox";
 import { MAX_NAME_LENGTH, MAX_PLAYERS, toNetId } from "../net/protocol";
 import type { NetId, PlayerInfo } from "../net/protocol";
 
@@ -43,6 +44,7 @@ export class GameRoom {
   private readonly world: NexusWorld;
   private readonly instantiator: Instantiator;
   private readonly prefab: Prefab<NetPlayerSimProps>;
+  private readonly outbox: EventOutbox;
   private readonly players: Map<NetId, RoomPlayer>;
 
   /* Monotonic and never recycled: an Entity packs a generation and its index is reused, so a
@@ -50,10 +52,14 @@ export class GameRoom {
   private nextNetId: number;
   private nextSlot: number;
 
-  public constructor(services: ServiceRegistry) {
+  /* The outbox is a constructor argument and not a service: a simulation script that resolved
+     one would throw in any engine that has none, and ScriptManager answers a throwing onCreate
+     by disabling the script — silently, for the rest of the run. */
+  public constructor(services: ServiceRegistry, outbox: EventOutbox) {
     this.world = services.get(NEXUS);
     this.instantiator = services.get(INSTANTIATOR);
     this.prefab = createNetPlayerSimPrefab();
+    this.outbox = outbox;
     this.players = new Map<NetId, RoomPlayer>();
     this.nextNetId = FIRST_NET_ID;
     this.nextSlot = 0;
@@ -99,6 +105,7 @@ export class GameRoom {
     const entity: GameEntity = this.instantiator.instantiate(this.prefab, {
       position: spawn,
       netId: id,
+      outbox: this.outbox,
     });
 
     const player: RoomPlayer = {

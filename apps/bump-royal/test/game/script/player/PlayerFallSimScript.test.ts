@@ -10,6 +10,7 @@ import { Vec2 } from "@atlasjs/math";
 import type { StepContext } from "@atlasjs/core";
 import type { Entity } from "@atlasjs/nexus";
 
+import { NULL_EVENT_OUTBOX } from "../../../../src/net/EventOutbox";
 import { ARENA_BOUNDS } from "../../../../src/game/sim/arena";
 import { PlayerFallSimScript } from "../../../../src/game/sim/script/player/PlayerFallSimScript";
 import { PlayerMovementScript } from "../../../../src/game/sim/script/player/PlayerMovementScript";
@@ -94,6 +95,7 @@ function spawnFallingPlayer(
       radius: COLLIDER_RADIUS,
       fallDuration: FALL_DURATION,
       respawnPosition,
+      outbox: NULL_EVENT_OUTBOX,
     },
   );
 

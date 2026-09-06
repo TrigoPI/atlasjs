@@ -11,6 +11,8 @@ import type {
 } from "../net/protocol";
 import { SnapshotBuffer } from "../net/SnapshotBuffer";
 
+import { NetEventQueue } from "./NetEventQueue";
+
 /* Entity creation is handed out rather than owned: what a replicated player looks like needs
    sprites, audio clips and a palette, none of which is a networking concern. */
 export type NetPlayerFactory = {
@@ -27,6 +29,7 @@ export type NetworkClientOptions = {
 
 export class NetworkClient {
   public readonly buffer: SnapshotBuffer;
+  public readonly events: NetEventQueue;
 
   private readonly logger: Logger;
   private readonly options: NetworkClientOptions;
@@ -39,6 +42,7 @@ export class NetworkClient {
     this.logger = createLogger("BumpRoyalClient");
     this.options = options;
     this.buffer = new SnapshotBuffer();
+    this.events = new NetEventQueue();
     this.entities = new Map<NetId, Entity>();
     this.socket = null;
     this.self = null;
@@ -85,8 +89,12 @@ export class NetworkClient {
     return this.buffer.newest()?.t ?? 0;
   }
 
+  /* The queue is emptied and not replayed: resync jumps the render clock forward onto the newest
+     snapshot, so everything still pending would come due in the same frame — a burst of squishes
+     and one overlapping sound per bump the tab missed while it was hidden. */
   public resync(now: number): void {
     this.buffer.resync(now);
+    this.events.clear();
   }
 
   public close(): void {
@@ -100,6 +108,7 @@ export class NetworkClient {
 
     this.entities.clear();
     this.buffer.clear();
+    this.events.clear();
     this.self = null;
   }
 
@@ -144,7 +153,15 @@ export class NetworkClient {
         return;
 
       case "snap":
-        this.buffer.push(message, this.options.now());
+        /* Only on a snapshot the buffer accepted: a duplicate would otherwise queue its events
+           a second time, and the client would squish twice for one bump. */
+        if (
+          this.buffer.push(message, this.options.now()) &&
+          message.e !== undefined
+        ) {
+          this.events.push(message.e);
+        }
+
         return;
     }
   }

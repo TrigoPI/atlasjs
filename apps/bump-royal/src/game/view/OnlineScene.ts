@@ -1,11 +1,17 @@
 import { Scene, type SceneContext } from "@atlasjs/core";
 import { ASSET_MANAGER, type AssetManager } from "@atlasjs/assets";
-import { INSTANTIATOR, type Instantiator } from "@atlasjs/gameplay";
+import {
+  INSTANTIATOR,
+  SCRIPT_MANAGER,
+  type Instantiator,
+  type ScriptManager,
+} from "@atlasjs/gameplay";
 import { NEXUS, type Entity, type NexusWorld } from "@atlasjs/nexus";
 
 import { registerApplyNetState } from "../../client/applyNetState";
 import { nowSeconds } from "../../client/clock";
 import { createNetPlayerFactory } from "../../client/netPlayerFactory";
+import { registerNetEvents } from "../../client/netEvents";
 import { NetworkClient } from "../../client/NetworkClient";
 import { registerSendInput } from "../../client/sendInput";
 import { registerLocalIntent } from "../sim/localIntent";
@@ -42,6 +48,7 @@ export class OnlineScene extends Scene {
     const assetsLoader: AssetsLoader<AssetName> = new AssetsLoader(asset);
     const world: NexusWorld = ctx.services.get(NEXUS);
     const instantiator: Instantiator = ctx.services.get(INSTANTIATOR);
+    const scripts: ScriptManager = ctx.services.get(SCRIPT_MANAGER);
 
     await this.loadAssets(assetsLoader);
 
@@ -62,6 +69,16 @@ export class OnlineScene extends Scene {
     this.client = client;
 
     registerApplyNetState(ctx.scheduler, world, client.buffer, nowSeconds);
+
+    registerNetEvents(
+      ctx.scheduler,
+      world,
+      scripts,
+      client.buffer,
+      client.events,
+      nowSeconds,
+    );
+
     registerSendInput(ctx.scheduler, world, input, client, nowSeconds);
 
     this.watchVisibility(client);

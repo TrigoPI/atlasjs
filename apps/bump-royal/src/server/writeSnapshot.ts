@@ -5,7 +5,12 @@ import type { Entity, NexusWorld, Query } from "@atlasjs/nexus";
 import { NetPlayer } from "../game/sim/NetPlayer";
 import { PlayerStatus } from "../game/sim/PlayerStatus";
 import { PlayerFlags, SNAPSHOT_INTERVAL_TICKS } from "../net/protocol";
-import type { NetId, PlayerWireState, ServerSnapshot } from "../net/protocol";
+import type {
+  NetId,
+  PlayerWireState,
+  ServerEvent,
+  ServerSnapshot,
+} from "../net/protocol";
 
 export const WRITE_SNAPSHOT_STEP: string = "bump-royal:write-snapshot";
 
@@ -14,6 +19,7 @@ const NEXUS_FLUSH_STEP: string = "nexus:flush";
 export type SnapshotSink = {
   recipients: () => readonly NetId[];
   ackFor: (id: NetId) => number;
+  drainEvents: () => readonly ServerEvent[];
   send: (id: NetId, snapshot: ServerSnapshot) => void;
 };
 
@@ -46,6 +52,9 @@ export function registerWriteSnapshot(
         return;
       }
 
+      /* Drained before the recipient check, never after: an empty room still has to empty the
+         outbox, or the first client to connect inherits every bump since the server booted. */
+      const events: readonly ServerEvent[] = sink.drainEvents();
       const recipients: readonly NetId[] = sink.recipients();
 
       if (recipients.length === 0) {
@@ -83,12 +92,14 @@ export function registerWriteSnapshot(
       /* `ack` is the last input tick the simulation consumed from *this* recipient, so the
          snapshot is encoded once per client. Prediction will read it; do not hoist it. */
       for (const id of recipients) {
-        sink.send(id, {
-          k: "snap",
-          t: ctx.tick,
-          ack: sink.ackFor(id),
-          p: states,
-        });
+        const ack: number = sink.ackFor(id);
+
+        sink.send(
+          id,
+          events.length === 0
+            ? { k: "snap", t: ctx.tick, ack, p: states }
+            : { k: "snap", t: ctx.tick, ack, p: states, e: events },
+        );
       }
     },
     {

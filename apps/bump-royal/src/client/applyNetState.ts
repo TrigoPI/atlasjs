@@ -29,6 +29,13 @@ export const SNAP_DISTANCE: number = 120;
 const CORRECTION_TIME_CONSTANT: number =
   SNAPSHOT_INTERVAL_TICKS * SECONDS_PER_TICK;
 
+/* A respawn is a teleport, and the bracket that spans it still starts on a snapshot holding the
+   player off the arena. Interpolating across it would drag a shrinking ghost diagonally over the
+   slab, so the view is pinned to the spawn point until the bracket itself moves past the jump. */
+function holdsTeleport(view: NetView, fromTick: number, tick: number): boolean {
+  return view.teleportTick > fromTick && tick >= view.teleportTick;
+}
+
 function stateOf(
   snapshot: ServerSnapshot,
   id: NetId,
@@ -85,6 +92,14 @@ export function registerApplyNetState(
           /* A known id absent from a snapshot is left where it is. Despawning is what a leave
              message is for; a gap here is a straggler, not a departure. */
           if (from === undefined) {
+            return;
+          }
+
+          if (holdsTeleport(view, bracket.from.t, tick)) {
+            transform.position.set(view.teleportX, view.teleportY);
+            view.errorX = 0;
+            view.errorY = 0;
+            status.falling = false;
             return;
           }
 

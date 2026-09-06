@@ -6,6 +6,7 @@ import type { Vec2 } from "@atlasjs/math";
 import { ARENA_BOUNDS, isInsideArena } from "../../src/game/sim/arena/bounds";
 import { NetPlayer } from "../../src/game/sim/NetPlayer";
 import { COLLIDER_RADIUS } from "../../src/game/sim/prefabs/buildPlayerSim";
+import { ServerEventOutbox } from "../../src/net/EventOutbox";
 import { MAX_PLAYERS } from "../../src/net/protocol";
 import type { NetId } from "../../src/net/protocol";
 
@@ -44,7 +45,7 @@ describe("GameRoom", () => {
 
   beforeEach(async () => {
     harness = await createGameHarness({ fixedDelta: FIXED_DELTA });
-    room = new GameRoom(harness.engine.services);
+    room = new GameRoom(harness.engine.services, new ServerEventOutbox());
   });
 
   afterEach(() => {

@@ -1,6 +1,8 @@
-import { MathUtils, Vec2 } from "@atlasjs/math";
+import { MathUtils } from "@atlasjs/math";
 import { randomRange } from "@atlasjs/utils";
 import type { AudioClip } from "@atlasjs/audio";
+
+import { impactSpeedBetween, reportsPair } from "../../../sim/impact";
 
 import {
   type GameEntity,
@@ -32,9 +34,6 @@ export class PlayerSoundScript extends AtlasScript<PlayerSoundScriptProps> {
   private readonly maxPitch: number;
   private readonly pitchJitter: number;
 
-  private readonly relativeVelocity: Vec2 = new Vec2();
-  private readonly normal: Vec2 = new Vec2();
-
   private transform: Transform2D;
   private rigidBody: RigidBody | undefined;
   private audio: AudioApi;
@@ -46,6 +45,19 @@ export class PlayerSoundScript extends AtlasScript<PlayerSoundScriptProps> {
     this.transform = this.requireComponent(Transform2D);
     this.rigidBody = this.getComponent(RigidBody);
     this.audio = this.getService(AudioApi);
+  }
+
+  /* Impact speed, not a raw volume: the same number the server computes with the same formula,
+     so a bump sounds identical whichever side decided it happened. */
+  public playBump(speed: number): void {
+    const t: number = MathUtils.clamp(speed / this.maxImpactSpeed, 0, 1);
+    const pitch: number = MathUtils.lerp(this.maxPitch, this.minPitch, t);
+    const jitter: number = randomRange(-this.pitchJitter, this.pitchJitter);
+
+    this.audio.playOneShot(this.bumpAudio, {
+      volume: MathUtils.lerp(this.minVolume, this.maxVolume, t),
+      pitch: Math.max(0.01, pitch + jitter),
+    });
   }
 
   // prettier-ignore
@@ -64,7 +76,7 @@ export class PlayerSoundScript extends AtlasScript<PlayerSoundScriptProps> {
       return;
     }
 
-    if (this.entityId > other.id) {
+    if (!reportsPair(this.entityId, other.id)) {
       return;
     }
 
@@ -76,28 +88,12 @@ export class PlayerSoundScript extends AtlasScript<PlayerSoundScriptProps> {
       return;
     }
 
-    const impactSpeed: number = this.impactSpeedAgainst(this.rigidBody, otherTransform, otherBody);
-    const t: number = MathUtils.clamp(impactSpeed / this.maxImpactSpeed, 0, 1);
-    const pitch: number = MathUtils.lerp(this.maxPitch, this.minPitch, t);
-    const jitter: number = randomRange(-this.pitchJitter, this.pitchJitter);
-
-    this.audio.playOneShot(this.bumpAudio, {
-      volume: MathUtils.lerp(this.minVolume, this.maxVolume, t),
-      pitch: Math.max(0.01, pitch + jitter),
-    });
-  }
-
-  // prettier-ignore
-  private impactSpeedAgainst(
-    body: RigidBody,
-    otherTransform: Transform2D,
-    otherBody: RigidBody,
-  ): number {
-    Vec2.subTo(body.velocity, otherBody.velocity, this.relativeVelocity);
-    Vec2.subTo(otherTransform.position, this.transform.position, this.normal);
-    this.normal.normalize();
-
-    return Math.abs(this.relativeVelocity.dot(this.normal));
+    this.playBump(impactSpeedBetween(
+      this.transform.position,
+      this.rigidBody.velocity,
+      otherTransform.position,
+      otherBody.velocity,
+    ));
   }
 }
 

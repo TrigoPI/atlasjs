@@ -2,8 +2,9 @@ import type { Engine, StepContext, StepSet } from "@atlasjs/core";
 import { NEXUS } from "@atlasjs/nexus";
 import type { NexusWorld } from "@atlasjs/nexus";
 
+import { ServerEventOutbox } from "../net/EventOutbox";
 import { DEFAULT_SERVER_PORT } from "../net/protocol";
-import type { NetId, ServerSnapshot } from "../net/protocol";
+import type { NetId, ServerEvent, ServerSnapshot } from "../net/protocol";
 
 import { registerApplyNetIntents } from "./applyNetIntents";
 import {
@@ -12,6 +13,7 @@ import {
   SERVER_MAX_SUB_STEPS,
 } from "./createHeadlessEngine";
 import { createTimerLoop } from "./createTimerLoop";
+import { registerEventClock } from "./eventClock";
 import { GameRoom } from "./GameRoom";
 import { InputInbox } from "./InputInbox";
 import { ServerScene } from "./ServerScene";
@@ -36,6 +38,7 @@ export type GameServer = {
   world: NexusWorld;
   room: GameRoom;
   inbox: InputInbox;
+  outbox: ServerEventOutbox;
   transport: WebSocketTransport;
   port: number;
   currentTick: () => number;
@@ -60,7 +63,8 @@ export async function createGameServer(
   await engine.scene.set(new ServerScene());
 
   const world: NexusWorld = engine.services.get(NEXUS);
-  const room: GameRoom = new GameRoom(engine.services);
+  const outbox: ServerEventOutbox = new ServerEventOutbox();
+  const room: GameRoom = new GameRoom(engine.services, outbox);
   const inbox: InputInbox = new InputInbox();
 
   /* join, leave and welcome are timestamped with the tick the client should attach them to,
@@ -86,11 +90,13 @@ export async function createGameServer(
     { name: CLOCK_STEP, stage: "PreSim" },
   );
 
+  registerEventClock(steps, outbox);
   registerApplyNetIntents(steps, world, inbox);
 
   registerWriteSnapshot(steps, world, {
     recipients: (): readonly NetId[] => transport.recipients(),
     ackFor: (id: NetId): number => inbox.ackOf(id),
+    drainEvents: (): readonly ServerEvent[] => outbox.drain(),
     send: (id: NetId, snapshot: ServerSnapshot): void =>
       transport.send(id, snapshot),
   });
@@ -102,6 +108,7 @@ export async function createGameServer(
     world,
     room,
     inbox,
+    outbox,
     transport,
     port,
     currentTick,
@@ -111,6 +118,7 @@ export async function createGameServer(
       await transport.close();
       room.clear();
       inbox.clear();
+      outbox.clear();
       engine.stop();
     },
   };

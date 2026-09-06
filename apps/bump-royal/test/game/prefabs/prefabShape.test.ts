@@ -23,7 +23,7 @@ import type { GameHarness } from "../../helpers/engine";
 
 const FIXED_DELTA: number = 1 / 60;
 const TICKS: number = 60;
-const SIM_SCRIPT_COUNT: number = 2;
+const SIM_SCRIPT_COUNT: number = 3;
 
 describe("playerSimPrefab shape", () => {
   let harness: GameHarness;

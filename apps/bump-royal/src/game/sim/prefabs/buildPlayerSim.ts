@@ -8,9 +8,12 @@ import {
   type EntityBuilder,
 } from "@atlasjs/gameplay";
 
+import { NULL_EVENT_OUTBOX } from "../../../net/EventOutbox";
+import type { EventOutbox } from "../../../net/EventOutbox";
 import { ARENA_BOUNDS } from "../arena/bounds";
 import { MoveIntent } from "../MoveIntent";
 import { PlayerStatus } from "../PlayerStatus";
+import { PlayerBumpReportScript } from "../script/player/PlayerBumpReportScript";
 import { PlayerFallSimScript } from "../script/player/PlayerFallSimScript";
 import {
   PlayerMovementScript,
@@ -19,6 +22,9 @@ import {
 
 export type PlayerSimProps = {
   position: Vec2;
+  /* Left out offline. One builder serves both modes: the reporters always hold a sink, and
+     without one supplied it is the sink that discards. */
+  outbox?: EventOutbox;
 };
 
 const RADIUS: number = 8;
@@ -62,12 +68,16 @@ export function buildPlayerSim(
   entity.add(MoveIntent);
   entity.add(PlayerStatus);
 
+  const outbox: EventOutbox = props.outbox ?? NULL_EVENT_OUTBOX;
+
   entity.attach(PlayerFallSimScript, {
     bounds: ARENA_BOUNDS,
     radius: COLLIDER_RADIUS,
     fallDuration: FALL_DURATION,
     respawnPosition: props.position.clone(),
+    outbox,
   });
 
   entity.attach(PlayerMovementScript, PLAYER_MOVEMENT);
+  entity.attach(PlayerBumpReportScript, { outbox });
 }

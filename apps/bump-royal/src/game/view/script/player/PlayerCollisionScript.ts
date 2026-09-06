@@ -73,6 +73,14 @@ export class PlayerCollisionScript extends AtlasScript<PlayerCollisionScriptProp
     this.transform.scale.copyFrom(this.baseScale).mult(factor);
   }
 
+  /* World-space contact point. Called by the local solver offline and by a replicated bump
+     event online, so both modes squish and spray from the same code. */
+  public playBump(px: number, py: number): void {
+    this.elapsed = 0;
+    this.placeDust(px, py);
+    this.dustEmitter.emit(this.dustBurst);
+  }
+
   public onCollisionEnter(
     other: GameEntity,
     collision: Collision | null,
@@ -87,22 +95,23 @@ export class PlayerCollisionScript extends AtlasScript<PlayerCollisionScriptProp
       return;
     }
 
-    this.elapsed = 0;
-    this.placeDust(collision);
-    this.dustEmitter.emit(this.dustBurst);
+    /* A backend with no contact data falls back to this entity's own centre, which the offset
+       below turns into the local origin the script used before contact points existed. */
+    const point: Vec2 =
+      collision === null ? this.transform.position : collision.point;
+
+    this.playBump(point.x, point.y);
   }
 
-  private placeDust(collision: Collision | null): void {
-    if (collision === null) {
-      this.dustTransform.setPosition(0, 0);
-      return;
-    }
-
+  /* The dust anchor is a child, so its transform is local and the parent's scale multiplies it:
+     the world offset has to be divided by that scale before being written. baseScale and not
+     transform.scale — the squish this same call starts would otherwise skew the anchor. */
+  private placeDust(px: number, py: number): void {
     const inverseScale: number = 1 / this.baseScale.x;
 
     this.dustTransform.setPosition(
-      (collision.point.x - this.transform.position.x) * inverseScale,
-      (collision.point.y - this.transform.position.y) * inverseScale,
+      (px - this.transform.position.x) * inverseScale,
+      (py - this.transform.position.y) * inverseScale,
     );
   }
 }

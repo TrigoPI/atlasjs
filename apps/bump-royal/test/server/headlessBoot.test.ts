@@ -20,7 +20,7 @@ import type { LogCapture } from "../helpers/logCapture";
 const FIXED_DELTA: number = 1 / 60;
 const ONE_SECOND_OF_TICKS: number = 60;
 const CANARY_TICKS: number = 120;
-const SIM_SCRIPTS_PER_PLAYER: number = 2;
+const SIM_SCRIPTS_PER_PLAYER: number = 3;
 
 const SEED_SPAWNS: readonly Vec2[] = [new Vec2(0, 0), new Vec2(0, 100)];
 

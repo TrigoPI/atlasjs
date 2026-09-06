@@ -10,7 +10,9 @@ import {
   Transform2D,
 } from "@atlasjs/gameplay";
 
+import type { EventOutbox } from "../../../../net/EventOutbox";
 import { isInsideArena, type ArenaBounds } from "../../arena/bounds";
+import { NetPlayer } from "../../NetPlayer";
 import { PlayerStatus } from "../../PlayerStatus";
 
 type PlayerFallSimScriptProps = {
@@ -18,6 +20,7 @@ type PlayerFallSimScriptProps = {
   radius: number;
   fallDuration: number;
   respawnPosition: Vec2;
+  outbox: EventOutbox;
 };
 
 export class PlayerFallSimScript extends AtlasScript<PlayerFallSimScriptProps> {
@@ -25,11 +28,13 @@ export class PlayerFallSimScript extends AtlasScript<PlayerFallSimScriptProps> {
   private readonly radius: number;
   private readonly fallDuration: number;
   private readonly respawnPosition: Vec2;
+  private readonly outbox: EventOutbox;
 
   private transform: Transform2D;
   private collider: Collider;
   private rigidBody: RigidBody;
   private status: PlayerStatus;
+  private net: NetPlayer | undefined;
   private collidesWith: number;
 
   public onCreate(): void {
@@ -37,6 +42,7 @@ export class PlayerFallSimScript extends AtlasScript<PlayerFallSimScriptProps> {
     this.collider = this.requireComponent(Collider);
     this.rigidBody = this.requireComponent(RigidBody);
     this.status = this.requireComponent(PlayerStatus);
+    this.net = this.getComponent(NetPlayer);
 
     this.collidesWith = this.collider.collidesWith;
   }
@@ -67,6 +73,12 @@ export class PlayerFallSimScript extends AtlasScript<PlayerFallSimScriptProps> {
     this.status.fallElapsed = 0;
     this.status.fallCount++;
     this.collider.collidesWith = 0;
+
+    const net: NetPlayer | undefined = this.net;
+
+    if (net !== undefined) {
+      this.outbox.push({ k: "fall", t: this.outbox.tick, id: net.id });
+    }
   }
 
   private respawn(): void {
@@ -91,6 +103,20 @@ export class PlayerFallSimScript extends AtlasScript<PlayerFallSimScriptProps> {
     this.status.falling = false;
     this.status.fallElapsed = 0;
     this.status.respawnCount++;
+
+    const net: NetPlayer | undefined = this.net;
+
+    /* An event and not a replicated position: a client interpolating from off-arena to the spawn
+       point would drag a shrinking ghost diagonally across the slab. */
+    if (net !== undefined) {
+      this.outbox.push({
+        k: "respawn",
+        t: this.outbox.tick,
+        id: net.id,
+        x: this.respawnPosition.x,
+        y: this.respawnPosition.y,
+      });
+    }
   }
 }
 
@@ -100,5 +126,6 @@ registerScriptMetadata(PlayerFallSimScript, {
     radius: ScriptMetadata.field({ required: true }),
     fallDuration: ScriptMetadata.field({ required: true }),
     respawnPosition: ScriptMetadata.field({ required: true }),
+    outbox: ScriptMetadata.field({ required: true }),
   },
 });
