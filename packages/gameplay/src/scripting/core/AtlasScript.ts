@@ -3,6 +3,7 @@ import { Component, Entity } from "@atlasjs/nexus";
 import { ScriptServiceCtor } from "./ScriptService";
 import { ScriptContext } from "./ScriptContext";
 import { ScriptLifecycle } from "./ScriptLifeCycle";
+import type { Collision } from "./Collision";
 import type { GameEntity } from "./GameEntity";
 import type { InstantiateArgs, Prefab } from "./Prefab";
 
@@ -28,7 +29,13 @@ export abstract class AtlasScript<TProps extends object = {}> implements ScriptL
   public onUpdate?(dt: number): void;
   public onFixedUpdate?(dt: number): void;
   public onDestroy?(): void;
-  public onCollisionEnter?(other: GameEntity): void;
+  /**
+   * @param collision The contact, or `null` when the backend cannot produce
+   * one. **Borrowed, not given:** it is valid for the duration of this call
+   * only — copy `point` and `normal` to keep them. Its normal points from
+   * `other` towards this entity.
+   */
+  public onCollisionEnter?(other: GameEntity, collision: Collision | null): void;
   public onCollisionExit?(other: GameEntity): void;
   public onTriggerEnter?(other: GameEntity): void;
   public onTriggerExit?(other: GameEntity): void;

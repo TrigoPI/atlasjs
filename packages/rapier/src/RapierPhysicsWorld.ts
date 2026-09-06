@@ -17,6 +17,7 @@ import {
   Collider,
   ColliderDesc,
   CollisionHandler,
+  ContactPoint,
   PhysicsQuery,
   PhysicsWorld,
   PhysicsWorldOptions,
@@ -24,6 +25,12 @@ import {
   RigidBodyDesc,
   RigidBodyType,
 } from "@atlasjs/inertia";
+
+type MutableContactPoint = {
+  point: Vec2;
+  normal: Vec2;
+  impulse: number;
+};
 
 export class RapierPhysicsWorld implements PhysicsWorld {
   private readonly bodies: Map<number, RapierRigidBody>;
@@ -33,6 +40,7 @@ export class RapierPhysicsWorld implements PhysicsWorld {
 
   private readonly unitsPerMeter: number;
   private readonly converter: PhysicsUnitConverter;
+  private readonly contact: MutableContactPoint;
 
   private queryApi!: PhysicsQuery;
   private world!: RAPIER.World;
@@ -46,6 +54,11 @@ export class RapierPhysicsWorld implements PhysicsWorld {
     this.bodies = new Map<number, RapierRigidBody>();
     this.colliders = new Map<number, RapierCollider>();
     this.controllers = new Set<RapierCharacterController>();
+    this.contact = {
+      point: new Vec2(0, 0),
+      normal: new Vec2(0, 0),
+      impulse: 0,
+    };
   }
 
   public async init(): Promise<void> {
@@ -86,9 +99,80 @@ export class RapierPhysicsWorld implements PhysicsWorld {
           return;
         }
 
-        handler(a, b, started);
+        handler(a, b, started, this.resolveContact(a, b, started));
       },
     );
+  }
+
+  private resolveContact(
+    a: RapierCollider,
+    b: RapierCollider,
+    started: boolean,
+  ): ContactPoint | null {
+    if (!started || a.isSensor() || b.isSensor()) {
+      return null;
+    }
+
+    let found: boolean = false;
+
+    this.world.contactPair(
+      a.rapierCollider,
+      b.rapierCollider,
+      (manifold: RAPIER.TempContactManifold, flipped: boolean) => {
+        const count: number = manifold.numContacts();
+
+        if (count === 0) {
+          return;
+        }
+
+        let best: number = 0;
+        let bestImpulse: number = manifold.contactImpulse(0);
+
+        for (let i: number = 1; i < count; i++) {
+          const impulse: number = manifold.contactImpulse(i);
+
+          if (impulse > bestImpulse) {
+            bestImpulse = impulse;
+            best = i;
+          }
+        }
+
+        if (found && bestImpulse <= this.contact.impulse) {
+          return;
+        }
+
+        const local: RAPIER.Vector | null = manifold.localContactPoint1(best);
+
+        if (local === null) {
+          return;
+        }
+
+        const owner: RAPIER.Collider = flipped
+          ? b.rapierCollider
+          : a.rapierCollider;
+
+        const origin: RAPIER.Vector = owner.translation();
+        const angle: number = owner.rotation();
+        const cos: number = Math.cos(angle);
+        const sin: number = Math.sin(angle);
+
+        this.contact.point.set(
+          origin.x + local.x * cos - local.y * sin,
+          origin.y + local.x * sin + local.y * cos,
+        );
+
+        this.converter.vecToWorldInto(this.contact.point);
+
+        const normal: RAPIER.Vector = manifold.normal();
+        const sign: number = flipped ? -1 : 1;
+
+        this.contact.normal.set(normal.x * sign, normal.y * sign);
+        this.contact.impulse = bestImpulse;
+        found = true;
+      },
+    );
+
+    return found ? this.contact : null;
   }
 
   public setGravity(x: number, y: number): void {

@@ -1,5 +1,6 @@
 export * from "./AtlasScript";
 export * from "./AttachArgs";
+export * from "./Collision";
 export * from "./ComponentAccess";
 export * from "./EntityBuilder";
 export * from "./GameEntity";

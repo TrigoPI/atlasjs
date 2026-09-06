@@ -6,6 +6,7 @@ import {
   Collider,
   ColliderDesc,
   CollisionHandler,
+  ContactPoint,
   PhysicsQuery,
   PhysicsWorld,
   RigidBody,
@@ -440,6 +441,7 @@ export class FakePhysicsWorld implements PhysicsWorld {
     a: FakeCollider;
     b: FakeCollider;
     started: boolean;
+    contact: ContactPoint | null;
   }>;
   private nextId: number;
 
@@ -479,16 +481,22 @@ export class FakePhysicsWorld implements PhysicsWorld {
 
   public drainCollisions(handler: CollisionHandler): void {
     for (const event of this.events) {
-      handler(event.a, event.b, event.started);
+      handler(event.a, event.b, event.started, event.contact);
     }
     this.events.length = 0;
   }
 
-  public emitCollision(a: Collider, b: Collider, started: boolean): void {
+  public emitCollision(
+    a: Collider,
+    b: Collider,
+    started: boolean,
+    contact?: ContactPoint,
+  ): void {
     this.events.push({
       a: a as FakeCollider,
       b: b as FakeCollider,
       started,
+      contact: contact ?? null,
     });
   }
 
