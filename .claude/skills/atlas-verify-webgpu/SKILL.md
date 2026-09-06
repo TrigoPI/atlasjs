@@ -73,6 +73,24 @@ Each `javascript_tool` call tends to un-front the tab, so RAF re-throttles and t
 
 To actually walk, dispatch a bare `keydown` (no `keyup`) on `[window, document, canvas]` via `javascript_tool`, then make two or three real `hover` calls so wall-clock frames elapse, then dispatch `keyup`. Two hovers is roughly enough to cross 150 world units.
 
+### A single bare `keydown` is wiped by the blur — re-arm it on an interval
+
+The recipe above fails on `apps/bump-royal`: un-fronting the tab fires `blur` on `window`, `DomInputBackend` answers with `input.clearAll()`, and the one keydown is gone before any frame observes it. The player does not move, which reads exactly like a broken input binding. Four attempts produced four identical "nothing happened" screenshots.
+
+What lands is a keydown **re-armed from inside the page**, so it survives every blur:
+
+```js
+const c = document.querySelector('canvas');
+globalThis.__hold = setInterval(() => {
+  [window, document, c].forEach(t => t && t.dispatchEvent(
+    new KeyboardEvent('keydown', { code: 'KeyD', key: 'd', bubbles: true })));
+}, 40);
+```
+
+Then make six or so real `hover` calls and screenshot. The interval keeps firing after the blur, so `isDown` is re-set on every frame the loop actually runs. Release with `clearInterval(globalThis.__hold)` followed by a real `keyup`, in the same batch as the final screenshot.
+
+At the pane's 4 fps with `maxSubSteps: 5`, each frame advances only ~83 ms of simulation, so budget roughly a dozen hovers to cross half an arena — and read the *positions*, never a duration.
+
 ## 9. At a throttled framerate a swing tunnels through a sensor
 
 At 4 fps, `dt` is ~250 ms: a weapon hitbox teleports past its target between physics steps and `onTriggerEnter` never fires. Attacks read as misses even when the gizmos look like they overlap mid-swing.

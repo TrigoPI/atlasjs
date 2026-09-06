@@ -3,6 +3,7 @@ import type { AudioClip } from "@atlasjs/audio";
 
 import { SortingOrder } from "../config";
 import { ARENA_BOUNDS } from "../arena";
+import { MoveIntent } from "../sim";
 import type { PlayerControlsType } from "../controls";
 
 import {
@@ -68,6 +69,7 @@ export const createPlayerPrefab = () =>
       collider.restitution = 1;
       collider.friction = 0.05;
 
+      entity.add(MoveIntent);
       entity.add(PlayerInput, props.controls);
       entity.add(Tag, "Player");
 

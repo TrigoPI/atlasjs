@@ -163,6 +163,17 @@ pour la première fois. Offline, l'ambiguïté demeure, mais tient désormais da
 de douze lignes au lieu d'être étalée sur deux `onUpdate`. L'item n'est pas clos ; il a
 maintenant **un seul site d'appel** à remplacer.
 
+**Ce que le déplacement n'est pas : identique au bit près.** `facing` était calculé dans
+`onUpdate`, il l'est maintenant dans `onFixedUpdate` depuis l'intent. Les deux coïncident tant
+que chaque frame porte au moins un tick fixe (≤ 60 fps). Au-delà, une frame peut n'en porter
+aucun, et deux écarts d'une frame deviennent atteignables : une direction tenue une seule frame
+puis relâchée laisse `facing` d'un échantillon en retard ; et un appui dash émis pendant une
+chute, dans une frame sans tick fixe juste avant le respawn, est désormais latché alors qu'il ne
+l'était pas (l'ancien `onUpdate` sortait tôt sur la chute, le sampler ignore la chute — et il le
+doit, le serveur ne peut pas la connaître). Les deux cas demandent un appui-relâchement d'une
+seule frame au-dessus de 60 fps. C'est le résidu assumé de
+[[GAMEPLAY-29-input-fixed-lane-sampling]], que ce design contourne sans le clore.
+
 ### 5.2 `PlayerStatus` : l'état répliquable en un composant
 
 Trois scripts se couplent aujourd'hui par `getScript(PlayerFallScript)`. Une référence de

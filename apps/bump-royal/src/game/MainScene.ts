@@ -1,9 +1,12 @@
 import { type SceneContext, Scene } from "@atlasjs/core";
+import { NEXUS, type NexusWorld } from "@atlasjs/nexus";
 
 import { spawnArena, spawnCamera, spawnPlayer } from "./spawn";
 import { ASSET_MANAGER, type AssetManager } from "@atlasjs/assets";
 import { AssetsLoader, AudioList, SpriteList, type AssetName } from "./loaders";
 import { Vec2 } from "@atlasjs/math";
+
+import { registerLocalIntent } from "./sim";
 
 import { PlayerControls } from "./controls";
 import { Color } from "@atlasjs/nebula";
@@ -22,8 +25,11 @@ export class MainScene extends Scene {
   public override async onCreate(ctx: SceneContext): Promise<void> {
     const asset: AssetManager = ctx.services.get(ASSET_MANAGER);
     const assetsLoader: AssetsLoader<AssetName> = new AssetsLoader(asset);
+    const world: NexusWorld = ctx.services.get(NEXUS);
 
     await this.loadAssets(assetsLoader);
+
+    registerLocalIntent(ctx.scheduler, world);
 
     spawnCamera(ctx);
     spawnArena(ctx, assetsLoader);

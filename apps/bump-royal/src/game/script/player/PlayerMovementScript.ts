@@ -1,16 +1,13 @@
 import { Vec2 } from "@atlasjs/math";
-import type { PlayerControlsType } from "../../controls";
 
 import {
   AtlasScript,
-  PlayerInput,
   RigidBody,
-  Vector2Action,
   registerScriptMetadata,
   ScriptMetadata,
-  ButtonAction,
 } from "@atlasjs/gameplay";
 
+import { MoveIntent } from "../../sim";
 import { PlayerFallScript } from "./PlayerFallScript";
 
 type PlayerMovementScriptProps = {
@@ -32,7 +29,6 @@ export class PlayerMovementScript extends AtlasScript<PlayerMovementScriptProps>
   private readonly dashCooldown: number;
   private readonly overspeedDeceleration: number;
 
-  private readonly direction: Vec2 = new Vec2();
   private readonly facing: Vec2 = new Vec2(1, 0);
   private readonly target: Vec2 = new Vec2();
 
@@ -41,41 +37,32 @@ export class PlayerMovementScript extends AtlasScript<PlayerMovementScriptProps>
   private cooldownRemaining: number = 0;
 
   private rigidBody: RigidBody;
-  private move: Vector2Action;
-  private dash: ButtonAction;
+  private intent: MoveIntent;
   private fall: PlayerFallScript | undefined;
 
   public onCreate(): void {
-    const controls: PlayerInput<PlayerControlsType> =
-      this.requireComponent(PlayerInput);
-
+    this.intent = this.requireComponent(MoveIntent);
     this.rigidBody = this.requireComponent(RigidBody);
-    this.move = controls.get("move");
-    this.dash = controls.get("dash");
     this.fall = this.getEntity(this.entityId).getScript(PlayerFallScript);
   }
 
-  public onUpdate(): void {
-    if (this.fall?.isFalling === true) {
-      return;
-    }
-
-    const v: Vec2 = this.move.readValue();
-    this.direction.copyFrom(v).normalize();
-
-    if (this.direction.mag() > 0) {
-      this.facing.copyFrom(this.direction);
-    }
-
-    if (this.dash.isPressed()) {
+  public onFixedUpdate(dt: number): void {
+    /* MoveIntent.dash is a per-tick edge; dashRequested is a buffer. It is cleared only
+       when the dash actually fires, so a press during the cooldown fires the instant the
+       cooldown ends. Consuming the edge directly would silently delete that buffer. */
+    if (this.intent.dash) {
       this.dashRequested = true;
     }
-  }
 
-  public onFixedUpdate(dt: number): void {
     if (this.fall?.isFalling === true) {
       this.dashRequested = false;
       return;
+    }
+
+    const direction: Vec2 = this.intent.direction;
+
+    if (direction.mag() > 0) {
+      this.facing.copyFrom(direction);
     }
 
     if (this.dashRequested && this.canDash()) {
@@ -111,7 +98,7 @@ export class PlayerMovementScript extends AtlasScript<PlayerMovementScriptProps>
 
   private steer(dt: number): void {
     const velocity: Vec2 = this.rigidBody.velocity;
-    this.target.copyFrom(this.direction).mult(this.maxSpeed);
+    this.target.copyFrom(this.intent.direction).mult(this.maxSpeed);
 
     const rate: number = this.getRate();
     velocity.moveTowards(this.target, rate * dt);
