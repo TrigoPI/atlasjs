@@ -265,8 +265,8 @@ Deux choses sont livrées sans preuve, et il faut le savoir :
   **réglage** `0,5 s / 1 s / 150 unités` ne l'est pas. Voir [[sandbox-browser-verify-gotchas]].
 - **La branche `|velocity| > maxSpeed`.** ~~Rien dans la scène ne peut la déclencher~~ — **plus vrai
   depuis le dash** (§13), qui pose la vélocité au-delà de `maxSpeed` et emprunte donc cette branche à
-  chaque sortie de fenêtre. Elle reste non couverte par une spec
-  ([[APP-24-bump-royal-no-test-infra]]), et un knockback du solveur l'empruntera aussi
+  chaque sortie de fenêtre. Elle est **couverte par une spec depuis le 2026-09-06** (cf.
+  [[state-sync]]), et un knockback du solveur l'empruntera aussi
   ([[PHYSICS-24-momentum-exchange-on-bump]]).
 
 ## 12. Non-objectifs / backlog
@@ -277,7 +277,7 @@ Deux choses sont livrées sans preuve, et il faut le savoir :
 - **Le bump lui-même n'existe pas** → [[PHYSICS-24-momentum-exchange-on-bump]] (restitution du
   solveur *ou* impulsion conçue, façon formule de knockback de Smash ; classes de poids atteignables
   dès aujourd'hui, cf. [[PHYSICS-22-rigidbody-mass-semantics]]).
-- **Aucune infra de test dans `apps/bump-royal`** → [[APP-24-bump-royal-no-test-infra]].
+- ~~**Aucune infra de test dans `apps/bump-royal`**~~ → **livré le 2026-09-06**, cf. [[state-sync]].
 - **Le seam de test unitaire ne pilote pas la lane fixe** → [[GAMEPLAY-112-script-harness-cannot-drive-fixed-lane]], ce qui rend le modèle intestable là où un auteur de jeu testerait.
 - **Les specs de `packages/math` ne sont pas type-checkées** → [[CORE-09-math-specs-not-typechecked]], trou trouvé en ajoutant `moveTowards`.
 - Hors périmètre pour l'instant : `linearDamping`/`angularDamping` exposés sur `RigidBody2D`

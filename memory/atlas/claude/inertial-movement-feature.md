@@ -41,11 +41,10 @@ gravity + the movement model in the app.
 - **The bump-royal preview pane drops to 4 fps.** Judge a movement feature **qualitatively** there
   and measure it on **accumulated fixed time**, never on wall clock: the glide is provable, the
   tuning (0.5 s / 1 s / 150 units) is not. See [[sandbox-browser-verify-gotchas]].
-- **`apps/bump-royal` has no test infrastructure at all** — no `test/` dir, no `test` script — so
-  **nothing in that app is unit-tested**, including the movement model's one opinionated branch.
-  Filed as [[APP-24-bump-royal-no-test-infra]]; the engine-side twin is
-  [[GAMEPLAY-112-script-harness-cannot-drive-fixed-lane]] (the published unit seam cannot drive
-  `onFixedUpdate` at all).
+- ~~**`apps/bump-royal` has no test infrastructure at all**~~ — **fixed 2026-09-06**
+  (see [[state-sync]]): the app now has vitest and 149 specs, the overspeed branch included. The
+  engine-side twin is still open — [[GAMEPLAY-112-script-harness-cannot-drive-fixed-lane]], the
+  published unit seam cannot drive `onFixedUpdate` — which is why those specs drive a real `Engine`.
 
 **The two apps now diverge on movement architecture, on purpose.** dino-brawl stays kinematic +
 `CharacterController2D` with `Transform2D` as the authority ([[world-collisions-character-controller]]);

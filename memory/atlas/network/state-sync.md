@@ -1,14 +1,21 @@
 ---
-status: planned
-summary: "Multijoueur en ligne de bump-royal : serveur Node headless autoritaire faisant tourner un vrai Engine Atlas, state sync à 20 Hz sans prédiction. Design cadré, non implémenté."
+status: implemented
+shipped: 2026-09-06
+summary: "Multijoueur en ligne de bump-royal : serveur Node headless autoritaire faisant tourner un vrai Engine Atlas, state sync à 20 Hz, interpolation client et événements discrets. Livré en entier, prédiction exclue par construction."
 ---
 # bump-royal online — serveur autoritaire & state sync (V1)
 
-> Statut : **design cadré, non implémenté.**
-> Portée V1 : autorité serveur sur la physique, réplication d'état à 20 Hz, interpolation
-> client, événements discrets. **Hors V1 : prédiction, réconciliation, rollback** — le
-> protocole est taillé pour les accueillir, il ne les implémente pas.
-> Tout vit dans `apps/bump-royal`. Rien n'entre dans `packages/` à ce stade.
+> Statut : **implémenté**, branche `feat/claude/bump-royal-online`, dix commits.
+> Livré : autorité serveur sur la physique, réplication d'état à 20 Hz, interpolation client,
+> événements discrets (bump au point de contact, chute, respawn), join/leave à chaud.
+> **Hors V1, délibérément : prédiction, réconciliation, rollback** — le protocole les accueille
+> (`InputFrame.t`, `ServerSnapshot.ack`, l'état de dash dans `PlayerStatus`), il ne les
+> implémente pas ; cf. [[NETWORK-01-client-prediction-reconciliation]].
+> Tout vit dans `apps/bump-royal`. **Rien n'est entré dans `packages/`**, comme décidé.
+>
+> Vérifié : 149 specs, et deux onglets qui jouent ensemble contre un vrai serveur — mouvement
+> répliqué dans les deux sens, chute et respawn autoritaires, poussière au point de contact.
+> Le mode local tourne inchangé, sans socket, et a servi de garde anti-régression à chaque commit.
 
 ---
 
@@ -353,10 +360,9 @@ et 400 lirait la valeur d'avant le respawn.
 
 ## 9. Vérification
 
-- **vitest dans `apps/bump-royal`**, qui n'en avait aucun ([[APP-24-bump-royal-no-test-infra]]
-  est clos par la première tâche). Le bloc `define` du `vitest.config.ts` n'est pas du
+- **vitest dans `apps/bump-royal`**, qui n'en avait aucun — la première tâche a clos cette dette. Le bloc `define` du `vitest.config.ts` n'est pas du
   boilerplate : c'est le piège n°1 ci-dessus.
-- La spec que [[APP-24-bump-royal-no-test-infra]] réclamait — le choix du taux après un bump —
+- La spec que le backlog réclamait — le choix du taux après un bump —
   ne peut pas s'écrire au seam publié ([[GAMEPLAY-112-script-harness-cannot-drive-fixed-lane]]
   n'appelle jamais `onFixedUpdate`) : elle pilote un vrai `Engine`.
 - **Spec de forme de prefab** : `PlayerSimPrefab` a les bons composants, n'a pas les composants
@@ -372,7 +378,7 @@ et 400 lirait la valeur d'avant le respawn.
 Dix commits. Les cinq premiers sont des refactors **sous le jeu local, qui reste jouable à
 chaque commit** ; les suivants ajoutent du code serveur puis du code client derrière un flag.
 
-1. Infra de test + suppression de l'alias `@bump-royal/*` — clôt [[APP-24-bump-royal-no-test-infra]]
+1. Infra de test + suppression de l'alias `@bump-royal/*`
 2. Toolchain serveur : `tsx`, `tsconfig.server.json` sans DOM, les trois globales
 3. `MoveIntent` — couper `PlayerMovementScript` de `PlayerInput`
 4. `PlayerStatus` + scission du script de chute, passage en lane fixed
@@ -385,10 +391,8 @@ chaque commit** ; les suivants ajoutent du code serveur puis du code client derr
 
 ## 11. Hors périmètre
 
-- **Prédiction et réconciliation** — la V2. Le protocole porte déjà `t` et `ack`, et
-  `PlayerStatus` porte déjà l'état de dash qu'elle réclamera. Note : un client prédictif devra
-  reproduire le passage de `collidesWith` à `0` pendant une chute, sinon il prédira des bumps
-  que le serveur n'a pas eus et se réconciliera d'une secousse visible à **chaque** chute.
+- **Prédiction et réconciliation** → [[NETWORK-01-client-prediction-reconciliation]], qui porte
+  aussi le piège du `collidesWith` remis à `0` pendant une chute.
 - **Driver de rollback** ([[CORE-04-rollback-driver]]) — reste une vision moteur. La V1 ne
   l'approche pas ; la V2 en aurait besoin.
 - **Ids de composants stables** ([[CORE-03-component-registry-by-name]]) — non requis : l'état
@@ -399,6 +403,8 @@ chaque commit** ; les suivants ajoutent du code serveur puis du code client derr
 - **Règles de manche** ([[APP-25-bump-royal-no-round-rules]]) — ne bloque pas, mais retire le
   chemin facile : sans manche, il n'existe aucun moment naturel pour ajouter ou retirer un
   joueur, donc join et leave doivent tous deux être traités **en pleine simulation**.
-- **Encodage binaire, deltas de snapshot, reconnexion, mode replay** — après une V1 jouable.
+- **Encodage binaire et deltas de snapshot** → [[NETWORK-02-binary-encoding-and-deltas]].
+- **Reconnexion, dérive d'horloge, sockets oisives** → [[NETWORK-03-reconnect-and-clock-drift]].
+  Les trois sont inoffensifs en localhost et pas ailleurs.
 - **Extraction d'un `@atlasjs/net`** — délibérément repoussée jusqu'à ce qu'on sache ce qui a
   survécu. C'est aussi pourquoi rien n'entre dans `packages/` ici.
