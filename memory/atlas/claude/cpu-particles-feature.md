@@ -1,13 +1,13 @@
 ---
 name: cpu-particles-feature
-description: "CPU particle system on branch feat/claude/cpu-particles — shipped and browser-verified, not merged; reuses the sprite batch so nebula-webgpu is untouched."
+description: "CPU particle system — shipped, browser-verified, and MERGED into dev (bd0a802, 2026-09-04, not pushed); reuses the sprite batch so nebula-webgpu is untouched."
 type: project
-modified: 2026-09-04
+modified: 2026-09-05
 ---
 
 `ParticleEmitter` (gameplay) + `CPUParticleNode` / `CPUParticleNodeRenderer` (nebula). Design: `memory/atlas/rendering/particles.md` (`status: implemented`).
 
-**State on 2026-09-04:** 12 commits on `feat/claude/cpu-particles`, **not merged, not pushed**. `215` nebula tests, `598` gameplay tests, monorepo `27/27`. Browser-verified at 60 fps in `apps/bump-royal`, including `simulationSpace: "world"` (particles stay put while the player moves away). **The effect at its real speed was never captured** — a 0.3 s burst finishes between two frames of a driven pane, so every screenshot used a deliberately exaggerated config. That proves the render path, not the tuning.
+**State (corrected 2026-09-05):** 12 commits on `feat/claude/cpu-particles`, **merged into `dev` by `bd0a802`, still not pushed** (`origin/dev` is behind). The branch no longer exists locally. `215` nebula tests, `598` gameplay tests, monorepo `27/27`. Browser-verified at 60 fps in `apps/bump-royal`, including `simulationSpace: "world"` (particles stay put while the player moves away). **The effect at its real speed was never captured** — a 0.3 s burst finishes between two frames of a driven pane, so every screenshot used a deliberately exaggerated config. That proves the render path, not the tuning.
 
 **A near-empty sprite under additive blend looks exactly like a broken render path.** The first demo attempt reused `shadow.png` and drew nothing. What settled it in one move: swap the texture for one whose visibility is certain, change nothing else. Reach for that before probing the pipeline.
 
