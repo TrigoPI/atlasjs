@@ -79,25 +79,6 @@ export const createPlayerPrefab = () =>
         r.sortingOrder = SortingOrder.PlayerEyes;
       });
 
-      entity.child((e: EntityBuilder) => {
-        const t: Transform2D = e.add(Transform2D);
-        t.position.set(0, 5);
-        t.scale.set(1.15, 1);
-
-        const r: SpriteRenderer = e.add(SpriteRenderer, props.shadowSprite);
-        r.sortingOrder = SortingOrder.Shadow;
-        r.color = Color.Black().setAlpha(0.5);
-      });
-
-      entity.add(AfterimageRenderer, {
-        interval: 0.04,
-        time: 0.12,
-        startColor: props.color.clone().setAlpha(0.5),
-        endColor: props.color.clone().setAlpha(0),
-        sortingOrder: SortingOrder.Trail,
-        maxImages: 15,
-      });
-
       const dust: EntityBuilder = entity.child((e: EntityBuilder) => {
         const t: Transform2D = e.add(Transform2D);
         t.position.set(0, 0);
@@ -125,6 +106,25 @@ export const createPlayerPrefab = () =>
             },
           },
         });
+      });
+
+      entity.child((e: EntityBuilder) => {
+        const t: Transform2D = e.add(Transform2D);
+        t.position.set(0, 5);
+        t.scale.set(1.15, 1);
+
+        const r: SpriteRenderer = e.add(SpriteRenderer, props.shadowSprite);
+        r.sortingOrder = SortingOrder.Shadow;
+        r.color = Color.Black().setAlpha(0.5);
+      });
+
+      entity.add(AfterimageRenderer, {
+        interval: 0.04,
+        time: 0.12,
+        startColor: props.color.clone().setAlpha(0.5),
+        endColor: props.color.clone().setAlpha(0),
+        sortingOrder: SortingOrder.Trail,
+        maxImages: 15,
       });
 
       entity.attach(PlayerSoundScript, {
