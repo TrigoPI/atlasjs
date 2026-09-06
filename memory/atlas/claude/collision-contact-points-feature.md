@@ -6,7 +6,7 @@ modified: 2026-09-05
 ---
 
 Le 2026-09-05, livré **le point de contact des collisions jusqu'aux scripts** : branche
-`feat/claude/collision-contact-points`, **6 commits `e66dcc4` → `ae7749b`**, non mergée. Design :
+`feat/claude/collision-contact-points`, **mergée dans `dev` par `3bfa95f` le 2026-09-06** (non poussée). Design :
 [[collision-contacts]] (`status: implemented`) — le lire avant de toucher à cette chaîne, il porte les
 caveats, pas seulement le résultat.
 
