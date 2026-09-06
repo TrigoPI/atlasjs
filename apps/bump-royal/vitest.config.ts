@@ -8,5 +8,8 @@ export default defineConfig({
   },
   test: {
     include: ["test/**/*.test.ts"],
+    /* The server e2e spec measures a wall-clock broadcast rate off a real 60 Hz engine loop.
+       Workers competing for the same cores make that number meaningless. */
+    fileParallelism: false,
   },
 });

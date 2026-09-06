@@ -8,6 +8,7 @@ import { Vec2 } from "@atlasjs/math";
 import type { Entity } from "@atlasjs/nexus";
 
 import { MoveIntent } from "../../src/game/sim/MoveIntent";
+import { COLLIDER_RADIUS } from "../../src/game/sim/prefabs/buildPlayerSim";
 import { createPlayerSimPrefab } from "../../src/game/sim/prefabs/PlayerSimPrefab";
 import { ServerScene } from "../../src/server/ServerScene";
 
@@ -21,7 +22,8 @@ const ONE_SECOND_OF_TICKS: number = 60;
 const CANARY_TICKS: number = 120;
 const SIM_SCRIPTS_PER_PLAYER: number = 2;
 
-const COLLIDER_RADIUS: number = 28;
+const SEED_SPAWNS: readonly Vec2[] = [new Vec2(0, 0), new Vec2(0, 100)];
+
 const APPROACH_X: number = 100;
 const APPROACH_TICKS: number = 60;
 
@@ -58,7 +60,7 @@ describe("headless server boot", () => {
   });
 
   it("runs the same sim scripts the browser does, with no input plugin installed", async () => {
-    const scene: ServerScene = new ServerScene();
+    const scene: ServerScene = new ServerScene(SEED_SPAWNS);
     await harness.engine.scene.set(scene);
 
     const [player]: readonly Entity[] = scene.getPlayers();
@@ -72,6 +74,10 @@ describe("headless server boot", () => {
     expect(harness.world.query(PlayerInput).size).toBe(0);
     expect(transform.position.x).toBe(0);
 
+    /* The only producer of MoveIntent on the real server is applyNetIntents, which needs a
+       socket. Writing the component directly is what that step would have done. */
+    harness.world.requireComponent(player, MoveIntent).direction.set(1, 0);
+
     for (let i: number = 0; i < ONE_SECOND_OF_TICKS; i++) {
       harness.frame();
     }
@@ -80,7 +86,7 @@ describe("headless server boot", () => {
   });
 
   it("disables no script and logs no error over 120 ticks", async () => {
-    const scene: ServerScene = new ServerScene();
+    const scene: ServerScene = new ServerScene(SEED_SPAWNS);
     await harness.engine.scene.set(scene);
 
     for (let i: number = 0; i < CANARY_TICKS; i++) {

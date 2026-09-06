@@ -1,49 +1,73 @@
-import type { Engine, StepContext, StepSet } from "@atlasjs/core";
-import { Transform2D } from "@atlasjs/gameplay";
-import { NEXUS } from "@atlasjs/nexus";
-import type { Entity, NexusWorld } from "@atlasjs/nexus";
+import type { StepContext, StepSet } from "@atlasjs/core";
 import { createLogger, Logger } from "@atlasjs/utils";
 
-import { PlayerStatus } from "../game/sim/PlayerStatus";
-
-import {
-  createHeadlessEngine,
-  SERVER_FIXED_DELTA,
-  SERVER_MAX_SUB_STEPS,
-} from "./createHeadlessEngine";
-
-import { createTimerLoop } from "./createTimerLoop";
-import { ServerScene } from "./ServerScene";
+import { SERVER_FIXED_DELTA } from "./createHeadlessEngine";
+import { createGameServer, DEFAULT_PORT } from "./createGameServer";
+import type { GameServer } from "./createGameServer";
 
 const SHUTDOWN_SIGNALS: NodeJS.Signals[] = ["SIGINT", "SIGTERM"];
 const RUNNER_STEP: string = "server:runner";
-const REPORT_INTERVAL_TICKS: number = 60;
+const REPORT_INTERVAL_TICKS: number = 300;
 const MS_PER_SECOND: number = 1000;
+
 const TICKS_FLAG: string = "--ticks=";
 const TICKS_ENV: string = "BUMP_ROYAL_TICKS";
+const PORT_FLAG: string = "--port=";
+const PORT_ENV: string = "BUMP_ROYAL_PORT";
+const HOST_FLAG: string = "--host=";
+const HOST_ENV: string = "BUMP_ROYAL_HOST";
+
+const MAX_PORT: number = 65535;
 
 export type ServerOptions = {
   ticks?: number;
+  port?: number;
+  host?: string;
 };
+
+function readOption(
+  argv: readonly string[],
+  env: NodeJS.ProcessEnv,
+  flag: string,
+  envKey: string,
+): string | null {
+  const match: string | undefined = argv.find((arg: string): boolean =>
+    arg.startsWith(flag),
+  );
+
+  const raw: string | undefined =
+    match !== undefined ? match.slice(flag.length) : env[envKey];
+
+  return raw === undefined || raw === "" ? null : raw;
+}
+
+function parseInteger(raw: string, label: string, max: number): number {
+  const value: number = Number.parseInt(raw, 10);
+
+  if (!Number.isInteger(value) || value < 0 || value > max) {
+    throw new Error(`Invalid ${label} "${raw}".`);
+  }
+
+  return value;
+}
 
 export function parseTickLimit(
   argv: readonly string[],
   env: NodeJS.ProcessEnv,
 ): number | null {
-  const flag: string | undefined = argv.find((arg: string): boolean =>
-    arg.startsWith(TICKS_FLAG),
-  );
+  const raw: string | null = readOption(argv, env, TICKS_FLAG, TICKS_ENV);
 
-  const raw: string | undefined =
-    flag !== undefined ? flag.slice(TICKS_FLAG.length) : env[TICKS_ENV];
-
-  if (raw === undefined || raw === "") {
+  if (raw === null) {
     return null;
   }
 
-  const value: number = Number.parseInt(raw, 10);
+  const value: number = parseInteger(
+    raw,
+    "tick limit",
+    Number.MAX_SAFE_INTEGER,
+  );
 
-  if (!Number.isInteger(value) || value <= 0) {
+  if (value === 0) {
     throw new Error(
       `Invalid tick limit "${raw}": expected a positive integer.`,
     );
@@ -52,24 +76,20 @@ export function parseTickLimit(
   return value;
 }
 
-function describePlayers(
-  world: NexusWorld,
-  players: readonly Entity[],
-): string {
-  return players
-    .map((player: Entity, index: number): string => {
-      const transform: Transform2D = world.requireComponent(
-        player,
-        Transform2D,
-      );
+export function parsePort(
+  argv: readonly string[],
+  env: NodeJS.ProcessEnv,
+): number {
+  const raw: string | null = readOption(argv, env, PORT_FLAG, PORT_ENV);
 
-      const status: PlayerStatus = world.requireComponent(player, PlayerStatus);
+  return raw === null ? DEFAULT_PORT : parseInteger(raw, "port", MAX_PORT);
+}
 
-      const position: string = `${transform.position.x.toFixed(1)}, ${transform.position.y.toFixed(1)}`;
-
-      return `p${index}=(${position}) falls=${status.fallCount}`;
-    })
-    .join(" ");
+export function parseHost(
+  argv: readonly string[],
+  env: NodeJS.ProcessEnv,
+): string | undefined {
+  return readOption(argv, env, HOST_FLAG, HOST_ENV) ?? undefined;
 }
 
 export async function startServer(options: ServerOptions = {}): Promise<void> {
@@ -78,18 +98,12 @@ export async function startServer(options: ServerOptions = {}): Promise<void> {
   const tickLimit: number | null =
     options.ticks ?? parseTickLimit(process.argv, process.env);
 
-  const engine: Engine = await createHeadlessEngine({
-    loop: createTimerLoop({
-      periodMs: SERVER_FIXED_DELTA * MS_PER_SECOND,
-      maxDeltaMs: SERVER_MAX_SUB_STEPS * SERVER_FIXED_DELTA * MS_PER_SECOND,
-    }),
+  const server: GameServer = await createGameServer({
+    port: options.port ?? parsePort(process.argv, process.env),
+    host: options.host ?? parseHost(process.argv, process.env),
   });
 
-  const scene: ServerScene = new ServerScene();
-  await engine.scene.set(scene);
-
-  const world: NexusWorld = engine.services.get(NEXUS);
-  const runner: StepSet = engine.scheduler.createSet(RUNNER_STEP);
+  const runner: StepSet = server.engine.scheduler.createSet(RUNNER_STEP);
   const startedAt: number = performance.now();
 
   let stopped: boolean = false;
@@ -99,7 +113,7 @@ export async function startServer(options: ServerOptions = {}): Promise<void> {
     resolveRun = resolve;
   });
 
-  const finish = (tick: number): void => {
+  const finish = async (tick: number): Promise<void> => {
     const elapsed: number = performance.now() - startedAt;
     const hz: number = (tick * MS_PER_SECOND) / elapsed;
 
@@ -107,12 +121,16 @@ export async function startServer(options: ServerOptions = {}): Promise<void> {
       `completed ${tick} ticks in ${elapsed.toFixed(0)}ms (${hz.toFixed(2)} Hz)`,
     );
 
-    engine.stop();
+    await server.close();
     resolveRun?.();
   };
 
   logger.log(
-    `running ${tickLimit === null ? "until interrupted" : `${tickLimit} ticks`} at ${(1 / SERVER_FIXED_DELTA).toFixed(0)} Hz`,
+    `listening on ws://${options.host ?? "localhost"}:${server.port} at ${(1 / SERVER_FIXED_DELTA).toFixed(0)} Hz`,
+  );
+
+  logger.log(
+    `running ${tickLimit === null ? "until interrupted" : `${tickLimit} ticks`}`,
   );
 
   runner.add(
@@ -123,9 +141,7 @@ export async function startServer(options: ServerOptions = {}): Promise<void> {
       }
 
       if (ctx.tick % REPORT_INTERVAL_TICKS === 0) {
-        logger.log(
-          `tick=${ctx.tick} ${describePlayers(world, scene.getPlayers())}`,
-        );
+        logger.log(`tick=${ctx.tick} players=${server.room.size}`);
       }
 
       if (tickLimit !== null && ctx.tick >= tickLimit) {
@@ -135,7 +151,7 @@ export async function startServer(options: ServerOptions = {}): Promise<void> {
            and disposes the ScriptManager, and advanceFixed may still owe sub-steps from
            this frame's accumulator. The microtask lands after the whole frame, and long
            before the next timer. */
-        queueMicrotask((): void => finish(ctx.tick));
+        queueMicrotask((): void => void finish(ctx.tick));
       }
     },
     {
@@ -145,9 +161,11 @@ export async function startServer(options: ServerOptions = {}): Promise<void> {
   );
 
   const shutdown = (signal: NodeJS.Signals): void => {
-    logger.log(`${signal} received, stopping engine`);
-    engine.stop();
-    process.exit(0);
+    logger.log(`${signal} received, stopping server`);
+
+    void server.close().then((): void => {
+      process.exit(0);
+    });
   };
 
   for (const signal of SHUTDOWN_SIGNALS) {

@@ -12,7 +12,10 @@ import { ARENA_BOUNDS } from "../arena/bounds";
 import { MoveIntent } from "../MoveIntent";
 import { PlayerStatus } from "../PlayerStatus";
 import { PlayerFallSimScript } from "../script/player/PlayerFallSimScript";
-import { PlayerMovementScript } from "../script/player/PlayerMovementScript";
+import {
+  PlayerMovementScript,
+  type PlayerMovementProps,
+} from "../script/player/PlayerMovementScript";
 
 export type PlayerSimProps = {
   position: Vec2;
@@ -20,9 +23,20 @@ export type PlayerSimProps = {
 
 const SCALE: number = 3.5;
 const RADIUS: number = 8;
-const COLLIDER_RADIUS: number = SCALE * RADIUS;
+
+export const COLLIDER_RADIUS: number = SCALE * RADIUS;
 
 export const FALL_DURATION: number = 0.35;
+
+export const PLAYER_MOVEMENT: PlayerMovementProps = {
+  maxSpeed: 300,
+  acceleration: 600,
+  deceleration: 300,
+  dashSpeed: 700,
+  dashDuration: 0.18,
+  dashCooldown: 0.6,
+  overspeedDeceleration: 5000,
+};
 
 // prettier-ignore
 export function buildPlayerSim(
@@ -52,13 +66,5 @@ export function buildPlayerSim(
     respawnPosition: props.position.clone(),
   });
 
-  entity.attach(PlayerMovementScript, {
-    maxSpeed: 300,
-    acceleration: 600,
-    deceleration: 300,
-    dashSpeed: 700,
-    dashDuration: 0.18,
-    dashCooldown: 0.6,
-    overspeedDeceleration: 5000,
-  });
+  entity.attach(PlayerMovementScript, PLAYER_MOVEMENT);
 }

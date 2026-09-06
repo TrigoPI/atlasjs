@@ -10,7 +10,7 @@ import {
 import { MoveIntent } from "../../MoveIntent";
 import { PlayerStatus } from "../../PlayerStatus";
 
-type PlayerMovementScriptProps = {
+export type PlayerMovementProps = {
   maxSpeed: number;
   acceleration: number;
   deceleration: number;
@@ -20,7 +20,7 @@ type PlayerMovementScriptProps = {
   dashCooldown: number;
 };
 
-export class PlayerMovementScript extends AtlasScript<PlayerMovementScriptProps> {
+export class PlayerMovementScript extends AtlasScript<PlayerMovementProps> {
   private readonly maxSpeed: number;
   private readonly acceleration: number;
   private readonly deceleration: number;

@@ -1,4 +1,5 @@
 export * from "./MoveIntent";
+export * from "./NetPlayer";
 export * from "./PlayerStatus";
 export * from "./arena";
 export * from "./config";

@@ -80,6 +80,9 @@ importers:
       react-dom:
         specifier: ^19.2.0
         version: 19.2.4(react@19.2.4)
+      ws:
+        specifier: ^8.19.0
+        version: 8.19.0
     devDependencies:
       '@eslint/js':
         specifier: ^9.39.1
@@ -93,6 +96,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@types/ws':
+        specifier: ^8.18.1
+        version: 8.18.1
       '@vitejs/plugin-react':
         specifier: ^5.1.1
         version: 5.1.4(vite@7.3.1(@types/node@24.10.13)(lightningcss@1.32.0)(tsx@4.23.13))
