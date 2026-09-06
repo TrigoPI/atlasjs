@@ -296,9 +296,12 @@ bump reçu en pleine fenêtre **compose** au lieu d'être écrasé.
 
 Le press est **latché dans `onUpdate`** et consommé dans `onFixedUpdate` — `isPressed()` est une arête
 valable une frame d'update, donc la lire depuis la lane fixe la raterait ou la doublerait. Le latch
-est effacé inconditionnellement à la consommation, ce qui rend une lane fixe tournant deux fois dans
-la frame incapable de double-déclencher, tout en gardant le press vivant si elle ne tourne pas du
-tout. La fenêtre et le cooldown sont comptés en **nombres bruts sur le `dt` fixe**, pas avec
+n'est effacé **que quand le dash part réellement** (`if (this.dashRequested && this.canDash())`), pas
+à chaque passage : une lane fixe tournant deux fois dans la frame ne peut pas double-déclencher, le
+press reste vivant si elle ne tourne pas du tout, **et un press émis pendant le cooldown est mis en
+tampon jusqu'à l'expiration de celui-ci**. Cette troisième propriété est du feeling, pas un accident :
+faire de la demande de dash une arête consommée à chaque tick la supprimerait silencieusement (voir
+[[state-sync]] §8). La fenêtre et le cooldown sont comptés en **nombres bruts sur le `dt` fixe**, pas avec
 `this.countdown(...)` : les timers de script n'avancent que sur la lane `update`, et une fenêtre
 comptée là dériverait de la lane où le modèle tourne.
 
