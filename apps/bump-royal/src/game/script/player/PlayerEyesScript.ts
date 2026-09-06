@@ -1,5 +1,5 @@
 import { PI, PI_2, Vec2 } from "@atlasjs/math";
-import type { PlayerControlsType } from "@bump-royal/game/controls";
+import type { PlayerControlsType } from "../../controls";
 
 import {
   AtlasScript,

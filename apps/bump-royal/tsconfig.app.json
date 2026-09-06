@@ -27,7 +27,6 @@
     "resolveJsonModule": true,
     "paths": {
       "@css/*": ["./css/*"],
-      "@bump-royal/*": ["./src/*"],
       "@assets/*": ["./assets/*"]
     }
   },
