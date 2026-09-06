@@ -9,17 +9,17 @@ const headlessRestrictedImports = [
   {
     group: ["**/view/**", "view/**"],
     message:
-      "sim/ and server/ are Node-safe: they must never import from the client-only view/ subtree.",
+      "sim/, net/ and server/ are Node-safe: they must never import from the client-only view/ subtree.",
   },
   {
     group: ["@assets/*", "@css/*"],
     message:
-      "sim/ and server/ are Node-safe: those aliases resolve through Vite and do not exist under tsconfig.server.json.",
+      "sim/, net/ and server/ are Node-safe: those aliases resolve through Vite and do not exist under tsconfig.server.json.",
   },
   {
     group: ["@atlasjs/nebula-webgpu", "@atlasjs/gizmos"],
     message:
-      "sim/ and server/ are Node-safe: @atlasjs/nebula-webgpu fails to import in Node, and gizmos are presentation.",
+      "sim/, net/ and server/ are Node-safe: @atlasjs/nebula-webgpu fails to import in Node, and gizmos are presentation.",
   },
 ];
 
@@ -42,7 +42,7 @@ export default defineConfig([
     },
   },
   {
-    files: ["src/game/sim/**/*.ts", "src/server/**/*.ts"],
+    files: ["src/game/sim/**/*.ts", "src/net/**/*.ts", "src/server/**/*.ts"],
     rules: {
       "no-restricted-imports": [
         "error",

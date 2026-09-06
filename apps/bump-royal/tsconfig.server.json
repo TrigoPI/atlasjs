@@ -27,5 +27,5 @@
     "strictPropertyInitialization": false,
     "resolveJsonModule": true
   },
-  "include": ["src/server", "src/game/sim"]
+  "include": ["src/server", "src/game/sim", "src/net"]
 }

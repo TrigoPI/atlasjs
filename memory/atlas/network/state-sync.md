@@ -82,7 +82,7 @@ dont 0,0006 ms pour la lane render qui tourne à vide sur le stub. Il n'y a rien
 | **Rien dans `packages/`** en V1 | On n'abstrait pas avant d'avoir compris. `@atlasjs/net` s'extraira de ce qui aura survécu à une V1 jouable |
 | **State sync, sans prédiction** | Trois fois moins de code, et une base honnête sur laquelle brancher la prédiction |
 | **`tsx`** pour lancer le serveur | Un build `tsc` émet des specifiers ESM sans extension → `ERR_MODULE_NOT_FOUND`. `tsx` est zéro-emit et résout comme Vite |
-| **JSON** sur le fil en V1, derrière un codec | 8 joueurs × 20 Hz ≈ 5 ko/s : le binaire n'achète rien de mesurable, et une trame lisible dans les devtools vaut plus que 60 % de compression pendant qu'on debug |
+| **JSON** sur le fil en V1, derrière un codec | 12,5 ko/s par client à 8 joueurs (**mesuré**, cf. §6) : le binaire n'achète rien de décisif à cette échelle, et une trame lisible dans les devtools vaut plus que la compression pendant qu'on debug |
 
 ### Le coût assumé de « pas de prédiction »
 
@@ -230,8 +230,14 @@ une écriture de composant plutôt qu'un second refactor de scripts. On le livre
 | `dashRemaining`, `cooldownRemaining` | non | rien ne les consomme en V1. Ils vivent dans `PlayerStatus`, donc la prédiction ajoutera deux champs de fil, pas un refactor |
 | score, vies, manche | **rien n'existe** | [[APP-25-bump-royal-no-round-rules]] |
 
-État complet, pas de delta : à 8 × 7 nombres la charge fait 250 octets, et le delta demanderait
-une baseline par client plus une boucle d'ack fiable.
+État complet, pas de delta : le delta demanderait une baseline par client plus une boucle d'ack
+fiable, pour une charge qui reste petite.
+
+**Taille réellement mesurée, une fois le codec écrit : 624 octets par snapshot à 8 joueurs, soit
+12,5 ko/s par client et ~100 ko/s en sortie serveur.** Une estimation antérieure de ce document
+disait 250 octets et 5 ko/s — elle comptait les nombres et oubliait les **clés** JSON, qui pèsent
+à elles seules près de 200 octets par trame. Le facteur 2,5 ne renverse pas la décision (12,5 ko/s
+reste négligeable), mais c'est le budget de sortie qu'il faut retenir, pas l'ancien.
 
 ### 6.1 Pourquoi le bump est un événement serveur et non dérivé du client
 
