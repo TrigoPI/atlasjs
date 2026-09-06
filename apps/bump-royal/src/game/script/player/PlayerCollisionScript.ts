@@ -12,7 +12,7 @@ import {
   type GameEntity,
 } from "@atlasjs/gameplay";
 
-import { PlayerFallScript } from "./PlayerFallScript";
+import { PlayerStatus } from "../../sim";
 
 type PlayerCollisionScriptProps = {
   dust: GameEntity;
@@ -36,7 +36,7 @@ export class PlayerCollisionScript extends AtlasScript<PlayerCollisionScriptProp
   private transform: Transform2D;
   private dustEmitter: ParticleEmitter;
   private dustTransform: Transform;
-  private fall: PlayerFallScript | undefined;
+  private status: PlayerStatus;
   private elapsed: number;
 
   public onCreate(): void {
@@ -45,12 +45,12 @@ export class PlayerCollisionScript extends AtlasScript<PlayerCollisionScriptProp
     this.dustTransform = this.dust.requireComponent(Transform);
     this.baseScale.copyFrom(this.transform.scale);
     this.elapsed = this.squishDuration;
-    this.fall = this.getEntity(this.entityId).getScript(PlayerFallScript);
+    this.status = this.requireComponent(PlayerStatus);
   }
 
   // prettier-ignore
   public onUpdate(dt: number): void {
-    if (this.fall?.isFalling === true) {
+    if (this.status.falling) {
       this.elapsed = this.squishDuration;
       return;
     }

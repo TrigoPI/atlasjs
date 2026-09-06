@@ -186,8 +186,15 @@ export class PlayerStatus {
   public readonly facing: Vec2 = new Vec2(1, 0);
   public dashRemaining: number = 0;      // hors fil en V1 ; requis par la prédiction
   public cooldownRemaining: number = 0;  // idem
+  public fallCount: number = 0;          // fronts, pour la moitié présentation
+  public respawnCount: number = 0;
 }
 ```
+
+`fallCount` / `respawnCount` sont des **compteurs monotones, pas des détecteurs de
+transition** sur `falling` : à 20 Hz une chute suivie d'un respawn peut boucler entièrement
+entre deux snapshots, et un détecteur de front ne verrait rien. Même offline, une frame
+portant vingt-et-un ticks fixes avalerait le front.
 
 Sortir `facing`, `dashRemaining` et `cooldownRemaining` des champs privés de
 `PlayerMovementScript` **maintenant** est le seul changement qui fera de la réconciliation

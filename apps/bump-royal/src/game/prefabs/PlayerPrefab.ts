@@ -3,13 +3,14 @@ import type { AudioClip } from "@atlasjs/audio";
 
 import { SortingOrder } from "../config";
 import { ARENA_BOUNDS } from "../arena";
-import { MoveIntent } from "../sim";
+import { MoveIntent, PlayerStatus } from "../sim";
 import type { PlayerControlsType } from "../controls";
 
 import {
   PlayerCollisionScript,
   PlayerEyesScript,
-  PlayerFallScript,
+  PlayerFallSimScript,
+  PlayerFallViewScript,
   PlayerMovementScript,
   PlayerSoundScript,
 } from "../script/player";
@@ -70,6 +71,7 @@ export const createPlayerPrefab = () =>
       collider.friction = 0.05;
 
       entity.add(MoveIntent);
+      entity.add(PlayerStatus);
       entity.add(PlayerInput, props.controls);
       entity.add(Tag, "Player");
 
@@ -154,11 +156,15 @@ export const createPlayerPrefab = () =>
         rotationSpeed: 5,
       });
 
-      entity.attach(PlayerFallScript, {
+      entity.attach(PlayerFallSimScript, {
         bounds: ARENA_BOUNDS,
         radius: COLLIDER_RADIUS,
         fallDuration: FALL_DURATION,
         respawnPosition: props.position.clone(),
+      });
+
+      entity.attach(PlayerFallViewScript, {
+        fallDuration: FALL_DURATION,
         fallAudio: props.fallAudio,
       });
 

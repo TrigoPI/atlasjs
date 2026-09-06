@@ -1,10 +1,7 @@
-import { Vec2 } from "@atlasjs/math";
-import { randomRange } from "@atlasjs/utils";
-import type { AudioClip } from "@atlasjs/audio";
+import type { Vec2 } from "@atlasjs/math";
 
 import {
   AtlasScript,
-  AudioApi,
   Collider,
   PhysicsBodyRef,
   registerScriptMetadata,
@@ -14,50 +11,38 @@ import {
 } from "@atlasjs/gameplay";
 
 import { isInsideArena, type ArenaBounds } from "../../arena";
+import { PlayerStatus } from "../../sim";
 
-type PlayerFallScriptProps = {
+type PlayerFallSimScriptProps = {
   bounds: ArenaBounds;
   radius: number;
   fallDuration: number;
   respawnPosition: Vec2;
-  fallAudio: AudioClip;
 };
 
-export class PlayerFallScript extends AtlasScript<PlayerFallScriptProps> {
+export class PlayerFallSimScript extends AtlasScript<PlayerFallSimScriptProps> {
   private readonly bounds: ArenaBounds;
   private readonly radius: number;
   private readonly fallDuration: number;
   private readonly respawnPosition: Vec2;
-  private readonly fallAudio: AudioClip;
-
-  private readonly baseScale: Vec2 = new Vec2();
 
   private transform: Transform2D;
   private collider: Collider;
   private rigidBody: RigidBody;
-  private audio: AudioApi;
+  private status: PlayerStatus;
   private collidesWith: number;
-  private falling: boolean;
-  private elapsed: number;
 
   public onCreate(): void {
     this.transform = this.requireComponent(Transform2D);
     this.collider = this.requireComponent(Collider);
     this.rigidBody = this.requireComponent(RigidBody);
-    this.audio = this.getService(AudioApi);
+    this.status = this.requireComponent(PlayerStatus);
 
-    this.baseScale.copyFrom(this.transform.scale);
     this.collidesWith = this.collider.collidesWith;
-    this.falling = false;
-    this.elapsed = 0;
   }
 
-  public get isFalling(): boolean {
-    return this.falling;
-  }
-
-  public onUpdate(dt: number): void {
-    if (!this.falling) {
+  public onFixedUpdate(dt: number): void {
+    if (!this.status.falling) {
       if (!isInsideArena(this.bounds, this.transform.position, this.radius)) {
         this.startFall();
       }
@@ -66,25 +51,22 @@ export class PlayerFallScript extends AtlasScript<PlayerFallScriptProps> {
     }
 
     this.rigidBody.velocity.set(0, 0);
-    this.elapsed = Math.min(this.elapsed + dt, this.fallDuration);
 
-    const t: number = this.elapsed / this.fallDuration;
-    this.transform.scale.copyFrom(this.baseScale).mult(1 - t);
+    this.status.fallElapsed = Math.min(
+      this.status.fallElapsed + dt,
+      this.fallDuration,
+    );
 
-    if (this.elapsed >= this.fallDuration) {
+    if (this.status.fallElapsed >= this.fallDuration) {
       this.respawn();
     }
   }
 
   private startFall(): void {
-    this.falling = true;
-    this.elapsed = 0;
+    this.status.falling = true;
+    this.status.fallElapsed = 0;
+    this.status.fallCount++;
     this.collider.collidesWith = 0;
-
-    this.audio.playOneShot(this.fallAudio, {
-      volume: randomRange(0.1, 0.2),
-      pitch: randomRange(0.9, 1.1),
-    });
   }
 
   private respawn(): void {
@@ -96,20 +78,27 @@ export class PlayerFallScript extends AtlasScript<PlayerFallScriptProps> {
       this.respawnPosition.y,
     );
 
+    /* PhysicsPullSystem (PhysicsWriteback, 400) rewrites Transform2D.position from the body
+       later in this same tick, so this write looks dead. It is not: script order inside
+       ScriptFixed (150) is attach order, so any other fixed-lane script reading
+       Transform2D.position between stage 150 and stage 400 reads the pre-respawn value
+       without it. Do not delete. See PHYSICS-25. */
     this.transform.position.copyFrom(this.respawnPosition);
-    this.transform.scale.copyFrom(this.baseScale);
+
     this.rigidBody.velocity.set(0, 0);
     this.collider.collidesWith = this.collidesWith;
-    this.falling = false;
+
+    this.status.falling = false;
+    this.status.fallElapsed = 0;
+    this.status.respawnCount++;
   }
 }
 
-registerScriptMetadata(PlayerFallScript, {
+registerScriptMetadata(PlayerFallSimScript, {
   exposed: {
     bounds: ScriptMetadata.field({ required: true }),
     radius: ScriptMetadata.field({ required: true }),
     fallDuration: ScriptMetadata.field({ required: true }),
     respawnPosition: ScriptMetadata.field({ required: true }),
-    fallAudio: ScriptMetadata.field({ required: true }),
   },
 });

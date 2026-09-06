@@ -1,15 +1,14 @@
-import { PI, PI_2, Vec2 } from "@atlasjs/math";
-import type { PlayerControlsType } from "../../controls";
+import { PI, PI_2 } from "@atlasjs/math";
 
 import {
   AtlasScript,
-  PlayerInput,
   registerScriptMetadata,
   ScriptMetadata,
   Transform,
-  Vector2Action,
   type GameEntity,
 } from "@atlasjs/gameplay";
+
+import { PlayerStatus } from "../../sim";
 
 type PlayerEyesScriptProps = {
   playerEyes: GameEntity;
@@ -22,31 +21,20 @@ export class PlayerEyesScript extends AtlasScript<PlayerEyesScriptProps> {
   private readonly rotationSpeed: number;
   private readonly radius: number;
 
-  private readonly direction: Vec2 = new Vec2();
-
-  private move: Vector2Action;
+  private status: PlayerStatus;
   private eyeTransform: Transform;
 
   public onCreate(): void {
-    const controls: PlayerInput<PlayerControlsType> =
-      this.requireComponent(PlayerInput);
-
+    this.status = this.requireComponent(PlayerStatus);
     this.eyeTransform = this.playerEyes.requireComponent(Transform);
-    this.move = controls.get("move");
   }
 
   public onUpdate(dt: number): void {
-    const v: Vec2 = this.move.readValue();
-
-    if (v.mag() > 0) {
-      this.direction.copyFrom(v).normalize();
-    }
-
-    if (this.direction.mag() === 0) {
+    if (this.status.facing.mag() === 0) {
       return;
     }
 
-    const target: number = this.direction.angle();
+    const target: number = this.status.facing.angle();
     const rotation: number = this.eyeTransform.position.angle();
     const delta: number = this.shortestDelta(rotation, target);
 

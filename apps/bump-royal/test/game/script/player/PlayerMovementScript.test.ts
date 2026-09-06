@@ -4,7 +4,11 @@ import { RigidBody } from "@atlasjs/gameplay";
 import type { Entity } from "@atlasjs/nexus";
 import type { Vec2 } from "@atlasjs/math";
 
-import { MoveIntent, registerLocalIntent } from "../../../../src/game/sim";
+import {
+  MoveIntent,
+  PlayerStatus,
+  registerLocalIntent,
+} from "../../../../src/game/sim";
 import { PlayerMovementScript } from "../../../../src/game/script/player/PlayerMovementScript";
 import { createGameHarness, FIXED } from "../../../helpers/engine";
 import type { GameHarness } from "../../../helpers/engine";
@@ -25,6 +29,7 @@ const OVERSPEED_STEP: number = PROPS.overspeedDeceleration * FIXED;
 
 type Player = {
   intent: MoveIntent;
+  status: PlayerStatus;
   velocity: Vec2;
 };
 
@@ -40,9 +45,14 @@ describe("PlayerMovementScript", () => {
     const body: RigidBody = harness.world.addComponent(entity, RigidBody);
     const intent: MoveIntent = harness.world.addComponent(entity, MoveIntent);
 
+    const status: PlayerStatus = harness.world.addComponent(
+      entity,
+      PlayerStatus,
+    );
+
     harness.scripts.attach(entity, PlayerMovementScript, PROPS);
 
-    player = { intent, velocity: body.velocity };
+    player = { intent, status, velocity: body.velocity };
   });
 
   afterEach(() => {
@@ -127,6 +137,8 @@ describe("PlayerMovementScript", () => {
     harness.frame();
     expect(player.velocity.x).toBe(0);
     expect(player.velocity.y).toBe(PROPS.dashSpeed);
+    expect(player.status.facing.x).toBe(0);
+    expect(player.status.facing.y).toBe(1);
   });
 
   it("starts exactly one dash when the fixed lane runs twice on a single dash edge", () => {

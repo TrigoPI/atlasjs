@@ -7,8 +7,7 @@ import {
   ScriptMetadata,
 } from "@atlasjs/gameplay";
 
-import { MoveIntent } from "../../sim";
-import { PlayerFallScript } from "./PlayerFallScript";
+import { MoveIntent, PlayerStatus } from "../../sim";
 
 type PlayerMovementScriptProps = {
   maxSpeed: number;
@@ -29,21 +28,18 @@ export class PlayerMovementScript extends AtlasScript<PlayerMovementScriptProps>
   private readonly dashCooldown: number;
   private readonly overspeedDeceleration: number;
 
-  private readonly facing: Vec2 = new Vec2(1, 0);
   private readonly target: Vec2 = new Vec2();
 
   private dashRequested: boolean = false;
-  private dashRemaining: number = 0;
-  private cooldownRemaining: number = 0;
 
   private rigidBody: RigidBody;
   private intent: MoveIntent;
-  private fall: PlayerFallScript | undefined;
+  private status: PlayerStatus;
 
   public onCreate(): void {
     this.intent = this.requireComponent(MoveIntent);
     this.rigidBody = this.requireComponent(RigidBody);
-    this.fall = this.getEntity(this.entityId).getScript(PlayerFallScript);
+    this.status = this.requireComponent(PlayerStatus);
   }
 
   public onFixedUpdate(dt: number): void {
@@ -54,7 +50,7 @@ export class PlayerMovementScript extends AtlasScript<PlayerMovementScriptProps>
       this.dashRequested = true;
     }
 
-    if (this.fall?.isFalling === true) {
+    if (this.status.falling) {
       this.dashRequested = false;
       return;
     }
@@ -62,7 +58,7 @@ export class PlayerMovementScript extends AtlasScript<PlayerMovementScriptProps>
     const direction: Vec2 = this.intent.direction;
 
     if (direction.mag() > 0) {
-      this.facing.copyFrom(direction);
+      this.status.facing.copyFrom(direction);
     }
 
     if (this.dashRequested && this.canDash()) {
@@ -71,10 +67,13 @@ export class PlayerMovementScript extends AtlasScript<PlayerMovementScriptProps>
       return;
     }
 
-    this.cooldownRemaining = this.countDown(this.cooldownRemaining, dt);
+    this.status.cooldownRemaining = this.countDown(
+      this.status.cooldownRemaining,
+      dt,
+    );
 
-    if (this.dashRemaining > 0) {
-      this.dashRemaining = this.countDown(this.dashRemaining, dt);
+    if (this.status.dashRemaining > 0) {
+      this.status.dashRemaining = this.countDown(this.status.dashRemaining, dt);
       return;
     }
 
@@ -82,13 +81,15 @@ export class PlayerMovementScript extends AtlasScript<PlayerMovementScriptProps>
   }
 
   private canDash(): boolean {
-    return !(this.dashRemaining > 0) && !(this.cooldownRemaining > 0);
+    return (
+      !(this.status.dashRemaining > 0) && !(this.status.cooldownRemaining > 0)
+    );
   }
 
   private startDash(): void {
-    this.rigidBody.velocity.copyFrom(this.facing).mult(this.dashSpeed);
-    this.dashRemaining = this.dashDuration;
-    this.cooldownRemaining = this.dashCooldown;
+    this.rigidBody.velocity.copyFrom(this.status.facing).mult(this.dashSpeed);
+    this.status.dashRemaining = this.dashDuration;
+    this.status.cooldownRemaining = this.dashCooldown;
   }
 
   private countDown(remaining: number, dt: number): number {

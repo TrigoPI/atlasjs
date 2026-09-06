@@ -39,11 +39,19 @@ export type GameHarness = {
   world: NexusWorld;
   scripts: ScriptManager;
   scheduler: StepSet;
+  fixedDelta: number;
   frame: (ticks?: number) => void;
   stop: () => void;
 };
 
-export async function createGameHarness(): Promise<GameHarness> {
+export type GameHarnessOptions = {
+  fixedDelta?: number;
+};
+
+export async function createGameHarness(
+  options: GameHarnessOptions = {},
+): Promise<GameHarness> {
+  const fixedDelta: number = options.fixedDelta ?? FIXED;
   let onTick: ((dt: number) => void) | null = null;
 
   const nebula: StubNebula = {
@@ -57,7 +65,7 @@ export async function createGameHarness(): Promise<GameHarness> {
   });
 
   const engine: Engine = new Engine({
-    fixedDelta: FIXED,
+    fixedDelta,
     maxSubSteps: 64,
     loop: (cb: (dt: number) => void): (() => void) => {
       onTick = cb;
@@ -81,12 +89,13 @@ export async function createGameHarness(): Promise<GameHarness> {
     world,
     scripts,
     scheduler,
+    fixedDelta,
     frame: (ticks: number = 1): void => {
       if (onTick === null) {
         throw new Error("engine loop was never started");
       }
 
-      onTick(ticks * FIXED);
+      onTick(ticks * fixedDelta);
     },
     stop: (): void => engine.stop(),
   };
