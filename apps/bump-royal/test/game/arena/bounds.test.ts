@@ -6,7 +6,7 @@ import {
   ARENA_SCALE,
   isInsideArena,
   type ArenaBounds,
-} from "../../../src/game/arena/bounds";
+} from "../../../src/game/sim/arena/bounds";
 
 const HALF_WIDTH: number = ARENA_BOUNDS.halfWidth;
 const DIAGONAL_EXTENT: number = ARENA_BOUNDS.diagonalExtent;

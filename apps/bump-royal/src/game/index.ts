@@ -1,1 +1,1 @@
-export * from "./MainScene";
+export * from "./view";

@@ -1,0 +1,8 @@
+export const SortingOrder = {
+  Ground: 0,
+  Shadow: 5,
+  Trail: 10,
+  Player: 15,
+  PlayerEyes: 20,
+  Dust: 25,
+} as const;

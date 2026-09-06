@@ -12,7 +12,7 @@ import {
   type GameEntity,
 } from "@atlasjs/gameplay";
 
-import { PlayerStatus } from "../../sim";
+import { PlayerStatus } from "../../../sim";
 
 type PlayerCollisionScriptProps = {
   dust: GameEntity;

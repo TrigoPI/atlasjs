@@ -6,9 +6,9 @@ import { ASSET_MANAGER, type AssetManager } from "@atlasjs/assets";
 import { AssetsLoader, AudioList, SpriteList, type AssetName } from "./loaders";
 import { Vec2 } from "@atlasjs/math";
 
-import { registerLocalIntent } from "./sim";
+import { registerLocalIntent } from "../sim";
 
-import { PlayerControls } from "./controls";
+import { PlayerControls } from "../sim/controls";
 import { Color } from "@atlasjs/nebula";
 
 export class MainScene extends Scene {

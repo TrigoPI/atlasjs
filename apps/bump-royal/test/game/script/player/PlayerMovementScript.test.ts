@@ -9,7 +9,7 @@ import {
   PlayerStatus,
   registerLocalIntent,
 } from "../../../../src/game/sim";
-import { PlayerMovementScript } from "../../../../src/game/script/player/PlayerMovementScript";
+import { PlayerMovementScript } from "../../../../src/game/sim/script/player/PlayerMovementScript";
 import { createGameHarness, FIXED } from "../../../helpers/engine";
 import type { GameHarness } from "../../../helpers/engine";
 

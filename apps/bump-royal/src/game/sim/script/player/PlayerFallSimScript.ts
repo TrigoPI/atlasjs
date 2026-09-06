@@ -10,8 +10,8 @@ import {
   Transform2D,
 } from "@atlasjs/gameplay";
 
-import { isInsideArena, type ArenaBounds } from "../../arena";
-import { PlayerStatus } from "../../sim";
+import { isInsideArena, type ArenaBounds } from "../../arena/bounds";
+import { PlayerStatus } from "../../PlayerStatus";
 
 type PlayerFallSimScriptProps = {
   bounds: ArenaBounds;

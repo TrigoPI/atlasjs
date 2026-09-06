@@ -7,7 +7,7 @@ import {
   ScriptMetadata,
 } from "@atlasjs/gameplay";
 
-import { arenaVertices, type ArenaBounds } from "../../arena";
+import { arenaVertices, type ArenaBounds } from "../../../sim/arena";
 import { GizmosApi } from "../../services";
 
 type ArenaBoundsGizmoScriptProps = {

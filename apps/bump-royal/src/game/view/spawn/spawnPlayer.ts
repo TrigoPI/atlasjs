@@ -4,7 +4,7 @@ import type { Vec2 } from "@atlasjs/math";
 import type { Sprite } from "@atlasjs/nebula";
 
 import type { AssetName, AssetsLoader } from "../loaders";
-import type { PlayerControlsType } from "../controls";
+import type { PlayerControlsType } from "../../sim/controls";
 import { createPlayerPrefab, type PlayerPrefabProps } from "../prefabs";
 
 import {

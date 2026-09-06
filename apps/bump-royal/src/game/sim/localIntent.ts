@@ -10,7 +10,7 @@ import type {
 
 import { PlayerInput } from "@atlasjs/gameplay";
 
-import type { PlayerControlsType } from "../controls";
+import type { PlayerControlsType } from "./controls";
 import { MoveIntent } from "./MoveIntent";
 
 const LOCAL_INTENT_STEP: string = "bump-royal:local-intent";

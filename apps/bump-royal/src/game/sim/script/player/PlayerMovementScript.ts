@@ -7,7 +7,8 @@ import {
   ScriptMetadata,
 } from "@atlasjs/gameplay";
 
-import { MoveIntent, PlayerStatus } from "../../sim";
+import { MoveIntent } from "../../MoveIntent";
+import { PlayerStatus } from "../../PlayerStatus";
 
 type PlayerMovementScriptProps = {
   maxSpeed: number;
