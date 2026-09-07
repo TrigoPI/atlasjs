@@ -13,7 +13,9 @@ import { GizmoPlugin } from "@atlasjs/gizmos";
 import { NebulaPlugin } from "@atlasjs/nebula";
 import { WebGPURenderer } from "@atlasjs/nebula-webgpu";
 
-import { MainScene } from "../game";
+import { readOnlineConfig } from "../client/config";
+import type { OnlineConfig } from "../client/config";
+import { MainScene, OnlineScene } from "../game";
 import { throttle } from "../utils";
 
 export function GameCanvas({
@@ -64,6 +66,16 @@ export function GameCanvas({
       .use(gameplayPlugin)
       .use(gizmoPlugin);
 
+    /* Online keeps the exact same plugin set, InertialPlugin included with an empty world:
+       GameplayPlugin requires INERTIAL_ENGINE, and the gravity has to stay identical to the
+       server's so the day prediction adds bodies the two worlds are already configured
+       alike — a divergent gravity would be a silent one. */
+    const config: OnlineConfig = readOnlineConfig(
+      window.location.search,
+      window.location.hostname,
+      import.meta.env.VITE_BUMP_ROYAL_SERVER as string | undefined,
+    );
+
     engine
       .start()
       .then(() => {
@@ -71,7 +83,11 @@ export function GameCanvas({
           onFps(Math.round(frame));
         }, 500);
 
-        engine.scene.set(new MainScene(cb, () => onReady?.()));
+        engine.scene.set(
+          config.online
+            ? new OnlineScene(cb, () => onReady?.(), config.serverUrl)
+            : new MainScene(cb, () => onReady?.()),
+        );
       })
       .catch((error: unknown) => {
         console.error("Failed to start the engine", error);

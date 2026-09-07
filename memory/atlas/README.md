@@ -14,7 +14,7 @@ Ce fichier est écrit **à la main** — il n'est plus généré.
 
 ## Domaines
 
-`assets/` · `core/` · `debug/` · `gameplay/` · `physics/` · `rendering/`
+`assets/` · `core/` · `debug/` · `gameplay/` · `network/` · `physics/` · `rendering/`
 
 Un doc de design par système, avec son statut en frontmatter et sa portée réelle
 dans la ligne `> Statut :` en tête de corps.

@@ -42,5 +42,6 @@ ou un second joueur — avant toute décision de design : la branche `|velocity|
 n'a **jamais** été exercée, et c'est elle qui dira si l'aller-retour push/pull rend bien la vélocité
 d'après-collision.
 
-**À rapprocher de :** [[APP-24-bump-royal-no-test-infra]] — la branche en question ne sera pas
-couverte par une spec tant que l'app n'a pas de suite de tests.
+**À rapprocher de :** la suite de tests de `apps/bump-royal`, **livrée** le 2026-09-06
+(cf. [[state-sync]]). La branche `|velocity| > maxSpeed` y est désormais couverte par une spec, donc
+le prérequis qui bloquait cet item est levé.

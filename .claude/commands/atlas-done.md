@@ -38,7 +38,7 @@ Dérouler dans l'ordre. **Ne pas passer à l'étape suivante si la précédente 
 
    - `id` — `<DOMAIN>-<nn>`, cohérent avec le nom du fichier. Vérifie les IDs déjà pris : `grep -h '^id:' memory/atlas/backlog/*.md | sort`. Aucun identifiant ne se réutilise, même si sa note a été supprimée.
    - `status` — `todo`, `partial` ou `vision`. **Jamais `done`** : un item terminé quitte le backlog.
-   - `domain` — `core`, `rendering`, `gameplay`, `physics`, `assets`, `debug`, `audio` ou `app`.
+   - `domain` — `core`, `rendering`, `gameplay`, `physics`, `assets`, `debug`, `audio`, `network` ou `app`.
    - `source` — wikilink vers le doc de design, sans chemin ni extension, entre guillemets. Si le doc vit **hors** du vault (`apps/*/docs/`), utilise un lien markdown relatif à la place. S'il n'y a aucun doc de design, omets le champ plutôt que d'inventer une cible.
    - `effort` — `S`, `M` ou `L`.
    - `verified` — la date du jour, au format `AAAA-MM-JJ`. C'est la date à laquelle le statut a été confronté **au code**.

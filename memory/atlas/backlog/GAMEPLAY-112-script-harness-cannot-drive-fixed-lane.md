@@ -36,4 +36,7 @@ plus observer la mise à l'échelle du temps**, `StubScriptContext` n'ayant pas 
 donc le paragraphe à compléter existe déjà.
 
 **À rapprocher de :** [[GAMEPLAY-84-test-suite-hygiene]] (l'autre dette de la suite de tests du
-package) et [[APP-24-bump-royal-no-test-infra]], qui est **le même trou vu depuis l'app**.
+package). Le même trou vu depuis l'app — `apps/bump-royal` sans infra de test — **est livré**
+(2026-09-06, cf. [[state-sync]]) : l'app a désormais vitest et 149 specs. Mais elles ont dû piloter
+un vrai `Engine`, précisément parce que le seam publié décrit ici ne sait pas déclencher
+`onFixedUpdate`. Cet item reste donc entier, et il a maintenant un consommateur qui le contourne.
