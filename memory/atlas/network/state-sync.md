@@ -5,7 +5,8 @@ summary: "Multijoueur en ligne de bump-royal : serveur Node headless autoritaire
 ---
 # bump-royal online — serveur autoritaire & state sync (V1)
 
-> Statut : **implémenté**, branche `feat/claude/bump-royal-online`, dix commits.
+> Statut : **implémenté**, **mergé dans `dev`** le 2026-09-07 (`39b514d`, non poussé).
+> Douze commits sur `feat/claude/bump-royal-online`, elle-même poussée.
 > Livré : autorité serveur sur la physique, réplication d'état à 20 Hz, interpolation client,
 > événements discrets (bump au point de contact, chute, respawn), join/leave à chaud.
 > **Hors V1, délibérément : prédiction, réconciliation, rollback** — le protocole les accueille

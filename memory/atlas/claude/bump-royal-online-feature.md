@@ -1,12 +1,13 @@
 ---
 name: bump-royal-online-feature
-description: "bump-royal joue en ligne contre un serveur Node headless — livré sur feat/claude/bump-royal-online (poussée, non mergée) ; le moteur Atlas tourne headless sans aucun travail moteur, et rien n'est entré dans packages/."
+description: "bump-royal joue en ligne contre un serveur Node headless — mergé dans dev le 2026-09-07 (non poussé) ; le moteur Atlas tourne headless sans aucun travail moteur, et rien n'est entré dans packages/."
 type: project
-modified: 2026-09-06
+modified: 2026-09-07
 ---
 
 Le 2026-09-06, livré **le multijoueur en ligne de `apps/bump-royal`** : branche
-`feat/claude/bump-royal-online`, dix commits, **poussée mais non mergée dans `dev`**. Design :
+`feat/claude/bump-royal-online`, douze commits, poussée, **mergée dans `dev` le 2026-09-07
+(`39b514d`) — `dev` n'est pas poussée**, conformément à l'habitude sur ce dépôt. Design :
 [[state-sync]] (`status: implemented`) — le lire avant de toucher à cette chaîne, il porte les
 treize pièges vérifiés par exécution, pas seulement le résultat.
 
